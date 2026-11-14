@@ -59,7 +59,7 @@ Seven shared engines live in `packages/sim`; every feature is a thin layer on to
 
 Python trains on public historical data; the game ships only trained models, never player data.
 
-1. **Data pipeline.** Play-by-play with shot locations, player stats, drafts, contracts, junior and European seasons (collect junior/European from the start).
+1. **Data pipeline.** Play-by-play with shot locations, player stats, drafts, contracts, junior and European seasons (collect junior/European when suitable rights exist). Community roster files supply players in the shipped game; historical data supports research and model calibration.
 2. **What drives winning.** Which advanced stats predict goals and wins. Decides which ratings the game needs.
 3. **Stats to ratings.** Turns a stat line into hidden ratings so community rosters get rated automatically.
 4. **Growth and potential.** Career-shape distributions (peak age, length, decline speed), skill-specific aging, junior/European translation, potential as a floor/ceiling range.

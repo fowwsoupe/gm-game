@@ -84,7 +84,7 @@ export function App() {
                   if (res.ok === 'canceled') return;
                   setLastSim(
                     res.ok
-                      ? t('home.teamsLoaded', { count: res.teams.length })
+                      ? null
                       : `${t('roster.loadFailed')} ${res.errors.slice(0, 3).join('; ')}`,
                   );
                 },

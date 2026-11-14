@@ -1,8 +1,37 @@
 # Player ratings (hockey) — DRAFT
 
-Status: **draft, v1 keys in code.** Finalize after Azmi's M1 analysis of which stats drive
-goals and wins; then update this file, `packages/shared/src/sports/hockey.ts` and the roster
-schema together, bump `ROSTER_FORMAT_VERSION`, and add a migration.
+Status: **v1 keys in code, final M1 signoff pending.** Community files supply these
+hidden inputs. The game is intended to generate [advanced stats](ADVANCED_STATS.md)
+that help evaluate and tune them, but does not yet produce full player stat lines.
+The NHL-only M1 study supports parts of this design but does not empirically identify
+every key. If keys change, update this file,
+`packages/shared/src/sports/hockey.ts` and the roster schema together, bump
+`ROSTER_FORMAT_VERSION`, and add a migration.
+
+The [four-season MoneyPuck prototype](M1_PROTOTYPE_REPORT.md) provides preliminary
+shot, team, skater and goalie evidence. It does not cover junior/European seasons,
+drafts or contracts, so the rating list is still awaiting joint review.
+
+## M1 evidence review and proposal
+
+The season-held-out study supports keeping `shooting` and `passing` distinct: shot
+geometry predicts goals, while xG, finishing and assists together predict later
+skater goals better than one stat alone. `skating`, `puckHandling`, `defense`,
+`physical` and `hockeyIq` remain gameplay concepts; this source does not identify
+their separate effects. Hits repeat strongly between seasons, but that does not
+establish the value of a `physical` rating. On/off xG is confounded by teammates,
+competition and usage, so it does not isolate `defense` or `hockeyIq`.
+
+For goalies, goals saved above xG is weakly repeatable and failed to improve one of
+the two held-out forecasts. The source cannot separate `reflexes`, `positioning` and
+`reboundControl`; it does not justify estimating `consistency` from one season's
+save percentage. Those keys can remain in the game model provisionally, but should
+not be presented as empirically measured talents.
+
+**Proposed v1 decision:** retain the current keys and roster format. Do not
+add `faceoffs` solely because faceoff percentage repeats, or split shooting without
+a direct shot-power measure. Keep handedness as a possible fixed attribute. Revisit
+the unmeasured keys when a suitable licensed event or tracking source is available.
 
 Rules (from the feature spec):
 
@@ -31,7 +60,7 @@ Rules (from the feature spec):
 | `reboundControl` | How many second chances the other team gets                                              |
 | `consistency`    | Game-to-game variance (research: goalie SV% year to year is mostly noise, r ≈ 0.12–0.30) |
 
-## Open questions for M1
+## Later calibration questions
 
 - Split `shooting` into shot accuracy vs. shot power? Depends on whether xG data separates them.
 - Faceoffs (centers): own key, or part of `hockeyIq`?

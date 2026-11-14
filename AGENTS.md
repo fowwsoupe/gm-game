@@ -1,4 +1,5 @@
 <!-- Same rules as CLAUDE.md. Keep the two files in sync. -->
+
 # Notes for coding agents (Codex, Claude, others)
 
 Read `docs/ARCHITECTURE.md` before changing code (it ends with an "add a feature" checklist).
