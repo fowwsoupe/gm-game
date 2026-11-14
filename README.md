@@ -34,3 +34,13 @@ Read [docs/ROADMAP.md](docs/ROADMAP.md) and [docs/ARCHITECTURE.md](docs/ARCHITEC
 React 19 + TypeScript, Vite (electron-vite), Tailwind 4, TanStack Table / Virtual / Query,
 Zustand, ECharts, PixiJS, Electron, better-sqlite3, steamworks.js, ONNX Runtime for ML.
 shadcn/ui components get added as needed with `pnpm dlx shadcn@latest add <component>`.
+
+## Troubleshooting
+
+**`better_sqlite3.node was compiled against a different Node.js version`**: the SQLite
+add-on is built for one runtime at a time. `pnpm dev` rebuilds it for Electron and
+`pnpm test` / `pnpm check` rebuild it for Node, automatically. If you still see it, run
+`pnpm --filter @gm/desktop native:electron` (for the app) or `pnpm native:node` (for tests).
+
+**Steam messages at startup** (`SteamAPI_Init() failed`): normal when Steam isn't running.
+The game runs without Steam.
