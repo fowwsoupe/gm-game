@@ -25,7 +25,7 @@ ml/               Python model training → models/*.onnx
 docs/             architecture and decisions
 ```
 
-Read [docs/ARCHITECTURE.md](docs/ARCHITECTURE.md) first, then [CONTRIBUTING.md](CONTRIBUTING.md).
+Read [docs/ROADMAP.md](docs/ROADMAP.md) and [docs/ARCHITECTURE.md](docs/ARCHITECTURE.md) first, then [CONTRIBUTING.md](CONTRIBUTING.md). Full feature spec: [docs/FEATURE_SPEC.md](docs/FEATURE_SPEC.md).
 
 ## Stack
 
