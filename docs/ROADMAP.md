@@ -32,6 +32,8 @@ Builds the engines everything else depends on.
 
 ## Phase 1 — v0.1 Early Access (the full loop)
 
+Build order, owners and "done when" for each step: **[V0.1_PLAN.md](V0.1_PLAN.md)** (milestones M1–M9).
+
 **Engines**
 
 - [ ] Players (`sim/players`): percentiles, builds, role tags, traits, non-linear development, injuries

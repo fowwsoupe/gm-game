@@ -27,7 +27,7 @@ tools/balance-lab league-health report (pnpm lab)
 docs/             architecture and decisions
 ```
 
-Read [docs/ROADMAP.md](docs/ROADMAP.md) and [docs/ARCHITECTURE.md](docs/ARCHITECTURE.md) first, then [CONTRIBUTING.md](CONTRIBUTING.md). Full feature spec: [docs/FEATURE_SPEC.md](docs/FEATURE_SPEC.md).
+Read [docs/V0.1_PLAN.md](docs/V0.1_PLAN.md), [docs/ROADMAP.md](docs/ROADMAP.md) and [docs/ARCHITECTURE.md](docs/ARCHITECTURE.md) first, then [CONTRIBUTING.md](CONTRIBUTING.md). Full feature spec: [docs/FEATURE_SPEC.md](docs/FEATURE_SPEC.md).
 
 ## Stack
 
