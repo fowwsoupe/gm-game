@@ -1,0 +1,17 @@
+appId: com.example.gmgame # TODO: change before release
+productName: GM Game # TODO: real name
+directories:
+  output: release
+files:
+  - out/**
+  - package.json
+asarUnpack:
+  - '**/*.node'
+  - '**/node_modules/steamworks.js/**'
+win:
+  target: dir # Steam ships the folder; no installer needed
+mac:
+  target: dir
+  category: public.app-category.sports-games
+linux:
+  target: dir

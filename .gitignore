@@ -1,0 +1,27 @@
+node_modules/
+dist/
+out/
+release/
+coverage/
+*.tsbuildinfo
+.DS_Store
+.env
+.env.*
+!.env.example
+
+# Save files created while testing
+*.sqlite
+*.sqlite-journal
+*.sqlite-wal
+*.sqlite-shm
+
+# Python / ML
+.venv/
+__pycache__/
+*.pyc
+ml/data/raw/
+ml/data/processed/
+.ipynb_checkpoints/
+
+# Steam (dev only, never commit your real app id file)
+steam_appid.txt
