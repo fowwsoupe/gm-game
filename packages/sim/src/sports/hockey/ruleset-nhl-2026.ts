@@ -3,11 +3,14 @@ import type { Ruleset } from '../../cba';
 
 /**
  * Default ruleset, modelled on the real league for the 2026-27 season.
+ * Values and sources: docs/research/2026-11-sports-gm-research.md (rules table).
  * Sources: league / NHLPA announcement of 2026-27 payroll range (upper $104M, lower $76.9M,
  * max player salary 20% of upper) and the 2025 CBA memorandum (84 games, playoff cap,
  * shorter max terms, double-retention limits).
  *
- * TODO(verify): league minimum salary and exact calendar day counts before release.
+ * League minimum: $850K (26-27), $900K (27-28), $950K (28-29), $1M (29-30).
+ * TODO(verify against PuckPedia/CBA): ELC slide, arbitration, 35+ rules, retention limits,
+ * offseason overage, roster and 50-contract limits; exact calendar day counts.
  */
 export const NHL_2026: Ruleset = {
   id: 'nhl-2026',
@@ -29,6 +32,8 @@ export const NHL_2026: Ruleset = {
   contracts: {
     maxYearsResign: 7,
     maxYearsNewTeam: 6,
+    maxYearToYearChangePctOfFirstYear: 20,
+    minYearPctOfHighestYear: 71,
     elcYearsByAge: [
       { minAge: 18, maxAge: 21, years: 3 },
       { minAge: 22, maxAge: 23, years: 2 },

@@ -18,6 +18,8 @@ export type ContractIssue =
   | { code: 'too_long'; max: number }
   | { code: 'below_minimum'; season: number; min: Dollars }
   | { code: 'above_maximum'; max: Dollars }
+  | { code: 'variance'; season: number }
+  | { code: 'year_too_low'; season: number }
   | { code: 'empty' };
 
 export const averageAnnualValue = (salaries: Dollars[]): Dollars =>
@@ -40,7 +42,16 @@ export function validateContract(rules: Ruleset, terms: ContractTerms): Contract
   if (averageAnnualValue(terms.salaries) > maxPlayerCapHit(rules)) {
     issues.push({ code: 'above_maximum', max: maxPlayerCapHit(rules) });
   }
-  // TODO(feature): year-to-year variance limits, front-loading rules, bonuses, 35+ rules.
+  const first = terms.salaries[0]!;
+  const highest = Math.max(...terms.salaries);
+  const maxStep = pct(first, rules.contracts.maxYearToYearChangePctOfFirstYear);
+  terms.salaries.forEach((s, i) => {
+    if (i > 0 && Math.abs(s - terms.salaries[i - 1]!) > maxStep)
+      issues.push({ code: 'variance', season: i });
+    if (s < pct(highest, rules.contracts.minYearPctOfHighestYear))
+      issues.push({ code: 'year_too_low', season: i });
+  });
+  // TODO(feature): bonuses, 35+ rules, ELC limits.
   return issues;
 }
 

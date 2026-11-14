@@ -57,44 +57,50 @@ const goals = all.reduce((s, g) => s + g.homeScore + g.awayScore, 0);
 const shots = all.reduce((s, g) => s + (g.stats.homeShots ?? 0) + (g.stats.awayShots ?? 0), 0);
 const avg = (xs: number[]) => xs.reduce((a, b) => a + b, 0) / xs.length;
 
+// Targets from docs/research/2026-11-sports-gm-research.md (Hockey-Reference 2024-25 to 2026-27).
+// Ranges marked "unverified" are estimates not yet backed by the research; replace when sourced.
 const checks: Check[] = [
-  { name: 'Goals per team per game', value: goals / (games * 2), min: 2.8, max: 3.3 },
-  { name: 'Shots per team per game', value: shots / (games * 2), min: 27, max: 33 },
-  { name: 'Save percentage', value: 1 - goals / shots, min: 0.895, max: 0.91 },
+  { name: 'Goals per team per game', value: goals / (games * 2), min: 3.0, max: 3.15 },
+  { name: 'Shots per team per game', value: shots / (games * 2), min: 27, max: 28.5 },
+  { name: 'Save percentage', value: 1 - goals / shots, min: 0.89, max: 0.9 },
   {
-    name: 'Home win %',
+    name: 'Home win % (unverified)',
     value: (100 * all.filter((g) => g.homeScore > g.awayScore).length) / games,
     min: 52,
     max: 56,
     unit: '%',
   },
   {
-    name: 'Games to overtime %',
+    name: 'Games to OT % (unverified)',
     value: (100 * all.filter((g) => g.overtime).length) / games,
     min: 20,
     max: 26,
     unit: '%',
   },
   {
-    name: 'Shootout %',
+    name: 'Shootout % (unverified)',
     value: (100 * all.filter((g) => g.stats.shootout === 1).length) / games,
     min: 6,
     max: 12,
     unit: '%',
   },
-  { name: 'Points gap 1st to last', value: avg(pointSpreads), min: 40, max: 70 },
+  { name: 'Points gap 1st-last (unverified)', value: avg(pointSpreads), min: 40, max: 70 },
 ];
+// TODO (from research): favorite wins ~60% of single games; better team wins a best-of-7
+// 60-65%; goalie SV% year-to-year r 0.12-0.30; 5-7 of 16 playoff teams turn over each year.
 
 const pad = (s: string, n: number) => s.padEnd(n);
 console.log(`\nBalance lab: ${seasons} seasons, ${games} games, ${(ms / 1000).toFixed(1)}s\n`);
-console.log(`${pad('Check', 28)}${pad('Value', 10)}${pad('Healthy', 16)}Result`);
+console.log(`${pad('Check', 36)}${pad('Value', 10)}${pad('Healthy', 16)}Result`);
 let failures = 0;
 for (const c of checks) {
   const ok = c.value >= c.min && c.value <= c.max;
   if (!ok) failures++;
-  const fmt = (n: number) => (Math.abs(n) < 1 ? n.toFixed(3) : n.toFixed(1)) + (c.unit ?? '');
+  const fmt = (n: number) =>
+    (Math.abs(n) < 1 ? n.toFixed(3) : Math.abs(n) < 10 ? n.toFixed(2) : n.toFixed(1)) +
+    (c.unit ?? '');
   console.log(
-    `${pad(c.name, 28)}${pad(fmt(c.value), 10)}${pad(`${fmt(c.min)}–${fmt(c.max)}`, 16)}${ok ? 'ok' : 'OUT OF RANGE'}`,
+    `${pad(c.name, 36)}${pad(fmt(c.value), 10)}${pad(`${fmt(c.min)}–${fmt(c.max)}`, 16)}${ok ? 'ok' : 'OUT OF RANGE'}`,
   );
 }
 console.log(

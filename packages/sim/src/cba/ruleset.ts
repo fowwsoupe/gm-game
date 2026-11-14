@@ -38,6 +38,10 @@ export interface Ruleset {
   contracts: {
     maxYearsResign: number;
     maxYearsNewTeam: number;
+    /** Max change between consecutive years' salary, as % of the first year's salary. */
+    maxYearToYearChangePctOfFirstYear: number;
+    /** No year may be below this % of the highest year. */
+    minYearPctOfHighestYear: number;
     /** Entry-level contract length by signing age (inclusive ranges). */
     elcYearsByAge: { minAge: number; maxAge: number; years: number }[];
   };

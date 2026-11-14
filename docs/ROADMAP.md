@@ -97,6 +97,15 @@ Build order, owners and "done when" for each step: **[V0.1_PLAN.md](V0.1_PLAN.md
 
 ## Open decisions
 
+Research behind these: [docs/research/2026-11-sports-gm-research.md](research/2026-11-sports-gm-research.md).
+
+- [ ] **Data licensing (blocker before launch):** NHL API and MoneyPuck are non-commercial;
+      Hockey-Reference and Elite Prospects ban model training. Prototype freely; before launch,
+      ask the NHL and MoneyPuck for commercial permission or license a commercial feed.
+- [ ] **Incorporate and see a lawyer before any revenue** (Quebec image rights are strict;
+      ship a fully fictional league; never host real-player or logo files).
+- [ ] Pricing: research suggests $19.99 in Early Access, $24.99-29.99 at 1.0.
+
 - [ ] Build order and who owns which engine
 - [ ] Game name and championship cup name
 - [ ] Contract negotiation design

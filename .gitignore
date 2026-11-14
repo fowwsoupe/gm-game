@@ -25,3 +25,7 @@ ml/data/processed/
 
 # Steam (dev only, never commit your real app id file)
 steam_appid.txt
+
+# Research notes (kept out of the repo)
+research_notes/
+reports/

@@ -121,6 +121,23 @@ describe('CBA rules', () => {
     expect(tooRich.map((i) => i.code)).toContain('above_maximum');
   });
 
+  it('enforces salary variance (20% step, 71% floor)', () => {
+    const ok = validateContract(NHL_2026, {
+      salaries: [dollars(10), dollars(9), dollars(8)],
+      signingAge: 28,
+      isResign: true,
+    });
+    expect(ok).toEqual([]);
+    const frontLoaded = validateContract(NHL_2026, {
+      salaries: [dollars(12), dollars(6), dollars(6)],
+      signingAge: 28,
+      isResign: true,
+    });
+    expect(frontLoaded.map((i) => i.code)).toEqual(
+      expect.arrayContaining(['variance', 'year_too_low']),
+    );
+  });
+
   it('gives entry-level length by age', () => {
     expect(elcYears(NHL_2026, 18)).toBe(3);
     expect(elcYears(NHL_2026, 23)).toBe(2);
