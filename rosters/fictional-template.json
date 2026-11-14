@@ -1,0 +1,8795 @@
+{
+  "formatVersion": 1,
+  "sport": "nhl",
+  "season": 2027,
+  "name": "Fictional league (template)",
+  "author": "GM Game",
+  "teams": [
+    {
+      "abbreviation": "AUR",
+      "city": "Aurora",
+      "name": "Wolves"
+    },
+    {
+      "abbreviation": "BAY",
+      "city": "Bayview",
+      "name": "Comets"
+    },
+    {
+      "abbreviation": "CED",
+      "city": "Cedar Falls",
+      "name": "Blizzard"
+    },
+    {
+      "abbreviation": "DUN",
+      "city": "Dunmore",
+      "name": "Lumberjacks"
+    },
+    {
+      "abbreviation": "EAS",
+      "city": "Eastport",
+      "name": "Admirals"
+    },
+    {
+      "abbreviation": "FAI",
+      "city": "Fairhaven",
+      "name": "Foxes"
+    },
+    {
+      "abbreviation": "GLE",
+      "city": "Glenrock",
+      "name": "Thunder"
+    },
+    {
+      "abbreviation": "HAR",
+      "city": "Harbor City",
+      "name": "Ravens"
+    },
+    {
+      "abbreviation": "IRO",
+      "city": "Ironwood",
+      "name": "Miners"
+    },
+    {
+      "abbreviation": "JUN",
+      "city": "Juniper",
+      "name": "Sentinels"
+    },
+    {
+      "abbreviation": "KIN",
+      "city": "Kingsbridge",
+      "name": "Stallions"
+    },
+    {
+      "abbreviation": "LAK",
+      "city": "Lakeshore",
+      "name": "Pilots"
+    },
+    {
+      "abbreviation": "MAP",
+      "city": "Maple Ridge",
+      "name": "Grizzlies"
+    },
+    {
+      "abbreviation": "NOR",
+      "city": "Northgate",
+      "name": "Owls"
+    },
+    {
+      "abbreviation": "OAK",
+      "city": "Oakmont",
+      "name": "Storm"
+    },
+    {
+      "abbreviation": "PIN",
+      "city": "Pinecrest",
+      "name": "Knights"
+    }
+  ],
+  "players": [
+    {
+      "id": "p0",
+      "firstName": "Pierre",
+      "lastName": "Fischer",
+      "birthYear": 1991,
+      "team": "AUR",
+      "position": "C",
+      "potential": 76,
+      "skater": {
+        "skating": 67,
+        "shooting": 65,
+        "passing": 75,
+        "puckHandling": 70,
+        "defense": 74,
+        "physical": 68,
+        "hockeyIq": 65
+      },
+      "contract": {
+        "capHit": 7800000,
+        "expiresAfterSeason": 2031
+      }
+    },
+    {
+      "id": "p1",
+      "firstName": "Felix",
+      "lastName": "Jensen",
+      "birthYear": 2005,
+      "team": "AUR",
+      "position": "C",
+      "potential": 87,
+      "skater": {
+        "skating": 69,
+        "shooting": 85,
+        "passing": 77,
+        "puckHandling": 76,
+        "defense": 78,
+        "physical": 79,
+        "hockeyIq": 75
+      },
+      "contract": {
+        "capHit": 9400000,
+        "expiresAfterSeason": 2030
+      }
+    },
+    {
+      "id": "p2",
+      "firstName": "Gabe",
+      "lastName": "Gagnon",
+      "birthYear": 1990,
+      "team": "AUR",
+      "position": "C",
+      "potential": 82,
+      "skater": {
+        "skating": 74,
+        "shooting": 79,
+        "passing": 70,
+        "puckHandling": 77,
+        "defense": 72,
+        "physical": 72,
+        "hockeyIq": 68
+      },
+      "contract": {
+        "capHit": 1700000,
+        "expiresAfterSeason": 2031
+      }
+    },
+    {
+      "id": "p3",
+      "firstName": "Jonas",
+      "lastName": "Gagnon",
+      "birthYear": 1998,
+      "team": "AUR",
+      "position": "C",
+      "potential": 66,
+      "skater": {
+        "skating": 51,
+        "shooting": 65,
+        "passing": 59,
+        "puckHandling": 57,
+        "defense": 67,
+        "physical": 53,
+        "hockeyIq": 57
+      },
+      "contract": {
+        "capHit": 2300000,
+        "expiresAfterSeason": 2027
+      }
+    },
+    {
+      "id": "p4",
+      "firstName": "Felix",
+      "lastName": "Dumont",
+      "birthYear": 2005,
+      "team": "AUR",
+      "position": "C",
+      "potential": 79,
+      "skater": {
+        "skating": 72,
+        "shooting": 65,
+        "passing": 71,
+        "puckHandling": 73,
+        "defense": 67,
+        "physical": 63,
+        "hockeyIq": 65
+      },
+      "contract": {
+        "capHit": 9200000,
+        "expiresAfterSeason": 2027
+      }
+    },
+    {
+      "id": "p5",
+      "firstName": "Isaac",
+      "lastName": "Pelletier",
+      "birthYear": 1991,
+      "team": "AUR",
+      "position": "LW",
+      "potential": 84,
+      "skater": {
+        "skating": 82,
+        "shooting": 77,
+        "passing": 66,
+        "puckHandling": 73,
+        "defense": 69,
+        "physical": 66,
+        "hockeyIq": 74
+      },
+      "contract": {
+        "capHit": 5400000,
+        "expiresAfterSeason": 2027
+      }
+    },
+    {
+      "id": "p6",
+      "firstName": "Ryan",
+      "lastName": "Carlsson",
+      "birthYear": 2001,
+      "team": "AUR",
+      "position": "LW",
+      "potential": 91,
+      "skater": {
+        "skating": 72,
+        "shooting": 77,
+        "passing": 72,
+        "puckHandling": 71,
+        "defense": 78,
+        "physical": 81,
+        "hockeyIq": 79
+      },
+      "contract": {
+        "capHit": 9100000,
+        "expiresAfterSeason": 2029
+      }
+    },
+    {
+      "id": "p7",
+      "firstName": "Quinn",
+      "lastName": "Fischer",
+      "birthYear": 2004,
+      "team": "AUR",
+      "position": "LW",
+      "potential": 72,
+      "skater": {
+        "skating": 59,
+        "shooting": 56,
+        "passing": 66,
+        "puckHandling": 60,
+        "defense": 62,
+        "physical": 64,
+        "hockeyIq": 64
+      },
+      "contract": {
+        "capHit": 9300000,
+        "expiresAfterSeason": 2029
+      }
+    },
+    {
+      "id": "p8",
+      "firstName": "Owen",
+      "lastName": "Pelletier",
+      "birthYear": 1995,
+      "team": "AUR",
+      "position": "LW",
+      "potential": 75,
+      "skater": {
+        "skating": 71,
+        "shooting": 78,
+        "passing": 69,
+        "puckHandling": 78,
+        "defense": 70,
+        "physical": 69,
+        "hockeyIq": 79
+      },
+      "contract": {
+        "capHit": 10000000,
+        "expiresAfterSeason": 2029
+      }
+    },
+    {
+      "id": "p9",
+      "firstName": "Quinn",
+      "lastName": "Eriksen",
+      "birthYear": 2007,
+      "team": "AUR",
+      "position": "LW",
+      "potential": 81,
+      "skater": {
+        "skating": 73,
+        "shooting": 72,
+        "passing": 85,
+        "puckHandling": 75,
+        "defense": 76,
+        "physical": 79,
+        "hockeyIq": 73
+      },
+      "contract": {
+        "capHit": 8400000,
+        "expiresAfterSeason": 2029
+      }
+    },
+    {
+      "id": "p10",
+      "firstName": "Liam",
+      "lastName": "Hall",
+      "birthYear": 2007,
+      "team": "AUR",
+      "position": "RW",
+      "potential": 72,
+      "skater": {
+        "skating": 63,
+        "shooting": 64,
+        "passing": 68,
+        "puckHandling": 73,
+        "defense": 59,
+        "physical": 61,
+        "hockeyIq": 59
+      },
+      "contract": {
+        "capHit": 2600000,
+        "expiresAfterSeason": 2032
+      }
+    },
+    {
+      "id": "p11",
+      "firstName": "Owen",
+      "lastName": "Moreau",
+      "birthYear": 2006,
+      "team": "AUR",
+      "position": "RW",
+      "potential": 77,
+      "skater": {
+        "skating": 79,
+        "shooting": 75,
+        "passing": 73,
+        "puckHandling": 70,
+        "defense": 79,
+        "physical": 77,
+        "hockeyIq": 77
+      },
+      "contract": {
+        "capHit": 9600000,
+        "expiresAfterSeason": 2031
+      }
+    },
+    {
+      "id": "p12",
+      "firstName": "Felix",
+      "lastName": "Fischer",
+      "birthYear": 1996,
+      "team": "AUR",
+      "position": "RW",
+      "potential": 86,
+      "skater": {
+        "skating": 71,
+        "shooting": 68,
+        "passing": 66,
+        "puckHandling": 66,
+        "defense": 75,
+        "physical": 70,
+        "hockeyIq": 71
+      },
+      "contract": {
+        "capHit": 5800000,
+        "expiresAfterSeason": 2032
+      }
+    },
+    {
+      "id": "p13",
+      "firstName": "Carter",
+      "lastName": "Novak",
+      "birthYear": 2004,
+      "team": "AUR",
+      "position": "RW",
+      "potential": 78,
+      "skater": {
+        "skating": 58,
+        "shooting": 56,
+        "passing": 61,
+        "puckHandling": 68,
+        "defense": 56,
+        "physical": 72,
+        "hockeyIq": 66
+      },
+      "contract": {
+        "capHit": 2800000,
+        "expiresAfterSeason": 2029
+      }
+    },
+    {
+      "id": "p14",
+      "firstName": "Ben",
+      "lastName": "Tremblay",
+      "birthYear": 1994,
+      "team": "AUR",
+      "position": "RW",
+      "potential": 70,
+      "skater": {
+        "skating": 56,
+        "shooting": 62,
+        "passing": 65,
+        "puckHandling": 53,
+        "defense": 53,
+        "physical": 63,
+        "hockeyIq": 62
+      },
+      "contract": {
+        "capHit": 8400000,
+        "expiresAfterSeason": 2032
+      }
+    },
+    {
+      "id": "p15",
+      "firstName": "Isaac",
+      "lastName": "Sato",
+      "birthYear": 1999,
+      "team": "AUR",
+      "position": "D",
+      "potential": 74,
+      "skater": {
+        "skating": 72,
+        "shooting": 66,
+        "passing": 64,
+        "puckHandling": 62,
+        "defense": 77,
+        "physical": 74,
+        "hockeyIq": 61
+      },
+      "contract": {
+        "capHit": 7500000,
+        "expiresAfterSeason": 2031
+      }
+    },
+    {
+      "id": "p16",
+      "firstName": "Alex",
+      "lastName": "Pelletier",
+      "birthYear": 2006,
+      "team": "AUR",
+      "position": "D",
+      "potential": 67,
+      "skater": {
+        "skating": 67,
+        "shooting": 64,
+        "passing": 51,
+        "puckHandling": 51,
+        "defense": 66,
+        "physical": 62,
+        "hockeyIq": 58
+      },
+      "contract": {
+        "capHit": 9000000,
+        "expiresAfterSeason": 2032
+      }
+    },
+    {
+      "id": "p17",
+      "firstName": "Carter",
+      "lastName": "Tremblay",
+      "birthYear": 1995,
+      "team": "AUR",
+      "position": "D",
+      "potential": 70,
+      "skater": {
+        "skating": 70,
+        "shooting": 66,
+        "passing": 76,
+        "puckHandling": 75,
+        "defense": 71,
+        "physical": 71,
+        "hockeyIq": 76
+      },
+      "contract": {
+        "capHit": 1000000,
+        "expiresAfterSeason": 2028
+      }
+    },
+    {
+      "id": "p18",
+      "firstName": "Ryan",
+      "lastName": "Novak",
+      "birthYear": 1990,
+      "team": "AUR",
+      "position": "D",
+      "potential": 87,
+      "skater": {
+        "skating": 74,
+        "shooting": 85,
+        "passing": 85,
+        "puckHandling": 75,
+        "defense": 84,
+        "physical": 86,
+        "hockeyIq": 82
+      },
+      "contract": {
+        "capHit": 9900000,
+        "expiresAfterSeason": 2030
+      }
+    },
+    {
+      "id": "p19",
+      "firstName": "Quinn",
+      "lastName": "Moreau",
+      "birthYear": 1990,
+      "team": "AUR",
+      "position": "D",
+      "potential": 76,
+      "skater": {
+        "skating": 64,
+        "shooting": 73,
+        "passing": 66,
+        "puckHandling": 71,
+        "defense": 72,
+        "physical": 66,
+        "hockeyIq": 59
+      },
+      "contract": {
+        "capHit": 4400000,
+        "expiresAfterSeason": 2029
+      }
+    },
+    {
+      "id": "p20",
+      "firstName": "Ben",
+      "lastName": "Jensen",
+      "birthYear": 2005,
+      "team": "AUR",
+      "position": "D",
+      "potential": 68,
+      "skater": {
+        "skating": 59,
+        "shooting": 64,
+        "passing": 62,
+        "puckHandling": 57,
+        "defense": 66,
+        "physical": 68,
+        "hockeyIq": 65
+      },
+      "contract": {
+        "capHit": 8000000,
+        "expiresAfterSeason": 2031
+      }
+    },
+    {
+      "id": "p21",
+      "firstName": "Sami",
+      "lastName": "Korhonen",
+      "birthYear": 1992,
+      "team": "AUR",
+      "position": "D",
+      "potential": 71,
+      "skater": {
+        "skating": 66,
+        "shooting": 73,
+        "passing": 71,
+        "puckHandling": 57,
+        "defense": 71,
+        "physical": 65,
+        "hockeyIq": 65
+      },
+      "contract": {
+        "capHit": 2900000,
+        "expiresAfterSeason": 2028
+      }
+    },
+    {
+      "id": "p22",
+      "firstName": "Liam",
+      "lastName": "Fischer",
+      "birthYear": 1990,
+      "team": "AUR",
+      "position": "D",
+      "potential": 84,
+      "skater": {
+        "skating": 68,
+        "shooting": 80,
+        "passing": 70,
+        "puckHandling": 71,
+        "defense": 77,
+        "physical": 80,
+        "hockeyIq": 68
+      },
+      "contract": {
+        "capHit": 1100000,
+        "expiresAfterSeason": 2031
+      }
+    },
+    {
+      "id": "p23",
+      "firstName": "Jonas",
+      "lastName": "Pelletier",
+      "birthYear": 1995,
+      "team": "AUR",
+      "position": "G",
+      "potential": 67,
+      "goalie": {
+        "reflexes": 67,
+        "positioning": 53,
+        "reboundControl": 55,
+        "consistency": 58
+      },
+      "contract": {
+        "capHit": 10000000,
+        "expiresAfterSeason": 2030
+      }
+    },
+    {
+      "id": "p24",
+      "firstName": "Pierre",
+      "lastName": "Anders",
+      "birthYear": 2005,
+      "team": "AUR",
+      "position": "G",
+      "potential": 83,
+      "goalie": {
+        "reflexes": 73,
+        "positioning": 72,
+        "reboundControl": 69,
+        "consistency": 77
+      },
+      "contract": {
+        "capHit": 4500000,
+        "expiresAfterSeason": 2027
+      }
+    },
+    {
+      "id": "p25",
+      "firstName": "Sami",
+      "lastName": "Fischer",
+      "birthYear": 2002,
+      "team": "BAY",
+      "position": "C",
+      "potential": 71,
+      "skater": {
+        "skating": 61,
+        "shooting": 69,
+        "passing": 58,
+        "puckHandling": 63,
+        "defense": 59,
+        "physical": 65,
+        "hockeyIq": 59
+      },
+      "contract": {
+        "capHit": 6200000,
+        "expiresAfterSeason": 2031
+      }
+    },
+    {
+      "id": "p26",
+      "firstName": "Ryan",
+      "lastName": "Eriksen",
+      "birthYear": 2003,
+      "team": "BAY",
+      "position": "C",
+      "potential": 72,
+      "skater": {
+        "skating": 56,
+        "shooting": 56,
+        "passing": 64,
+        "puckHandling": 67,
+        "defense": 63,
+        "physical": 61,
+        "hockeyIq": 54
+      },
+      "contract": {
+        "capHit": 1000000,
+        "expiresAfterSeason": 2032
+      }
+    },
+    {
+      "id": "p27",
+      "firstName": "Sami",
+      "lastName": "Tremblay",
+      "birthYear": 1997,
+      "team": "BAY",
+      "position": "C",
+      "potential": 87,
+      "skater": {
+        "skating": 72,
+        "shooting": 73,
+        "passing": 74,
+        "puckHandling": 73,
+        "defense": 72,
+        "physical": 72,
+        "hockeyIq": 78
+      },
+      "contract": {
+        "capHit": 4300000,
+        "expiresAfterSeason": 2032
+      }
+    },
+    {
+      "id": "p28",
+      "firstName": "Liam",
+      "lastName": "Fischer",
+      "birthYear": 2004,
+      "team": "BAY",
+      "position": "C",
+      "potential": 75,
+      "skater": {
+        "skating": 72,
+        "shooting": 62,
+        "passing": 68,
+        "puckHandling": 66,
+        "defense": 61,
+        "physical": 70,
+        "hockeyIq": 62
+      },
+      "contract": {
+        "capHit": 7900000,
+        "expiresAfterSeason": 2030
+      }
+    },
+    {
+      "id": "p29",
+      "firstName": "Ryan",
+      "lastName": "Roy",
+      "birthYear": 2003,
+      "team": "BAY",
+      "position": "C",
+      "potential": 90,
+      "skater": {
+        "skating": 84,
+        "shooting": 90,
+        "passing": 89,
+        "puckHandling": 77,
+        "defense": 86,
+        "physical": 87,
+        "hockeyIq": 78
+      },
+      "contract": {
+        "capHit": 9600000,
+        "expiresAfterSeason": 2031
+      }
+    },
+    {
+      "id": "p30",
+      "firstName": "Henri",
+      "lastName": "Fischer",
+      "birthYear": 1996,
+      "team": "BAY",
+      "position": "LW",
+      "potential": 79,
+      "skater": {
+        "skating": 66,
+        "shooting": 82,
+        "passing": 70,
+        "puckHandling": 71,
+        "defense": 66,
+        "physical": 74,
+        "hockeyIq": 78
+      },
+      "contract": {
+        "capHit": 5700000,
+        "expiresAfterSeason": 2031
+      }
+    },
+    {
+      "id": "p31",
+      "firstName": "Marc",
+      "lastName": "Hall",
+      "birthYear": 2006,
+      "team": "BAY",
+      "position": "LW",
+      "potential": 69,
+      "skater": {
+        "skating": 65,
+        "shooting": 69,
+        "passing": 60,
+        "puckHandling": 59,
+        "defense": 66,
+        "physical": 68,
+        "hockeyIq": 65
+      },
+      "contract": {
+        "capHit": 3500000,
+        "expiresAfterSeason": 2027
+      }
+    },
+    {
+      "id": "p32",
+      "firstName": "Ryan",
+      "lastName": "Eriksen",
+      "birthYear": 2006,
+      "team": "BAY",
+      "position": "LW",
+      "potential": 74,
+      "skater": {
+        "skating": 74,
+        "shooting": 60,
+        "passing": 60,
+        "puckHandling": 63,
+        "defense": 62,
+        "physical": 66,
+        "hockeyIq": 61
+      },
+      "contract": {
+        "capHit": 6700000,
+        "expiresAfterSeason": 2030
+      }
+    },
+    {
+      "id": "p33",
+      "firstName": "Owen",
+      "lastName": "Pelletier",
+      "birthYear": 2005,
+      "team": "BAY",
+      "position": "LW",
+      "potential": 86,
+      "skater": {
+        "skating": 88,
+        "shooting": 81,
+        "passing": 75,
+        "puckHandling": 78,
+        "defense": 80,
+        "physical": 87,
+        "hockeyIq": 83
+      },
+      "contract": {
+        "capHit": 1500000,
+        "expiresAfterSeason": 2032
+      }
+    },
+    {
+      "id": "p34",
+      "firstName": "Gabe",
+      "lastName": "Tremblay",
+      "birthYear": 2006,
+      "team": "BAY",
+      "position": "LW",
+      "potential": 93,
+      "skater": {
+        "skating": 85,
+        "shooting": 72,
+        "passing": 81,
+        "puckHandling": 79,
+        "defense": 81,
+        "physical": 75,
+        "hockeyIq": 81
+      },
+      "contract": {
+        "capHit": 7100000,
+        "expiresAfterSeason": 2032
+      }
+    },
+    {
+      "id": "p35",
+      "firstName": "Sami",
+      "lastName": "Sato",
+      "birthYear": 2006,
+      "team": "BAY",
+      "position": "RW",
+      "potential": 80,
+      "skater": {
+        "skating": 64,
+        "shooting": 67,
+        "passing": 66,
+        "puckHandling": 61,
+        "defense": 70,
+        "physical": 71,
+        "hockeyIq": 65
+      },
+      "contract": {
+        "capHit": 7400000,
+        "expiresAfterSeason": 2032
+      }
+    },
+    {
+      "id": "p36",
+      "firstName": "Kai",
+      "lastName": "Ivanov",
+      "birthYear": 1991,
+      "team": "BAY",
+      "position": "RW",
+      "potential": 79,
+      "skater": {
+        "skating": 82,
+        "shooting": 69,
+        "passing": 75,
+        "puckHandling": 76,
+        "defense": 75,
+        "physical": 72,
+        "hockeyIq": 66
+      },
+      "contract": {
+        "capHit": 2300000,
+        "expiresAfterSeason": 2030
+      }
+    },
+    {
+      "id": "p37",
+      "firstName": "Dylan",
+      "lastName": "Roy",
+      "birthYear": 2002,
+      "team": "BAY",
+      "position": "RW",
+      "potential": 86,
+      "skater": {
+        "skating": 68,
+        "shooting": 72,
+        "passing": 65,
+        "puckHandling": 71,
+        "defense": 70,
+        "physical": 70,
+        "hockeyIq": 80
+      },
+      "contract": {
+        "capHit": 8200000,
+        "expiresAfterSeason": 2030
+      }
+    },
+    {
+      "id": "p38",
+      "firstName": "Owen",
+      "lastName": "Carlsson",
+      "birthYear": 2004,
+      "team": "BAY",
+      "position": "RW",
+      "potential": 72,
+      "skater": {
+        "skating": 57,
+        "shooting": 63,
+        "passing": 58,
+        "puckHandling": 71,
+        "defense": 66,
+        "physical": 65,
+        "hockeyIq": 72
+      },
+      "contract": {
+        "capHit": 5900000,
+        "expiresAfterSeason": 2029
+      }
+    },
+    {
+      "id": "p39",
+      "firstName": "Ethan",
+      "lastName": "Pelletier",
+      "birthYear": 1995,
+      "team": "BAY",
+      "position": "RW",
+      "potential": 62,
+      "skater": {
+        "skating": 67,
+        "shooting": 56,
+        "passing": 55,
+        "puckHandling": 64,
+        "defense": 63,
+        "physical": 67,
+        "hockeyIq": 66
+      },
+      "contract": {
+        "capHit": 7500000,
+        "expiresAfterSeason": 2032
+      }
+    },
+    {
+      "id": "p40",
+      "firstName": "Theo",
+      "lastName": "Korhonen",
+      "birthYear": 2004,
+      "team": "BAY",
+      "position": "D",
+      "potential": 66,
+      "skater": {
+        "skating": 68,
+        "shooting": 58,
+        "passing": 61,
+        "puckHandling": 56,
+        "defense": 68,
+        "physical": 61,
+        "hockeyIq": 68
+      },
+      "contract": {
+        "capHit": 8800000,
+        "expiresAfterSeason": 2027
+      }
+    },
+    {
+      "id": "p41",
+      "firstName": "Felix",
+      "lastName": "Dumont",
+      "birthYear": 2004,
+      "team": "BAY",
+      "position": "D",
+      "potential": 69,
+      "skater": {
+        "skating": 63,
+        "shooting": 60,
+        "passing": 71,
+        "puckHandling": 56,
+        "defense": 64,
+        "physical": 64,
+        "hockeyIq": 72
+      },
+      "contract": {
+        "capHit": 5200000,
+        "expiresAfterSeason": 2030
+      }
+    },
+    {
+      "id": "p42",
+      "firstName": "Dylan",
+      "lastName": "Ivanov",
+      "birthYear": 1990,
+      "team": "BAY",
+      "position": "D",
+      "potential": 78,
+      "skater": {
+        "skating": 64,
+        "shooting": 57,
+        "passing": 60,
+        "puckHandling": 63,
+        "defense": 69,
+        "physical": 58,
+        "hockeyIq": 60
+      },
+      "contract": {
+        "capHit": 9900000,
+        "expiresAfterSeason": 2032
+      }
+    },
+    {
+      "id": "p43",
+      "firstName": "Sami",
+      "lastName": "Novak",
+      "birthYear": 2002,
+      "team": "BAY",
+      "position": "D",
+      "potential": 78,
+      "skater": {
+        "skating": 78,
+        "shooting": 79,
+        "passing": 73,
+        "puckHandling": 69,
+        "defense": 81,
+        "physical": 69,
+        "hockeyIq": 70
+      },
+      "contract": {
+        "capHit": 5700000,
+        "expiresAfterSeason": 2029
+      }
+    },
+    {
+      "id": "p44",
+      "firstName": "Ryan",
+      "lastName": "Fischer",
+      "birthYear": 2007,
+      "team": "BAY",
+      "position": "D",
+      "potential": 75,
+      "skater": {
+        "skating": 64,
+        "shooting": 72,
+        "passing": 67,
+        "puckHandling": 68,
+        "defense": 58,
+        "physical": 61,
+        "hockeyIq": 67
+      },
+      "contract": {
+        "capHit": 3700000,
+        "expiresAfterSeason": 2029
+      }
+    },
+    {
+      "id": "p45",
+      "firstName": "Liam",
+      "lastName": "Novak",
+      "birthYear": 2000,
+      "team": "BAY",
+      "position": "D",
+      "potential": 82,
+      "skater": {
+        "skating": 76,
+        "shooting": 76,
+        "passing": 74,
+        "puckHandling": 83,
+        "defense": 82,
+        "physical": 79,
+        "hockeyIq": 73
+      },
+      "contract": {
+        "capHit": 5300000,
+        "expiresAfterSeason": 2032
+      }
+    },
+    {
+      "id": "p46",
+      "firstName": "Dylan",
+      "lastName": "Olsen",
+      "birthYear": 2006,
+      "team": "BAY",
+      "position": "D",
+      "potential": 79,
+      "skater": {
+        "skating": 67,
+        "shooting": 69,
+        "passing": 60,
+        "puckHandling": 61,
+        "defense": 58,
+        "physical": 59,
+        "hockeyIq": 63
+      },
+      "contract": {
+        "capHit": 5400000,
+        "expiresAfterSeason": 2029
+      }
+    },
+    {
+      "id": "p47",
+      "firstName": "Marc",
+      "lastName": "Bouchard",
+      "birthYear": 2005,
+      "team": "BAY",
+      "position": "D",
+      "potential": 96,
+      "skater": {
+        "skating": 80,
+        "shooting": 74,
+        "passing": 87,
+        "puckHandling": 82,
+        "defense": 90,
+        "physical": 74,
+        "hockeyIq": 90
+      },
+      "contract": {
+        "capHit": 1500000,
+        "expiresAfterSeason": 2030
+      }
+    },
+    {
+      "id": "p48",
+      "firstName": "Pierre",
+      "lastName": "Sato",
+      "birthYear": 1998,
+      "team": "BAY",
+      "position": "G",
+      "potential": 74,
+      "goalie": {
+        "reflexes": 82,
+        "positioning": 71,
+        "reboundControl": 81,
+        "consistency": 81
+      },
+      "contract": {
+        "capHit": 2000000,
+        "expiresAfterSeason": 2030
+      }
+    },
+    {
+      "id": "p49",
+      "firstName": "Carter",
+      "lastName": "Olsen",
+      "birthYear": 2000,
+      "team": "BAY",
+      "position": "G",
+      "potential": 68,
+      "goalie": {
+        "reflexes": 65,
+        "positioning": 76,
+        "reboundControl": 66,
+        "consistency": 67
+      },
+      "contract": {
+        "capHit": 7500000,
+        "expiresAfterSeason": 2031
+      }
+    },
+    {
+      "id": "p50",
+      "firstName": "Owen",
+      "lastName": "Tremblay",
+      "birthYear": 2006,
+      "team": "CED",
+      "position": "C",
+      "potential": 67,
+      "skater": {
+        "skating": 64,
+        "shooting": 65,
+        "passing": 63,
+        "puckHandling": 60,
+        "defense": 59,
+        "physical": 68,
+        "hockeyIq": 57
+      },
+      "contract": {
+        "capHit": 8700000,
+        "expiresAfterSeason": 2027
+      }
+    },
+    {
+      "id": "p51",
+      "firstName": "Noah",
+      "lastName": "Ivanov",
+      "birthYear": 1991,
+      "team": "CED",
+      "position": "C",
+      "potential": 84,
+      "skater": {
+        "skating": 66,
+        "shooting": 72,
+        "passing": 76,
+        "puckHandling": 75,
+        "defense": 64,
+        "physical": 72,
+        "hockeyIq": 68
+      },
+      "contract": {
+        "capHit": 5400000,
+        "expiresAfterSeason": 2031
+      }
+    },
+    {
+      "id": "p52",
+      "firstName": "Gabe",
+      "lastName": "Moreau",
+      "birthYear": 2006,
+      "team": "CED",
+      "position": "C",
+      "potential": 92,
+      "skater": {
+        "skating": 75,
+        "shooting": 84,
+        "passing": 78,
+        "puckHandling": 86,
+        "defense": 82,
+        "physical": 75,
+        "hockeyIq": 81
+      },
+      "contract": {
+        "capHit": 4700000,
+        "expiresAfterSeason": 2032
+      }
+    },
+    {
+      "id": "p53",
+      "firstName": "Pierre",
+      "lastName": "Gagnon",
+      "birthYear": 1990,
+      "team": "CED",
+      "position": "C",
+      "potential": 85,
+      "skater": {
+        "skating": 68,
+        "shooting": 71,
+        "passing": 71,
+        "puckHandling": 71,
+        "defense": 72,
+        "physical": 76,
+        "hockeyIq": 78
+      },
+      "contract": {
+        "capHit": 6200000,
+        "expiresAfterSeason": 2032
+      }
+    },
+    {
+      "id": "p54",
+      "firstName": "Sami",
+      "lastName": "Novak",
+      "birthYear": 2007,
+      "team": "CED",
+      "position": "C",
+      "potential": 72,
+      "skater": {
+        "skating": 70,
+        "shooting": 69,
+        "passing": 73,
+        "puckHandling": 70,
+        "defense": 65,
+        "physical": 64,
+        "hockeyIq": 79
+      },
+      "contract": {
+        "capHit": 9800000,
+        "expiresAfterSeason": 2028
+      }
+    },
+    {
+      "id": "p55",
+      "firstName": "Sami",
+      "lastName": "Korhonen",
+      "birthYear": 1999,
+      "team": "CED",
+      "position": "LW",
+      "potential": 87,
+      "skater": {
+        "skating": 87,
+        "shooting": 76,
+        "passing": 80,
+        "puckHandling": 81,
+        "defense": 78,
+        "physical": 85,
+        "hockeyIq": 76
+      },
+      "contract": {
+        "capHit": 4200000,
+        "expiresAfterSeason": 2030
+      }
+    },
+    {
+      "id": "p56",
+      "firstName": "Noah",
+      "lastName": "Eriksen",
+      "birthYear": 2007,
+      "team": "CED",
+      "position": "LW",
+      "potential": 97,
+      "skater": {
+        "skating": 84,
+        "shooting": 90,
+        "passing": 77,
+        "puckHandling": 83,
+        "defense": 76,
+        "physical": 88,
+        "hockeyIq": 87
+      },
+      "contract": {
+        "capHit": 5300000,
+        "expiresAfterSeason": 2027
+      }
+    },
+    {
+      "id": "p57",
+      "firstName": "Ethan",
+      "lastName": "Novak",
+      "birthYear": 1997,
+      "team": "CED",
+      "position": "LW",
+      "potential": 69,
+      "skater": {
+        "skating": 62,
+        "shooting": 60,
+        "passing": 60,
+        "puckHandling": 57,
+        "defense": 59,
+        "physical": 54,
+        "hockeyIq": 58
+      },
+      "contract": {
+        "capHit": 5300000,
+        "expiresAfterSeason": 2028
+      }
+    },
+    {
+      "id": "p58",
+      "firstName": "Noah",
+      "lastName": "Gagnon",
+      "birthYear": 1996,
+      "team": "CED",
+      "position": "LW",
+      "potential": 74,
+      "skater": {
+        "skating": 74,
+        "shooting": 61,
+        "passing": 61,
+        "puckHandling": 76,
+        "defense": 73,
+        "physical": 61,
+        "hockeyIq": 74
+      },
+      "contract": {
+        "capHit": 3200000,
+        "expiresAfterSeason": 2030
+      }
+    },
+    {
+      "id": "p59",
+      "firstName": "Isaac",
+      "lastName": "Korhonen",
+      "birthYear": 2005,
+      "team": "CED",
+      "position": "LW",
+      "potential": 69,
+      "skater": {
+        "skating": 58,
+        "shooting": 66,
+        "passing": 58,
+        "puckHandling": 64,
+        "defense": 69,
+        "physical": 67,
+        "hockeyIq": 58
+      },
+      "contract": {
+        "capHit": 4700000,
+        "expiresAfterSeason": 2029
+      }
+    },
+    {
+      "id": "p60",
+      "firstName": "Sami",
+      "lastName": "Jensen",
+      "birthYear": 2004,
+      "team": "CED",
+      "position": "RW",
+      "potential": 76,
+      "skater": {
+        "skating": 75,
+        "shooting": 72,
+        "passing": 60,
+        "puckHandling": 60,
+        "defense": 73,
+        "physical": 62,
+        "hockeyIq": 59
+      },
+      "contract": {
+        "capHit": 7000000,
+        "expiresAfterSeason": 2028
+      }
+    },
+    {
+      "id": "p61",
+      "firstName": "Gabe",
+      "lastName": "Eriksen",
+      "birthYear": 2000,
+      "team": "CED",
+      "position": "RW",
+      "potential": 72,
+      "skater": {
+        "skating": 78,
+        "shooting": 76,
+        "passing": 75,
+        "puckHandling": 71,
+        "defense": 69,
+        "physical": 64,
+        "hockeyIq": 69
+      },
+      "contract": {
+        "capHit": 900000,
+        "expiresAfterSeason": 2031
+      }
+    },
+    {
+      "id": "p62",
+      "firstName": "Theo",
+      "lastName": "Eriksen",
+      "birthYear": 2002,
+      "team": "CED",
+      "position": "RW",
+      "potential": 68,
+      "skater": {
+        "skating": 69,
+        "shooting": 63,
+        "passing": 67,
+        "puckHandling": 68,
+        "defense": 56,
+        "physical": 61,
+        "hockeyIq": 67
+      },
+      "contract": {
+        "capHit": 2700000,
+        "expiresAfterSeason": 2030
+      }
+    },
+    {
+      "id": "p63",
+      "firstName": "Jonas",
+      "lastName": "Roy",
+      "birthYear": 2004,
+      "team": "CED",
+      "position": "RW",
+      "potential": 72,
+      "skater": {
+        "skating": 70,
+        "shooting": 68,
+        "passing": 61,
+        "puckHandling": 54,
+        "defense": 63,
+        "physical": 68,
+        "hockeyIq": 55
+      },
+      "contract": {
+        "capHit": 5700000,
+        "expiresAfterSeason": 2027
+      }
+    },
+    {
+      "id": "p64",
+      "firstName": "Ryan",
+      "lastName": "Gagnon",
+      "birthYear": 2001,
+      "team": "CED",
+      "position": "RW",
+      "potential": 83,
+      "skater": {
+        "skating": 77,
+        "shooting": 78,
+        "passing": 73,
+        "puckHandling": 70,
+        "defense": 78,
+        "physical": 73,
+        "hockeyIq": 80
+      },
+      "contract": {
+        "capHit": 1200000,
+        "expiresAfterSeason": 2028
+      }
+    },
+    {
+      "id": "p65",
+      "firstName": "Owen",
+      "lastName": "Gagnon",
+      "birthYear": 1991,
+      "team": "CED",
+      "position": "D",
+      "potential": 71,
+      "skater": {
+        "skating": 63,
+        "shooting": 74,
+        "passing": 62,
+        "puckHandling": 72,
+        "defense": 69,
+        "physical": 73,
+        "hockeyIq": 63
+      },
+      "contract": {
+        "capHit": 5900000,
+        "expiresAfterSeason": 2028
+      }
+    },
+    {
+      "id": "p66",
+      "firstName": "Owen",
+      "lastName": "Pelletier",
+      "birthYear": 1990,
+      "team": "CED",
+      "position": "D",
+      "potential": 68,
+      "skater": {
+        "skating": 66,
+        "shooting": 74,
+        "passing": 61,
+        "puckHandling": 60,
+        "defense": 60,
+        "physical": 76,
+        "hockeyIq": 69
+      },
+      "contract": {
+        "capHit": 4700000,
+        "expiresAfterSeason": 2028
+      }
+    },
+    {
+      "id": "p67",
+      "firstName": "Ethan",
+      "lastName": "Ivanov",
+      "birthYear": 1991,
+      "team": "CED",
+      "position": "D",
+      "potential": 94,
+      "skater": {
+        "skating": 76,
+        "shooting": 87,
+        "passing": 79,
+        "puckHandling": 74,
+        "defense": 73,
+        "physical": 73,
+        "hockeyIq": 74
+      },
+      "contract": {
+        "capHit": 6400000,
+        "expiresAfterSeason": 2031
+      }
+    },
+    {
+      "id": "p68",
+      "firstName": "Carter",
+      "lastName": "Dumont",
+      "birthYear": 2002,
+      "team": "CED",
+      "position": "D",
+      "potential": 94,
+      "skater": {
+        "skating": 87,
+        "shooting": 71,
+        "passing": 76,
+        "puckHandling": 80,
+        "defense": 76,
+        "physical": 78,
+        "hockeyIq": 80
+      },
+      "contract": {
+        "capHit": 4900000,
+        "expiresAfterSeason": 2032
+      }
+    },
+    {
+      "id": "p69",
+      "firstName": "Kai",
+      "lastName": "Bouchard",
+      "birthYear": 2002,
+      "team": "CED",
+      "position": "D",
+      "potential": 86,
+      "skater": {
+        "skating": 81,
+        "shooting": 86,
+        "passing": 77,
+        "puckHandling": 82,
+        "defense": 76,
+        "physical": 70,
+        "hockeyIq": 83
+      },
+      "contract": {
+        "capHit": 9800000,
+        "expiresAfterSeason": 2029
+      }
+    },
+    {
+      "id": "p70",
+      "firstName": "Ben",
+      "lastName": "Korhonen",
+      "birthYear": 1993,
+      "team": "CED",
+      "position": "D",
+      "potential": 85,
+      "skater": {
+        "skating": 69,
+        "shooting": 70,
+        "passing": 77,
+        "puckHandling": 75,
+        "defense": 68,
+        "physical": 72,
+        "hockeyIq": 74
+      },
+      "contract": {
+        "capHit": 5400000,
+        "expiresAfterSeason": 2032
+      }
+    },
+    {
+      "id": "p71",
+      "firstName": "Noah",
+      "lastName": "Gagnon",
+      "birthYear": 2006,
+      "team": "CED",
+      "position": "D",
+      "potential": 70,
+      "skater": {
+        "skating": 58,
+        "shooting": 58,
+        "passing": 66,
+        "puckHandling": 60,
+        "defense": 61,
+        "physical": 58,
+        "hockeyIq": 61
+      },
+      "contract": {
+        "capHit": 6200000,
+        "expiresAfterSeason": 2031
+      }
+    },
+    {
+      "id": "p72",
+      "firstName": "Marc",
+      "lastName": "Dumont",
+      "birthYear": 1991,
+      "team": "CED",
+      "position": "D",
+      "potential": 94,
+      "skater": {
+        "skating": 83,
+        "shooting": 74,
+        "passing": 89,
+        "puckHandling": 90,
+        "defense": 88,
+        "physical": 87,
+        "hockeyIq": 75
+      },
+      "contract": {
+        "capHit": 2200000,
+        "expiresAfterSeason": 2029
+      }
+    },
+    {
+      "id": "p73",
+      "firstName": "Dylan",
+      "lastName": "Eriksen",
+      "birthYear": 1995,
+      "team": "CED",
+      "position": "G",
+      "potential": 92,
+      "goalie": {
+        "reflexes": 84,
+        "positioning": 85,
+        "reboundControl": 75,
+        "consistency": 77
+      },
+      "contract": {
+        "capHit": 5600000,
+        "expiresAfterSeason": 2032
+      }
+    },
+    {
+      "id": "p74",
+      "firstName": "Jonas",
+      "lastName": "Bouchard",
+      "birthYear": 1991,
+      "team": "CED",
+      "position": "G",
+      "potential": 87,
+      "goalie": {
+        "reflexes": 67,
+        "positioning": 69,
+        "reboundControl": 80,
+        "consistency": 75
+      },
+      "contract": {
+        "capHit": 3500000,
+        "expiresAfterSeason": 2028
+      }
+    },
+    {
+      "id": "p75",
+      "firstName": "Quinn",
+      "lastName": "Virtanen",
+      "birthYear": 1999,
+      "team": "DUN",
+      "position": "C",
+      "potential": 68,
+      "skater": {
+        "skating": 58,
+        "shooting": 69,
+        "passing": 68,
+        "puckHandling": 55,
+        "defense": 58,
+        "physical": 54,
+        "hockeyIq": 68
+      },
+      "contract": {
+        "capHit": 1600000,
+        "expiresAfterSeason": 2028
+      }
+    },
+    {
+      "id": "p76",
+      "firstName": "Henri",
+      "lastName": "Pelletier",
+      "birthYear": 2003,
+      "team": "DUN",
+      "position": "C",
+      "potential": 66,
+      "skater": {
+        "skating": 60,
+        "shooting": 57,
+        "passing": 71,
+        "puckHandling": 68,
+        "defense": 62,
+        "physical": 61,
+        "hockeyIq": 71
+      },
+      "contract": {
+        "capHit": 2200000,
+        "expiresAfterSeason": 2031
+      }
+    },
+    {
+      "id": "p77",
+      "firstName": "Carter",
+      "lastName": "Ivanov",
+      "birthYear": 2004,
+      "team": "DUN",
+      "position": "C",
+      "potential": 80,
+      "skater": {
+        "skating": 72,
+        "shooting": 70,
+        "passing": 70,
+        "puckHandling": 62,
+        "defense": 72,
+        "physical": 71,
+        "hockeyIq": 61
+      },
+      "contract": {
+        "capHit": 9500000,
+        "expiresAfterSeason": 2027
+      }
+    },
+    {
+      "id": "p78",
+      "firstName": "Kai",
+      "lastName": "Moreau",
+      "birthYear": 1998,
+      "team": "DUN",
+      "position": "C",
+      "potential": 74,
+      "skater": {
+        "skating": 53,
+        "shooting": 67,
+        "passing": 58,
+        "puckHandling": 59,
+        "defense": 65,
+        "physical": 69,
+        "hockeyIq": 68
+      },
+      "contract": {
+        "capHit": 7200000,
+        "expiresAfterSeason": 2032
+      }
+    },
+    {
+      "id": "p79",
+      "firstName": "Felix",
+      "lastName": "Novak",
+      "birthYear": 1993,
+      "team": "DUN",
+      "position": "C",
+      "potential": 83,
+      "skater": {
+        "skating": 72,
+        "shooting": 68,
+        "passing": 64,
+        "puckHandling": 78,
+        "defense": 69,
+        "physical": 66,
+        "hockeyIq": 73
+      },
+      "contract": {
+        "capHit": 9600000,
+        "expiresAfterSeason": 2031
+      }
+    },
+    {
+      "id": "p80",
+      "firstName": "Alex",
+      "lastName": "Bouchard",
+      "birthYear": 2003,
+      "team": "DUN",
+      "position": "LW",
+      "potential": 66,
+      "skater": {
+        "skating": 62,
+        "shooting": 64,
+        "passing": 52,
+        "puckHandling": 54,
+        "defense": 66,
+        "physical": 61,
+        "hockeyIq": 62
+      },
+      "contract": {
+        "capHit": 8600000,
+        "expiresAfterSeason": 2030
+      }
+    },
+    {
+      "id": "p81",
+      "firstName": "Kai",
+      "lastName": "Bouchard",
+      "birthYear": 2002,
+      "team": "DUN",
+      "position": "LW",
+      "potential": 78,
+      "skater": {
+        "skating": 61,
+        "shooting": 70,
+        "passing": 61,
+        "puckHandling": 62,
+        "defense": 65,
+        "physical": 57,
+        "hockeyIq": 70
+      },
+      "contract": {
+        "capHit": 3900000,
+        "expiresAfterSeason": 2030
+      }
+    },
+    {
+      "id": "p82",
+      "firstName": "Ryan",
+      "lastName": "Gagnon",
+      "birthYear": 1994,
+      "team": "DUN",
+      "position": "LW",
+      "potential": 89,
+      "skater": {
+        "skating": 70,
+        "shooting": 78,
+        "passing": 69,
+        "puckHandling": 74,
+        "defense": 70,
+        "physical": 68,
+        "hockeyIq": 80
+      },
+      "contract": {
+        "capHit": 8200000,
+        "expiresAfterSeason": 2032
+      }
+    },
+    {
+      "id": "p83",
+      "firstName": "Alex",
+      "lastName": "Pelletier",
+      "birthYear": 1993,
+      "team": "DUN",
+      "position": "LW",
+      "potential": 72,
+      "skater": {
+        "skating": 57,
+        "shooting": 49,
+        "passing": 58,
+        "puckHandling": 52,
+        "defense": 55,
+        "physical": 65,
+        "hockeyIq": 56
+      },
+      "contract": {
+        "capHit": 7800000,
+        "expiresAfterSeason": 2031
+      }
+    },
+    {
+      "id": "p84",
+      "firstName": "Marc",
+      "lastName": "Pelletier",
+      "birthYear": 1992,
+      "team": "DUN",
+      "position": "LW",
+      "potential": 70,
+      "skater": {
+        "skating": 59,
+        "shooting": 52,
+        "passing": 50,
+        "puckHandling": 49,
+        "defense": 52,
+        "physical": 49,
+        "hockeyIq": 47
+      },
+      "contract": {
+        "capHit": 5400000,
+        "expiresAfterSeason": 2030
+      }
+    },
+    {
+      "id": "p85",
+      "firstName": "Kai",
+      "lastName": "Korhonen",
+      "birthYear": 2000,
+      "team": "DUN",
+      "position": "RW",
+      "potential": 70,
+      "skater": {
+        "skating": 65,
+        "shooting": 60,
+        "passing": 65,
+        "puckHandling": 68,
+        "defense": 70,
+        "physical": 69,
+        "hockeyIq": 70
+      },
+      "contract": {
+        "capHit": 1200000,
+        "expiresAfterSeason": 2028
+      }
+    },
+    {
+      "id": "p86",
+      "firstName": "Noah",
+      "lastName": "Lindqvist",
+      "birthYear": 1995,
+      "team": "DUN",
+      "position": "RW",
+      "potential": 87,
+      "skater": {
+        "skating": 80,
+        "shooting": 75,
+        "passing": 69,
+        "puckHandling": 70,
+        "defense": 71,
+        "physical": 81,
+        "hockeyIq": 70
+      },
+      "contract": {
+        "capHit": 1000000,
+        "expiresAfterSeason": 2031
+      }
+    },
+    {
+      "id": "p87",
+      "firstName": "Liam",
+      "lastName": "Lindqvist",
+      "birthYear": 2006,
+      "team": "DUN",
+      "position": "RW",
+      "potential": 69,
+      "skater": {
+        "skating": 59,
+        "shooting": 66,
+        "passing": 71,
+        "puckHandling": 70,
+        "defense": 62,
+        "physical": 58,
+        "hockeyIq": 63
+      },
+      "contract": {
+        "capHit": 2800000,
+        "expiresAfterSeason": 2029
+      }
+    },
+    {
+      "id": "p88",
+      "firstName": "Jonas",
+      "lastName": "Bouchard",
+      "birthYear": 2006,
+      "team": "DUN",
+      "position": "RW",
+      "potential": 84,
+      "skater": {
+        "skating": 71,
+        "shooting": 76,
+        "passing": 77,
+        "puckHandling": 76,
+        "defense": 64,
+        "physical": 62,
+        "hockeyIq": 67
+      },
+      "contract": {
+        "capHit": 1300000,
+        "expiresAfterSeason": 2030
+      }
+    },
+    {
+      "id": "p89",
+      "firstName": "Carter",
+      "lastName": "Pelletier",
+      "birthYear": 2001,
+      "team": "DUN",
+      "position": "RW",
+      "potential": 58,
+      "skater": {
+        "skating": 45,
+        "shooting": 48,
+        "passing": 45,
+        "puckHandling": 59,
+        "defense": 49,
+        "physical": 56,
+        "hockeyIq": 44
+      },
+      "contract": {
+        "capHit": 7000000,
+        "expiresAfterSeason": 2029
+      }
+    },
+    {
+      "id": "p90",
+      "firstName": "Kai",
+      "lastName": "Ivanov",
+      "birthYear": 1995,
+      "team": "DUN",
+      "position": "D",
+      "potential": 79,
+      "skater": {
+        "skating": 73,
+        "shooting": 63,
+        "passing": 67,
+        "puckHandling": 61,
+        "defense": 70,
+        "physical": 61,
+        "hockeyIq": 68
+      },
+      "contract": {
+        "capHit": 3200000,
+        "expiresAfterSeason": 2032
+      }
+    },
+    {
+      "id": "p91",
+      "firstName": "Noah",
+      "lastName": "Moreau",
+      "birthYear": 1999,
+      "team": "DUN",
+      "position": "D",
+      "potential": 61,
+      "skater": {
+        "skating": 60,
+        "shooting": 47,
+        "passing": 54,
+        "puckHandling": 48,
+        "defense": 58,
+        "physical": 48,
+        "hockeyIq": 55
+      },
+      "contract": {
+        "capHit": 1500000,
+        "expiresAfterSeason": 2027
+      }
+    },
+    {
+      "id": "p92",
+      "firstName": "Pierre",
+      "lastName": "Ivanov",
+      "birthYear": 1992,
+      "team": "DUN",
+      "position": "D",
+      "potential": 65,
+      "skater": {
+        "skating": 60,
+        "shooting": 67,
+        "passing": 59,
+        "puckHandling": 66,
+        "defense": 69,
+        "physical": 69,
+        "hockeyIq": 67
+      },
+      "contract": {
+        "capHit": 5700000,
+        "expiresAfterSeason": 2029
+      }
+    },
+    {
+      "id": "p93",
+      "firstName": "Isaac",
+      "lastName": "Dumont",
+      "birthYear": 1993,
+      "team": "DUN",
+      "position": "D",
+      "potential": 62,
+      "skater": {
+        "skating": 58,
+        "shooting": 62,
+        "passing": 50,
+        "puckHandling": 53,
+        "defense": 53,
+        "physical": 54,
+        "hockeyIq": 52
+      },
+      "contract": {
+        "capHit": 8200000,
+        "expiresAfterSeason": 2028
+      }
+    },
+    {
+      "id": "p94",
+      "firstName": "Quinn",
+      "lastName": "Jensen",
+      "birthYear": 1992,
+      "team": "DUN",
+      "position": "D",
+      "potential": 75,
+      "skater": {
+        "skating": 78,
+        "shooting": 77,
+        "passing": 70,
+        "puckHandling": 78,
+        "defense": 64,
+        "physical": 65,
+        "hockeyIq": 71
+      },
+      "contract": {
+        "capHit": 7700000,
+        "expiresAfterSeason": 2027
+      }
+    },
+    {
+      "id": "p95",
+      "firstName": "Noah",
+      "lastName": "Olsen",
+      "birthYear": 1997,
+      "team": "DUN",
+      "position": "D",
+      "potential": 79,
+      "skater": {
+        "skating": 74,
+        "shooting": 72,
+        "passing": 64,
+        "puckHandling": 80,
+        "defense": 80,
+        "physical": 67,
+        "hockeyIq": 78
+      },
+      "contract": {
+        "capHit": 3800000,
+        "expiresAfterSeason": 2032
+      }
+    },
+    {
+      "id": "p96",
+      "firstName": "Carter",
+      "lastName": "Bouchard",
+      "birthYear": 1992,
+      "team": "DUN",
+      "position": "D",
+      "potential": 65,
+      "skater": {
+        "skating": 55,
+        "shooting": 49,
+        "passing": 61,
+        "puckHandling": 49,
+        "defense": 52,
+        "physical": 52,
+        "hockeyIq": 49
+      },
+      "contract": {
+        "capHit": 6800000,
+        "expiresAfterSeason": 2027
+      }
+    },
+    {
+      "id": "p97",
+      "firstName": "Marc",
+      "lastName": "Tremblay",
+      "birthYear": 1993,
+      "team": "DUN",
+      "position": "D",
+      "potential": 67,
+      "skater": {
+        "skating": 47,
+        "shooting": 52,
+        "passing": 53,
+        "puckHandling": 60,
+        "defense": 57,
+        "physical": 58,
+        "hockeyIq": 46
+      },
+      "contract": {
+        "capHit": 2800000,
+        "expiresAfterSeason": 2027
+      }
+    },
+    {
+      "id": "p98",
+      "firstName": "Pierre",
+      "lastName": "Dumont",
+      "birthYear": 2000,
+      "team": "DUN",
+      "position": "G",
+      "potential": 59,
+      "goalie": {
+        "reflexes": 47,
+        "positioning": 55,
+        "reboundControl": 60,
+        "consistency": 58
+      },
+      "contract": {
+        "capHit": 1300000,
+        "expiresAfterSeason": 2029
+      }
+    },
+    {
+      "id": "p99",
+      "firstName": "Carter",
+      "lastName": "Novak",
+      "birthYear": 2002,
+      "team": "DUN",
+      "position": "G",
+      "potential": 64,
+      "goalie": {
+        "reflexes": 58,
+        "positioning": 61,
+        "reboundControl": 66,
+        "consistency": 66
+      },
+      "contract": {
+        "capHit": 1400000,
+        "expiresAfterSeason": 2028
+      }
+    },
+    {
+      "id": "p100",
+      "firstName": "Sami",
+      "lastName": "Virtanen",
+      "birthYear": 2006,
+      "team": "EAS",
+      "position": "C",
+      "potential": 58,
+      "skater": {
+        "skating": 42,
+        "shooting": 53,
+        "passing": 56,
+        "puckHandling": 48,
+        "defense": 41,
+        "physical": 53,
+        "hockeyIq": 54
+      },
+      "contract": {
+        "capHit": 3700000,
+        "expiresAfterSeason": 2027
+      }
+    },
+    {
+      "id": "p101",
+      "firstName": "Carter",
+      "lastName": "Gagnon",
+      "birthYear": 2007,
+      "team": "EAS",
+      "position": "C",
+      "potential": 58,
+      "skater": {
+        "skating": 63,
+        "shooting": 62,
+        "passing": 62,
+        "puckHandling": 62,
+        "defense": 66,
+        "physical": 62,
+        "hockeyIq": 61
+      },
+      "contract": {
+        "capHit": 4100000,
+        "expiresAfterSeason": 2032
+      }
+    },
+    {
+      "id": "p102",
+      "firstName": "Ethan",
+      "lastName": "Lindqvist",
+      "birthYear": 1997,
+      "team": "EAS",
+      "position": "C",
+      "potential": 70,
+      "skater": {
+        "skating": 61,
+        "shooting": 59,
+        "passing": 62,
+        "puckHandling": 63,
+        "defense": 62,
+        "physical": 65,
+        "hockeyIq": 71
+      },
+      "contract": {
+        "capHit": 1700000,
+        "expiresAfterSeason": 2028
+      }
+    },
+    {
+      "id": "p103",
+      "firstName": "Isaac",
+      "lastName": "Lindqvist",
+      "birthYear": 1996,
+      "team": "EAS",
+      "position": "C",
+      "potential": 75,
+      "skater": {
+        "skating": 68,
+        "shooting": 68,
+        "passing": 63,
+        "puckHandling": 62,
+        "defense": 57,
+        "physical": 70,
+        "hockeyIq": 65
+      },
+      "contract": {
+        "capHit": 1500000,
+        "expiresAfterSeason": 2027
+      }
+    },
+    {
+      "id": "p104",
+      "firstName": "Theo",
+      "lastName": "Olsen",
+      "birthYear": 1994,
+      "team": "EAS",
+      "position": "C",
+      "potential": 72,
+      "skater": {
+        "skating": 67,
+        "shooting": 77,
+        "passing": 68,
+        "puckHandling": 62,
+        "defense": 71,
+        "physical": 70,
+        "hockeyIq": 65
+      },
+      "contract": {
+        "capHit": 6000000,
+        "expiresAfterSeason": 2032
+      }
+    },
+    {
+      "id": "p105",
+      "firstName": "Henri",
+      "lastName": "Carlsson",
+      "birthYear": 2002,
+      "team": "EAS",
+      "position": "LW",
+      "potential": 63,
+      "skater": {
+        "skating": 64,
+        "shooting": 58,
+        "passing": 55,
+        "puckHandling": 59,
+        "defense": 49,
+        "physical": 60,
+        "hockeyIq": 59
+      },
+      "contract": {
+        "capHit": 8300000,
+        "expiresAfterSeason": 2029
+      }
+    },
+    {
+      "id": "p106",
+      "firstName": "Henri",
+      "lastName": "Roy",
+      "birthYear": 2004,
+      "team": "EAS",
+      "position": "LW",
+      "potential": 72,
+      "skater": {
+        "skating": 73,
+        "shooting": 62,
+        "passing": 62,
+        "puckHandling": 76,
+        "defense": 67,
+        "physical": 61,
+        "hockeyIq": 71
+      },
+      "contract": {
+        "capHit": 8600000,
+        "expiresAfterSeason": 2027
+      }
+    },
+    {
+      "id": "p107",
+      "firstName": "Owen",
+      "lastName": "Tremblay",
+      "birthYear": 2005,
+      "team": "EAS",
+      "position": "LW",
+      "potential": 52,
+      "skater": {
+        "skating": 46,
+        "shooting": 46,
+        "passing": 55,
+        "puckHandling": 49,
+        "defense": 50,
+        "physical": 53,
+        "hockeyIq": 50
+      },
+      "contract": {
+        "capHit": 9200000,
+        "expiresAfterSeason": 2032
+      }
+    },
+    {
+      "id": "p108",
+      "firstName": "Carter",
+      "lastName": "Bouchard",
+      "birthYear": 2006,
+      "team": "EAS",
+      "position": "LW",
+      "potential": 74,
+      "skater": {
+        "skating": 66,
+        "shooting": 66,
+        "passing": 59,
+        "puckHandling": 53,
+        "defense": 64,
+        "physical": 55,
+        "hockeyIq": 52
+      },
+      "contract": {
+        "capHit": 1600000,
+        "expiresAfterSeason": 2031
+      }
+    },
+    {
+      "id": "p109",
+      "firstName": "Marc",
+      "lastName": "Novak",
+      "birthYear": 1994,
+      "team": "EAS",
+      "position": "LW",
+      "potential": 59,
+      "skater": {
+        "skating": 54,
+        "shooting": 53,
+        "passing": 45,
+        "puckHandling": 45,
+        "defense": 56,
+        "physical": 41,
+        "hockeyIq": 47
+      },
+      "contract": {
+        "capHit": 9800000,
+        "expiresAfterSeason": 2031
+      }
+    },
+    {
+      "id": "p110",
+      "firstName": "Dylan",
+      "lastName": "Sato",
+      "birthYear": 2001,
+      "team": "EAS",
+      "position": "RW",
+      "potential": 69,
+      "skater": {
+        "skating": 60,
+        "shooting": 60,
+        "passing": 58,
+        "puckHandling": 55,
+        "defense": 67,
+        "physical": 56,
+        "hockeyIq": 55
+      },
+      "contract": {
+        "capHit": 9900000,
+        "expiresAfterSeason": 2027
+      }
+    },
+    {
+      "id": "p111",
+      "firstName": "Sami",
+      "lastName": "Hall",
+      "birthYear": 1992,
+      "team": "EAS",
+      "position": "RW",
+      "potential": 61,
+      "skater": {
+        "skating": 53,
+        "shooting": 47,
+        "passing": 52,
+        "puckHandling": 51,
+        "defense": 53,
+        "physical": 53,
+        "hockeyIq": 45
+      },
+      "contract": {
+        "capHit": 1000000,
+        "expiresAfterSeason": 2032
+      }
+    },
+    {
+      "id": "p112",
+      "firstName": "Sami",
+      "lastName": "Anders",
+      "birthYear": 1994,
+      "team": "EAS",
+      "position": "RW",
+      "potential": 49,
+      "skater": {
+        "skating": 44,
+        "shooting": 41,
+        "passing": 49,
+        "puckHandling": 56,
+        "defense": 53,
+        "physical": 50,
+        "hockeyIq": 53
+      },
+      "contract": {
+        "capHit": 9700000,
+        "expiresAfterSeason": 2030
+      }
+    },
+    {
+      "id": "p113",
+      "firstName": "Alex",
+      "lastName": "Moreau",
+      "birthYear": 1996,
+      "team": "EAS",
+      "position": "RW",
+      "potential": 69,
+      "skater": {
+        "skating": 74,
+        "shooting": 60,
+        "passing": 70,
+        "puckHandling": 74,
+        "defense": 75,
+        "physical": 70,
+        "hockeyIq": 64
+      },
+      "contract": {
+        "capHit": 3500000,
+        "expiresAfterSeason": 2029
+      }
+    },
+    {
+      "id": "p114",
+      "firstName": "Noah",
+      "lastName": "Virtanen",
+      "birthYear": 2007,
+      "team": "EAS",
+      "position": "RW",
+      "potential": 68,
+      "skater": {
+        "skating": 58,
+        "shooting": 73,
+        "passing": 57,
+        "puckHandling": 60,
+        "defense": 71,
+        "physical": 66,
+        "hockeyIq": 60
+      },
+      "contract": {
+        "capHit": 1600000,
+        "expiresAfterSeason": 2032
+      }
+    },
+    {
+      "id": "p115",
+      "firstName": "Ethan",
+      "lastName": "Ivanov",
+      "birthYear": 1996,
+      "team": "EAS",
+      "position": "D",
+      "potential": 73,
+      "skater": {
+        "skating": 59,
+        "shooting": 63,
+        "passing": 53,
+        "puckHandling": 53,
+        "defense": 60,
+        "physical": 56,
+        "hockeyIq": 64
+      },
+      "contract": {
+        "capHit": 9600000,
+        "expiresAfterSeason": 2029
+      }
+    },
+    {
+      "id": "p116",
+      "firstName": "Henri",
+      "lastName": "Moreau",
+      "birthYear": 1995,
+      "team": "EAS",
+      "position": "D",
+      "potential": 74,
+      "skater": {
+        "skating": 65,
+        "shooting": 65,
+        "passing": 66,
+        "puckHandling": 62,
+        "defense": 72,
+        "physical": 70,
+        "hockeyIq": 63
+      },
+      "contract": {
+        "capHit": 6600000,
+        "expiresAfterSeason": 2027
+      }
+    },
+    {
+      "id": "p117",
+      "firstName": "Quinn",
+      "lastName": "Korhonen",
+      "birthYear": 1996,
+      "team": "EAS",
+      "position": "D",
+      "potential": 66,
+      "skater": {
+        "skating": 60,
+        "shooting": 61,
+        "passing": 56,
+        "puckHandling": 66,
+        "defense": 53,
+        "physical": 58,
+        "hockeyIq": 50
+      },
+      "contract": {
+        "capHit": 5400000,
+        "expiresAfterSeason": 2030
+      }
+    },
+    {
+      "id": "p118",
+      "firstName": "Ethan",
+      "lastName": "Anders",
+      "birthYear": 2000,
+      "team": "EAS",
+      "position": "D",
+      "potential": 54,
+      "skater": {
+        "skating": 61,
+        "shooting": 51,
+        "passing": 49,
+        "puckHandling": 47,
+        "defense": 57,
+        "physical": 50,
+        "hockeyIq": 49
+      },
+      "contract": {
+        "capHit": 4400000,
+        "expiresAfterSeason": 2032
+      }
+    },
+    {
+      "id": "p119",
+      "firstName": "Ben",
+      "lastName": "Ivanov",
+      "birthYear": 1998,
+      "team": "EAS",
+      "position": "D",
+      "potential": 66,
+      "skater": {
+        "skating": 66,
+        "shooting": 65,
+        "passing": 55,
+        "puckHandling": 58,
+        "defense": 56,
+        "physical": 65,
+        "hockeyIq": 55
+      },
+      "contract": {
+        "capHit": 1300000,
+        "expiresAfterSeason": 2027
+      }
+    },
+    {
+      "id": "p120",
+      "firstName": "Ryan",
+      "lastName": "Roy",
+      "birthYear": 1997,
+      "team": "EAS",
+      "position": "D",
+      "potential": 66,
+      "skater": {
+        "skating": 63,
+        "shooting": 50,
+        "passing": 63,
+        "puckHandling": 60,
+        "defense": 55,
+        "physical": 51,
+        "hockeyIq": 59
+      },
+      "contract": {
+        "capHit": 9700000,
+        "expiresAfterSeason": 2029
+      }
+    },
+    {
+      "id": "p121",
+      "firstName": "Sami",
+      "lastName": "Fischer",
+      "birthYear": 1990,
+      "team": "EAS",
+      "position": "D",
+      "potential": 63,
+      "skater": {
+        "skating": 54,
+        "shooting": 55,
+        "passing": 53,
+        "puckHandling": 53,
+        "defense": 52,
+        "physical": 58,
+        "hockeyIq": 61
+      },
+      "contract": {
+        "capHit": 5700000,
+        "expiresAfterSeason": 2031
+      }
+    },
+    {
+      "id": "p122",
+      "firstName": "Owen",
+      "lastName": "Roy",
+      "birthYear": 1991,
+      "team": "EAS",
+      "position": "D",
+      "potential": 55,
+      "skater": {
+        "skating": 46,
+        "shooting": 43,
+        "passing": 46,
+        "puckHandling": 56,
+        "defense": 47,
+        "physical": 43,
+        "hockeyIq": 47
+      },
+      "contract": {
+        "capHit": 5000000,
+        "expiresAfterSeason": 2029
+      }
+    },
+    {
+      "id": "p123",
+      "firstName": "Dylan",
+      "lastName": "Olsen",
+      "birthYear": 1996,
+      "team": "EAS",
+      "position": "G",
+      "potential": 51,
+      "goalie": {
+        "reflexes": 50,
+        "positioning": 55,
+        "reboundControl": 56,
+        "consistency": 49
+      },
+      "contract": {
+        "capHit": 6800000,
+        "expiresAfterSeason": 2027
+      }
+    },
+    {
+      "id": "p124",
+      "firstName": "Ben",
+      "lastName": "Novak",
+      "birthYear": 2001,
+      "team": "EAS",
+      "position": "G",
+      "potential": 75,
+      "goalie": {
+        "reflexes": 53,
+        "positioning": 64,
+        "reboundControl": 65,
+        "consistency": 68
+      },
+      "contract": {
+        "capHit": 8600000,
+        "expiresAfterSeason": 2028
+      }
+    },
+    {
+      "id": "p125",
+      "firstName": "Sami",
+      "lastName": "Moreau",
+      "birthYear": 2000,
+      "team": "FAI",
+      "position": "C",
+      "potential": 82,
+      "skater": {
+        "skating": 79,
+        "shooting": 68,
+        "passing": 68,
+        "puckHandling": 80,
+        "defense": 74,
+        "physical": 80,
+        "hockeyIq": 69
+      },
+      "contract": {
+        "capHit": 5700000,
+        "expiresAfterSeason": 2032
+      }
+    },
+    {
+      "id": "p126",
+      "firstName": "Owen",
+      "lastName": "Ivanov",
+      "birthYear": 1999,
+      "team": "FAI",
+      "position": "C",
+      "potential": 94,
+      "skater": {
+        "skating": 88,
+        "shooting": 88,
+        "passing": 84,
+        "puckHandling": 79,
+        "defense": 85,
+        "physical": 83,
+        "hockeyIq": 86
+      },
+      "contract": {
+        "capHit": 9200000,
+        "expiresAfterSeason": 2032
+      }
+    },
+    {
+      "id": "p127",
+      "firstName": "Kai",
+      "lastName": "Virtanen",
+      "birthYear": 2000,
+      "team": "FAI",
+      "position": "C",
+      "potential": 83,
+      "skater": {
+        "skating": 80,
+        "shooting": 69,
+        "passing": 67,
+        "puckHandling": 72,
+        "defense": 75,
+        "physical": 65,
+        "hockeyIq": 70
+      },
+      "contract": {
+        "capHit": 8900000,
+        "expiresAfterSeason": 2028
+      }
+    },
+    {
+      "id": "p128",
+      "firstName": "Jonas",
+      "lastName": "Virtanen",
+      "birthYear": 2005,
+      "team": "FAI",
+      "position": "C",
+      "potential": 83,
+      "skater": {
+        "skating": 81,
+        "shooting": 75,
+        "passing": 85,
+        "puckHandling": 76,
+        "defense": 72,
+        "physical": 72,
+        "hockeyIq": 75
+      },
+      "contract": {
+        "capHit": 2300000,
+        "expiresAfterSeason": 2032
+      }
+    },
+    {
+      "id": "p129",
+      "firstName": "Ryan",
+      "lastName": "Pelletier",
+      "birthYear": 2004,
+      "team": "FAI",
+      "position": "C",
+      "potential": 83,
+      "skater": {
+        "skating": 64,
+        "shooting": 65,
+        "passing": 65,
+        "puckHandling": 67,
+        "defense": 79,
+        "physical": 64,
+        "hockeyIq": 72
+      },
+      "contract": {
+        "capHit": 2300000,
+        "expiresAfterSeason": 2032
+      }
+    },
+    {
+      "id": "p130",
+      "firstName": "Felix",
+      "lastName": "Pelletier",
+      "birthYear": 1994,
+      "team": "FAI",
+      "position": "LW",
+      "potential": 66,
+      "skater": {
+        "skating": 62,
+        "shooting": 65,
+        "passing": 66,
+        "puckHandling": 61,
+        "defense": 70,
+        "physical": 66,
+        "hockeyIq": 62
+      },
+      "contract": {
+        "capHit": 2600000,
+        "expiresAfterSeason": 2030
+      }
+    },
+    {
+      "id": "p131",
+      "firstName": "Marc",
+      "lastName": "Tremblay",
+      "birthYear": 2004,
+      "team": "FAI",
+      "position": "LW",
+      "potential": 62,
+      "skater": {
+        "skating": 59,
+        "shooting": 56,
+        "passing": 65,
+        "puckHandling": 54,
+        "defense": 57,
+        "physical": 53,
+        "hockeyIq": 59
+      },
+      "contract": {
+        "capHit": 3200000,
+        "expiresAfterSeason": 2030
+      }
+    },
+    {
+      "id": "p132",
+      "firstName": "Sami",
+      "lastName": "Jensen",
+      "birthYear": 1991,
+      "team": "FAI",
+      "position": "LW",
+      "potential": 92,
+      "skater": {
+        "skating": 72,
+        "shooting": 80,
+        "passing": 83,
+        "puckHandling": 77,
+        "defense": 73,
+        "physical": 85,
+        "hockeyIq": 72
+      },
+      "contract": {
+        "capHit": 9000000,
+        "expiresAfterSeason": 2032
+      }
+    },
+    {
+      "id": "p133",
+      "firstName": "Quinn",
+      "lastName": "Hall",
+      "birthYear": 2004,
+      "team": "FAI",
+      "position": "LW",
+      "potential": 91,
+      "skater": {
+        "skating": 73,
+        "shooting": 84,
+        "passing": 75,
+        "puckHandling": 70,
+        "defense": 69,
+        "physical": 74,
+        "hockeyIq": 78
+      },
+      "contract": {
+        "capHit": 6600000,
+        "expiresAfterSeason": 2027
+      }
+    },
+    {
+      "id": "p134",
+      "firstName": "Henri",
+      "lastName": "Anders",
+      "birthYear": 1996,
+      "team": "FAI",
+      "position": "LW",
+      "potential": 73,
+      "skater": {
+        "skating": 77,
+        "shooting": 79,
+        "passing": 68,
+        "puckHandling": 68,
+        "defense": 65,
+        "physical": 74,
+        "hockeyIq": 67
+      },
+      "contract": {
+        "capHit": 9500000,
+        "expiresAfterSeason": 2032
+      }
+    },
+    {
+      "id": "p135",
+      "firstName": "Isaac",
+      "lastName": "Gagnon",
+      "birthYear": 1997,
+      "team": "FAI",
+      "position": "RW",
+      "potential": 84,
+      "skater": {
+        "skating": 76,
+        "shooting": 81,
+        "passing": 81,
+        "puckHandling": 81,
+        "defense": 72,
+        "physical": 79,
+        "hockeyIq": 82
+      },
+      "contract": {
+        "capHit": 9500000,
+        "expiresAfterSeason": 2029
+      }
+    },
+    {
+      "id": "p136",
+      "firstName": "Owen",
+      "lastName": "Roy",
+      "birthYear": 1991,
+      "team": "FAI",
+      "position": "RW",
+      "potential": 82,
+      "skater": {
+        "skating": 69,
+        "shooting": 69,
+        "passing": 76,
+        "puckHandling": 70,
+        "defense": 67,
+        "physical": 79,
+        "hockeyIq": 72
+      },
+      "contract": {
+        "capHit": 6000000,
+        "expiresAfterSeason": 2029
+      }
+    },
+    {
+      "id": "p137",
+      "firstName": "Liam",
+      "lastName": "Virtanen",
+      "birthYear": 2005,
+      "team": "FAI",
+      "position": "RW",
+      "potential": 79,
+      "skater": {
+        "skating": 72,
+        "shooting": 59,
+        "passing": 62,
+        "puckHandling": 63,
+        "defense": 68,
+        "physical": 66,
+        "hockeyIq": 70
+      },
+      "contract": {
+        "capHit": 7200000,
+        "expiresAfterSeason": 2030
+      }
+    },
+    {
+      "id": "p138",
+      "firstName": "Gabe",
+      "lastName": "Virtanen",
+      "birthYear": 2002,
+      "team": "FAI",
+      "position": "RW",
+      "potential": 63,
+      "skater": {
+        "skating": 63,
+        "shooting": 65,
+        "passing": 63,
+        "puckHandling": 60,
+        "defense": 55,
+        "physical": 51,
+        "hockeyIq": 64
+      },
+      "contract": {
+        "capHit": 2400000,
+        "expiresAfterSeason": 2027
+      }
+    },
+    {
+      "id": "p139",
+      "firstName": "Theo",
+      "lastName": "Sato",
+      "birthYear": 1999,
+      "team": "FAI",
+      "position": "RW",
+      "potential": 85,
+      "skater": {
+        "skating": 75,
+        "shooting": 77,
+        "passing": 68,
+        "puckHandling": 70,
+        "defense": 72,
+        "physical": 66,
+        "hockeyIq": 80
+      },
+      "contract": {
+        "capHit": 2700000,
+        "expiresAfterSeason": 2030
+      }
+    },
+    {
+      "id": "p140",
+      "firstName": "Theo",
+      "lastName": "Moreau",
+      "birthYear": 2003,
+      "team": "FAI",
+      "position": "D",
+      "potential": 72,
+      "skater": {
+        "skating": 68,
+        "shooting": 63,
+        "passing": 69,
+        "puckHandling": 64,
+        "defense": 73,
+        "physical": 73,
+        "hockeyIq": 73
+      },
+      "contract": {
+        "capHit": 5300000,
+        "expiresAfterSeason": 2028
+      }
+    },
+    {
+      "id": "p141",
+      "firstName": "Theo",
+      "lastName": "Fischer",
+      "birthYear": 2001,
+      "team": "FAI",
+      "position": "D",
+      "potential": 79,
+      "skater": {
+        "skating": 74,
+        "shooting": 62,
+        "passing": 62,
+        "puckHandling": 71,
+        "defense": 67,
+        "physical": 71,
+        "hockeyIq": 63
+      },
+      "contract": {
+        "capHit": 4000000,
+        "expiresAfterSeason": 2028
+      }
+    },
+    {
+      "id": "p142",
+      "firstName": "Isaac",
+      "lastName": "Hall",
+      "birthYear": 2006,
+      "team": "FAI",
+      "position": "D",
+      "potential": 63,
+      "skater": {
+        "skating": 67,
+        "shooting": 64,
+        "passing": 62,
+        "puckHandling": 69,
+        "defense": 68,
+        "physical": 59,
+        "hockeyIq": 63
+      },
+      "contract": {
+        "capHit": 1400000,
+        "expiresAfterSeason": 2029
+      }
+    },
+    {
+      "id": "p143",
+      "firstName": "Ben",
+      "lastName": "Moreau",
+      "birthYear": 1996,
+      "team": "FAI",
+      "position": "D",
+      "potential": 83,
+      "skater": {
+        "skating": 77,
+        "shooting": 85,
+        "passing": 81,
+        "puckHandling": 88,
+        "defense": 80,
+        "physical": 81,
+        "hockeyIq": 74
+      },
+      "contract": {
+        "capHit": 2700000,
+        "expiresAfterSeason": 2029
+      }
+    },
+    {
+      "id": "p144",
+      "firstName": "Marc",
+      "lastName": "Ivanov",
+      "birthYear": 2002,
+      "team": "FAI",
+      "position": "D",
+      "potential": 75,
+      "skater": {
+        "skating": 63,
+        "shooting": 59,
+        "passing": 55,
+        "puckHandling": 64,
+        "defense": 55,
+        "physical": 63,
+        "hockeyIq": 56
+      },
+      "contract": {
+        "capHit": 8300000,
+        "expiresAfterSeason": 2029
+      }
+    },
+    {
+      "id": "p145",
+      "firstName": "Henri",
+      "lastName": "Novak",
+      "birthYear": 2000,
+      "team": "FAI",
+      "position": "D",
+      "potential": 84,
+      "skater": {
+        "skating": 73,
+        "shooting": 78,
+        "passing": 82,
+        "puckHandling": 74,
+        "defense": 72,
+        "physical": 80,
+        "hockeyIq": 79
+      },
+      "contract": {
+        "capHit": 6900000,
+        "expiresAfterSeason": 2031
+      }
+    },
+    {
+      "id": "p146",
+      "firstName": "Ryan",
+      "lastName": "Olsen",
+      "birthYear": 1994,
+      "team": "FAI",
+      "position": "D",
+      "potential": 61,
+      "skater": {
+        "skating": 63,
+        "shooting": 66,
+        "passing": 54,
+        "puckHandling": 66,
+        "defense": 55,
+        "physical": 59,
+        "hockeyIq": 58
+      },
+      "contract": {
+        "capHit": 4500000,
+        "expiresAfterSeason": 2030
+      }
+    },
+    {
+      "id": "p147",
+      "firstName": "Sami",
+      "lastName": "Carlsson",
+      "birthYear": 2006,
+      "team": "FAI",
+      "position": "D",
+      "potential": 71,
+      "skater": {
+        "skating": 64,
+        "shooting": 69,
+        "passing": 70,
+        "puckHandling": 70,
+        "defense": 69,
+        "physical": 68,
+        "hockeyIq": 75
+      },
+      "contract": {
+        "capHit": 1700000,
+        "expiresAfterSeason": 2028
+      }
+    },
+    {
+      "id": "p148",
+      "firstName": "Alex",
+      "lastName": "Tremblay",
+      "birthYear": 1998,
+      "team": "FAI",
+      "position": "G",
+      "potential": 86,
+      "goalie": {
+        "reflexes": 71,
+        "positioning": 71,
+        "reboundControl": 79,
+        "consistency": 70
+      },
+      "contract": {
+        "capHit": 9800000,
+        "expiresAfterSeason": 2027
+      }
+    },
+    {
+      "id": "p149",
+      "firstName": "Kai",
+      "lastName": "Lindqvist",
+      "birthYear": 2002,
+      "team": "FAI",
+      "position": "G",
+      "potential": 75,
+      "goalie": {
+        "reflexes": 63,
+        "positioning": 66,
+        "reboundControl": 74,
+        "consistency": 77
+      },
+      "contract": {
+        "capHit": 9200000,
+        "expiresAfterSeason": 2027
+      }
+    },
+    {
+      "id": "p150",
+      "firstName": "Owen",
+      "lastName": "Novak",
+      "birthYear": 2001,
+      "team": "GLE",
+      "position": "C",
+      "potential": 82,
+      "skater": {
+        "skating": 72,
+        "shooting": 77,
+        "passing": 80,
+        "puckHandling": 84,
+        "defense": 76,
+        "physical": 78,
+        "hockeyIq": 74
+      },
+      "contract": {
+        "capHit": 6600000,
+        "expiresAfterSeason": 2032
+      }
+    },
+    {
+      "id": "p151",
+      "firstName": "Theo",
+      "lastName": "Pelletier",
+      "birthYear": 2002,
+      "team": "GLE",
+      "position": "C",
+      "potential": 78,
+      "skater": {
+        "skating": 71,
+        "shooting": 70,
+        "passing": 66,
+        "puckHandling": 71,
+        "defense": 71,
+        "physical": 69,
+        "hockeyIq": 76
+      },
+      "contract": {
+        "capHit": 2400000,
+        "expiresAfterSeason": 2031
+      }
+    },
+    {
+      "id": "p152",
+      "firstName": "Kai",
+      "lastName": "Moreau",
+      "birthYear": 2001,
+      "team": "GLE",
+      "position": "C",
+      "potential": 69,
+      "skater": {
+        "skating": 74,
+        "shooting": 75,
+        "passing": 59,
+        "puckHandling": 67,
+        "defense": 69,
+        "physical": 59,
+        "hockeyIq": 70
+      },
+      "contract": {
+        "capHit": 6800000,
+        "expiresAfterSeason": 2028
+      }
+    },
+    {
+      "id": "p153",
+      "firstName": "Dylan",
+      "lastName": "Jensen",
+      "birthYear": 2000,
+      "team": "GLE",
+      "position": "C",
+      "potential": 91,
+      "skater": {
+        "skating": 72,
+        "shooting": 70,
+        "passing": 69,
+        "puckHandling": 82,
+        "defense": 75,
+        "physical": 71,
+        "hockeyIq": 76
+      },
+      "contract": {
+        "capHit": 4700000,
+        "expiresAfterSeason": 2029
+      }
+    },
+    {
+      "id": "p154",
+      "firstName": "Jonas",
+      "lastName": "Virtanen",
+      "birthYear": 1994,
+      "team": "GLE",
+      "position": "C",
+      "potential": 79,
+      "skater": {
+        "skating": 72,
+        "shooting": 63,
+        "passing": 62,
+        "puckHandling": 69,
+        "defense": 56,
+        "physical": 72,
+        "hockeyIq": 61
+      },
+      "contract": {
+        "capHit": 7500000,
+        "expiresAfterSeason": 2032
+      }
+    },
+    {
+      "id": "p155",
+      "firstName": "Theo",
+      "lastName": "Eriksen",
+      "birthYear": 1993,
+      "team": "GLE",
+      "position": "LW",
+      "potential": 89,
+      "skater": {
+        "skating": 80,
+        "shooting": 85,
+        "passing": 81,
+        "puckHandling": 83,
+        "defense": 78,
+        "physical": 82,
+        "hockeyIq": 86
+      },
+      "contract": {
+        "capHit": 8200000,
+        "expiresAfterSeason": 2031
+      }
+    },
+    {
+      "id": "p156",
+      "firstName": "Quinn",
+      "lastName": "Bouchard",
+      "birthYear": 1999,
+      "team": "GLE",
+      "position": "LW",
+      "potential": 77,
+      "skater": {
+        "skating": 74,
+        "shooting": 73,
+        "passing": 70,
+        "puckHandling": 68,
+        "defense": 64,
+        "physical": 69,
+        "hockeyIq": 66
+      },
+      "contract": {
+        "capHit": 6400000,
+        "expiresAfterSeason": 2029
+      }
+    },
+    {
+      "id": "p157",
+      "firstName": "Henri",
+      "lastName": "Korhonen",
+      "birthYear": 1991,
+      "team": "GLE",
+      "position": "LW",
+      "potential": 74,
+      "skater": {
+        "skating": 69,
+        "shooting": 68,
+        "passing": 69,
+        "puckHandling": 67,
+        "defense": 60,
+        "physical": 61,
+        "hockeyIq": 67
+      },
+      "contract": {
+        "capHit": 8600000,
+        "expiresAfterSeason": 2030
+      }
+    },
+    {
+      "id": "p158",
+      "firstName": "Pierre",
+      "lastName": "Novak",
+      "birthYear": 1993,
+      "team": "GLE",
+      "position": "LW",
+      "potential": 79,
+      "skater": {
+        "skating": 72,
+        "shooting": 71,
+        "passing": 85,
+        "puckHandling": 76,
+        "defense": 74,
+        "physical": 84,
+        "hockeyIq": 75
+      },
+      "contract": {
+        "capHit": 6900000,
+        "expiresAfterSeason": 2027
+      }
+    },
+    {
+      "id": "p159",
+      "firstName": "Pierre",
+      "lastName": "Hall",
+      "birthYear": 1994,
+      "team": "GLE",
+      "position": "LW",
+      "potential": 87,
+      "skater": {
+        "skating": 65,
+        "shooting": 81,
+        "passing": 74,
+        "puckHandling": 68,
+        "defense": 77,
+        "physical": 70,
+        "hockeyIq": 75
+      },
+      "contract": {
+        "capHit": 6800000,
+        "expiresAfterSeason": 2032
+      }
+    },
+    {
+      "id": "p160",
+      "firstName": "Henri",
+      "lastName": "Tremblay",
+      "birthYear": 2003,
+      "team": "GLE",
+      "position": "RW",
+      "potential": 73,
+      "skater": {
+        "skating": 74,
+        "shooting": 62,
+        "passing": 64,
+        "puckHandling": 74,
+        "defense": 61,
+        "physical": 66,
+        "hockeyIq": 76
+      },
+      "contract": {
+        "capHit": 9800000,
+        "expiresAfterSeason": 2030
+      }
+    },
+    {
+      "id": "p161",
+      "firstName": "Noah",
+      "lastName": "Ivanov",
+      "birthYear": 2006,
+      "team": "GLE",
+      "position": "RW",
+      "potential": 62,
+      "skater": {
+        "skating": 67,
+        "shooting": 63,
+        "passing": 54,
+        "puckHandling": 53,
+        "defense": 64,
+        "physical": 51,
+        "hockeyIq": 66
+      },
+      "contract": {
+        "capHit": 4400000,
+        "expiresAfterSeason": 2028
+      }
+    },
+    {
+      "id": "p162",
+      "firstName": "Liam",
+      "lastName": "Carlsson",
+      "birthYear": 2006,
+      "team": "GLE",
+      "position": "RW",
+      "potential": 83,
+      "skater": {
+        "skating": 74,
+        "shooting": 73,
+        "passing": 68,
+        "puckHandling": 70,
+        "defense": 81,
+        "physical": 70,
+        "hockeyIq": 75
+      },
+      "contract": {
+        "capHit": 10000000,
+        "expiresAfterSeason": 2029
+      }
+    },
+    {
+      "id": "p163",
+      "firstName": "Alex",
+      "lastName": "Sato",
+      "birthYear": 2006,
+      "team": "GLE",
+      "position": "RW",
+      "potential": 71,
+      "skater": {
+        "skating": 66,
+        "shooting": 70,
+        "passing": 67,
+        "puckHandling": 70,
+        "defense": 62,
+        "physical": 61,
+        "hockeyIq": 59
+      },
+      "contract": {
+        "capHit": 3500000,
+        "expiresAfterSeason": 2031
+      }
+    },
+    {
+      "id": "p164",
+      "firstName": "Owen",
+      "lastName": "Tremblay",
+      "birthYear": 1993,
+      "team": "GLE",
+      "position": "RW",
+      "potential": 73,
+      "skater": {
+        "skating": 71,
+        "shooting": 79,
+        "passing": 70,
+        "puckHandling": 77,
+        "defense": 74,
+        "physical": 71,
+        "hockeyIq": 74
+      },
+      "contract": {
+        "capHit": 1100000,
+        "expiresAfterSeason": 2030
+      }
+    },
+    {
+      "id": "p165",
+      "firstName": "Ethan",
+      "lastName": "Roy",
+      "birthYear": 2004,
+      "team": "GLE",
+      "position": "D",
+      "potential": 58,
+      "skater": {
+        "skating": 66,
+        "shooting": 52,
+        "passing": 52,
+        "puckHandling": 64,
+        "defense": 61,
+        "physical": 56,
+        "hockeyIq": 65
+      },
+      "contract": {
+        "capHit": 1200000,
+        "expiresAfterSeason": 2032
+      }
+    },
+    {
+      "id": "p166",
+      "firstName": "Ethan",
+      "lastName": "Jensen",
+      "birthYear": 2000,
+      "team": "GLE",
+      "position": "D",
+      "potential": 76,
+      "skater": {
+        "skating": 65,
+        "shooting": 70,
+        "passing": 69,
+        "puckHandling": 75,
+        "defense": 73,
+        "physical": 66,
+        "hockeyIq": 71
+      },
+      "contract": {
+        "capHit": 2800000,
+        "expiresAfterSeason": 2028
+      }
+    },
+    {
+      "id": "p167",
+      "firstName": "Marc",
+      "lastName": "Bouchard",
+      "birthYear": 1998,
+      "team": "GLE",
+      "position": "D",
+      "potential": 81,
+      "skater": {
+        "skating": 77,
+        "shooting": 84,
+        "passing": 71,
+        "puckHandling": 74,
+        "defense": 73,
+        "physical": 78,
+        "hockeyIq": 77
+      },
+      "contract": {
+        "capHit": 1600000,
+        "expiresAfterSeason": 2029
+      }
+    },
+    {
+      "id": "p168",
+      "firstName": "Theo",
+      "lastName": "Tremblay",
+      "birthYear": 2004,
+      "team": "GLE",
+      "position": "D",
+      "potential": 73,
+      "skater": {
+        "skating": 67,
+        "shooting": 65,
+        "passing": 72,
+        "puckHandling": 68,
+        "defense": 63,
+        "physical": 70,
+        "hockeyIq": 64
+      },
+      "contract": {
+        "capHit": 9300000,
+        "expiresAfterSeason": 2032
+      }
+    },
+    {
+      "id": "p169",
+      "firstName": "Ben",
+      "lastName": "Jensen",
+      "birthYear": 1995,
+      "team": "GLE",
+      "position": "D",
+      "potential": 65,
+      "skater": {
+        "skating": 54,
+        "shooting": 55,
+        "passing": 65,
+        "puckHandling": 62,
+        "defense": 50,
+        "physical": 51,
+        "hockeyIq": 50
+      },
+      "contract": {
+        "capHit": 8600000,
+        "expiresAfterSeason": 2027
+      }
+    },
+    {
+      "id": "p170",
+      "firstName": "Kai",
+      "lastName": "Fischer",
+      "birthYear": 2005,
+      "team": "GLE",
+      "position": "D",
+      "potential": 78,
+      "skater": {
+        "skating": 63,
+        "shooting": 63,
+        "passing": 71,
+        "puckHandling": 70,
+        "defense": 69,
+        "physical": 62,
+        "hockeyIq": 68
+      },
+      "contract": {
+        "capHit": 4200000,
+        "expiresAfterSeason": 2032
+      }
+    },
+    {
+      "id": "p171",
+      "firstName": "Theo",
+      "lastName": "Virtanen",
+      "birthYear": 2002,
+      "team": "GLE",
+      "position": "D",
+      "potential": 70,
+      "skater": {
+        "skating": 61,
+        "shooting": 59,
+        "passing": 60,
+        "puckHandling": 72,
+        "defense": 58,
+        "physical": 60,
+        "hockeyIq": 62
+      },
+      "contract": {
+        "capHit": 5800000,
+        "expiresAfterSeason": 2031
+      }
+    },
+    {
+      "id": "p172",
+      "firstName": "Kai",
+      "lastName": "Korhonen",
+      "birthYear": 2000,
+      "team": "GLE",
+      "position": "D",
+      "potential": 76,
+      "skater": {
+        "skating": 67,
+        "shooting": 57,
+        "passing": 55,
+        "puckHandling": 60,
+        "defense": 56,
+        "physical": 59,
+        "hockeyIq": 67
+      },
+      "contract": {
+        "capHit": 6800000,
+        "expiresAfterSeason": 2027
+      }
+    },
+    {
+      "id": "p173",
+      "firstName": "Ryan",
+      "lastName": "Roy",
+      "birthYear": 1999,
+      "team": "GLE",
+      "position": "G",
+      "potential": 90,
+      "goalie": {
+        "reflexes": 80,
+        "positioning": 82,
+        "reboundControl": 71,
+        "consistency": 86
+      },
+      "contract": {
+        "capHit": 7500000,
+        "expiresAfterSeason": 2032
+      }
+    },
+    {
+      "id": "p174",
+      "firstName": "Kai",
+      "lastName": "Moreau",
+      "birthYear": 1996,
+      "team": "GLE",
+      "position": "G",
+      "potential": 78,
+      "goalie": {
+        "reflexes": 82,
+        "positioning": 80,
+        "reboundControl": 75,
+        "consistency": 83
+      },
+      "contract": {
+        "capHit": 2000000,
+        "expiresAfterSeason": 2030
+      }
+    },
+    {
+      "id": "p175",
+      "firstName": "Kai",
+      "lastName": "Carlsson",
+      "birthYear": 2001,
+      "team": "HAR",
+      "position": "C",
+      "potential": 86,
+      "skater": {
+        "skating": 81,
+        "shooting": 76,
+        "passing": 81,
+        "puckHandling": 69,
+        "defense": 67,
+        "physical": 72,
+        "hockeyIq": 69
+      },
+      "contract": {
+        "capHit": 5600000,
+        "expiresAfterSeason": 2029
+      }
+    },
+    {
+      "id": "p176",
+      "firstName": "Noah",
+      "lastName": "Olsen",
+      "birthYear": 1990,
+      "team": "HAR",
+      "position": "C",
+      "potential": 84,
+      "skater": {
+        "skating": 64,
+        "shooting": 68,
+        "passing": 64,
+        "puckHandling": 75,
+        "defense": 65,
+        "physical": 77,
+        "hockeyIq": 67
+      },
+      "contract": {
+        "capHit": 4400000,
+        "expiresAfterSeason": 2027
+      }
+    },
+    {
+      "id": "p177",
+      "firstName": "Dylan",
+      "lastName": "Carlsson",
+      "birthYear": 2001,
+      "team": "HAR",
+      "position": "C",
+      "potential": 79,
+      "skater": {
+        "skating": 69,
+        "shooting": 75,
+        "passing": 63,
+        "puckHandling": 68,
+        "defense": 71,
+        "physical": 78,
+        "hockeyIq": 72
+      },
+      "contract": {
+        "capHit": 8200000,
+        "expiresAfterSeason": 2032
+      }
+    },
+    {
+      "id": "p178",
+      "firstName": "Ben",
+      "lastName": "Carlsson",
+      "birthYear": 2000,
+      "team": "HAR",
+      "position": "C",
+      "potential": 94,
+      "skater": {
+        "skating": 81,
+        "shooting": 83,
+        "passing": 87,
+        "puckHandling": 80,
+        "defense": 72,
+        "physical": 76,
+        "hockeyIq": 71
+      },
+      "contract": {
+        "capHit": 4800000,
+        "expiresAfterSeason": 2027
+      }
+    },
+    {
+      "id": "p179",
+      "firstName": "Carter",
+      "lastName": "Novak",
+      "birthYear": 2004,
+      "team": "HAR",
+      "position": "C",
+      "potential": 93,
+      "skater": {
+        "skating": 77,
+        "shooting": 82,
+        "passing": 80,
+        "puckHandling": 84,
+        "defense": 73,
+        "physical": 77,
+        "hockeyIq": 85
+      },
+      "contract": {
+        "capHit": 8800000,
+        "expiresAfterSeason": 2028
+      }
+    },
+    {
+      "id": "p180",
+      "firstName": "Carter",
+      "lastName": "Carlsson",
+      "birthYear": 1994,
+      "team": "HAR",
+      "position": "LW",
+      "potential": 66,
+      "skater": {
+        "skating": 62,
+        "shooting": 61,
+        "passing": 64,
+        "puckHandling": 72,
+        "defense": 69,
+        "physical": 59,
+        "hockeyIq": 58
+      },
+      "contract": {
+        "capHit": 4700000,
+        "expiresAfterSeason": 2027
+      }
+    },
+    {
+      "id": "p181",
+      "firstName": "Ryan",
+      "lastName": "Sato",
+      "birthYear": 2004,
+      "team": "HAR",
+      "position": "LW",
+      "potential": 70,
+      "skater": {
+        "skating": 65,
+        "shooting": 52,
+        "passing": 56,
+        "puckHandling": 62,
+        "defense": 58,
+        "physical": 60,
+        "hockeyIq": 54
+      },
+      "contract": {
+        "capHit": 4300000,
+        "expiresAfterSeason": 2028
+      }
+    },
+    {
+      "id": "p182",
+      "firstName": "Gabe",
+      "lastName": "Sato",
+      "birthYear": 1998,
+      "team": "HAR",
+      "position": "LW",
+      "potential": 68,
+      "skater": {
+        "skating": 58,
+        "shooting": 49,
+        "passing": 65,
+        "puckHandling": 59,
+        "defense": 51,
+        "physical": 64,
+        "hockeyIq": 57
+      },
+      "contract": {
+        "capHit": 9400000,
+        "expiresAfterSeason": 2030
+      }
+    },
+    {
+      "id": "p183",
+      "firstName": "Marc",
+      "lastName": "Virtanen",
+      "birthYear": 2005,
+      "team": "HAR",
+      "position": "LW",
+      "potential": 70,
+      "skater": {
+        "skating": 62,
+        "shooting": 69,
+        "passing": 61,
+        "puckHandling": 71,
+        "defense": 61,
+        "physical": 60,
+        "hockeyIq": 68
+      },
+      "contract": {
+        "capHit": 5300000,
+        "expiresAfterSeason": 2029
+      }
+    },
+    {
+      "id": "p184",
+      "firstName": "Alex",
+      "lastName": "Lindqvist",
+      "birthYear": 1995,
+      "team": "HAR",
+      "position": "LW",
+      "potential": 70,
+      "skater": {
+        "skating": 62,
+        "shooting": 72,
+        "passing": 64,
+        "puckHandling": 62,
+        "defense": 73,
+        "physical": 76,
+        "hockeyIq": 76
+      },
+      "contract": {
+        "capHit": 2500000,
+        "expiresAfterSeason": 2029
+      }
+    },
+    {
+      "id": "p185",
+      "firstName": "Pierre",
+      "lastName": "Moreau",
+      "birthYear": 2006,
+      "team": "HAR",
+      "position": "RW",
+      "potential": 90,
+      "skater": {
+        "skating": 71,
+        "shooting": 82,
+        "passing": 78,
+        "puckHandling": 78,
+        "defense": 80,
+        "physical": 70,
+        "hockeyIq": 76
+      },
+      "contract": {
+        "capHit": 3100000,
+        "expiresAfterSeason": 2031
+      }
+    },
+    {
+      "id": "p186",
+      "firstName": "Ryan",
+      "lastName": "Tremblay",
+      "birthYear": 2000,
+      "team": "HAR",
+      "position": "RW",
+      "potential": 79,
+      "skater": {
+        "skating": 64,
+        "shooting": 64,
+        "passing": 62,
+        "puckHandling": 65,
+        "defense": 68,
+        "physical": 75,
+        "hockeyIq": 70
+      },
+      "contract": {
+        "capHit": 5300000,
+        "expiresAfterSeason": 2028
+      }
+    },
+    {
+      "id": "p187",
+      "firstName": "Isaac",
+      "lastName": "Olsen",
+      "birthYear": 1998,
+      "team": "HAR",
+      "position": "RW",
+      "potential": 59,
+      "skater": {
+        "skating": 65,
+        "shooting": 51,
+        "passing": 57,
+        "puckHandling": 51,
+        "defense": 56,
+        "physical": 65,
+        "hockeyIq": 62
+      },
+      "contract": {
+        "capHit": 9600000,
+        "expiresAfterSeason": 2027
+      }
+    },
+    {
+      "id": "p188",
+      "firstName": "Isaac",
+      "lastName": "Hall",
+      "birthYear": 1996,
+      "team": "HAR",
+      "position": "RW",
+      "potential": 79,
+      "skater": {
+        "skating": 74,
+        "shooting": 63,
+        "passing": 58,
+        "puckHandling": 67,
+        "defense": 64,
+        "physical": 68,
+        "hockeyIq": 66
+      },
+      "contract": {
+        "capHit": 1200000,
+        "expiresAfterSeason": 2027
+      }
+    },
+    {
+      "id": "p189",
+      "firstName": "Liam",
+      "lastName": "Korhonen",
+      "birthYear": 2000,
+      "team": "HAR",
+      "position": "RW",
+      "potential": 78,
+      "skater": {
+        "skating": 62,
+        "shooting": 76,
+        "passing": 76,
+        "puckHandling": 60,
+        "defense": 70,
+        "physical": 69,
+        "hockeyIq": 66
+      },
+      "contract": {
+        "capHit": 6900000,
+        "expiresAfterSeason": 2027
+      }
+    },
+    {
+      "id": "p190",
+      "firstName": "Liam",
+      "lastName": "Gagnon",
+      "birthYear": 2000,
+      "team": "HAR",
+      "position": "D",
+      "potential": 66,
+      "skater": {
+        "skating": 72,
+        "shooting": 59,
+        "passing": 71,
+        "puckHandling": 72,
+        "defense": 59,
+        "physical": 73,
+        "hockeyIq": 73
+      },
+      "contract": {
+        "capHit": 2600000,
+        "expiresAfterSeason": 2027
+      }
+    },
+    {
+      "id": "p191",
+      "firstName": "Ben",
+      "lastName": "Sato",
+      "birthYear": 2003,
+      "team": "HAR",
+      "position": "D",
+      "potential": 80,
+      "skater": {
+        "skating": 77,
+        "shooting": 84,
+        "passing": 84,
+        "puckHandling": 85,
+        "defense": 83,
+        "physical": 77,
+        "hockeyIq": 83
+      },
+      "contract": {
+        "capHit": 8100000,
+        "expiresAfterSeason": 2029
+      }
+    },
+    {
+      "id": "p192",
+      "firstName": "Dylan",
+      "lastName": "Virtanen",
+      "birthYear": 2002,
+      "team": "HAR",
+      "position": "D",
+      "potential": 87,
+      "skater": {
+        "skating": 82,
+        "shooting": 76,
+        "passing": 72,
+        "puckHandling": 77,
+        "defense": 70,
+        "physical": 76,
+        "hockeyIq": 78
+      },
+      "contract": {
+        "capHit": 7700000,
+        "expiresAfterSeason": 2032
+      }
+    },
+    {
+      "id": "p193",
+      "firstName": "Jonas",
+      "lastName": "Anders",
+      "birthYear": 1990,
+      "team": "HAR",
+      "position": "D",
+      "potential": 61,
+      "skater": {
+        "skating": 57,
+        "shooting": 67,
+        "passing": 59,
+        "puckHandling": 67,
+        "defense": 67,
+        "physical": 65,
+        "hockeyIq": 66
+      },
+      "contract": {
+        "capHit": 2500000,
+        "expiresAfterSeason": 2031
+      }
+    },
+    {
+      "id": "p194",
+      "firstName": "Gabe",
+      "lastName": "Ivanov",
+      "birthYear": 1996,
+      "team": "HAR",
+      "position": "D",
+      "potential": 71,
+      "skater": {
+        "skating": 62,
+        "shooting": 59,
+        "passing": 61,
+        "puckHandling": 55,
+        "defense": 63,
+        "physical": 56,
+        "hockeyIq": 58
+      },
+      "contract": {
+        "capHit": 2300000,
+        "expiresAfterSeason": 2029
+      }
+    },
+    {
+      "id": "p195",
+      "firstName": "Ben",
+      "lastName": "Lindqvist",
+      "birthYear": 1994,
+      "team": "HAR",
+      "position": "D",
+      "potential": 89,
+      "skater": {
+        "skating": 79,
+        "shooting": 79,
+        "passing": 68,
+        "puckHandling": 70,
+        "defense": 79,
+        "physical": 80,
+        "hockeyIq": 71
+      },
+      "contract": {
+        "capHit": 1000000,
+        "expiresAfterSeason": 2027
+      }
+    },
+    {
+      "id": "p196",
+      "firstName": "Marc",
+      "lastName": "Moreau",
+      "birthYear": 1995,
+      "team": "HAR",
+      "position": "D",
+      "potential": 86,
+      "skater": {
+        "skating": 65,
+        "shooting": 80,
+        "passing": 71,
+        "puckHandling": 67,
+        "defense": 67,
+        "physical": 78,
+        "hockeyIq": 66
+      },
+      "contract": {
+        "capHit": 7400000,
+        "expiresAfterSeason": 2027
+      }
+    },
+    {
+      "id": "p197",
+      "firstName": "Noah",
+      "lastName": "Pelletier",
+      "birthYear": 1999,
+      "team": "HAR",
+      "position": "D",
+      "potential": 69,
+      "skater": {
+        "skating": 61,
+        "shooting": 56,
+        "passing": 61,
+        "puckHandling": 52,
+        "defense": 59,
+        "physical": 65,
+        "hockeyIq": 51
+      },
+      "contract": {
+        "capHit": 5800000,
+        "expiresAfterSeason": 2031
+      }
+    },
+    {
+      "id": "p198",
+      "firstName": "Isaac",
+      "lastName": "Virtanen",
+      "birthYear": 1993,
+      "team": "HAR",
+      "position": "G",
+      "potential": 80,
+      "goalie": {
+        "reflexes": 83,
+        "positioning": 86,
+        "reboundControl": 85,
+        "consistency": 70
+      },
+      "contract": {
+        "capHit": 1500000,
+        "expiresAfterSeason": 2031
+      }
+    },
+    {
+      "id": "p199",
+      "firstName": "Alex",
+      "lastName": "Korhonen",
+      "birthYear": 1997,
+      "team": "HAR",
+      "position": "G",
+      "potential": 68,
+      "goalie": {
+        "reflexes": 69,
+        "positioning": 71,
+        "reboundControl": 68,
+        "consistency": 62
+      },
+      "contract": {
+        "capHit": 1200000,
+        "expiresAfterSeason": 2027
+      }
+    },
+    {
+      "id": "p200",
+      "firstName": "Isaac",
+      "lastName": "Moreau",
+      "birthYear": 2002,
+      "team": "IRO",
+      "position": "C",
+      "potential": 73,
+      "skater": {
+        "skating": 71,
+        "shooting": 66,
+        "passing": 72,
+        "puckHandling": 62,
+        "defense": 64,
+        "physical": 71,
+        "hockeyIq": 71
+      },
+      "contract": {
+        "capHit": 4500000,
+        "expiresAfterSeason": 2027
+      }
+    },
+    {
+      "id": "p201",
+      "firstName": "Liam",
+      "lastName": "Korhonen",
+      "birthYear": 2001,
+      "team": "IRO",
+      "position": "C",
+      "potential": 85,
+      "skater": {
+        "skating": 68,
+        "shooting": 67,
+        "passing": 67,
+        "puckHandling": 67,
+        "defense": 67,
+        "physical": 65,
+        "hockeyIq": 68
+      },
+      "contract": {
+        "capHit": 9100000,
+        "expiresAfterSeason": 2032
+      }
+    },
+    {
+      "id": "p202",
+      "firstName": "Sami",
+      "lastName": "Tremblay",
+      "birthYear": 2002,
+      "team": "IRO",
+      "position": "C",
+      "potential": 80,
+      "skater": {
+        "skating": 71,
+        "shooting": 68,
+        "passing": 62,
+        "puckHandling": 59,
+        "defense": 72,
+        "physical": 68,
+        "hockeyIq": 72
+      },
+      "contract": {
+        "capHit": 7700000,
+        "expiresAfterSeason": 2032
+      }
+    },
+    {
+      "id": "p203",
+      "firstName": "Carter",
+      "lastName": "Anders",
+      "birthYear": 1992,
+      "team": "IRO",
+      "position": "C",
+      "potential": 64,
+      "skater": {
+        "skating": 58,
+        "shooting": 65,
+        "passing": 59,
+        "puckHandling": 69,
+        "defense": 62,
+        "physical": 56,
+        "hockeyIq": 55
+      },
+      "contract": {
+        "capHit": 7000000,
+        "expiresAfterSeason": 2030
+      }
+    },
+    {
+      "id": "p204",
+      "firstName": "Ethan",
+      "lastName": "Roy",
+      "birthYear": 1998,
+      "team": "IRO",
+      "position": "C",
+      "potential": 81,
+      "skater": {
+        "skating": 64,
+        "shooting": 65,
+        "passing": 72,
+        "puckHandling": 66,
+        "defense": 75,
+        "physical": 70,
+        "hockeyIq": 78
+      },
+      "contract": {
+        "capHit": 2100000,
+        "expiresAfterSeason": 2031
+      }
+    },
+    {
+      "id": "p205",
+      "firstName": "Marc",
+      "lastName": "Moreau",
+      "birthYear": 2002,
+      "team": "IRO",
+      "position": "LW",
+      "potential": 78,
+      "skater": {
+        "skating": 66,
+        "shooting": 70,
+        "passing": 72,
+        "puckHandling": 66,
+        "defense": 65,
+        "physical": 68,
+        "hockeyIq": 70
+      },
+      "contract": {
+        "capHit": 1000000,
+        "expiresAfterSeason": 2030
+      }
+    },
+    {
+      "id": "p206",
+      "firstName": "Henri",
+      "lastName": "Tremblay",
+      "birthYear": 1991,
+      "team": "IRO",
+      "position": "LW",
+      "potential": 68,
+      "skater": {
+        "skating": 57,
+        "shooting": 57,
+        "passing": 56,
+        "puckHandling": 65,
+        "defense": 63,
+        "physical": 53,
+        "hockeyIq": 58
+      },
+      "contract": {
+        "capHit": 1700000,
+        "expiresAfterSeason": 2032
+      }
+    },
+    {
+      "id": "p207",
+      "firstName": "Owen",
+      "lastName": "Dumont",
+      "birthYear": 2004,
+      "team": "IRO",
+      "position": "LW",
+      "potential": 81,
+      "skater": {
+        "skating": 68,
+        "shooting": 64,
+        "passing": 64,
+        "puckHandling": 70,
+        "defense": 64,
+        "physical": 79,
+        "hockeyIq": 77
+      },
+      "contract": {
+        "capHit": 2100000,
+        "expiresAfterSeason": 2031
+      }
+    },
+    {
+      "id": "p208",
+      "firstName": "Henri",
+      "lastName": "Dumont",
+      "birthYear": 1991,
+      "team": "IRO",
+      "position": "LW",
+      "potential": 77,
+      "skater": {
+        "skating": 69,
+        "shooting": 69,
+        "passing": 60,
+        "puckHandling": 67,
+        "defense": 58,
+        "physical": 66,
+        "hockeyIq": 69
+      },
+      "contract": {
+        "capHit": 8100000,
+        "expiresAfterSeason": 2028
+      }
+    },
+    {
+      "id": "p209",
+      "firstName": "Jonas",
+      "lastName": "Olsen",
+      "birthYear": 2003,
+      "team": "IRO",
+      "position": "LW",
+      "potential": 65,
+      "skater": {
+        "skating": 72,
+        "shooting": 67,
+        "passing": 59,
+        "puckHandling": 59,
+        "defense": 57,
+        "physical": 69,
+        "hockeyIq": 59
+      },
+      "contract": {
+        "capHit": 4300000,
+        "expiresAfterSeason": 2031
+      }
+    },
+    {
+      "id": "p210",
+      "firstName": "Ryan",
+      "lastName": "Bouchard",
+      "birthYear": 2006,
+      "team": "IRO",
+      "position": "RW",
+      "potential": 77,
+      "skater": {
+        "skating": 61,
+        "shooting": 67,
+        "passing": 64,
+        "puckHandling": 67,
+        "defense": 71,
+        "physical": 60,
+        "hockeyIq": 74
+      },
+      "contract": {
+        "capHit": 3200000,
+        "expiresAfterSeason": 2027
+      }
+    },
+    {
+      "id": "p211",
+      "firstName": "Owen",
+      "lastName": "Eriksen",
+      "birthYear": 1992,
+      "team": "IRO",
+      "position": "RW",
+      "potential": 81,
+      "skater": {
+        "skating": 74,
+        "shooting": 63,
+        "passing": 73,
+        "puckHandling": 70,
+        "defense": 67,
+        "physical": 64,
+        "hockeyIq": 77
+      },
+      "contract": {
+        "capHit": 9200000,
+        "expiresAfterSeason": 2032
+      }
+    },
+    {
+      "id": "p212",
+      "firstName": "Kai",
+      "lastName": "Fischer",
+      "birthYear": 1992,
+      "team": "IRO",
+      "position": "RW",
+      "potential": 76,
+      "skater": {
+        "skating": 71,
+        "shooting": 61,
+        "passing": 63,
+        "puckHandling": 56,
+        "defense": 56,
+        "physical": 60,
+        "hockeyIq": 72
+      },
+      "contract": {
+        "capHit": 8200000,
+        "expiresAfterSeason": 2028
+      }
+    },
+    {
+      "id": "p213",
+      "firstName": "Sami",
+      "lastName": "Novak",
+      "birthYear": 2002,
+      "team": "IRO",
+      "position": "RW",
+      "potential": 69,
+      "skater": {
+        "skating": 62,
+        "shooting": 56,
+        "passing": 57,
+        "puckHandling": 66,
+        "defense": 55,
+        "physical": 62,
+        "hockeyIq": 65
+      },
+      "contract": {
+        "capHit": 8600000,
+        "expiresAfterSeason": 2030
+      }
+    },
+    {
+      "id": "p214",
+      "firstName": "Henri",
+      "lastName": "Gagnon",
+      "birthYear": 2006,
+      "team": "IRO",
+      "position": "RW",
+      "potential": 77,
+      "skater": {
+        "skating": 80,
+        "shooting": 66,
+        "passing": 72,
+        "puckHandling": 80,
+        "defense": 79,
+        "physical": 76,
+        "hockeyIq": 71
+      },
+      "contract": {
+        "capHit": 2500000,
+        "expiresAfterSeason": 2027
+      }
+    },
+    {
+      "id": "p215",
+      "firstName": "Jonas",
+      "lastName": "Bouchard",
+      "birthYear": 1994,
+      "team": "IRO",
+      "position": "D",
+      "potential": 69,
+      "skater": {
+        "skating": 64,
+        "shooting": 58,
+        "passing": 59,
+        "puckHandling": 57,
+        "defense": 60,
+        "physical": 62,
+        "hockeyIq": 65
+      },
+      "contract": {
+        "capHit": 8200000,
+        "expiresAfterSeason": 2031
+      }
+    },
+    {
+      "id": "p216",
+      "firstName": "Pierre",
+      "lastName": "Olsen",
+      "birthYear": 2005,
+      "team": "IRO",
+      "position": "D",
+      "potential": 69,
+      "skater": {
+        "skating": 54,
+        "shooting": 57,
+        "passing": 49,
+        "puckHandling": 60,
+        "defense": 57,
+        "physical": 50,
+        "hockeyIq": 48
+      },
+      "contract": {
+        "capHit": 5100000,
+        "expiresAfterSeason": 2030
+      }
+    },
+    {
+      "id": "p217",
+      "firstName": "Jonas",
+      "lastName": "Anders",
+      "birthYear": 1997,
+      "team": "IRO",
+      "position": "D",
+      "potential": 74,
+      "skater": {
+        "skating": 72,
+        "shooting": 66,
+        "passing": 76,
+        "puckHandling": 67,
+        "defense": 65,
+        "physical": 67,
+        "hockeyIq": 69
+      },
+      "contract": {
+        "capHit": 2500000,
+        "expiresAfterSeason": 2027
+      }
+    },
+    {
+      "id": "p218",
+      "firstName": "Marc",
+      "lastName": "Novak",
+      "birthYear": 2002,
+      "team": "IRO",
+      "position": "D",
+      "potential": 76,
+      "skater": {
+        "skating": 66,
+        "shooting": 68,
+        "passing": 69,
+        "puckHandling": 75,
+        "defense": 79,
+        "physical": 82,
+        "hockeyIq": 78
+      },
+      "contract": {
+        "capHit": 9800000,
+        "expiresAfterSeason": 2031
+      }
+    },
+    {
+      "id": "p219",
+      "firstName": "Dylan",
+      "lastName": "Hall",
+      "birthYear": 2001,
+      "team": "IRO",
+      "position": "D",
+      "potential": 82,
+      "skater": {
+        "skating": 81,
+        "shooting": 76,
+        "passing": 76,
+        "puckHandling": 78,
+        "defense": 72,
+        "physical": 74,
+        "hockeyIq": 70
+      },
+      "contract": {
+        "capHit": 5200000,
+        "expiresAfterSeason": 2031
+      }
+    },
+    {
+      "id": "p220",
+      "firstName": "Dylan",
+      "lastName": "Moreau",
+      "birthYear": 1993,
+      "team": "IRO",
+      "position": "D",
+      "potential": 57,
+      "skater": {
+        "skating": 65,
+        "shooting": 55,
+        "passing": 58,
+        "puckHandling": 53,
+        "defense": 56,
+        "physical": 64,
+        "hockeyIq": 53
+      },
+      "contract": {
+        "capHit": 7300000,
+        "expiresAfterSeason": 2032
+      }
+    },
+    {
+      "id": "p221",
+      "firstName": "Felix",
+      "lastName": "Carlsson",
+      "birthYear": 2005,
+      "team": "IRO",
+      "position": "D",
+      "potential": 57,
+      "skater": {
+        "skating": 49,
+        "shooting": 56,
+        "passing": 60,
+        "puckHandling": 54,
+        "defense": 56,
+        "physical": 57,
+        "hockeyIq": 57
+      },
+      "contract": {
+        "capHit": 2800000,
+        "expiresAfterSeason": 2030
+      }
+    },
+    {
+      "id": "p222",
+      "firstName": "Theo",
+      "lastName": "Hall",
+      "birthYear": 1996,
+      "team": "IRO",
+      "position": "D",
+      "potential": 85,
+      "skater": {
+        "skating": 74,
+        "shooting": 73,
+        "passing": 77,
+        "puckHandling": 75,
+        "defense": 80,
+        "physical": 67,
+        "hockeyIq": 79
+      },
+      "contract": {
+        "capHit": 6600000,
+        "expiresAfterSeason": 2027
+      }
+    },
+    {
+      "id": "p223",
+      "firstName": "Felix",
+      "lastName": "Bouchard",
+      "birthYear": 2004,
+      "team": "IRO",
+      "position": "G",
+      "potential": 73,
+      "goalie": {
+        "reflexes": 65,
+        "positioning": 60,
+        "reboundControl": 63,
+        "consistency": 52
+      },
+      "contract": {
+        "capHit": 5700000,
+        "expiresAfterSeason": 2027
+      }
+    },
+    {
+      "id": "p224",
+      "firstName": "Noah",
+      "lastName": "Ivanov",
+      "birthYear": 1998,
+      "team": "IRO",
+      "position": "G",
+      "potential": 70,
+      "goalie": {
+        "reflexes": 72,
+        "positioning": 61,
+        "reboundControl": 63,
+        "consistency": 70
+      },
+      "contract": {
+        "capHit": 8200000,
+        "expiresAfterSeason": 2030
+      }
+    },
+    {
+      "id": "p225",
+      "firstName": "Ryan",
+      "lastName": "Eriksen",
+      "birthYear": 2003,
+      "team": "JUN",
+      "position": "C",
+      "potential": 63,
+      "skater": {
+        "skating": 65,
+        "shooting": 60,
+        "passing": 65,
+        "puckHandling": 54,
+        "defense": 60,
+        "physical": 63,
+        "hockeyIq": 68
+      },
+      "contract": {
+        "capHit": 5200000,
+        "expiresAfterSeason": 2032
+      }
+    },
+    {
+      "id": "p226",
+      "firstName": "Alex",
+      "lastName": "Tremblay",
+      "birthYear": 1994,
+      "team": "JUN",
+      "position": "C",
+      "potential": 68,
+      "skater": {
+        "skating": 53,
+        "shooting": 48,
+        "passing": 64,
+        "puckHandling": 48,
+        "defense": 61,
+        "physical": 63,
+        "hockeyIq": 56
+      },
+      "contract": {
+        "capHit": 4700000,
+        "expiresAfterSeason": 2028
+      }
+    },
+    {
+      "id": "p227",
+      "firstName": "Liam",
+      "lastName": "Bouchard",
+      "birthYear": 2004,
+      "team": "JUN",
+      "position": "C",
+      "potential": 59,
+      "skater": {
+        "skating": 47,
+        "shooting": 47,
+        "passing": 44,
+        "puckHandling": 44,
+        "defense": 43,
+        "physical": 42,
+        "hockeyIq": 38
+      },
+      "contract": {
+        "capHit": 8400000,
+        "expiresAfterSeason": 2029
+      }
+    },
+    {
+      "id": "p228",
+      "firstName": "Liam",
+      "lastName": "Gagnon",
+      "birthYear": 1999,
+      "team": "JUN",
+      "position": "C",
+      "potential": 61,
+      "skater": {
+        "skating": 65,
+        "shooting": 53,
+        "passing": 60,
+        "puckHandling": 50,
+        "defense": 60,
+        "physical": 64,
+        "hockeyIq": 57
+      },
+      "contract": {
+        "capHit": 3700000,
+        "expiresAfterSeason": 2028
+      }
+    },
+    {
+      "id": "p229",
+      "firstName": "Kai",
+      "lastName": "Novak",
+      "birthYear": 2002,
+      "team": "JUN",
+      "position": "C",
+      "potential": 61,
+      "skater": {
+        "skating": 64,
+        "shooting": 56,
+        "passing": 65,
+        "puckHandling": 50,
+        "defense": 58,
+        "physical": 58,
+        "hockeyIq": 55
+      },
+      "contract": {
+        "capHit": 6900000,
+        "expiresAfterSeason": 2031
+      }
+    },
+    {
+      "id": "p230",
+      "firstName": "Noah",
+      "lastName": "Hall",
+      "birthYear": 1994,
+      "team": "JUN",
+      "position": "LW",
+      "potential": 47,
+      "skater": {
+        "skating": 50,
+        "shooting": 38,
+        "passing": 47,
+        "puckHandling": 50,
+        "defense": 40,
+        "physical": 54,
+        "hockeyIq": 54
+      },
+      "contract": {
+        "capHit": 4400000,
+        "expiresAfterSeason": 2028
+      }
+    },
+    {
+      "id": "p231",
+      "firstName": "Felix",
+      "lastName": "Virtanen",
+      "birthYear": 1998,
+      "team": "JUN",
+      "position": "LW",
+      "potential": 54,
+      "skater": {
+        "skating": 42,
+        "shooting": 45,
+        "passing": 46,
+        "puckHandling": 40,
+        "defense": 49,
+        "physical": 45,
+        "hockeyIq": 42
+      },
+      "contract": {
+        "capHit": 8400000,
+        "expiresAfterSeason": 2028
+      }
+    },
+    {
+      "id": "p232",
+      "firstName": "Owen",
+      "lastName": "Fischer",
+      "birthYear": 2001,
+      "team": "JUN",
+      "position": "LW",
+      "potential": 64,
+      "skater": {
+        "skating": 53,
+        "shooting": 59,
+        "passing": 69,
+        "puckHandling": 67,
+        "defense": 55,
+        "physical": 69,
+        "hockeyIq": 59
+      },
+      "contract": {
+        "capHit": 8800000,
+        "expiresAfterSeason": 2031
+      }
+    },
+    {
+      "id": "p233",
+      "firstName": "Ryan",
+      "lastName": "Jensen",
+      "birthYear": 2004,
+      "team": "JUN",
+      "position": "LW",
+      "potential": 58,
+      "skater": {
+        "skating": 56,
+        "shooting": 60,
+        "passing": 52,
+        "puckHandling": 63,
+        "defense": 55,
+        "physical": 50,
+        "hockeyIq": 52
+      },
+      "contract": {
+        "capHit": 1200000,
+        "expiresAfterSeason": 2031
+      }
+    },
+    {
+      "id": "p234",
+      "firstName": "Kai",
+      "lastName": "Roy",
+      "birthYear": 1997,
+      "team": "JUN",
+      "position": "LW",
+      "potential": 53,
+      "skater": {
+        "skating": 49,
+        "shooting": 36,
+        "passing": 50,
+        "puckHandling": 48,
+        "defense": 52,
+        "physical": 46,
+        "hockeyIq": 51
+      },
+      "contract": {
+        "capHit": 3400000,
+        "expiresAfterSeason": 2028
+      }
+    },
+    {
+      "id": "p235",
+      "firstName": "Marc",
+      "lastName": "Dumont",
+      "birthYear": 2005,
+      "team": "JUN",
+      "position": "RW",
+      "potential": 72,
+      "skater": {
+        "skating": 62,
+        "shooting": 66,
+        "passing": 61,
+        "puckHandling": 66,
+        "defense": 59,
+        "physical": 67,
+        "hockeyIq": 60
+      },
+      "contract": {
+        "capHit": 2700000,
+        "expiresAfterSeason": 2031
+      }
+    },
+    {
+      "id": "p236",
+      "firstName": "Quinn",
+      "lastName": "Korhonen",
+      "birthYear": 1999,
+      "team": "JUN",
+      "position": "RW",
+      "potential": 66,
+      "skater": {
+        "skating": 55,
+        "shooting": 56,
+        "passing": 56,
+        "puckHandling": 57,
+        "defense": 54,
+        "physical": 59,
+        "hockeyIq": 55
+      },
+      "contract": {
+        "capHit": 4300000,
+        "expiresAfterSeason": 2028
+      }
+    },
+    {
+      "id": "p237",
+      "firstName": "Alex",
+      "lastName": "Hall",
+      "birthYear": 1993,
+      "team": "JUN",
+      "position": "RW",
+      "potential": 51,
+      "skater": {
+        "skating": 57,
+        "shooting": 59,
+        "passing": 57,
+        "puckHandling": 52,
+        "defense": 51,
+        "physical": 51,
+        "hockeyIq": 56
+      },
+      "contract": {
+        "capHit": 1700000,
+        "expiresAfterSeason": 2030
+      }
+    },
+    {
+      "id": "p238",
+      "firstName": "Carter",
+      "lastName": "Novak",
+      "birthYear": 2005,
+      "team": "JUN",
+      "position": "RW",
+      "potential": 65,
+      "skater": {
+        "skating": 56,
+        "shooting": 55,
+        "passing": 59,
+        "puckHandling": 58,
+        "defense": 52,
+        "physical": 60,
+        "hockeyIq": 56
+      },
+      "contract": {
+        "capHit": 3300000,
+        "expiresAfterSeason": 2028
+      }
+    },
+    {
+      "id": "p239",
+      "firstName": "Dylan",
+      "lastName": "Roy",
+      "birthYear": 2003,
+      "team": "JUN",
+      "position": "RW",
+      "potential": 60,
+      "skater": {
+        "skating": 55,
+        "shooting": 64,
+        "passing": 61,
+        "puckHandling": 49,
+        "defense": 57,
+        "physical": 57,
+        "hockeyIq": 53
+      },
+      "contract": {
+        "capHit": 4900000,
+        "expiresAfterSeason": 2028
+      }
+    },
+    {
+      "id": "p240",
+      "firstName": "Alex",
+      "lastName": "Ivanov",
+      "birthYear": 1994,
+      "team": "JUN",
+      "position": "D",
+      "potential": 57,
+      "skater": {
+        "skating": 52,
+        "shooting": 56,
+        "passing": 46,
+        "puckHandling": 51,
+        "defense": 58,
+        "physical": 61,
+        "hockeyIq": 57
+      },
+      "contract": {
+        "capHit": 2000000,
+        "expiresAfterSeason": 2029
+      }
+    },
+    {
+      "id": "p241",
+      "firstName": "Isaac",
+      "lastName": "Sato",
+      "birthYear": 2000,
+      "team": "JUN",
+      "position": "D",
+      "potential": 60,
+      "skater": {
+        "skating": 41,
+        "shooting": 40,
+        "passing": 39,
+        "puckHandling": 41,
+        "defense": 44,
+        "physical": 48,
+        "hockeyIq": 42
+      },
+      "contract": {
+        "capHit": 3500000,
+        "expiresAfterSeason": 2031
+      }
+    },
+    {
+      "id": "p242",
+      "firstName": "Ethan",
+      "lastName": "Anders",
+      "birthYear": 1991,
+      "team": "JUN",
+      "position": "D",
+      "potential": 73,
+      "skater": {
+        "skating": 64,
+        "shooting": 70,
+        "passing": 56,
+        "puckHandling": 59,
+        "defense": 66,
+        "physical": 70,
+        "hockeyIq": 57
+      },
+      "contract": {
+        "capHit": 9400000,
+        "expiresAfterSeason": 2027
+      }
+    },
+    {
+      "id": "p243",
+      "firstName": "Alex",
+      "lastName": "Carlsson",
+      "birthYear": 1999,
+      "team": "JUN",
+      "position": "D",
+      "potential": 52,
+      "skater": {
+        "skating": 40,
+        "shooting": 41,
+        "passing": 43,
+        "puckHandling": 48,
+        "defense": 42,
+        "physical": 41,
+        "hockeyIq": 46
+      },
+      "contract": {
+        "capHit": 4300000,
+        "expiresAfterSeason": 2032
+      }
+    },
+    {
+      "id": "p244",
+      "firstName": "Felix",
+      "lastName": "Pelletier",
+      "birthYear": 2000,
+      "team": "JUN",
+      "position": "D",
+      "potential": 79,
+      "skater": {
+        "skating": 70,
+        "shooting": 70,
+        "passing": 69,
+        "puckHandling": 69,
+        "defense": 69,
+        "physical": 60,
+        "hockeyIq": 58
+      },
+      "contract": {
+        "capHit": 1600000,
+        "expiresAfterSeason": 2030
+      }
+    },
+    {
+      "id": "p245",
+      "firstName": "Owen",
+      "lastName": "Moreau",
+      "birthYear": 2002,
+      "team": "JUN",
+      "position": "D",
+      "potential": 57,
+      "skater": {
+        "skating": 48,
+        "shooting": 57,
+        "passing": 52,
+        "puckHandling": 43,
+        "defense": 55,
+        "physical": 50,
+        "hockeyIq": 46
+      },
+      "contract": {
+        "capHit": 3000000,
+        "expiresAfterSeason": 2032
+      }
+    },
+    {
+      "id": "p246",
+      "firstName": "Marc",
+      "lastName": "Eriksen",
+      "birthYear": 1992,
+      "team": "JUN",
+      "position": "D",
+      "potential": 64,
+      "skater": {
+        "skating": 51,
+        "shooting": 56,
+        "passing": 53,
+        "puckHandling": 49,
+        "defense": 55,
+        "physical": 43,
+        "hockeyIq": 50
+      },
+      "contract": {
+        "capHit": 3500000,
+        "expiresAfterSeason": 2030
+      }
+    },
+    {
+      "id": "p247",
+      "firstName": "Jonas",
+      "lastName": "Roy",
+      "birthYear": 2007,
+      "team": "JUN",
+      "position": "D",
+      "potential": 55,
+      "skater": {
+        "skating": 43,
+        "shooting": 45,
+        "passing": 42,
+        "puckHandling": 49,
+        "defense": 53,
+        "physical": 41,
+        "hockeyIq": 53
+      },
+      "contract": {
+        "capHit": 2100000,
+        "expiresAfterSeason": 2032
+      }
+    },
+    {
+      "id": "p248",
+      "firstName": "Ryan",
+      "lastName": "Gagnon",
+      "birthYear": 2005,
+      "team": "JUN",
+      "position": "G",
+      "potential": 65,
+      "goalie": {
+        "reflexes": 46,
+        "positioning": 54,
+        "reboundControl": 58,
+        "consistency": 47
+      },
+      "contract": {
+        "capHit": 5000000,
+        "expiresAfterSeason": 2030
+      }
+    },
+    {
+      "id": "p249",
+      "firstName": "Ethan",
+      "lastName": "Gagnon",
+      "birthYear": 1995,
+      "team": "JUN",
+      "position": "G",
+      "potential": 66,
+      "goalie": {
+        "reflexes": 59,
+        "positioning": 65,
+        "reboundControl": 60,
+        "consistency": 56
+      },
+      "contract": {
+        "capHit": 6800000,
+        "expiresAfterSeason": 2030
+      }
+    },
+    {
+      "id": "p250",
+      "firstName": "Henri",
+      "lastName": "Korhonen",
+      "birthYear": 2000,
+      "team": "KIN",
+      "position": "C",
+      "potential": 68,
+      "skater": {
+        "skating": 47,
+        "shooting": 58,
+        "passing": 62,
+        "puckHandling": 57,
+        "defense": 61,
+        "physical": 59,
+        "hockeyIq": 55
+      },
+      "contract": {
+        "capHit": 4400000,
+        "expiresAfterSeason": 2027
+      }
+    },
+    {
+      "id": "p251",
+      "firstName": "Ethan",
+      "lastName": "Roy",
+      "birthYear": 1997,
+      "team": "KIN",
+      "position": "C",
+      "potential": 59,
+      "skater": {
+        "skating": 50,
+        "shooting": 49,
+        "passing": 53,
+        "puckHandling": 56,
+        "defense": 57,
+        "physical": 49,
+        "hockeyIq": 50
+      },
+      "contract": {
+        "capHit": 2000000,
+        "expiresAfterSeason": 2028
+      }
+    },
+    {
+      "id": "p252",
+      "firstName": "Sami",
+      "lastName": "Carlsson",
+      "birthYear": 2007,
+      "team": "KIN",
+      "position": "C",
+      "potential": 81,
+      "skater": {
+        "skating": 70,
+        "shooting": 72,
+        "passing": 59,
+        "puckHandling": 74,
+        "defense": 64,
+        "physical": 60,
+        "hockeyIq": 63
+      },
+      "contract": {
+        "capHit": 3100000,
+        "expiresAfterSeason": 2029
+      }
+    },
+    {
+      "id": "p253",
+      "firstName": "Kai",
+      "lastName": "Lindqvist",
+      "birthYear": 1990,
+      "team": "KIN",
+      "position": "C",
+      "potential": 78,
+      "skater": {
+        "skating": 61,
+        "shooting": 68,
+        "passing": 68,
+        "puckHandling": 71,
+        "defense": 63,
+        "physical": 65,
+        "hockeyIq": 72
+      },
+      "contract": {
+        "capHit": 9800000,
+        "expiresAfterSeason": 2030
+      }
+    },
+    {
+      "id": "p254",
+      "firstName": "Henri",
+      "lastName": "Dumont",
+      "birthYear": 2000,
+      "team": "KIN",
+      "position": "C",
+      "potential": 76,
+      "skater": {
+        "skating": 65,
+        "shooting": 75,
+        "passing": 69,
+        "puckHandling": 68,
+        "defense": 75,
+        "physical": 72,
+        "hockeyIq": 63
+      },
+      "contract": {
+        "capHit": 7900000,
+        "expiresAfterSeason": 2030
+      }
+    },
+    {
+      "id": "p255",
+      "firstName": "Henri",
+      "lastName": "Sato",
+      "birthYear": 2004,
+      "team": "KIN",
+      "position": "LW",
+      "potential": 58,
+      "skater": {
+        "skating": 54,
+        "shooting": 62,
+        "passing": 46,
+        "puckHandling": 54,
+        "defense": 52,
+        "physical": 50,
+        "hockeyIq": 59
+      },
+      "contract": {
+        "capHit": 1000000,
+        "expiresAfterSeason": 2027
+      }
+    },
+    {
+      "id": "p256",
+      "firstName": "Owen",
+      "lastName": "Gagnon",
+      "birthYear": 1991,
+      "team": "KIN",
+      "position": "LW",
+      "potential": 78,
+      "skater": {
+        "skating": 57,
+        "shooting": 70,
+        "passing": 56,
+        "puckHandling": 70,
+        "defense": 64,
+        "physical": 67,
+        "hockeyIq": 66
+      },
+      "contract": {
+        "capHit": 9600000,
+        "expiresAfterSeason": 2029
+      }
+    },
+    {
+      "id": "p257",
+      "firstName": "Liam",
+      "lastName": "Anders",
+      "birthYear": 1996,
+      "team": "KIN",
+      "position": "LW",
+      "potential": 63,
+      "skater": {
+        "skating": 44,
+        "shooting": 49,
+        "passing": 50,
+        "puckHandling": 45,
+        "defense": 56,
+        "physical": 51,
+        "hockeyIq": 56
+      },
+      "contract": {
+        "capHit": 6400000,
+        "expiresAfterSeason": 2032
+      }
+    },
+    {
+      "id": "p258",
+      "firstName": "Sami",
+      "lastName": "Carlsson",
+      "birthYear": 1999,
+      "team": "KIN",
+      "position": "LW",
+      "potential": 74,
+      "skater": {
+        "skating": 53,
+        "shooting": 65,
+        "passing": 67,
+        "puckHandling": 64,
+        "defense": 58,
+        "physical": 63,
+        "hockeyIq": 66
+      },
+      "contract": {
+        "capHit": 5600000,
+        "expiresAfterSeason": 2032
+      }
+    },
+    {
+      "id": "p259",
+      "firstName": "Theo",
+      "lastName": "Hall",
+      "birthYear": 2006,
+      "team": "KIN",
+      "position": "LW",
+      "potential": 71,
+      "skater": {
+        "skating": 62,
+        "shooting": 61,
+        "passing": 63,
+        "puckHandling": 75,
+        "defense": 59,
+        "physical": 70,
+        "hockeyIq": 65
+      },
+      "contract": {
+        "capHit": 1500000,
+        "expiresAfterSeason": 2028
+      }
+    },
+    {
+      "id": "p260",
+      "firstName": "Carter",
+      "lastName": "Fischer",
+      "birthYear": 1992,
+      "team": "KIN",
+      "position": "RW",
+      "potential": 53,
+      "skater": {
+        "skating": 53,
+        "shooting": 49,
+        "passing": 47,
+        "puckHandling": 46,
+        "defense": 55,
+        "physical": 53,
+        "hockeyIq": 55
+      },
+      "contract": {
+        "capHit": 3200000,
+        "expiresAfterSeason": 2027
+      }
+    },
+    {
+      "id": "p261",
+      "firstName": "Quinn",
+      "lastName": "Moreau",
+      "birthYear": 2000,
+      "team": "KIN",
+      "position": "RW",
+      "potential": 55,
+      "skater": {
+        "skating": 56,
+        "shooting": 58,
+        "passing": 47,
+        "puckHandling": 61,
+        "defense": 49,
+        "physical": 62,
+        "hockeyIq": 57
+      },
+      "contract": {
+        "capHit": 2000000,
+        "expiresAfterSeason": 2031
+      }
+    },
+    {
+      "id": "p262",
+      "firstName": "Ben",
+      "lastName": "Roy",
+      "birthYear": 1991,
+      "team": "KIN",
+      "position": "RW",
+      "potential": 60,
+      "skater": {
+        "skating": 51,
+        "shooting": 57,
+        "passing": 49,
+        "puckHandling": 45,
+        "defense": 43,
+        "physical": 50,
+        "hockeyIq": 52
+      },
+      "contract": {
+        "capHit": 8800000,
+        "expiresAfterSeason": 2031
+      }
+    },
+    {
+      "id": "p263",
+      "firstName": "Ben",
+      "lastName": "Olsen",
+      "birthYear": 2006,
+      "team": "KIN",
+      "position": "RW",
+      "potential": 77,
+      "skater": {
+        "skating": 71,
+        "shooting": 74,
+        "passing": 61,
+        "puckHandling": 65,
+        "defense": 70,
+        "physical": 73,
+        "hockeyIq": 74
+      },
+      "contract": {
+        "capHit": 2300000,
+        "expiresAfterSeason": 2031
+      }
+    },
+    {
+      "id": "p264",
+      "firstName": "Felix",
+      "lastName": "Novak",
+      "birthYear": 1998,
+      "team": "KIN",
+      "position": "RW",
+      "potential": 69,
+      "skater": {
+        "skating": 58,
+        "shooting": 57,
+        "passing": 66,
+        "puckHandling": 52,
+        "defense": 57,
+        "physical": 55,
+        "hockeyIq": 52
+      },
+      "contract": {
+        "capHit": 8000000,
+        "expiresAfterSeason": 2028
+      }
+    },
+    {
+      "id": "p265",
+      "firstName": "Isaac",
+      "lastName": "Lindqvist",
+      "birthYear": 1996,
+      "team": "KIN",
+      "position": "D",
+      "potential": 65,
+      "skater": {
+        "skating": 54,
+        "shooting": 58,
+        "passing": 55,
+        "puckHandling": 58,
+        "defense": 54,
+        "physical": 53,
+        "hockeyIq": 62
+      },
+      "contract": {
+        "capHit": 3400000,
+        "expiresAfterSeason": 2029
+      }
+    },
+    {
+      "id": "p266",
+      "firstName": "Gabe",
+      "lastName": "Hall",
+      "birthYear": 1991,
+      "team": "KIN",
+      "position": "D",
+      "potential": 70,
+      "skater": {
+        "skating": 48,
+        "shooting": 58,
+        "passing": 55,
+        "puckHandling": 58,
+        "defense": 59,
+        "physical": 51,
+        "hockeyIq": 62
+      },
+      "contract": {
+        "capHit": 4400000,
+        "expiresAfterSeason": 2031
+      }
+    },
+    {
+      "id": "p267",
+      "firstName": "Liam",
+      "lastName": "Sato",
+      "birthYear": 1997,
+      "team": "KIN",
+      "position": "D",
+      "potential": 69,
+      "skater": {
+        "skating": 49,
+        "shooting": 55,
+        "passing": 53,
+        "puckHandling": 51,
+        "defense": 65,
+        "physical": 59,
+        "hockeyIq": 54
+      },
+      "contract": {
+        "capHit": 7400000,
+        "expiresAfterSeason": 2032
+      }
+    },
+    {
+      "id": "p268",
+      "firstName": "Noah",
+      "lastName": "Virtanen",
+      "birthYear": 2007,
+      "team": "KIN",
+      "position": "D",
+      "potential": 57,
+      "skater": {
+        "skating": 55,
+        "shooting": 58,
+        "passing": 52,
+        "puckHandling": 64,
+        "defense": 65,
+        "physical": 65,
+        "hockeyIq": 53
+      },
+      "contract": {
+        "capHit": 4400000,
+        "expiresAfterSeason": 2027
+      }
+    },
+    {
+      "id": "p269",
+      "firstName": "Henri",
+      "lastName": "Carlsson",
+      "birthYear": 2003,
+      "team": "KIN",
+      "position": "D",
+      "potential": 65,
+      "skater": {
+        "skating": 56,
+        "shooting": 62,
+        "passing": 56,
+        "puckHandling": 61,
+        "defense": 68,
+        "physical": 60,
+        "hockeyIq": 56
+      },
+      "contract": {
+        "capHit": 8400000,
+        "expiresAfterSeason": 2030
+      }
+    },
+    {
+      "id": "p270",
+      "firstName": "Felix",
+      "lastName": "Sato",
+      "birthYear": 1991,
+      "team": "KIN",
+      "position": "D",
+      "potential": 73,
+      "skater": {
+        "skating": 61,
+        "shooting": 67,
+        "passing": 61,
+        "puckHandling": 65,
+        "defense": 61,
+        "physical": 56,
+        "hockeyIq": 60
+      },
+      "contract": {
+        "capHit": 7100000,
+        "expiresAfterSeason": 2027
+      }
+    },
+    {
+      "id": "p271",
+      "firstName": "Pierre",
+      "lastName": "Fischer",
+      "birthYear": 1990,
+      "team": "KIN",
+      "position": "D",
+      "potential": 62,
+      "skater": {
+        "skating": 63,
+        "shooting": 63,
+        "passing": 59,
+        "puckHandling": 48,
+        "defense": 64,
+        "physical": 52,
+        "hockeyIq": 49
+      },
+      "contract": {
+        "capHit": 3800000,
+        "expiresAfterSeason": 2028
+      }
+    },
+    {
+      "id": "p272",
+      "firstName": "Sami",
+      "lastName": "Fischer",
+      "birthYear": 2004,
+      "team": "KIN",
+      "position": "D",
+      "potential": 72,
+      "skater": {
+        "skating": 58,
+        "shooting": 52,
+        "passing": 65,
+        "puckHandling": 53,
+        "defense": 52,
+        "physical": 61,
+        "hockeyIq": 55
+      },
+      "contract": {
+        "capHit": 4500000,
+        "expiresAfterSeason": 2030
+      }
+    },
+    {
+      "id": "p273",
+      "firstName": "Isaac",
+      "lastName": "Pelletier",
+      "birthYear": 2004,
+      "team": "KIN",
+      "position": "G",
+      "potential": 61,
+      "goalie": {
+        "reflexes": 63,
+        "positioning": 52,
+        "reboundControl": 66,
+        "consistency": 53
+      },
+      "contract": {
+        "capHit": 3300000,
+        "expiresAfterSeason": 2030
+      }
+    },
+    {
+      "id": "p274",
+      "firstName": "Carter",
+      "lastName": "Sato",
+      "birthYear": 2002,
+      "team": "KIN",
+      "position": "G",
+      "potential": 75,
+      "goalie": {
+        "reflexes": 75,
+        "positioning": 72,
+        "reboundControl": 70,
+        "consistency": 71
+      },
+      "contract": {
+        "capHit": 9600000,
+        "expiresAfterSeason": 2030
+      }
+    },
+    {
+      "id": "p275",
+      "firstName": "Liam",
+      "lastName": "Moreau",
+      "birthYear": 1992,
+      "team": "LAK",
+      "position": "C",
+      "potential": 66,
+      "skater": {
+        "skating": 50,
+        "shooting": 51,
+        "passing": 53,
+        "puckHandling": 61,
+        "defense": 64,
+        "physical": 51,
+        "hockeyIq": 64
+      },
+      "contract": {
+        "capHit": 6400000,
+        "expiresAfterSeason": 2030
+      }
+    },
+    {
+      "id": "p276",
+      "firstName": "Ryan",
+      "lastName": "Anders",
+      "birthYear": 1993,
+      "team": "LAK",
+      "position": "C",
+      "potential": 60,
+      "skater": {
+        "skating": 60,
+        "shooting": 65,
+        "passing": 61,
+        "puckHandling": 59,
+        "defense": 49,
+        "physical": 62,
+        "hockeyIq": 65
+      },
+      "contract": {
+        "capHit": 2000000,
+        "expiresAfterSeason": 2028
+      }
+    },
+    {
+      "id": "p277",
+      "firstName": "Marc",
+      "lastName": "Jensen",
+      "birthYear": 2005,
+      "team": "LAK",
+      "position": "C",
+      "potential": 81,
+      "skater": {
+        "skating": 72,
+        "shooting": 74,
+        "passing": 67,
+        "puckHandling": 73,
+        "defense": 68,
+        "physical": 69,
+        "hockeyIq": 74
+      },
+      "contract": {
+        "capHit": 4600000,
+        "expiresAfterSeason": 2027
+      }
+    },
+    {
+      "id": "p278",
+      "firstName": "Owen",
+      "lastName": "Tremblay",
+      "birthYear": 2006,
+      "team": "LAK",
+      "position": "C",
+      "potential": 67,
+      "skater": {
+        "skating": 59,
+        "shooting": 58,
+        "passing": 66,
+        "puckHandling": 60,
+        "defense": 65,
+        "physical": 66,
+        "hockeyIq": 64
+      },
+      "contract": {
+        "capHit": 3700000,
+        "expiresAfterSeason": 2030
+      }
+    },
+    {
+      "id": "p279",
+      "firstName": "Henri",
+      "lastName": "Gagnon",
+      "birthYear": 1996,
+      "team": "LAK",
+      "position": "C",
+      "potential": 88,
+      "skater": {
+        "skating": 74,
+        "shooting": 68,
+        "passing": 69,
+        "puckHandling": 71,
+        "defense": 68,
+        "physical": 75,
+        "hockeyIq": 81
+      },
+      "contract": {
+        "capHit": 1300000,
+        "expiresAfterSeason": 2027
+      }
+    },
+    {
+      "id": "p280",
+      "firstName": "Noah",
+      "lastName": "Roy",
+      "birthYear": 2006,
+      "team": "LAK",
+      "position": "LW",
+      "potential": 59,
+      "skater": {
+        "skating": 55,
+        "shooting": 56,
+        "passing": 60,
+        "puckHandling": 51,
+        "defense": 59,
+        "physical": 48,
+        "hockeyIq": 60
+      },
+      "contract": {
+        "capHit": 1400000,
+        "expiresAfterSeason": 2028
+      }
+    },
+    {
+      "id": "p281",
+      "firstName": "Liam",
+      "lastName": "Tremblay",
+      "birthYear": 1996,
+      "team": "LAK",
+      "position": "LW",
+      "potential": 71,
+      "skater": {
+        "skating": 64,
+        "shooting": 69,
+        "passing": 61,
+        "puckHandling": 63,
+        "defense": 70,
+        "physical": 62,
+        "hockeyIq": 70
+      },
+      "contract": {
+        "capHit": 4200000,
+        "expiresAfterSeason": 2027
+      }
+    },
+    {
+      "id": "p282",
+      "firstName": "Ryan",
+      "lastName": "Anders",
+      "birthYear": 2007,
+      "team": "LAK",
+      "position": "LW",
+      "potential": 67,
+      "skater": {
+        "skating": 62,
+        "shooting": 56,
+        "passing": 57,
+        "puckHandling": 55,
+        "defense": 55,
+        "physical": 60,
+        "hockeyIq": 57
+      },
+      "contract": {
+        "capHit": 3400000,
+        "expiresAfterSeason": 2027
+      }
+    },
+    {
+      "id": "p283",
+      "firstName": "Theo",
+      "lastName": "Gagnon",
+      "birthYear": 1996,
+      "team": "LAK",
+      "position": "LW",
+      "potential": 61,
+      "skater": {
+        "skating": 62,
+        "shooting": 63,
+        "passing": 57,
+        "puckHandling": 62,
+        "defense": 60,
+        "physical": 60,
+        "hockeyIq": 52
+      },
+      "contract": {
+        "capHit": 7800000,
+        "expiresAfterSeason": 2031
+      }
+    },
+    {
+      "id": "p284",
+      "firstName": "Jonas",
+      "lastName": "Pelletier",
+      "birthYear": 1991,
+      "team": "LAK",
+      "position": "LW",
+      "potential": 64,
+      "skater": {
+        "skating": 57,
+        "shooting": 61,
+        "passing": 57,
+        "puckHandling": 62,
+        "defense": 65,
+        "physical": 57,
+        "hockeyIq": 70
+      },
+      "contract": {
+        "capHit": 2800000,
+        "expiresAfterSeason": 2030
+      }
+    },
+    {
+      "id": "p285",
+      "firstName": "Jonas",
+      "lastName": "Hall",
+      "birthYear": 2004,
+      "team": "LAK",
+      "position": "RW",
+      "potential": 71,
+      "skater": {
+        "skating": 62,
+        "shooting": 59,
+        "passing": 56,
+        "puckHandling": 67,
+        "defense": 64,
+        "physical": 70,
+        "hockeyIq": 67
+      },
+      "contract": {
+        "capHit": 4000000,
+        "expiresAfterSeason": 2029
+      }
+    },
+    {
+      "id": "p286",
+      "firstName": "Owen",
+      "lastName": "Novak",
+      "birthYear": 2001,
+      "team": "LAK",
+      "position": "RW",
+      "potential": 68,
+      "skater": {
+        "skating": 70,
+        "shooting": 64,
+        "passing": 70,
+        "puckHandling": 56,
+        "defense": 57,
+        "physical": 67,
+        "hockeyIq": 67
+      },
+      "contract": {
+        "capHit": 4700000,
+        "expiresAfterSeason": 2028
+      }
+    },
+    {
+      "id": "p287",
+      "firstName": "Pierre",
+      "lastName": "Korhonen",
+      "birthYear": 2006,
+      "team": "LAK",
+      "position": "RW",
+      "potential": 67,
+      "skater": {
+        "skating": 53,
+        "shooting": 67,
+        "passing": 57,
+        "puckHandling": 53,
+        "defense": 67,
+        "physical": 58,
+        "hockeyIq": 67
+      },
+      "contract": {
+        "capHit": 4600000,
+        "expiresAfterSeason": 2030
+      }
+    },
+    {
+      "id": "p288",
+      "firstName": "Jonas",
+      "lastName": "Sato",
+      "birthYear": 1990,
+      "team": "LAK",
+      "position": "RW",
+      "potential": 78,
+      "skater": {
+        "skating": 72,
+        "shooting": 78,
+        "passing": 72,
+        "puckHandling": 68,
+        "defense": 78,
+        "physical": 67,
+        "hockeyIq": 69
+      },
+      "contract": {
+        "capHit": 9100000,
+        "expiresAfterSeason": 2029
+      }
+    },
+    {
+      "id": "p289",
+      "firstName": "Felix",
+      "lastName": "Tremblay",
+      "birthYear": 2004,
+      "team": "LAK",
+      "position": "RW",
+      "potential": 69,
+      "skater": {
+        "skating": 54,
+        "shooting": 54,
+        "passing": 67,
+        "puckHandling": 61,
+        "defense": 61,
+        "physical": 54,
+        "hockeyIq": 70
+      },
+      "contract": {
+        "capHit": 3000000,
+        "expiresAfterSeason": 2027
+      }
+    },
+    {
+      "id": "p290",
+      "firstName": "Owen",
+      "lastName": "Olsen",
+      "birthYear": 2004,
+      "team": "LAK",
+      "position": "D",
+      "potential": 74,
+      "skater": {
+        "skating": 60,
+        "shooting": 68,
+        "passing": 61,
+        "puckHandling": 71,
+        "defense": 59,
+        "physical": 64,
+        "hockeyIq": 73
+      },
+      "contract": {
+        "capHit": 4300000,
+        "expiresAfterSeason": 2030
+      }
+    },
+    {
+      "id": "p291",
+      "firstName": "Jonas",
+      "lastName": "Hall",
+      "birthYear": 2000,
+      "team": "LAK",
+      "position": "D",
+      "potential": 79,
+      "skater": {
+        "skating": 56,
+        "shooting": 72,
+        "passing": 56,
+        "puckHandling": 58,
+        "defense": 62,
+        "physical": 56,
+        "hockeyIq": 56
+      },
+      "contract": {
+        "capHit": 6400000,
+        "expiresAfterSeason": 2030
+      }
+    },
+    {
+      "id": "p292",
+      "firstName": "Sami",
+      "lastName": "Novak",
+      "birthYear": 1991,
+      "team": "LAK",
+      "position": "D",
+      "potential": 71,
+      "skater": {
+        "skating": 68,
+        "shooting": 66,
+        "passing": 71,
+        "puckHandling": 65,
+        "defense": 73,
+        "physical": 75,
+        "hockeyIq": 63
+      },
+      "contract": {
+        "capHit": 3100000,
+        "expiresAfterSeason": 2028
+      }
+    },
+    {
+      "id": "p293",
+      "firstName": "Ryan",
+      "lastName": "Eriksen",
+      "birthYear": 1999,
+      "team": "LAK",
+      "position": "D",
+      "potential": 77,
+      "skater": {
+        "skating": 66,
+        "shooting": 55,
+        "passing": 69,
+        "puckHandling": 68,
+        "defense": 66,
+        "physical": 59,
+        "hockeyIq": 54
+      },
+      "contract": {
+        "capHit": 3500000,
+        "expiresAfterSeason": 2031
+      }
+    },
+    {
+      "id": "p294",
+      "firstName": "Ethan",
+      "lastName": "Jensen",
+      "birthYear": 1996,
+      "team": "LAK",
+      "position": "D",
+      "potential": 77,
+      "skater": {
+        "skating": 77,
+        "shooting": 69,
+        "passing": 72,
+        "puckHandling": 68,
+        "defense": 76,
+        "physical": 83,
+        "hockeyIq": 71
+      },
+      "contract": {
+        "capHit": 6800000,
+        "expiresAfterSeason": 2031
+      }
+    },
+    {
+      "id": "p295",
+      "firstName": "Marc",
+      "lastName": "Lindqvist",
+      "birthYear": 1993,
+      "team": "LAK",
+      "position": "D",
+      "potential": 82,
+      "skater": {
+        "skating": 68,
+        "shooting": 74,
+        "passing": 76,
+        "puckHandling": 79,
+        "defense": 78,
+        "physical": 75,
+        "hockeyIq": 79
+      },
+      "contract": {
+        "capHit": 3500000,
+        "expiresAfterSeason": 2032
+      }
+    },
+    {
+      "id": "p296",
+      "firstName": "Kai",
+      "lastName": "Fischer",
+      "birthYear": 2003,
+      "team": "LAK",
+      "position": "D",
+      "potential": 77,
+      "skater": {
+        "skating": 65,
+        "shooting": 71,
+        "passing": 58,
+        "puckHandling": 67,
+        "defense": 69,
+        "physical": 56,
+        "hockeyIq": 70
+      },
+      "contract": {
+        "capHit": 8500000,
+        "expiresAfterSeason": 2031
+      }
+    },
+    {
+      "id": "p297",
+      "firstName": "Sami",
+      "lastName": "Tremblay",
+      "birthYear": 1995,
+      "team": "LAK",
+      "position": "D",
+      "potential": 90,
+      "skater": {
+        "skating": 79,
+        "shooting": 83,
+        "passing": 75,
+        "puckHandling": 72,
+        "defense": 76,
+        "physical": 80,
+        "hockeyIq": 80
+      },
+      "contract": {
+        "capHit": 2700000,
+        "expiresAfterSeason": 2028
+      }
+    },
+    {
+      "id": "p298",
+      "firstName": "Dylan",
+      "lastName": "Bouchard",
+      "birthYear": 1997,
+      "team": "LAK",
+      "position": "G",
+      "potential": 80,
+      "goalie": {
+        "reflexes": 76,
+        "positioning": 61,
+        "reboundControl": 73,
+        "consistency": 68
+      },
+      "contract": {
+        "capHit": 9500000,
+        "expiresAfterSeason": 2031
+      }
+    },
+    {
+      "id": "p299",
+      "firstName": "Liam",
+      "lastName": "Fischer",
+      "birthYear": 1997,
+      "team": "LAK",
+      "position": "G",
+      "potential": 79,
+      "goalie": {
+        "reflexes": 72,
+        "positioning": 71,
+        "reboundControl": 81,
+        "consistency": 81
+      },
+      "contract": {
+        "capHit": 3500000,
+        "expiresAfterSeason": 2028
+      }
+    },
+    {
+      "id": "p300",
+      "firstName": "Gabe",
+      "lastName": "Fischer",
+      "birthYear": 1991,
+      "team": "MAP",
+      "position": "C",
+      "potential": 69,
+      "skater": {
+        "skating": 60,
+        "shooting": 54,
+        "passing": 54,
+        "puckHandling": 60,
+        "defense": 51,
+        "physical": 62,
+        "hockeyIq": 56
+      },
+      "contract": {
+        "capHit": 7600000,
+        "expiresAfterSeason": 2031
+      }
+    },
+    {
+      "id": "p301",
+      "firstName": "Felix",
+      "lastName": "Korhonen",
+      "birthYear": 2006,
+      "team": "MAP",
+      "position": "C",
+      "potential": 77,
+      "skater": {
+        "skating": 64,
+        "shooting": 67,
+        "passing": 70,
+        "puckHandling": 72,
+        "defense": 69,
+        "physical": 69,
+        "hockeyIq": 64
+      },
+      "contract": {
+        "capHit": 9100000,
+        "expiresAfterSeason": 2028
+      }
+    },
+    {
+      "id": "p302",
+      "firstName": "Noah",
+      "lastName": "Virtanen",
+      "birthYear": 1999,
+      "team": "MAP",
+      "position": "C",
+      "potential": 76,
+      "skater": {
+        "skating": 63,
+        "shooting": 73,
+        "passing": 79,
+        "puckHandling": 68,
+        "defense": 78,
+        "physical": 72,
+        "hockeyIq": 73
+      },
+      "contract": {
+        "capHit": 9700000,
+        "expiresAfterSeason": 2029
+      }
+    },
+    {
+      "id": "p303",
+      "firstName": "Carter",
+      "lastName": "Dumont",
+      "birthYear": 1997,
+      "team": "MAP",
+      "position": "C",
+      "potential": 62,
+      "skater": {
+        "skating": 42,
+        "shooting": 50,
+        "passing": 48,
+        "puckHandling": 48,
+        "defense": 48,
+        "physical": 42,
+        "hockeyIq": 54
+      },
+      "contract": {
+        "capHit": 2600000,
+        "expiresAfterSeason": 2028
+      }
+    },
+    {
+      "id": "p304",
+      "firstName": "Ryan",
+      "lastName": "Dumont",
+      "birthYear": 2001,
+      "team": "MAP",
+      "position": "C",
+      "potential": 70,
+      "skater": {
+        "skating": 62,
+        "shooting": 55,
+        "passing": 53,
+        "puckHandling": 54,
+        "defense": 48,
+        "physical": 60,
+        "hockeyIq": 49
+      },
+      "contract": {
+        "capHit": 3200000,
+        "expiresAfterSeason": 2032
+      }
+    },
+    {
+      "id": "p305",
+      "firstName": "Alex",
+      "lastName": "Dumont",
+      "birthYear": 1999,
+      "team": "MAP",
+      "position": "LW",
+      "potential": 65,
+      "skater": {
+        "skating": 46,
+        "shooting": 58,
+        "passing": 50,
+        "puckHandling": 60,
+        "defense": 51,
+        "physical": 61,
+        "hockeyIq": 52
+      },
+      "contract": {
+        "capHit": 7600000,
+        "expiresAfterSeason": 2031
+      }
+    },
+    {
+      "id": "p306",
+      "firstName": "Henri",
+      "lastName": "Hall",
+      "birthYear": 2006,
+      "team": "MAP",
+      "position": "LW",
+      "potential": 65,
+      "skater": {
+        "skating": 50,
+        "shooting": 63,
+        "passing": 50,
+        "puckHandling": 51,
+        "defense": 61,
+        "physical": 50,
+        "hockeyIq": 56
+      },
+      "contract": {
+        "capHit": 3600000,
+        "expiresAfterSeason": 2032
+      }
+    },
+    {
+      "id": "p307",
+      "firstName": "Alex",
+      "lastName": "Korhonen",
+      "birthYear": 1999,
+      "team": "MAP",
+      "position": "LW",
+      "potential": 60,
+      "skater": {
+        "skating": 49,
+        "shooting": 51,
+        "passing": 47,
+        "puckHandling": 57,
+        "defense": 46,
+        "physical": 52,
+        "hockeyIq": 56
+      },
+      "contract": {
+        "capHit": 5200000,
+        "expiresAfterSeason": 2030
+      }
+    },
+    {
+      "id": "p308",
+      "firstName": "Ryan",
+      "lastName": "Moreau",
+      "birthYear": 1997,
+      "team": "MAP",
+      "position": "LW",
+      "potential": 59,
+      "skater": {
+        "skating": 46,
+        "shooting": 52,
+        "passing": 46,
+        "puckHandling": 48,
+        "defense": 53,
+        "physical": 52,
+        "hockeyIq": 54
+      },
+      "contract": {
+        "capHit": 8300000,
+        "expiresAfterSeason": 2027
+      }
+    },
+    {
+      "id": "p309",
+      "firstName": "Kai",
+      "lastName": "Ivanov",
+      "birthYear": 2002,
+      "team": "MAP",
+      "position": "LW",
+      "potential": 58,
+      "skater": {
+        "skating": 59,
+        "shooting": 61,
+        "passing": 50,
+        "puckHandling": 52,
+        "defense": 55,
+        "physical": 53,
+        "hockeyIq": 52
+      },
+      "contract": {
+        "capHit": 4000000,
+        "expiresAfterSeason": 2028
+      }
+    },
+    {
+      "id": "p310",
+      "firstName": "Carter",
+      "lastName": "Moreau",
+      "birthYear": 2005,
+      "team": "MAP",
+      "position": "RW",
+      "potential": 71,
+      "skater": {
+        "skating": 65,
+        "shooting": 57,
+        "passing": 66,
+        "puckHandling": 73,
+        "defense": 67,
+        "physical": 71,
+        "hockeyIq": 60
+      },
+      "contract": {
+        "capHit": 1500000,
+        "expiresAfterSeason": 2030
+      }
+    },
+    {
+      "id": "p311",
+      "firstName": "Quinn",
+      "lastName": "Dumont",
+      "birthYear": 1992,
+      "team": "MAP",
+      "position": "RW",
+      "potential": 57,
+      "skater": {
+        "skating": 49,
+        "shooting": 49,
+        "passing": 51,
+        "puckHandling": 60,
+        "defense": 55,
+        "physical": 58,
+        "hockeyIq": 50
+      },
+      "contract": {
+        "capHit": 7200000,
+        "expiresAfterSeason": 2028
+      }
+    },
+    {
+      "id": "p312",
+      "firstName": "Ryan",
+      "lastName": "Tremblay",
+      "birthYear": 1996,
+      "team": "MAP",
+      "position": "RW",
+      "potential": 65,
+      "skater": {
+        "skating": 47,
+        "shooting": 53,
+        "passing": 56,
+        "puckHandling": 46,
+        "defense": 45,
+        "physical": 56,
+        "hockeyIq": 50
+      },
+      "contract": {
+        "capHit": 3900000,
+        "expiresAfterSeason": 2030
+      }
+    },
+    {
+      "id": "p313",
+      "firstName": "Isaac",
+      "lastName": "Anders",
+      "birthYear": 1999,
+      "team": "MAP",
+      "position": "RW",
+      "potential": 82,
+      "skater": {
+        "skating": 59,
+        "shooting": 72,
+        "passing": 66,
+        "puckHandling": 73,
+        "defense": 75,
+        "physical": 64,
+        "hockeyIq": 60
+      },
+      "contract": {
+        "capHit": 8300000,
+        "expiresAfterSeason": 2028
+      }
+    },
+    {
+      "id": "p314",
+      "firstName": "Liam",
+      "lastName": "Olsen",
+      "birthYear": 1994,
+      "team": "MAP",
+      "position": "RW",
+      "potential": 80,
+      "skater": {
+        "skating": 69,
+        "shooting": 60,
+        "passing": 60,
+        "puckHandling": 68,
+        "defense": 73,
+        "physical": 60,
+        "hockeyIq": 58
+      },
+      "contract": {
+        "capHit": 3800000,
+        "expiresAfterSeason": 2028
+      }
+    },
+    {
+      "id": "p315",
+      "firstName": "Ben",
+      "lastName": "Bouchard",
+      "birthYear": 2001,
+      "team": "MAP",
+      "position": "D",
+      "potential": 82,
+      "skater": {
+        "skating": 67,
+        "shooting": 71,
+        "passing": 63,
+        "puckHandling": 69,
+        "defense": 61,
+        "physical": 63,
+        "hockeyIq": 70
+      },
+      "contract": {
+        "capHit": 2600000,
+        "expiresAfterSeason": 2029
+      }
+    },
+    {
+      "id": "p316",
+      "firstName": "Noah",
+      "lastName": "Eriksen",
+      "birthYear": 2002,
+      "team": "MAP",
+      "position": "D",
+      "potential": 79,
+      "skater": {
+        "skating": 69,
+        "shooting": 58,
+        "passing": 71,
+        "puckHandling": 61,
+        "defense": 73,
+        "physical": 70,
+        "hockeyIq": 60
+      },
+      "contract": {
+        "capHit": 4600000,
+        "expiresAfterSeason": 2029
+      }
+    },
+    {
+      "id": "p317",
+      "firstName": "Alex",
+      "lastName": "Sato",
+      "birthYear": 2003,
+      "team": "MAP",
+      "position": "D",
+      "potential": 63,
+      "skater": {
+        "skating": 53,
+        "shooting": 58,
+        "passing": 50,
+        "puckHandling": 51,
+        "defense": 50,
+        "physical": 45,
+        "hockeyIq": 49
+      },
+      "contract": {
+        "capHit": 9300000,
+        "expiresAfterSeason": 2030
+      }
+    },
+    {
+      "id": "p318",
+      "firstName": "Henri",
+      "lastName": "Carlsson",
+      "birthYear": 1999,
+      "team": "MAP",
+      "position": "D",
+      "potential": 60,
+      "skater": {
+        "skating": 48,
+        "shooting": 58,
+        "passing": 56,
+        "puckHandling": 58,
+        "defense": 61,
+        "physical": 55,
+        "hockeyIq": 61
+      },
+      "contract": {
+        "capHit": 1300000,
+        "expiresAfterSeason": 2030
+      }
+    },
+    {
+      "id": "p319",
+      "firstName": "Alex",
+      "lastName": "Carlsson",
+      "birthYear": 2005,
+      "team": "MAP",
+      "position": "D",
+      "potential": 84,
+      "skater": {
+        "skating": 71,
+        "shooting": 75,
+        "passing": 66,
+        "puckHandling": 66,
+        "defense": 75,
+        "physical": 67,
+        "hockeyIq": 74
+      },
+      "contract": {
+        "capHit": 9500000,
+        "expiresAfterSeason": 2032
+      }
+    },
+    {
+      "id": "p320",
+      "firstName": "Henri",
+      "lastName": "Fischer",
+      "birthYear": 2005,
+      "team": "MAP",
+      "position": "D",
+      "potential": 68,
+      "skater": {
+        "skating": 48,
+        "shooting": 51,
+        "passing": 53,
+        "puckHandling": 58,
+        "defense": 50,
+        "physical": 60,
+        "hockeyIq": 57
+      },
+      "contract": {
+        "capHit": 6200000,
+        "expiresAfterSeason": 2030
+      }
+    },
+    {
+      "id": "p321",
+      "firstName": "Theo",
+      "lastName": "Carlsson",
+      "birthYear": 2004,
+      "team": "MAP",
+      "position": "D",
+      "potential": 75,
+      "skater": {
+        "skating": 59,
+        "shooting": 56,
+        "passing": 56,
+        "puckHandling": 69,
+        "defense": 62,
+        "physical": 65,
+        "hockeyIq": 66
+      },
+      "contract": {
+        "capHit": 1400000,
+        "expiresAfterSeason": 2032
+      }
+    },
+    {
+      "id": "p322",
+      "firstName": "Henri",
+      "lastName": "Tremblay",
+      "birthYear": 2007,
+      "team": "MAP",
+      "position": "D",
+      "potential": 82,
+      "skater": {
+        "skating": 72,
+        "shooting": 70,
+        "passing": 75,
+        "puckHandling": 75,
+        "defense": 72,
+        "physical": 76,
+        "hockeyIq": 64
+      },
+      "contract": {
+        "capHit": 5700000,
+        "expiresAfterSeason": 2029
+      }
+    },
+    {
+      "id": "p323",
+      "firstName": "Kai",
+      "lastName": "Pelletier",
+      "birthYear": 1996,
+      "team": "MAP",
+      "position": "G",
+      "potential": 71,
+      "goalie": {
+        "reflexes": 62,
+        "positioning": 68,
+        "reboundControl": 76,
+        "consistency": 70
+      },
+      "contract": {
+        "capHit": 8500000,
+        "expiresAfterSeason": 2029
+      }
+    },
+    {
+      "id": "p324",
+      "firstName": "Quinn",
+      "lastName": "Fischer",
+      "birthYear": 2006,
+      "team": "MAP",
+      "position": "G",
+      "potential": 64,
+      "goalie": {
+        "reflexes": 64,
+        "positioning": 62,
+        "reboundControl": 56,
+        "consistency": 55
+      },
+      "contract": {
+        "capHit": 4400000,
+        "expiresAfterSeason": 2029
+      }
+    },
+    {
+      "id": "p325",
+      "firstName": "Jonas",
+      "lastName": "Lindqvist",
+      "birthYear": 1990,
+      "team": "NOR",
+      "position": "C",
+      "potential": 73,
+      "skater": {
+        "skating": 66,
+        "shooting": 61,
+        "passing": 75,
+        "puckHandling": 60,
+        "defense": 63,
+        "physical": 68,
+        "hockeyIq": 64
+      },
+      "contract": {
+        "capHit": 9800000,
+        "expiresAfterSeason": 2031
+      }
+    },
+    {
+      "id": "p326",
+      "firstName": "Owen",
+      "lastName": "Fischer",
+      "birthYear": 1994,
+      "team": "NOR",
+      "position": "C",
+      "potential": 83,
+      "skater": {
+        "skating": 68,
+        "shooting": 65,
+        "passing": 61,
+        "puckHandling": 71,
+        "defense": 76,
+        "physical": 71,
+        "hockeyIq": 77
+      },
+      "contract": {
+        "capHit": 9400000,
+        "expiresAfterSeason": 2030
+      }
+    },
+    {
+      "id": "p327",
+      "firstName": "Quinn",
+      "lastName": "Roy",
+      "birthYear": 1993,
+      "team": "NOR",
+      "position": "C",
+      "potential": 66,
+      "skater": {
+        "skating": 47,
+        "shooting": 59,
+        "passing": 48,
+        "puckHandling": 55,
+        "defense": 46,
+        "physical": 46,
+        "hockeyIq": 52
+      },
+      "contract": {
+        "capHit": 2400000,
+        "expiresAfterSeason": 2030
+      }
+    },
+    {
+      "id": "p328",
+      "firstName": "Jonas",
+      "lastName": "Gagnon",
+      "birthYear": 2007,
+      "team": "NOR",
+      "position": "C",
+      "potential": 69,
+      "skater": {
+        "skating": 75,
+        "shooting": 66,
+        "passing": 70,
+        "puckHandling": 75,
+        "defense": 67,
+        "physical": 66,
+        "hockeyIq": 62
+      },
+      "contract": {
+        "capHit": 9200000,
+        "expiresAfterSeason": 2032
+      }
+    },
+    {
+      "id": "p329",
+      "firstName": "Noah",
+      "lastName": "Fischer",
+      "birthYear": 1993,
+      "team": "NOR",
+      "position": "C",
+      "potential": 60,
+      "skater": {
+        "skating": 46,
+        "shooting": 48,
+        "passing": 54,
+        "puckHandling": 50,
+        "defense": 52,
+        "physical": 43,
+        "hockeyIq": 48
+      },
+      "contract": {
+        "capHit": 3500000,
+        "expiresAfterSeason": 2031
+      }
+    },
+    {
+      "id": "p330",
+      "firstName": "Ethan",
+      "lastName": "Carlsson",
+      "birthYear": 1991,
+      "team": "NOR",
+      "position": "LW",
+      "potential": 80,
+      "skater": {
+        "skating": 70,
+        "shooting": 61,
+        "passing": 68,
+        "puckHandling": 75,
+        "defense": 71,
+        "physical": 60,
+        "hockeyIq": 71
+      },
+      "contract": {
+        "capHit": 5900000,
+        "expiresAfterSeason": 2030
+      }
+    },
+    {
+      "id": "p331",
+      "firstName": "Ethan",
+      "lastName": "Carlsson",
+      "birthYear": 1997,
+      "team": "NOR",
+      "position": "LW",
+      "potential": 69,
+      "skater": {
+        "skating": 50,
+        "shooting": 57,
+        "passing": 47,
+        "puckHandling": 59,
+        "defense": 56,
+        "physical": 50,
+        "hockeyIq": 63
+      },
+      "contract": {
+        "capHit": 1600000,
+        "expiresAfterSeason": 2030
+      }
+    },
+    {
+      "id": "p332",
+      "firstName": "Felix",
+      "lastName": "Jensen",
+      "birthYear": 2000,
+      "team": "NOR",
+      "position": "LW",
+      "potential": 81,
+      "skater": {
+        "skating": 70,
+        "shooting": 60,
+        "passing": 73,
+        "puckHandling": 68,
+        "defense": 73,
+        "physical": 67,
+        "hockeyIq": 73
+      },
+      "contract": {
+        "capHit": 8700000,
+        "expiresAfterSeason": 2029
+      }
+    },
+    {
+      "id": "p333",
+      "firstName": "Carter",
+      "lastName": "Fischer",
+      "birthYear": 1990,
+      "team": "NOR",
+      "position": "LW",
+      "potential": 62,
+      "skater": {
+        "skating": 55,
+        "shooting": 65,
+        "passing": 61,
+        "puckHandling": 59,
+        "defense": 66,
+        "physical": 60,
+        "hockeyIq": 63
+      },
+      "contract": {
+        "capHit": 5900000,
+        "expiresAfterSeason": 2029
+      }
+    },
+    {
+      "id": "p334",
+      "firstName": "Kai",
+      "lastName": "Hall",
+      "birthYear": 2004,
+      "team": "NOR",
+      "position": "LW",
+      "potential": 65,
+      "skater": {
+        "skating": 68,
+        "shooting": 58,
+        "passing": 61,
+        "puckHandling": 60,
+        "defense": 54,
+        "physical": 61,
+        "hockeyIq": 54
+      },
+      "contract": {
+        "capHit": 4500000,
+        "expiresAfterSeason": 2031
+      }
+    },
+    {
+      "id": "p335",
+      "firstName": "Ryan",
+      "lastName": "Fischer",
+      "birthYear": 2005,
+      "team": "NOR",
+      "position": "RW",
+      "potential": 56,
+      "skater": {
+        "skating": 46,
+        "shooting": 48,
+        "passing": 55,
+        "puckHandling": 53,
+        "defense": 51,
+        "physical": 57,
+        "hockeyIq": 59
+      },
+      "contract": {
+        "capHit": 1100000,
+        "expiresAfterSeason": 2027
+      }
+    },
+    {
+      "id": "p336",
+      "firstName": "Liam",
+      "lastName": "Moreau",
+      "birthYear": 1999,
+      "team": "NOR",
+      "position": "RW",
+      "potential": 81,
+      "skater": {
+        "skating": 59,
+        "shooting": 67,
+        "passing": 73,
+        "puckHandling": 69,
+        "defense": 75,
+        "physical": 74,
+        "hockeyIq": 64
+      },
+      "contract": {
+        "capHit": 7700000,
+        "expiresAfterSeason": 2031
+      }
+    },
+    {
+      "id": "p337",
+      "firstName": "Marc",
+      "lastName": "Sato",
+      "birthYear": 1998,
+      "team": "NOR",
+      "position": "RW",
+      "potential": 59,
+      "skater": {
+        "skating": 58,
+        "shooting": 53,
+        "passing": 65,
+        "puckHandling": 55,
+        "defense": 55,
+        "physical": 64,
+        "hockeyIq": 50
+      },
+      "contract": {
+        "capHit": 5900000,
+        "expiresAfterSeason": 2031
+      }
+    },
+    {
+      "id": "p338",
+      "firstName": "Ryan",
+      "lastName": "Olsen",
+      "birthYear": 2002,
+      "team": "NOR",
+      "position": "RW",
+      "potential": 60,
+      "skater": {
+        "skating": 60,
+        "shooting": 64,
+        "passing": 55,
+        "puckHandling": 64,
+        "defense": 49,
+        "physical": 61,
+        "hockeyIq": 49
+      },
+      "contract": {
+        "capHit": 3600000,
+        "expiresAfterSeason": 2030
+      }
+    },
+    {
+      "id": "p339",
+      "firstName": "Quinn",
+      "lastName": "Sato",
+      "birthYear": 2006,
+      "team": "NOR",
+      "position": "RW",
+      "potential": 72,
+      "skater": {
+        "skating": 72,
+        "shooting": 73,
+        "passing": 64,
+        "puckHandling": 59,
+        "defense": 60,
+        "physical": 65,
+        "hockeyIq": 70
+      },
+      "contract": {
+        "capHit": 7300000,
+        "expiresAfterSeason": 2032
+      }
+    },
+    {
+      "id": "p340",
+      "firstName": "Alex",
+      "lastName": "Novak",
+      "birthYear": 1996,
+      "team": "NOR",
+      "position": "D",
+      "potential": 70,
+      "skater": {
+        "skating": 60,
+        "shooting": 51,
+        "passing": 63,
+        "puckHandling": 62,
+        "defense": 63,
+        "physical": 60,
+        "hockeyIq": 52
+      },
+      "contract": {
+        "capHit": 6200000,
+        "expiresAfterSeason": 2030
+      }
+    },
+    {
+      "id": "p341",
+      "firstName": "Ryan",
+      "lastName": "Carlsson",
+      "birthYear": 1991,
+      "team": "NOR",
+      "position": "D",
+      "potential": 70,
+      "skater": {
+        "skating": 54,
+        "shooting": 60,
+        "passing": 51,
+        "puckHandling": 55,
+        "defense": 56,
+        "physical": 54,
+        "hockeyIq": 50
+      },
+      "contract": {
+        "capHit": 9800000,
+        "expiresAfterSeason": 2027
+      }
+    },
+    {
+      "id": "p342",
+      "firstName": "Ben",
+      "lastName": "Lindqvist",
+      "birthYear": 1994,
+      "team": "NOR",
+      "position": "D",
+      "potential": 70,
+      "skater": {
+        "skating": 55,
+        "shooting": 64,
+        "passing": 62,
+        "puckHandling": 60,
+        "defense": 59,
+        "physical": 51,
+        "hockeyIq": 64
+      },
+      "contract": {
+        "capHit": 8000000,
+        "expiresAfterSeason": 2028
+      }
+    },
+    {
+      "id": "p343",
+      "firstName": "Ryan",
+      "lastName": "Ivanov",
+      "birthYear": 1990,
+      "team": "NOR",
+      "position": "D",
+      "potential": 79,
+      "skater": {
+        "skating": 64,
+        "shooting": 63,
+        "passing": 61,
+        "puckHandling": 59,
+        "defense": 69,
+        "physical": 70,
+        "hockeyIq": 62
+      },
+      "contract": {
+        "capHit": 8600000,
+        "expiresAfterSeason": 2029
+      }
+    },
+    {
+      "id": "p344",
+      "firstName": "Ethan",
+      "lastName": "Bouchard",
+      "birthYear": 1997,
+      "team": "NOR",
+      "position": "D",
+      "potential": 68,
+      "skater": {
+        "skating": 58,
+        "shooting": 54,
+        "passing": 52,
+        "puckHandling": 47,
+        "defense": 49,
+        "physical": 51,
+        "hockeyIq": 58
+      },
+      "contract": {
+        "capHit": 7500000,
+        "expiresAfterSeason": 2028
+      }
+    },
+    {
+      "id": "p345",
+      "firstName": "Sami",
+      "lastName": "Moreau",
+      "birthYear": 1994,
+      "team": "NOR",
+      "position": "D",
+      "potential": 75,
+      "skater": {
+        "skating": 58,
+        "shooting": 68,
+        "passing": 57,
+        "puckHandling": 62,
+        "defense": 70,
+        "physical": 64,
+        "hockeyIq": 70
+      },
+      "contract": {
+        "capHit": 3000000,
+        "expiresAfterSeason": 2029
+      }
+    },
+    {
+      "id": "p346",
+      "firstName": "Ethan",
+      "lastName": "Carlsson",
+      "birthYear": 1990,
+      "team": "NOR",
+      "position": "D",
+      "potential": 71,
+      "skater": {
+        "skating": 62,
+        "shooting": 61,
+        "passing": 54,
+        "puckHandling": 65,
+        "defense": 55,
+        "physical": 50,
+        "hockeyIq": 65
+      },
+      "contract": {
+        "capHit": 7200000,
+        "expiresAfterSeason": 2031
+      }
+    },
+    {
+      "id": "p347",
+      "firstName": "Carter",
+      "lastName": "Pelletier",
+      "birthYear": 1998,
+      "team": "NOR",
+      "position": "D",
+      "potential": 57,
+      "skater": {
+        "skating": 47,
+        "shooting": 53,
+        "passing": 58,
+        "puckHandling": 62,
+        "defense": 49,
+        "physical": 62,
+        "hockeyIq": 57
+      },
+      "contract": {
+        "capHit": 3200000,
+        "expiresAfterSeason": 2032
+      }
+    },
+    {
+      "id": "p348",
+      "firstName": "Sami",
+      "lastName": "Eriksen",
+      "birthYear": 1997,
+      "team": "NOR",
+      "position": "G",
+      "potential": 63,
+      "goalie": {
+        "reflexes": 51,
+        "positioning": 62,
+        "reboundControl": 49,
+        "consistency": 62
+      },
+      "contract": {
+        "capHit": 9700000,
+        "expiresAfterSeason": 2029
+      }
+    },
+    {
+      "id": "p349",
+      "firstName": "Ethan",
+      "lastName": "Carlsson",
+      "birthYear": 2003,
+      "team": "NOR",
+      "position": "G",
+      "potential": 84,
+      "goalie": {
+        "reflexes": 66,
+        "positioning": 64,
+        "reboundControl": 66,
+        "consistency": 77
+      },
+      "contract": {
+        "capHit": 4700000,
+        "expiresAfterSeason": 2028
+      }
+    },
+    {
+      "id": "p350",
+      "firstName": "Theo",
+      "lastName": "Sato",
+      "birthYear": 1990,
+      "team": "OAK",
+      "position": "C",
+      "potential": 79,
+      "skater": {
+        "skating": 67,
+        "shooting": 70,
+        "passing": 69,
+        "puckHandling": 67,
+        "defense": 69,
+        "physical": 66,
+        "hockeyIq": 73
+      },
+      "contract": {
+        "capHit": 7100000,
+        "expiresAfterSeason": 2032
+      }
+    },
+    {
+      "id": "p351",
+      "firstName": "Owen",
+      "lastName": "Korhonen",
+      "birthYear": 2001,
+      "team": "OAK",
+      "position": "C",
+      "potential": 75,
+      "skater": {
+        "skating": 56,
+        "shooting": 55,
+        "passing": 59,
+        "puckHandling": 64,
+        "defense": 67,
+        "physical": 66,
+        "hockeyIq": 61
+      },
+      "contract": {
+        "capHit": 6000000,
+        "expiresAfterSeason": 2031
+      }
+    },
+    {
+      "id": "p352",
+      "firstName": "Quinn",
+      "lastName": "Anders",
+      "birthYear": 1994,
+      "team": "OAK",
+      "position": "C",
+      "potential": 74,
+      "skater": {
+        "skating": 63,
+        "shooting": 70,
+        "passing": 56,
+        "puckHandling": 70,
+        "defense": 58,
+        "physical": 68,
+        "hockeyIq": 55
+      },
+      "contract": {
+        "capHit": 1800000,
+        "expiresAfterSeason": 2028
+      }
+    },
+    {
+      "id": "p353",
+      "firstName": "Ben",
+      "lastName": "Carlsson",
+      "birthYear": 2000,
+      "team": "OAK",
+      "position": "C",
+      "potential": 69,
+      "skater": {
+        "skating": 53,
+        "shooting": 55,
+        "passing": 54,
+        "puckHandling": 50,
+        "defense": 59,
+        "physical": 60,
+        "hockeyIq": 55
+      },
+      "contract": {
+        "capHit": 8900000,
+        "expiresAfterSeason": 2028
+      }
+    },
+    {
+      "id": "p354",
+      "firstName": "Isaac",
+      "lastName": "Tremblay",
+      "birthYear": 1994,
+      "team": "OAK",
+      "position": "C",
+      "potential": 59,
+      "skater": {
+        "skating": 43,
+        "shooting": 42,
+        "passing": 51,
+        "puckHandling": 51,
+        "defense": 52,
+        "physical": 44,
+        "hockeyIq": 45
+      },
+      "contract": {
+        "capHit": 8800000,
+        "expiresAfterSeason": 2029
+      }
+    },
+    {
+      "id": "p355",
+      "firstName": "Carter",
+      "lastName": "Lindqvist",
+      "birthYear": 1991,
+      "team": "OAK",
+      "position": "LW",
+      "potential": 63,
+      "skater": {
+        "skating": 63,
+        "shooting": 68,
+        "passing": 65,
+        "puckHandling": 67,
+        "defense": 56,
+        "physical": 69,
+        "hockeyIq": 69
+      },
+      "contract": {
+        "capHit": 8100000,
+        "expiresAfterSeason": 2031
+      }
+    },
+    {
+      "id": "p356",
+      "firstName": "Theo",
+      "lastName": "Lindqvist",
+      "birthYear": 2001,
+      "team": "OAK",
+      "position": "LW",
+      "potential": 55,
+      "skater": {
+        "skating": 54,
+        "shooting": 47,
+        "passing": 50,
+        "puckHandling": 57,
+        "defense": 45,
+        "physical": 47,
+        "hockeyIq": 58
+      },
+      "contract": {
+        "capHit": 3500000,
+        "expiresAfterSeason": 2030
+      }
+    },
+    {
+      "id": "p357",
+      "firstName": "Marc",
+      "lastName": "Sato",
+      "birthYear": 2004,
+      "team": "OAK",
+      "position": "LW",
+      "potential": 76,
+      "skater": {
+        "skating": 71,
+        "shooting": 64,
+        "passing": 64,
+        "puckHandling": 64,
+        "defense": 69,
+        "physical": 72,
+        "hockeyIq": 70
+      },
+      "contract": {
+        "capHit": 5200000,
+        "expiresAfterSeason": 2032
+      }
+    },
+    {
+      "id": "p358",
+      "firstName": "Marc",
+      "lastName": "Anders",
+      "birthYear": 1990,
+      "team": "OAK",
+      "position": "LW",
+      "potential": 71,
+      "skater": {
+        "skating": 71,
+        "shooting": 60,
+        "passing": 71,
+        "puckHandling": 55,
+        "defense": 70,
+        "physical": 59,
+        "hockeyIq": 70
+      },
+      "contract": {
+        "capHit": 3400000,
+        "expiresAfterSeason": 2030
+      }
+    },
+    {
+      "id": "p359",
+      "firstName": "Sami",
+      "lastName": "Hall",
+      "birthYear": 1995,
+      "team": "OAK",
+      "position": "LW",
+      "potential": 60,
+      "skater": {
+        "skating": 67,
+        "shooting": 54,
+        "passing": 67,
+        "puckHandling": 57,
+        "defense": 57,
+        "physical": 55,
+        "hockeyIq": 52
+      },
+      "contract": {
+        "capHit": 9600000,
+        "expiresAfterSeason": 2031
+      }
+    },
+    {
+      "id": "p360",
+      "firstName": "Marc",
+      "lastName": "Pelletier",
+      "birthYear": 1996,
+      "team": "OAK",
+      "position": "RW",
+      "potential": 56,
+      "skater": {
+        "skating": 50,
+        "shooting": 57,
+        "passing": 50,
+        "puckHandling": 50,
+        "defense": 49,
+        "physical": 50,
+        "hockeyIq": 54
+      },
+      "contract": {
+        "capHit": 6600000,
+        "expiresAfterSeason": 2028
+      }
+    },
+    {
+      "id": "p361",
+      "firstName": "Liam",
+      "lastName": "Korhonen",
+      "birthYear": 2006,
+      "team": "OAK",
+      "position": "RW",
+      "potential": 79,
+      "skater": {
+        "skating": 65,
+        "shooting": 61,
+        "passing": 72,
+        "puckHandling": 69,
+        "defense": 66,
+        "physical": 62,
+        "hockeyIq": 69
+      },
+      "contract": {
+        "capHit": 6600000,
+        "expiresAfterSeason": 2027
+      }
+    },
+    {
+      "id": "p362",
+      "firstName": "Theo",
+      "lastName": "Pelletier",
+      "birthYear": 1996,
+      "team": "OAK",
+      "position": "RW",
+      "potential": 71,
+      "skater": {
+        "skating": 68,
+        "shooting": 60,
+        "passing": 60,
+        "puckHandling": 58,
+        "defense": 71,
+        "physical": 69,
+        "hockeyIq": 65
+      },
+      "contract": {
+        "capHit": 6800000,
+        "expiresAfterSeason": 2029
+      }
+    },
+    {
+      "id": "p363",
+      "firstName": "Ethan",
+      "lastName": "Roy",
+      "birthYear": 2007,
+      "team": "OAK",
+      "position": "RW",
+      "potential": 54,
+      "skater": {
+        "skating": 53,
+        "shooting": 42,
+        "passing": 53,
+        "puckHandling": 51,
+        "defense": 55,
+        "physical": 52,
+        "hockeyIq": 55
+      },
+      "contract": {
+        "capHit": 7200000,
+        "expiresAfterSeason": 2032
+      }
+    },
+    {
+      "id": "p364",
+      "firstName": "Quinn",
+      "lastName": "Jensen",
+      "birthYear": 2003,
+      "team": "OAK",
+      "position": "RW",
+      "potential": 58,
+      "skater": {
+        "skating": 47,
+        "shooting": 47,
+        "passing": 49,
+        "puckHandling": 49,
+        "defense": 48,
+        "physical": 46,
+        "hockeyIq": 55
+      },
+      "contract": {
+        "capHit": 8000000,
+        "expiresAfterSeason": 2030
+      }
+    },
+    {
+      "id": "p365",
+      "firstName": "Ben",
+      "lastName": "Carlsson",
+      "birthYear": 2004,
+      "team": "OAK",
+      "position": "D",
+      "potential": 77,
+      "skater": {
+        "skating": 68,
+        "shooting": 59,
+        "passing": 59,
+        "puckHandling": 58,
+        "defense": 60,
+        "physical": 60,
+        "hockeyIq": 61
+      },
+      "contract": {
+        "capHit": 1100000,
+        "expiresAfterSeason": 2027
+      }
+    },
+    {
+      "id": "p366",
+      "firstName": "Liam",
+      "lastName": "Dumont",
+      "birthYear": 2005,
+      "team": "OAK",
+      "position": "D",
+      "potential": 66,
+      "skater": {
+        "skating": 61,
+        "shooting": 63,
+        "passing": 64,
+        "puckHandling": 49,
+        "defense": 48,
+        "physical": 49,
+        "hockeyIq": 64
+      },
+      "contract": {
+        "capHit": 5200000,
+        "expiresAfterSeason": 2029
+      }
+    },
+    {
+      "id": "p367",
+      "firstName": "Noah",
+      "lastName": "Ivanov",
+      "birthYear": 1998,
+      "team": "OAK",
+      "position": "D",
+      "potential": 62,
+      "skater": {
+        "skating": 62,
+        "shooting": 56,
+        "passing": 63,
+        "puckHandling": 62,
+        "defense": 50,
+        "physical": 58,
+        "hockeyIq": 55
+      },
+      "contract": {
+        "capHit": 1100000,
+        "expiresAfterSeason": 2028
+      }
+    },
+    {
+      "id": "p368",
+      "firstName": "Dylan",
+      "lastName": "Roy",
+      "birthYear": 2002,
+      "team": "OAK",
+      "position": "D",
+      "potential": 67,
+      "skater": {
+        "skating": 63,
+        "shooting": 68,
+        "passing": 56,
+        "puckHandling": 64,
+        "defense": 63,
+        "physical": 62,
+        "hockeyIq": 60
+      },
+      "contract": {
+        "capHit": 4300000,
+        "expiresAfterSeason": 2031
+      }
+    },
+    {
+      "id": "p369",
+      "firstName": "Marc",
+      "lastName": "Korhonen",
+      "birthYear": 1999,
+      "team": "OAK",
+      "position": "D",
+      "potential": 52,
+      "skater": {
+        "skating": 52,
+        "shooting": 52,
+        "passing": 49,
+        "puckHandling": 40,
+        "defense": 53,
+        "physical": 54,
+        "hockeyIq": 49
+      },
+      "contract": {
+        "capHit": 3100000,
+        "expiresAfterSeason": 2032
+      }
+    },
+    {
+      "id": "p370",
+      "firstName": "Pierre",
+      "lastName": "Carlsson",
+      "birthYear": 1991,
+      "team": "OAK",
+      "position": "D",
+      "potential": 67,
+      "skater": {
+        "skating": 57,
+        "shooting": 69,
+        "passing": 59,
+        "puckHandling": 66,
+        "defense": 68,
+        "physical": 63,
+        "hockeyIq": 58
+      },
+      "contract": {
+        "capHit": 8200000,
+        "expiresAfterSeason": 2028
+      }
+    },
+    {
+      "id": "p371",
+      "firstName": "Theo",
+      "lastName": "Carlsson",
+      "birthYear": 1998,
+      "team": "OAK",
+      "position": "D",
+      "potential": 61,
+      "skater": {
+        "skating": 53,
+        "shooting": 51,
+        "passing": 53,
+        "puckHandling": 64,
+        "defense": 65,
+        "physical": 57,
+        "hockeyIq": 56
+      },
+      "contract": {
+        "capHit": 4500000,
+        "expiresAfterSeason": 2029
+      }
+    },
+    {
+      "id": "p372",
+      "firstName": "Alex",
+      "lastName": "Hall",
+      "birthYear": 2003,
+      "team": "OAK",
+      "position": "D",
+      "potential": 73,
+      "skater": {
+        "skating": 61,
+        "shooting": 63,
+        "passing": 63,
+        "puckHandling": 65,
+        "defense": 61,
+        "physical": 52,
+        "hockeyIq": 52
+      },
+      "contract": {
+        "capHit": 6500000,
+        "expiresAfterSeason": 2030
+      }
+    },
+    {
+      "id": "p373",
+      "firstName": "Kai",
+      "lastName": "Lindqvist",
+      "birthYear": 2001,
+      "team": "OAK",
+      "position": "G",
+      "potential": 67,
+      "goalie": {
+        "reflexes": 67,
+        "positioning": 62,
+        "reboundControl": 59,
+        "consistency": 60
+      },
+      "contract": {
+        "capHit": 7700000,
+        "expiresAfterSeason": 2032
+      }
+    },
+    {
+      "id": "p374",
+      "firstName": "Sami",
+      "lastName": "Moreau",
+      "birthYear": 2004,
+      "team": "OAK",
+      "position": "G",
+      "potential": 54,
+      "goalie": {
+        "reflexes": 38,
+        "positioning": 45,
+        "reboundControl": 45,
+        "consistency": 42
+      },
+      "contract": {
+        "capHit": 9200000,
+        "expiresAfterSeason": 2027
+      }
+    },
+    {
+      "id": "p375",
+      "firstName": "Pierre",
+      "lastName": "Jensen",
+      "birthYear": 2002,
+      "team": "PIN",
+      "position": "C",
+      "potential": 82,
+      "skater": {
+        "skating": 72,
+        "shooting": 73,
+        "passing": 77,
+        "puckHandling": 82,
+        "defense": 83,
+        "physical": 82,
+        "hockeyIq": 76
+      },
+      "contract": {
+        "capHit": 2500000,
+        "expiresAfterSeason": 2030
+      }
+    },
+    {
+      "id": "p376",
+      "firstName": "Carter",
+      "lastName": "Eriksen",
+      "birthYear": 1995,
+      "team": "PIN",
+      "position": "C",
+      "potential": 77,
+      "skater": {
+        "skating": 76,
+        "shooting": 79,
+        "passing": 71,
+        "puckHandling": 75,
+        "defense": 66,
+        "physical": 69,
+        "hockeyIq": 69
+      },
+      "contract": {
+        "capHit": 2700000,
+        "expiresAfterSeason": 2027
+      }
+    },
+    {
+      "id": "p377",
+      "firstName": "Owen",
+      "lastName": "Roy",
+      "birthYear": 1994,
+      "team": "PIN",
+      "position": "C",
+      "potential": 76,
+      "skater": {
+        "skating": 54,
+        "shooting": 56,
+        "passing": 69,
+        "puckHandling": 64,
+        "defense": 56,
+        "physical": 53,
+        "hockeyIq": 60
+      },
+      "contract": {
+        "capHit": 3600000,
+        "expiresAfterSeason": 2027
+      }
+    },
+    {
+      "id": "p378",
+      "firstName": "Kai",
+      "lastName": "Pelletier",
+      "birthYear": 1999,
+      "team": "PIN",
+      "position": "C",
+      "potential": 79,
+      "skater": {
+        "skating": 64,
+        "shooting": 68,
+        "passing": 67,
+        "puckHandling": 63,
+        "defense": 63,
+        "physical": 57,
+        "hockeyIq": 58
+      },
+      "contract": {
+        "capHit": 900000,
+        "expiresAfterSeason": 2029
+      }
+    },
+    {
+      "id": "p379",
+      "firstName": "Sami",
+      "lastName": "Bouchard",
+      "birthYear": 2003,
+      "team": "PIN",
+      "position": "C",
+      "potential": 67,
+      "skater": {
+        "skating": 59,
+        "shooting": 67,
+        "passing": 67,
+        "puckHandling": 64,
+        "defense": 69,
+        "physical": 70,
+        "hockeyIq": 58
+      },
+      "contract": {
+        "capHit": 8200000,
+        "expiresAfterSeason": 2032
+      }
+    },
+    {
+      "id": "p380",
+      "firstName": "Carter",
+      "lastName": "Sato",
+      "birthYear": 2001,
+      "team": "PIN",
+      "position": "LW",
+      "potential": 73,
+      "skater": {
+        "skating": 61,
+        "shooting": 73,
+        "passing": 71,
+        "puckHandling": 58,
+        "defense": 73,
+        "physical": 71,
+        "hockeyIq": 66
+      },
+      "contract": {
+        "capHit": 8100000,
+        "expiresAfterSeason": 2029
+      }
+    },
+    {
+      "id": "p381",
+      "firstName": "Ryan",
+      "lastName": "Moreau",
+      "birthYear": 2003,
+      "team": "PIN",
+      "position": "LW",
+      "potential": 79,
+      "skater": {
+        "skating": 66,
+        "shooting": 74,
+        "passing": 73,
+        "puckHandling": 67,
+        "defense": 62,
+        "physical": 65,
+        "hockeyIq": 70
+      },
+      "contract": {
+        "capHit": 9700000,
+        "expiresAfterSeason": 2032
+      }
+    },
+    {
+      "id": "p382",
+      "firstName": "Ryan",
+      "lastName": "Pelletier",
+      "birthYear": 1994,
+      "team": "PIN",
+      "position": "LW",
+      "potential": 80,
+      "skater": {
+        "skating": 67,
+        "shooting": 63,
+        "passing": 75,
+        "puckHandling": 71,
+        "defense": 76,
+        "physical": 75,
+        "hockeyIq": 66
+      },
+      "contract": {
+        "capHit": 9100000,
+        "expiresAfterSeason": 2027
+      }
+    },
+    {
+      "id": "p383",
+      "firstName": "Ben",
+      "lastName": "Gagnon",
+      "birthYear": 2007,
+      "team": "PIN",
+      "position": "LW",
+      "potential": 68,
+      "skater": {
+        "skating": 54,
+        "shooting": 56,
+        "passing": 52,
+        "puckHandling": 63,
+        "defense": 55,
+        "physical": 57,
+        "hockeyIq": 52
+      },
+      "contract": {
+        "capHit": 2900000,
+        "expiresAfterSeason": 2028
+      }
+    },
+    {
+      "id": "p384",
+      "firstName": "Ryan",
+      "lastName": "Roy",
+      "birthYear": 1993,
+      "team": "PIN",
+      "position": "LW",
+      "potential": 71,
+      "skater": {
+        "skating": 78,
+        "shooting": 75,
+        "passing": 71,
+        "puckHandling": 73,
+        "defense": 68,
+        "physical": 66,
+        "hockeyIq": 69
+      },
+      "contract": {
+        "capHit": 2800000,
+        "expiresAfterSeason": 2028
+      }
+    },
+    {
+      "id": "p385",
+      "firstName": "Henri",
+      "lastName": "Dumont",
+      "birthYear": 1990,
+      "team": "PIN",
+      "position": "RW",
+      "potential": 77,
+      "skater": {
+        "skating": 66,
+        "shooting": 73,
+        "passing": 74,
+        "puckHandling": 73,
+        "defense": 67,
+        "physical": 81,
+        "hockeyIq": 77
+      },
+      "contract": {
+        "capHit": 8300000,
+        "expiresAfterSeason": 2031
+      }
+    },
+    {
+      "id": "p386",
+      "firstName": "Henri",
+      "lastName": "Virtanen",
+      "birthYear": 1993,
+      "team": "PIN",
+      "position": "RW",
+      "potential": 73,
+      "skater": {
+        "skating": 66,
+        "shooting": 59,
+        "passing": 60,
+        "puckHandling": 60,
+        "defense": 52,
+        "physical": 59,
+        "hockeyIq": 64
+      },
+      "contract": {
+        "capHit": 3200000,
+        "expiresAfterSeason": 2032
+      }
+    },
+    {
+      "id": "p387",
+      "firstName": "Owen",
+      "lastName": "Lindqvist",
+      "birthYear": 2006,
+      "team": "PIN",
+      "position": "RW",
+      "potential": 70,
+      "skater": {
+        "skating": 63,
+        "shooting": 74,
+        "passing": 74,
+        "puckHandling": 65,
+        "defense": 66,
+        "physical": 61,
+        "hockeyIq": 72
+      },
+      "contract": {
+        "capHit": 8400000,
+        "expiresAfterSeason": 2030
+      }
+    },
+    {
+      "id": "p388",
+      "firstName": "Marc",
+      "lastName": "Roy",
+      "birthYear": 2003,
+      "team": "PIN",
+      "position": "RW",
+      "potential": 72,
+      "skater": {
+        "skating": 66,
+        "shooting": 58,
+        "passing": 56,
+        "puckHandling": 65,
+        "defense": 54,
+        "physical": 57,
+        "hockeyIq": 69
+      },
+      "contract": {
+        "capHit": 1000000,
+        "expiresAfterSeason": 2030
+      }
+    },
+    {
+      "id": "p389",
+      "firstName": "Ben",
+      "lastName": "Novak",
+      "birthYear": 1998,
+      "team": "PIN",
+      "position": "RW",
+      "potential": 85,
+      "skater": {
+        "skating": 80,
+        "shooting": 72,
+        "passing": 82,
+        "puckHandling": 78,
+        "defense": 76,
+        "physical": 74,
+        "hockeyIq": 80
+      },
+      "contract": {
+        "capHit": 4500000,
+        "expiresAfterSeason": 2028
+      }
+    },
+    {
+      "id": "p390",
+      "firstName": "Henri",
+      "lastName": "Jensen",
+      "birthYear": 1996,
+      "team": "PIN",
+      "position": "D",
+      "potential": 82,
+      "skater": {
+        "skating": 80,
+        "shooting": 83,
+        "passing": 81,
+        "puckHandling": 79,
+        "defense": 77,
+        "physical": 79,
+        "hockeyIq": 81
+      },
+      "contract": {
+        "capHit": 6200000,
+        "expiresAfterSeason": 2032
+      }
+    },
+    {
+      "id": "p391",
+      "firstName": "Ethan",
+      "lastName": "Bouchard",
+      "birthYear": 1997,
+      "team": "PIN",
+      "position": "D",
+      "potential": 89,
+      "skater": {
+        "skating": 81,
+        "shooting": 80,
+        "passing": 70,
+        "puckHandling": 80,
+        "defense": 72,
+        "physical": 74,
+        "hockeyIq": 84
+      },
+      "contract": {
+        "capHit": 4300000,
+        "expiresAfterSeason": 2030
+      }
+    },
+    {
+      "id": "p392",
+      "firstName": "Gabe",
+      "lastName": "Virtanen",
+      "birthYear": 2002,
+      "team": "PIN",
+      "position": "D",
+      "potential": 86,
+      "skater": {
+        "skating": 77,
+        "shooting": 65,
+        "passing": 80,
+        "puckHandling": 68,
+        "defense": 76,
+        "physical": 75,
+        "hockeyIq": 79
+      },
+      "contract": {
+        "capHit": 9200000,
+        "expiresAfterSeason": 2028
+      }
+    },
+    {
+      "id": "p393",
+      "firstName": "Sami",
+      "lastName": "Carlsson",
+      "birthYear": 2005,
+      "team": "PIN",
+      "position": "D",
+      "potential": 87,
+      "skater": {
+        "skating": 71,
+        "shooting": 73,
+        "passing": 82,
+        "puckHandling": 72,
+        "defense": 68,
+        "physical": 77,
+        "hockeyIq": 72
+      },
+      "contract": {
+        "capHit": 1400000,
+        "expiresAfterSeason": 2029
+      }
+    },
+    {
+      "id": "p394",
+      "firstName": "Pierre",
+      "lastName": "Bouchard",
+      "birthYear": 1995,
+      "team": "PIN",
+      "position": "D",
+      "potential": 69,
+      "skater": {
+        "skating": 52,
+        "shooting": 56,
+        "passing": 60,
+        "puckHandling": 68,
+        "defense": 64,
+        "physical": 55,
+        "hockeyIq": 63
+      },
+      "contract": {
+        "capHit": 8300000,
+        "expiresAfterSeason": 2030
+      }
+    },
+    {
+      "id": "p395",
+      "firstName": "Noah",
+      "lastName": "Novak",
+      "birthYear": 2003,
+      "team": "PIN",
+      "position": "D",
+      "potential": 87,
+      "skater": {
+        "skating": 80,
+        "shooting": 65,
+        "passing": 64,
+        "puckHandling": 79,
+        "defense": 67,
+        "physical": 68,
+        "hockeyIq": 67
+      },
+      "contract": {
+        "capHit": 2200000,
+        "expiresAfterSeason": 2031
+      }
+    },
+    {
+      "id": "p396",
+      "firstName": "Owen",
+      "lastName": "Bouchard",
+      "birthYear": 1994,
+      "team": "PIN",
+      "position": "D",
+      "potential": 80,
+      "skater": {
+        "skating": 76,
+        "shooting": 77,
+        "passing": 73,
+        "puckHandling": 71,
+        "defense": 79,
+        "physical": 78,
+        "hockeyIq": 82
+      },
+      "contract": {
+        "capHit": 2700000,
+        "expiresAfterSeason": 2029
+      }
+    },
+    {
+      "id": "p397",
+      "firstName": "Ethan",
+      "lastName": "Bouchard",
+      "birthYear": 2000,
+      "team": "PIN",
+      "position": "D",
+      "potential": 65,
+      "skater": {
+        "skating": 64,
+        "shooting": 59,
+        "passing": 61,
+        "puckHandling": 63,
+        "defense": 66,
+        "physical": 65,
+        "hockeyIq": 71
+      },
+      "contract": {
+        "capHit": 10000000,
+        "expiresAfterSeason": 2028
+      }
+    },
+    {
+      "id": "p398",
+      "firstName": "Dylan",
+      "lastName": "Moreau",
+      "birthYear": 1994,
+      "team": "PIN",
+      "position": "G",
+      "potential": 83,
+      "goalie": {
+        "reflexes": 69,
+        "positioning": 64,
+        "reboundControl": 74,
+        "consistency": 75
+      },
+      "contract": {
+        "capHit": 1100000,
+        "expiresAfterSeason": 2029
+      }
+    },
+    {
+      "id": "p399",
+      "firstName": "Kai",
+      "lastName": "Bouchard",
+      "birthYear": 1993,
+      "team": "PIN",
+      "position": "G",
+      "potential": 69,
+      "goalie": {
+        "reflexes": 60,
+        "positioning": 69,
+        "reboundControl": 68,
+        "consistency": 56
+      },
+      "contract": {
+        "capHit": 7500000,
+        "expiresAfterSeason": 2027
+      }
+    }
+  ]
+}

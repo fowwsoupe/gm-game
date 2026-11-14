@@ -24,6 +24,14 @@ export function useNewLeague() {
   });
 }
 
+export function useNewLeagueFromRoster() {
+  const qc = useQueryClient();
+  return useMutation({
+    mutationFn: (seed: number) => window.gm.league.newLeagueFromRoster({ seed }),
+    onSuccess: () => qc.invalidateQueries({ queryKey: ['league'] }),
+  });
+}
+
 export const useFeed = (limit = 20) =>
   useQuery({
     queryKey: [...keys.feed, limit],

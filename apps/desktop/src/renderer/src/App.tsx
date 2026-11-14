@@ -1,6 +1,13 @@
 import { useState } from 'react';
 import type { LeagueEvent } from '@gm/shared';
-import { useDispatch, useFeed, useNewLeague, useSteam, useTeams } from '@/lib/queries';
+import {
+  useDispatch,
+  useFeed,
+  useNewLeague,
+  useNewLeagueFromRoster,
+  useSteam,
+  useTeams,
+} from '@/lib/queries';
 import { useUi, type Screen } from '@/stores/ui';
 import { useT, type MessageKey } from '@/i18n';
 import { Button, Card } from '@/ui';
@@ -18,6 +25,7 @@ export function App() {
   const { data: steam } = useSteam();
   const { data: teams = [], isError } = useTeams();
   const newLeague = useNewLeague();
+  const fromRoster = useNewLeagueFromRoster();
   const dispatch = useDispatch();
   const [lastSim, setLastSim] = useState<string | null>(null);
   const hasLeague = !isError && teams.length > 0;
@@ -68,6 +76,22 @@ export function App() {
             onClick={() => newLeague.mutate(Math.floor(Math.random() * 1e9))}
           >
             {t('actions.newLeague')}
+          </Button>
+          <Button
+            onClick={() =>
+              fromRoster.mutate(Math.floor(Math.random() * 1e9), {
+                onSuccess: (res) => {
+                  if (res.ok === 'canceled') return;
+                  setLastSim(
+                    res.ok
+                      ? t('home.teamsLoaded', { count: res.teams.length })
+                      : `${t('roster.loadFailed')} ${res.errors.slice(0, 3).join('; ')}`,
+                  );
+                },
+              })
+            }
+          >
+            {t('actions.loadRoster')}
           </Button>
           <Button disabled={!hasLeague || dispatch.isPending} onClick={() => sim(1)}>
             {t('actions.simDay')}

@@ -15,6 +15,10 @@ export interface GmApi {
   };
   league: {
     newLeague(input: { seed: number }): Promise<{ teams: Team[] }>;
+    /** Opens a file picker for a roster JSON file and starts a league from it. */
+    newLeagueFromRoster(input: {
+      seed: number;
+    }): Promise<{ ok: true; teams: Team[] } | { ok: false; errors: string[] } | { ok: 'canceled' }>;
     listTeams(): Promise<Team[]>;
     standings(): Promise<StandingsRow[]>;
   };
@@ -34,6 +38,7 @@ export interface GmApi {
 export const IPC = {
   appVersion: 'app:version',
   newLeague: 'league:new',
+  newLeagueFromRoster: 'league:newFromRoster',
   listTeams: 'league:listTeams',
   standings: 'league:standings',
   feedList: 'feed:list',

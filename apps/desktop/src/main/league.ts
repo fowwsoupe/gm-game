@@ -1,4 +1,4 @@
-import { mkdirSync, rmSync } from 'node:fs';
+import { mkdirSync, readFileSync, rmSync } from 'node:fs';
 import { join } from 'node:path';
 import type { Worker } from 'node:worker_threads';
 import { app } from 'electron';
@@ -44,11 +44,29 @@ export class LeagueService {
   }
 
   newLeague(seed: number) {
+    return this.start(createLeague(seed, defaultContext()));
+  }
+
+  /** Starts a league from a roster JSON file. Invalid files leave the current save alone. */
+  newLeagueFromRoster(seed: number, path: string) {
+    const ctx = defaultContext();
+    let json: unknown;
+    try {
+      json = JSON.parse(readFileSync(path, 'utf8'));
+    } catch {
+      return { ok: false as const, errors: ['This file is not valid JSON.'] };
+    }
+    const roster = ctx.sport.importRoster(json);
+    if (!roster.ok) return { ok: false as const, errors: roster.errors };
+    return { ok: true as const, ...this.start(createLeague(seed, ctx, roster)) };
+  }
+
+  private start(state: LeagueState) {
     this.save?.close();
     mkdirSync(join(app.getPath('userData'), 'saves'), { recursive: true });
     rmSync(this.savePath(), { force: true });
     this.save = openSave(this.savePath());
-    this.state = createLeague(seed, defaultContext());
+    this.state = state;
     this.save.saveNewLeague(this.state);
     return { teams: this.save.listTeams() };
   }

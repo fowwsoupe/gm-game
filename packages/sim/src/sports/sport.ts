@@ -10,6 +10,11 @@ import type { Ruleset } from '../cba';
  * implementing this same interface; features built on the shared engines then work for
  * them with little or no change.
  */
+/** Result of loading a roster file: a ready league, or readable errors for the user. */
+export type RosterImport =
+  | { ok: true; season: number; name: string; teams: Team[]; players: Player[] }
+  | { ok: false; errors: string[] };
+
 export interface SportModule<Strength = unknown> {
   id: Sport;
   name: string;
@@ -24,6 +29,9 @@ export interface SportModule<Strength = unknown> {
 
   /** Builds a fictional league for this sport. */
   generateLeague(rng: Rng): { teams: Team[]; players: Player[] };
+
+  /** Loads a community roster file (untrusted JSON) for this sport. */
+  importRoster(json: unknown): RosterImport;
 
   /** Summarizes a roster into whatever the sport's game sim needs. */
   teamStrength(players: readonly Player[]): Strength;

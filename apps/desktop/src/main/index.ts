@@ -1,5 +1,5 @@
 import { join } from 'node:path';
-import { app, BrowserWindow, ipcMain } from 'electron';
+import { app, BrowserWindow, dialog, ipcMain } from 'electron';
 import { IPC } from '@gm/shared/ipc';
 import type { Command, Importance } from '@gm/shared';
 import { LeagueService } from './league';
@@ -38,6 +38,17 @@ function createWindow() {
 function registerIpc() {
   ipcMain.handle(IPC.appVersion, () => app.getVersion());
   ipcMain.handle(IPC.newLeague, (_e, input: { seed: number }) => league.newLeague(input.seed));
+  ipcMain.handle(IPC.newLeagueFromRoster, async (e, input: { seed: number }) => {
+    const win = BrowserWindow.fromWebContents(e.sender);
+    const opts = {
+      filters: [{ name: 'Roster file', extensions: ['json'] }],
+      properties: ['openFile' as const],
+    };
+    const pick = win ? await dialog.showOpenDialog(win, opts) : await dialog.showOpenDialog(opts);
+    const path = pick.filePaths[0];
+    if (pick.canceled || !path) return { ok: 'canceled' as const };
+    return league.newLeagueFromRoster(input.seed, path);
+  });
   ipcMain.handle(IPC.listTeams, () => league.listTeams());
   ipcMain.handle(IPC.standings, () => league.standings());
   ipcMain.handle(IPC.feedList, (_e, input: { limit: number; minImportance?: Importance }) =>

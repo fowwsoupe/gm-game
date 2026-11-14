@@ -16,7 +16,8 @@
     "format": "prettier --write .",
     "format:check": "prettier --check .",
     "check": "pnpm format:check && pnpm lint && pnpm typecheck && pnpm test",
-    "lab": "pnpm --filter @gm/balance-lab lab --"
+    "lab": "pnpm --filter @gm/balance-lab lab --",
+    "roster:template": "pnpm --filter @gm/balance-lab roster:template"
   },
   "devDependencies": {
     "@eslint/js": "^9.39.0",
