@@ -1,5 +1,5 @@
 import type { GameId, GameResult, TeamId } from '@gm/shared';
-import type { Rng } from './rng';
+import type { Rng } from '../core';
 import type { TeamStrength } from './strength';
 
 /** Knobs to tune league-wide scoring. Kept in one place so balance changes are easy to find. */

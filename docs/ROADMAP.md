@@ -16,16 +16,18 @@ Status: `[ ]` not started · `[~]` in progress · `[x]` done
 Builds the engines everything else depends on.
 
 - [x] Monorepo, CI, Electron app shell, pure sim package, SQLite saves
-- [ ] CBA ruleset as data (`sim/cba`): cap, contract rules, 84-game season
+- [x] Engine structure in `packages/sim` with lint-enforced boundaries
+- [x] Model plug-in points (`Models`): goal, development, valuation
+- [x] CBA ruleset as data (`sim/cba`): cap, contract rules, 84-game season
 - [ ] Data pipeline (`ml/`): play-by-play, stats, drafts, contracts, junior + European seasons
 - [ ] Study: which advanced stats drive goals and wins → final rating list
 - [ ] Hidden ratings model + stats-to-ratings model
 - [ ] Line-by-line game sim (`sim/game`) + fast "result only" odds sim
-- [ ] Balance lab: sim 100 seasons headless, report league health
-- [ ] Speed test in CI (year-20 save: day < 0.5 s, season < 20 s, screens < 200 ms)
-- [ ] Design system: colours, type, player card, percentile bar, tables, broadcast captions
-- [ ] Command layer for every action (`GmApi`), ready for multiplayer later
-- [ ] Translation-ready text from day one
+- [~] Balance lab: league-health report works (`pnpm lab`); multi-year checks once seasons roll over
+- [~] Speed test in CI: day and season budgets in place; year-20 save and screen timing to add
+- [~] Design system: tokens, team theming, Card, Button, PercentileBar; player card and broadcast captions to add
+- [x] Command layer + event log + single reducer (multiplayer-ready)
+- [x] Translation-ready text (English + French)
 
 ## Phase 1 — v0.1 Early Access (the full loop)
 

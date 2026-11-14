@@ -1,13 +1,21 @@
 import Database from 'better-sqlite3';
-import type { GameResult, Player, Team, TeamId } from '@gm/shared';
+import type {
+  GameResult,
+  Importance,
+  LeagueEvent,
+  Player,
+  Team,
+  TeamId,
+  TeamStatus,
+} from '@gm/shared';
+import type { LeagueState, ScheduledGame } from '@gm/sim';
 import { migrations } from './migrations';
 
 export type Db = Database.Database;
 
 /**
  * Opens (or creates) a save file. One league = one .sqlite file, which keeps
- * Steam Cloud sync and "copy your save to a friend" simple.
- * Pass ':memory:' in tests.
+ * Steam Cloud sync and "copy your save to a friend" simple. Pass ':memory:' in tests.
  */
 export function openSave(path: string): SaveFile {
   const db = new Database(path);
@@ -27,6 +35,8 @@ export function migrate(db: Db): void {
   }
 }
 
+const IMPORTANCE_RANK: Record<Importance, number> = { minor: 0, notable: 1, major: 2 };
+
 interface PlayerRow {
   id: string;
   team_id: string | null;
@@ -39,14 +49,15 @@ interface PlayerRow {
   contract_json: string | null;
 }
 
-export interface ScheduledGameRow {
-  id: string;
-  day: number;
-  homeTeamId: TeamId;
-  awayTeamId: TeamId;
-}
-
-/** All database access goes through here. The UI and sim never write SQL. */
+/**
+ * All database access goes through here. The UI and sim never write SQL.
+ *
+ * Shape of the contract with the sim:
+ * - `createLeague` (sim) → `saveNewLeague(state)` writes it once.
+ * - `loadState()` rebuilds the in-memory LeagueState when a save opens.
+ * - After every command, `persist(events, state)` stores the events and the rows they changed.
+ *   Mirrors the sim reducer `applyEvent`: when you add an event kind, handle it in both.
+ */
 export class SaveFile {
   constructor(readonly db: Db) {}
 
@@ -68,17 +79,31 @@ export class SaveFile {
       .run(key, value);
   }
 
-  insertLeague(teams: readonly Team[], players: readonly Player[]) {
+  // ---------- whole league ----------
+
+  saveNewLeague(state: LeagueState) {
     const insertTeam = this.db.prepare(
-      'INSERT INTO teams (id, city, name, abbreviation, user_controlled) VALUES (@id, @city, @name, @abbreviation, @userControlled)',
+      'INSERT INTO teams (id, city, name, abbreviation, user_controlled, status) VALUES (?, ?, ?, ?, ?, ?)',
     );
     const insertPlayer = this.db.prepare(
       `INSERT INTO players (id, team_id, first_name, last_name, birth_year, position, potential, ratings_json, contract_json)
        VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)`,
     );
+    const insertGame = this.db.prepare(
+      'INSERT INTO games (id, season, day, home_team_id, away_team_id) VALUES (?, ?, ?, ?, ?)',
+    );
     this.db.transaction(() => {
-      for (const t of teams) insertTeam.run({ ...t, userControlled: t.userControlled ? 1 : 0 });
-      for (const p of players) {
+      for (const t of Object.values(state.teams)) {
+        insertTeam.run(
+          t.id,
+          t.city,
+          t.name,
+          t.abbreviation,
+          t.userControlled ? 1 : 0,
+          state.teamStatus[t.id] ?? 'bubble',
+        );
+      }
+      for (const p of Object.values(state.players)) {
         insertPlayer.run(
           p.id,
           p.teamId,
@@ -91,7 +116,134 @@ export class SaveFile {
           p.contract ? JSON.stringify(p.contract) : null,
         );
       }
+      for (const g of state.schedule)
+        insertGame.run(g.id, g.date.season, g.date.day, g.homeTeamId, g.awayTeamId);
+      this.writeClock(state);
+      this.setMeta('rulesetId', state.rulesetId);
     })();
+  }
+
+  loadState(): LeagueState {
+    const season = Number(this.getMeta('season'));
+    const teams = this.listTeams();
+    const statusRows = this.db.prepare('SELECT id, status FROM teams').all() as {
+      id: TeamId;
+      status: TeamStatus;
+    }[];
+    const schedule = this.db
+      .prepare(
+        `SELECT id, season, day, home_team_id AS homeTeamId, away_team_id AS awayTeamId
+         FROM games WHERE season = ? ORDER BY day, rowid`,
+      )
+      .all(season) as {
+      id: string;
+      season: number;
+      day: number;
+      homeTeamId: TeamId;
+      awayTeamId: TeamId;
+    }[];
+    return {
+      rulesetId: this.getMeta('rulesetId') ?? 'nhl-2026',
+      date: { season, day: Number(this.getMeta('day')) },
+      rngState: Number(this.getMeta('rngState')),
+      eventSeq: Number(this.getMeta('eventSeq')),
+      teams: Object.fromEntries(teams.map((t) => [t.id, t])),
+      players: Object.fromEntries(this.listPlayers().map((p) => [p.id, p])),
+      teamStatus: Object.fromEntries(statusRows.map((r) => [r.id, r.status])) as Record<
+        TeamId,
+        TeamStatus
+      >,
+      schedule: schedule.map((g): ScheduledGame => ({
+        id: g.id,
+        date: { season: g.season, day: g.day },
+        homeTeamId: g.homeTeamId,
+        awayTeamId: g.awayTeamId,
+      })),
+      results: Object.fromEntries(this.playedResults(season).map((r) => [r.id, r])),
+    };
+  }
+
+  /** Stores events and the rows they changed, in one transaction. */
+  persist(events: readonly LeagueEvent[], state: LeagueState) {
+    const insertEvent = this.db.prepare(
+      `INSERT INTO events (id, season, day, kind, importance, team_ids, payload_json)
+       VALUES (?, ?, ?, ?, ?, ?, ?)`,
+    );
+    const recordGame = this.db.prepare(
+      `UPDATE games SET played = 1, home_goals = ?, away_goals = ?, overtime = ?, shootout = ?, home_shots = ?, away_shots = ?
+       WHERE id = ?`,
+    );
+    const setStatus = this.db.prepare('UPDATE teams SET status = ? WHERE id = ?');
+    const setControl = this.db.prepare('UPDATE teams SET user_controlled = ? WHERE id = ?');
+
+    this.db.transaction(() => {
+      for (const e of events) {
+        // Clock ticks are bookkeeping, not news: kept out of the log to keep it small.
+        if (e.kind !== 'clock.advanced') {
+          insertEvent.run(
+            e.id,
+            e.date.season,
+            e.date.day,
+            e.kind,
+            e.importance,
+            JSON.stringify(e.teamIds),
+            JSON.stringify(e),
+          );
+        }
+        switch (e.kind) {
+          case 'game.final': {
+            const r = e.result;
+            recordGame.run(
+              r.homeGoals,
+              r.awayGoals,
+              r.overtime ? 1 : 0,
+              r.shootout ? 1 : 0,
+              r.homeShots,
+              r.awayShots,
+              r.id,
+            );
+            break;
+          }
+          case 'team.statusChanged':
+            setStatus.run(e.to, e.teamId);
+            break;
+          case 'team.controlChanged':
+            setControl.run(e.userControlled ? 1 : 0, e.teamId);
+            break;
+          case 'clock.advanced':
+          case 'season.phaseChanged':
+          case 'news.posted':
+            break;
+          default: {
+            const unhandled: never = e;
+            throw new Error(`persist: unhandled event ${(unhandled as LeagueEvent).kind}`);
+          }
+        }
+      }
+      this.writeClock(state);
+    })();
+  }
+
+  private writeClock(state: LeagueState) {
+    this.setMeta('season', String(state.date.season));
+    this.setMeta('day', String(state.date.day));
+    this.setMeta('rngState', String(state.rngState));
+    this.setMeta('eventSeq', String(state.eventSeq));
+  }
+
+  // ---------- queries ----------
+
+  listEvents(limit: number, minImportance: Importance = 'minor'): LeagueEvent[] {
+    const allowed = (Object.keys(IMPORTANCE_RANK) as Importance[]).filter(
+      (k) => IMPORTANCE_RANK[k] >= IMPORTANCE_RANK[minImportance],
+    );
+    const rows = this.db
+      .prepare(
+        `SELECT payload_json FROM events WHERE importance IN (${allowed.map(() => '?').join(',')})
+         ORDER BY seq DESC LIMIT ?`,
+      )
+      .all(...allowed, limit) as { payload_json: string }[];
+    return rows.map((r) => JSON.parse(r.payload_json) as LeagueEvent);
   }
 
   listTeams(): Team[] {
@@ -131,60 +283,17 @@ export class SaveFile {
     });
   }
 
-  insertSchedule(season: number, games: readonly ScheduledGameRow[]) {
-    const stmt = this.db.prepare(
-      'INSERT INTO games (id, season, day, home_team_id, away_team_id) VALUES (?, ?, ?, ?, ?)',
-    );
-    this.db.transaction(() => {
-      for (const g of games) stmt.run(g.id, season, g.day, g.homeTeamId, g.awayTeamId);
-    })();
-  }
-
-  /** Unplayed games for the next `days` game days. */
-  nextUnplayed(season: number, days: number): ScheduledGameRow[] {
-    const first = this.db
-      .prepare('SELECT MIN(day) AS d FROM games WHERE season = ? AND played = 0')
-      .get(season) as { d: number | null };
-    if (first.d === null) return [];
-    return this.db
-      .prepare(
-        `SELECT id, day, home_team_id AS homeTeamId, away_team_id AS awayTeamId
-         FROM games WHERE season = ? AND played = 0 AND day < ? ORDER BY day, id`,
-      )
-      .all(season, first.d + days) as ScheduledGameRow[];
-  }
-
   playedResults(season: number): GameResult[] {
     const rows = this.db
       .prepare(
         `SELECT id, home_team_id AS homeTeamId, away_team_id AS awayTeamId, home_goals AS homeGoals,
                 away_goals AS awayGoals, overtime, shootout, home_shots AS homeShots, away_shots AS awayShots
-         FROM games WHERE season = ? AND played = 1 ORDER BY day, id`,
+         FROM games WHERE season = ? AND played = 1 ORDER BY day, rowid`,
       )
       .all(season) as (Omit<GameResult, 'overtime' | 'shootout'> & {
       overtime: number;
       shootout: number;
     })[];
     return rows.map((r) => ({ ...r, overtime: r.overtime === 1, shootout: r.shootout === 1 }));
-  }
-
-  recordResults(results: readonly GameResult[]) {
-    const stmt = this.db.prepare(
-      `UPDATE games SET played = 1, home_goals = ?, away_goals = ?, overtime = ?, shootout = ?, home_shots = ?, away_shots = ?
-       WHERE id = ?`,
-    );
-    this.db.transaction(() => {
-      for (const r of results) {
-        stmt.run(
-          r.homeGoals,
-          r.awayGoals,
-          r.overtime ? 1 : 0,
-          r.shootout ? 1 : 0,
-          r.homeShots,
-          r.awayShots,
-          r.id,
-        );
-      }
-    })();
   }
 }

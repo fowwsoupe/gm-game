@@ -4,36 +4,43 @@ import type { Worker } from 'node:worker_threads';
 import { app } from 'electron';
 import { openSave, type SaveFile } from '@gm/data';
 import {
+  applyEvent,
   computeStandings,
-  generateFictionalLeague,
-  roundRobinSchedule,
-  Rng,
-  teamStrength,
-  type TeamStrength,
+  createLeague,
+  defaultContext,
+  type LeagueState,
 } from '@gm/sim';
-import type { GameId, GameResult, TeamId } from '@gm/shared';
+import type { Actor, Command, CommandResult, Importance, LeagueEvent, TeamId } from '@gm/shared';
 import createSimWorker from './sim.worker?nodeWorker';
-import type { SimRequest, SimResponse } from './sim.worker';
+import type { WorkerRequest } from './sim.worker';
 
-const SEASON = 2027;
+/** Single-player: the local human. Multiplayer will pass real actors from the network. */
+const LOCAL: Actor = { id: 'local', controls: [] };
 
 /**
- * Owns the open save file and orchestrates sim + storage.
- * This is the only place that combines @gm/sim and @gm/data.
+ * Owns the open save and the in-memory league state. The flow for every change:
+ *   UI → commands.dispatch(cmd) → worker runs the sim → events
+ *   → applyEvent on our copy → SaveFile.persist(events) → UI refetches.
+ * Nothing else writes to the state or the save.
  */
 export class LeagueService {
   private save: SaveFile | null = null;
+  private state: LeagueState | null = null;
   private worker: Worker = createSimWorker({});
+  /** Commands run one at a time, in order. */
+  private queue: Promise<unknown> = Promise.resolve();
 
   private savePath() {
     return join(app.getPath('userData'), 'saves', 'league-1.sqlite');
   }
 
-  private requireSave(): SaveFile {
+  private open(): { save: SaveFile; state: LeagueState } {
     if (!this.save) {
       this.save = openSave(this.savePath());
+      if (this.save.getMeta('season')) this.state = this.save.loadState();
     }
-    return this.save;
+    if (!this.state) throw new Error('No league yet. Start a new league first.');
+    return { save: this.save, state: this.state };
   }
 
   newLeague(seed: number) {
@@ -41,61 +48,47 @@ export class LeagueService {
     mkdirSync(join(app.getPath('userData'), 'saves'), { recursive: true });
     rmSync(this.savePath(), { force: true });
     this.save = openSave(this.savePath());
-
-    const rng = new Rng(seed);
-    const { teams, players } = generateFictionalLeague(rng.fork('league'));
-    const schedule = roundRobinSchedule(
-      teams.map((t) => t.id),
-      82,
-      rng.fork('schedule'),
-    );
-    this.save.insertLeague(teams, players);
-    this.save.insertSchedule(SEASON, schedule);
-    this.save.setMeta('rngState', String(rng.fork('games').state));
-    return { teams };
+    this.state = createLeague(seed, defaultContext());
+    this.save.saveNewLeague(this.state);
+    return { teams: this.save.listTeams() };
   }
 
   listTeams() {
-    return this.requireSave().listTeams();
+    return this.open().save.listTeams();
   }
 
   standings() {
-    const save = this.requireSave();
+    const { state } = this.open();
     return computeStandings(
-      save.listTeams().map((t) => t.id),
-      save.playedResults(SEASON),
+      Object.keys(state.teams) as TeamId[],
+      Object.values(state.results),
+      defaultContext(state.rulesetId).ruleset.season.points,
     );
   }
 
-  async simDays(days: number): Promise<{ results: GameResult[] }> {
-    const save = this.requireSave();
-    const games = save.nextUnplayed(SEASON, days);
-    if (games.length === 0) return { results: [] };
-
-    const players = save.listPlayers();
-    const strength = new Map<TeamId, TeamStrength>();
-    for (const t of save.listTeams())
-      strength.set(t.id, teamStrength(players.filter((p) => p.teamId === t.id)));
-
-    const req: SimRequest = {
-      seed: Number(save.getMeta('rngState') ?? 1),
-      matchups: games.map((g) => ({
-        id: g.id as GameId,
-        homeTeamId: g.homeTeamId,
-        awayTeamId: g.awayTeamId,
-        home: strength.get(g.homeTeamId)!,
-        away: strength.get(g.awayTeamId)!,
-      })),
-    };
-    const res = await this.runWorker(req);
-    save.recordResults(res.results);
-    save.setMeta('rngState', String(res.nextSeed));
-    return { results: res.results };
+  feed(limit: number, minImportance?: Importance): LeagueEvent[] {
+    return this.open().save.listEvents(limit, minImportance);
   }
 
-  private runWorker(req: SimRequest): Promise<SimResponse> {
+  dispatch(command: Command): Promise<CommandResult> {
+    const run = this.queue.then(() => this.runCommand(command));
+    this.queue = run.catch(() => undefined);
+    return run;
+  }
+
+  private async runCommand(command: Command): Promise<CommandResult> {
+    const { save, state } = this.open();
+    const result = await this.runInWorker({ state, command, actor: LOCAL });
+    if (result.ok) {
+      for (const e of result.events) applyEvent(state, e);
+      save.persist(result.events, state);
+    }
+    return result;
+  }
+
+  private runInWorker(req: WorkerRequest): Promise<CommandResult> {
     return new Promise((resolve, reject) => {
-      const onMessage = (res: SimResponse) => {
+      const onMessage = (res: CommandResult) => {
         this.worker.off('error', onError);
         resolve(res);
       };

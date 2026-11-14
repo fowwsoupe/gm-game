@@ -1,66 +1,104 @@
 # Architecture
 
+Read this before writing code. The rules here are what keep the project easy to build on
+for years; most are enforced by lint, types or tests.
+
 ## The big picture
 
 ```
-┌──────────────────────── apps/desktop (Electron) ────────────────────────┐
-│                                                                          │
-│  renderer (React UI)  ──window.gm──▶  preload  ──IPC──▶  main process    │
-│  Zustand: UI state only                                  LeagueService   │
-│  TanStack Query: caches IPC calls                          │      │      │
-│                                                            ▼      ▼      │
-│                                                 sim worker    @gm/data   │
-│                                                 (@gm/sim)     (SQLite)   │
-│                                                                   │      │
-│                                                         saves/*.sqlite   │
-└──────────────────────────────────────────────────────────────────────────┘
-        ▲                                    ▲
-   @gm/shared (types, roster schema, IPC contract) used by everything
-        ▲
-   ml/ (Python, offline) ──exports──▶ models/*.onnx ──loaded by main
+ UI (React)          main process (Electron)                 sim worker
+ ─────────────       ───────────────────────────────         ──────────────────────
+ window.gm.          LeagueService                           handleCommand(state,
+ commands.dispatch ─▶  holds LeagueState in memory  ──copy──▶  command, actor, ctx)
+ (a Command)           queues commands one at a time          → events
+                       applyEvent(state, e) for each  ◀─────── (state changes only
+ queries refetch ◀──── SaveFile.persist(events, state)          via applyEvent)
+                       (SQLite: rows + event log)
 ```
+
+Three ideas carry everything:
+
+1. **Commands in.** Every change, from a click, an AI GM or (later) a remote player, is a
+   `Command` (`packages/shared/src/commands.ts`). Nothing edits game state directly.
+2. **Events out.** Everything that happens is a `LeagueEvent` (`packages/shared/src/events.ts`).
+   The sim returns events; one reducer, `applyEvent`, turns them into state changes. The news
+   feed, Home "To do", history and multiplayer sync all read events.
+3. **Rules and models are data and plug-ins.** League rules live in a `Ruleset`
+   (`packages/sim/src/cba`); swappable brains (goal model, development, valuation) live in
+   `Models`. Both reach the sim through `SimContext`, never globals.
+
+Because the sim is seeded and state only changes through events, **any copy of the state
+that applies the same events ends up identical.** Tests check this. It is what makes
+multiplayer, replays and debugging work.
 
 ## Packages
 
-| Package           | What it is                                                                                                  | May import                     |
-| ----------------- | ----------------------------------------------------------------------------------------------------------- | ------------------------------ |
-| `packages/shared` | Domain types, roster JSON schema (Zod), IPC contract `GmApi`                                                | `zod` only                     |
-| `packages/sim`    | The game engine: RNG, team strength, game sim, schedule, standings, league generation. **Pure TypeScript.** | `@gm/shared` only              |
-| `packages/data`   | SQLite save files: migrations and all queries                                                               | `@gm/shared`, `better-sqlite3` |
-| `apps/desktop`    | Electron app: main process, preload, React UI, Steam                                                        | everything                     |
-| `ml/`             | Python training, exports ONNX                                                                               | n/a                            |
+| Package             | What it is                                                              | May import                                              |
+| ------------------- | ----------------------------------------------------------------------- | ------------------------------------------------------- |
+| `packages/shared`   | Contracts: domain types, events, commands, IPC (`GmApi`), roster schema | `zod`                                                   |
+| `packages/sim`      | The game engine (pure TypeScript, see below)                            | `@gm/shared`                                            |
+| `packages/data`     | SQLite saves: migrations, load/save state, persist events, queries      | `@gm/shared`, `@gm/sim` (types + API), `better-sqlite3` |
+| `apps/desktop`      | Electron: main (LeagueService, worker, Steam), preload, React UI        | everything, but `@gm/sim` only from its root            |
+| `tools/balance-lab` | Headless league-health report (`pnpm lab`)                              | `@gm/sim`, `@gm/shared`                                 |
+| `ml/`               | Python training → `models/*.onnx`                                       | n/a                                                     |
 
-## Rules (the lint config enforces the sim ones)
+## Inside `packages/sim`: engines
 
-1. **The sim is pure.** No Node APIs, no DOM, no React, no database, no `Math.random()`,
-   no `Date`. It takes data in and returns data out. This is why it can run in a worker,
-   be tested in milliseconds, and later be reused for NBA/NFL.
-2. **All randomness goes through `Rng`.** Same seed = same season. Store `rng.state` in the
-   save. Use `rng.fork('label')` per system so adding randomness to injuries doesn't change
-   every game result.
-3. **The UI never touches the database or the sim directly.** It calls `window.gm.*`, which
-   is typed by `GmApi` in `@gm/shared`. To add a feature: add the method to `GmApi`, then
-   TypeScript tells you what's missing in preload and main.
-4. **Game state lives in the save file, not in React.** Zustand is for UI state only
-   (current screen, selections, filters).
-5. **Heavy work runs in the sim worker**, so simming a season never freezes the window.
-6. **Never edit a shipped migration.** Add a new one. Players' saves already ran the old ones.
-7. **Money is integer dollars.** Never floats.
-8. **Community roster files are untrusted.** Always go through `parseRosterFile()`.
+```
+src/
+  core/      rng, money, ids, calendar, LeagueState + applyEvent      (imports no engine)
+  cba/       Ruleset as data, NHL_2026 default, contract rules
+  players/   percentiles, development model interface, (later) builds, injuries
+  people/    personalities, priorities, (later) morale, chemistry
+  finance/   team finances, (later) revenue, budgets
+  game/      game sim, team strength, GoalModel
+  value/     PlayerValuator: per-team surplus value (can be negative)
+  league/    schedule, standings, team status (league pulse), league generation
+  models.ts  Models: every swappable brain + rules-based defaults
+  context.ts SimContext: ruleset + models
+  create.ts  createLeague(seed, ctx)
+  commands.ts handleCommand(state, command, actor, ctx) → events
+  index.ts   the public API
+```
 
-## Where things will go
+**Layering** (lint-enforced): `core` imports no engine. Engines import each other **only
+through their `index.ts`** (`'../cba'`, never `'../cba/ruleset'`). Apps import only from
+`'@gm/sim'`. Each engine's `index.ts` comment says what it owns.
 
-| Feature                                   | Where                                                                      |
-| ----------------------------------------- | -------------------------------------------------------------------------- |
-| Trades, AI GM logic, contracts, cap rules | `packages/sim/src/…` (new modules)                                         |
-| Player development / aging                | `packages/sim/src/development.ts`                                          |
-| Roster import                             | `packages/shared` (schema) → main (file dialog) → `@gm/data`               |
-| New screens                               | `apps/desktop/src/renderer/src/screens/`                                   |
-| Charts (ECharts)                          | `apps/desktop/src/renderer/src/components/charts/`                         |
-| Match viewer (PixiJS)                     | later; text play-by-play first                                             |
-| ML models                                 | `ml/` → `models/*.onnx` → main implements a sim interface like `GoalModel` |
-| NBA / NFL                                 | new `packages/sim-nba` etc. sharing `Rng`, schedule, standings patterns    |
-| Steam achievements / Workshop             | `apps/desktop/src/main/steam.ts`                                           |
+## Rules
+
+1. **The sim is pure.** No Node APIs, DOM, React, database, `Math.random()` or `Date`
+   (lint-enforced). All randomness through the seeded `Rng`; use `rng.fork('label')` per
+   system so adding randomness in one place doesn't shift everything else.
+2. **State changes only in `applyEvent`.** Adding a feature that changes state = add an event
+   kind in `shared/events.ts`, handle it in `applyEvent` (sim) and in `SaveFile.persist`
+   (data). TypeScript's exhaustive switches flag every place you forgot.
+3. **Every action is a Command.** New action = add a kind in `shared/commands.ts` and a case
+   in `handleCommand`. Validate the actor: in multiplayer, players may only command their teams.
+4. **Everything is data.** Cap numbers, contract limits, season length, points, award names,
+   team colours: data, never hard-coded. Read rules from `ctx.ruleset`.
+5. **Models behind interfaces.** ML models implement the same interface as the rules-based
+   default (`GoalModel`, `DevelopmentModel`, `PlayerValuator`) and are swapped in `Models`.
+   Check a new model in the balance lab against the default with fixed seeds first.
+6. **SQL only in `packages/data`.** Never edit a shipped migration; add a new one.
+7. **Money is integer dollars** (`dollars(5.5)` → 5_500_000). Never floats.
+8. **Community roster files are untrusted.** Always through `parseRosterFile()`.
+9. **The UI never touches game state.** It reads via `window.gm` queries and changes things
+   only with `commands.dispatch`. Zustand holds UI state only (screen, language, filters).
+10. **Every user-facing string is translated.** Add keys to `i18n/en.ts` and `i18n/fr.ts`.
+11. **Screens are built from `ui/` components** and design tokens in `styles.css`, never
+    one-off colours.
+12. **Speed is tested.** `perf.test.ts` fails the build if the sim gets slower than budget.
+
+## How to add a feature (checklist)
+
+1. Shared contract: new types, event kinds and command kinds in `packages/shared`.
+2. Engine logic in the right `packages/sim/src/<engine>/`, exported from its `index.ts`, with tests.
+3. `applyEvent` and `SaveFile.persist` handle the new events; add a migration if new columns/tables.
+4. A `handleCommand` case if players can trigger it.
+5. A query in `GmApi` if the UI needs to read new data; then the screen, from `ui/` components.
+6. Strings in `en.ts` and `fr.ts`.
+7. `pnpm check` and, for anything touching sim numbers, `pnpm lab` before and after.
 
 ## Decisions
 

@@ -1,1 +1,1 @@
-export { openSave, migrate, SaveFile, type Db, type ScheduledGameRow } from './save';
+export { openSave, migrate, SaveFile, type Db } from './save';

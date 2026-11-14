@@ -1,10 +1,13 @@
-import type { GameResult, StandingsRow, Team } from './domain';
+import type { StandingsRow, Team } from './domain';
+import type { Command, CommandResult } from './commands';
+import type { Importance, LeagueEvent } from './events';
 
 /**
  * The single contract between the UI (renderer) and the main process.
  * The preload script exposes exactly this object as `window.gm`.
- * Add a method here first, then implement it in main and call it from the UI:
- * TypeScript will flag every side you forgot.
+ *
+ * Reads are queries (`league.*`, `feed.*`). Every change goes through `commands.dispatch`.
+ * Add a query here first, then implement it in main and call it from the UI.
  */
 export interface GmApi {
   app: {
@@ -15,21 +18,25 @@ export interface GmApi {
     listTeams(): Promise<Team[]>;
     standings(): Promise<StandingsRow[]>;
   };
-  sim: {
-    /** Runs in a worker thread so the UI never freezes. */
-    simDays(input: { days: number }): Promise<{ results: GameResult[] }>;
+  feed: {
+    list(input: { limit: number; minImportance?: Importance }): Promise<LeagueEvent[]>;
+  };
+  commands: {
+    /** The only way to change game state. */
+    dispatch(command: Command): Promise<CommandResult>;
   };
   steam: {
     status(): Promise<{ enabled: boolean; playerName: string | null }>;
   };
 }
 
-/** IPC channel names, derived so they can't drift from GmApi. */
+/** IPC channel names. */
 export const IPC = {
   appVersion: 'app:version',
   newLeague: 'league:new',
   listTeams: 'league:listTeams',
   standings: 'league:standings',
-  simDays: 'sim:days',
+  feedList: 'feed:list',
+  dispatch: 'commands:dispatch',
   steamStatus: 'steam:status',
 } as const;

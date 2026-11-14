@@ -1,9 +1,11 @@
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
+import type { Command } from '@gm/shared';
 
 /** All data hooks in one place so query keys stay consistent. */
 export const keys = {
   teams: ['league', 'teams'] as const,
   standings: ['league', 'standings'] as const,
+  feed: ['league', 'feed'] as const,
   steam: ['steam'] as const,
 };
 
@@ -22,10 +24,20 @@ export function useNewLeague() {
   });
 }
 
-export function useSimDays() {
+export const useFeed = (limit = 20) =>
+  useQuery({
+    queryKey: [...keys.feed, limit],
+    queryFn: () => window.gm.feed.list({ limit, minImportance: 'notable' }),
+  });
+
+/**
+ * The one way the UI changes game state: send a Command. Errors come back as data, not throws.
+ * After any command, everything under the 'league' key is refetched.
+ */
+export function useDispatch() {
   const qc = useQueryClient();
   return useMutation({
-    mutationFn: (days: number) => window.gm.sim.simDays({ days }),
+    mutationFn: (command: Command) => window.gm.commands.dispatch(command),
     onSuccess: () => qc.invalidateQueries({ queryKey: ['league'] }),
   });
 }

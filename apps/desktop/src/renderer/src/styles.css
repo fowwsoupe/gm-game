@@ -1,14 +1,31 @@
 @import 'tailwindcss';
 
-/* Design tokens: change the game's look here, not in components. */
+/*
+ * Design tokens. Change the game's look here, never with one-off colours in components.
+ * Components use these names (bg-panel, text-muted, text-good...) through Tailwind.
+ */
 @theme {
   --color-bg: #0b0f17;
   --color-panel: #121826;
+  --color-panel-2: #182033;
   --color-line: #1f2937;
   --color-ink: #e5e7eb;
   --color-muted: #8b95a7;
   --color-accent: #38bdf8;
+
+  /* One visual language for good / bad everywhere (colour-blind safe: blue vs orange). */
+  --color-good: #3b82f6;
+  --color-neutral: #9ca3af;
+  --color-bad: #f97316;
+
   --font-sans: 'Inter', ui-sans-serif, system-ui, sans-serif;
+  --radius-card: 0.75rem;
+}
+
+/* Team theming: set --team-primary / --team-secondary on any container to theme what's inside. */
+:root {
+  --team-primary: var(--color-accent);
+  --team-secondary: var(--color-panel-2);
 }
 
 html,
@@ -26,4 +43,15 @@ body {
 
 .tabular {
   font-variant-numeric: tabular-nums;
+}
+
+/* Motion budget: every transition is short and never blocks input. */
+* {
+  transition-duration: 150ms;
+}
+@media (prefers-reduced-motion: reduce) {
+  * {
+    transition: none !important;
+    animation: none !important;
+  }
 }

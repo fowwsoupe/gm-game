@@ -49,4 +49,21 @@ export const migrations: readonly string[] = [
   );
   CREATE INDEX games_season_day ON games(season, day);
   `,
+
+  // 2: event log + team status. Everything that happens is an event (see @gm/shared events).
+  `
+  CREATE TABLE events (
+    seq INTEGER PRIMARY KEY AUTOINCREMENT,
+    id TEXT NOT NULL UNIQUE,
+    season INTEGER NOT NULL,
+    day INTEGER NOT NULL,
+    kind TEXT NOT NULL,
+    importance TEXT NOT NULL,
+    team_ids TEXT NOT NULL,
+    payload_json TEXT NOT NULL
+  );
+  CREATE INDEX events_importance ON events(importance, seq);
+
+  ALTER TABLE teams ADD COLUMN status TEXT NOT NULL DEFAULT 'bubble';
+  `,
 ];

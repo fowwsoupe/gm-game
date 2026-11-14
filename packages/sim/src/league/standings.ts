@@ -1,9 +1,10 @@
 import type { GameResult, StandingsRow, TeamId } from '@gm/shared';
 
-/** NHL points: 2 for a win, 1 for an overtime/shootout loss. */
+/** Points per result come from the ruleset (default: 2 for a win, 1 for an OT/SO loss). */
 export function computeStandings(
   teamIds: readonly TeamId[],
-  results: readonly GameResult[],
+  results: Iterable<GameResult>,
+  points: { win: number; overtimeLoss: number } = { win: 2, overtimeLoss: 1 },
 ): StandingsRow[] {
   const rows = new Map<TeamId, StandingsRow>(
     teamIds.map((id) => [id, { teamId: id, gp: 0, w: 0, l: 0, otl: 0, pts: 0, gf: 0, ga: 0 }]),
@@ -21,10 +22,10 @@ export function computeStandings(
     away.gf += g.awayGoals;
     away.ga += g.homeGoals;
     winner.w++;
-    winner.pts += 2;
+    winner.pts += points.win;
     if (g.overtime) {
       loser.otl++;
-      loser.pts += 1;
+      loser.pts += points.overtimeLoss;
     } else {
       loser.l++;
     }

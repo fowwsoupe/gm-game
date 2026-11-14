@@ -1,6 +1,7 @@
 import { join } from 'node:path';
 import { app, BrowserWindow, ipcMain } from 'electron';
 import { IPC } from '@gm/shared/ipc';
+import type { Command, Importance } from '@gm/shared';
 import { LeagueService } from './league';
 import { initSteam, steamStatus } from './steam';
 
@@ -39,7 +40,10 @@ function registerIpc() {
   ipcMain.handle(IPC.newLeague, (_e, input: { seed: number }) => league.newLeague(input.seed));
   ipcMain.handle(IPC.listTeams, () => league.listTeams());
   ipcMain.handle(IPC.standings, () => league.standings());
-  ipcMain.handle(IPC.simDays, (_e, input: { days: number }) => league.simDays(input.days));
+  ipcMain.handle(IPC.feedList, (_e, input: { limit: number; minImportance?: Importance }) =>
+    league.feed(input.limit, input.minImportance),
+  );
+  ipcMain.handle(IPC.dispatch, (_e, command: Command) => league.dispatch(command));
   ipcMain.handle(IPC.steamStatus, () => steamStatus());
 }
 

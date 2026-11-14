@@ -11,8 +11,11 @@ const api: GmApi = {
     listTeams: () => ipcRenderer.invoke(IPC.listTeams),
     standings: () => ipcRenderer.invoke(IPC.standings),
   },
-  sim: {
-    simDays: (input) => ipcRenderer.invoke(IPC.simDays, input),
+  feed: {
+    list: (input) => ipcRenderer.invoke(IPC.feedList, input),
+  },
+  commands: {
+    dispatch: (command) => ipcRenderer.invoke(IPC.dispatch, command),
   },
   steam: {
     status: () => ipcRenderer.invoke(IPC.steamStatus),

@@ -1,5 +1,5 @@
 import type { HockeyPosition, Player, PlayerId, Team, TeamId } from '@gm/shared';
-import type { Rng } from './rng';
+import type { Rng } from '../core';
 
 const FIRST = [
   'Alex',

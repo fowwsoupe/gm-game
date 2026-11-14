@@ -1,23 +1,20 @@
 import { parentPort } from 'node:worker_threads';
-import { Rng, simGame, type MatchupInput } from '@gm/sim';
-import type { GameResult } from '@gm/shared';
+import { defaultContext, handleCommand, type LeagueState } from '@gm/sim';
+import type { Actor, Command, CommandResult } from '@gm/shared';
 
 /**
- * Runs the pure sim engine off the main thread. Messages in, results out.
- * Only plain data crosses this boundary (no class instances, no db handles).
+ * Runs every command off the main thread, so the UI never freezes.
+ * Receives a copy of the league state + one command; returns the resulting events.
+ * The main process applies the same events to its own copy (see LeagueService).
  */
-export interface SimRequest {
-  seed: number;
-  matchups: MatchupInput[];
-}
-export interface SimResponse {
-  results: GameResult[];
-  nextSeed: number;
+export interface WorkerRequest {
+  state: LeagueState;
+  command: Command;
+  actor: Actor;
 }
 
-parentPort?.on('message', (req: SimRequest) => {
-  const rng = new Rng(req.seed);
-  const results = req.matchups.map((m) => simGame(m, rng));
-  const res: SimResponse = { results, nextSeed: rng.state };
-  parentPort?.postMessage(res);
+parentPort?.on('message', (req: WorkerRequest) => {
+  const ctx = defaultContext(req.state.rulesetId);
+  const result: CommandResult = handleCommand(req.state, req.command, req.actor, ctx);
+  parentPort?.postMessage(result);
 });

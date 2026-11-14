@@ -12,7 +12,8 @@
   },
   "dependencies": {
     "@gm/shared": "workspace:*",
-    "better-sqlite3": "^12.4.0"
+    "better-sqlite3": "^12.4.0",
+    "@gm/sim": "workspace:*"
   },
   "devDependencies": {
     "@types/better-sqlite3": "^7.6.13",

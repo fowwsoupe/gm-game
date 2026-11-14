@@ -11,6 +11,7 @@ Requires Node 22+ and pnpm 10 (`corepack enable`).
 pnpm install
 pnpm dev        # opens the game with hot reload
 pnpm check      # format + lint + typecheck + tests (run before every PR)
+pnpm lab        # balance lab: league-health report from simulated seasons
 pnpm dist       # packaged build in apps/desktop/release/
 ```
 
@@ -22,6 +23,7 @@ packages/shared   types, roster file schema, UI↔main contract
 packages/sim      the game engine (pure TypeScript, seeded, tested)
 packages/data     SQLite save files
 ml/               Python model training → models/*.onnx
+tools/balance-lab league-health report (pnpm lab)
 docs/             architecture and decisions
 ```
 
