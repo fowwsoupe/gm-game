@@ -30,8 +30,8 @@ export interface PlayerValuator {
  */
 export const naiveValuator: PlayerValuator = {
   value(player) {
-    const r = player.skater ?? player.goalie;
-    const avg = r ? Object.values(r).reduce((a, b) => a + b, 0) / Object.values(r).length : 50;
+    const values = Object.values(player.ratings);
+    const avg = values.length ? values.reduce((a, b) => a + b, 0) / values.length : 50;
     const worth = Math.max(0, (avg - 55) * 300_000);
     const cost = player.contract?.capHit ?? 0;
     return { surplus: Math.round(worth - cost), reasons: ['placeholder valuation'] };

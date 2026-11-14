@@ -17,6 +17,7 @@ Builds the engines everything else depends on.
 
 - [x] Monorepo, CI, Electron app shell, pure sim package, SQLite saves
 - [x] Engine structure in `packages/sim` with lint-enforced boundaries
+- [x] Multi-sport structure: shared engines + `SportModule` per sport (hockey only for now)
 - [x] Model plug-in points (`Models`): goal, development, valuation
 - [x] CBA ruleset as data (`sim/cba`): cap, contract rules, 84-game season
 - [ ] Data pipeline (`ml/`): play-by-play, stats, drafts, contracts, junior + European seasons

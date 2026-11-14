@@ -1,13 +1,17 @@
 /**
  * @gm/sim public API. Apps import from here only, never from engine internals.
  *
+ * Multi-sport: shared engines are sport-agnostic; each sport is a module in sports/
+ * (hockey today; basketball and football later) implementing SportModule.
+ *
  * Layers (an engine may import only from layers above it in this list, and only through
  * that engine's index.ts):
  *   core                     rng, money, ids, calendar, league state + reducer
- *   cba, players, people,    rules and pure building blocks
+ *   cba, players, people,    shared rules and pure building blocks
  *   finance
- *   game, value, league      simulation and decisions built on the above
- *   models, context,         wiring: swappable brains, rules, commands
+ *   value, league            shared decisions and league structure
+ *   sports/<sport>           sport-specific: positions, ratings, game sim, generator, rulesets
+ *   models, context,         wiring: sport + rules + swappable brains, commands
  *   create, commands
  */
 export * from './core';
@@ -15,10 +19,10 @@ export * from './cba';
 export * from './players';
 export * from './people';
 export * from './finance';
-export * from './game';
 export * from './value';
 export * from './league';
+export * from './sports';
 export { defaultModels, type Models } from './models';
-export { defaultContext, RULESETS, type SimContext } from './context';
+export { defaultContext, RULESETS, SPORTS, type SimContext } from './context';
 export { createLeague, START_SEASON } from './create';
 export { handleCommand } from './commands';

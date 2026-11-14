@@ -8,7 +8,6 @@ import type {
   TeamId,
 } from '@gm/shared';
 import { applyEvent, eventId, phaseOf, Rng, type LeagueState, type ScheduledGame } from './core';
-import { simGame, teamStrength, type TeamStrength } from './game';
 import { classifyTeams, computeStandings } from './league';
 import type { SimContext } from './context';
 
@@ -97,10 +96,11 @@ function advance(
   const cal = ctx.ruleset.season.calendar;
 
   // Precompute once per call: team strength and games by day.
-  const strength = new Map<TeamId, TeamStrength>();
+  const sport = ctx.sport;
+  const strength = new Map<TeamId, unknown>();
   const players = Object.values(state.players);
   for (const id of Object.keys(state.teams) as TeamId[]) {
-    strength.set(id, teamStrength(players.filter((p) => p.teamId === id)));
+    strength.set(id, sport.teamStrength(players.filter((p) => p.teamId === id)));
   }
   const byDay = new Map<number, ScheduledGame[]>();
   for (const g of state.schedule) {
@@ -115,16 +115,15 @@ function advance(
     const dayStart = events.length;
 
     for (const g of byDay.get(today.day) ?? []) {
-      const result = simGame(
+      const result = sport.simGame(
         {
           id: g.id as GameId,
           homeTeamId: g.homeTeamId,
           awayTeamId: g.awayTeamId,
-          home: strength.get(g.homeTeamId)!,
-          away: strength.get(g.awayTeamId)!,
+          home: strength.get(g.homeTeamId),
+          away: strength.get(g.awayTeamId),
         },
         rng,
-        ctx.models.goal,
       );
       emit(makeEvent(state, 'minor', [g.homeTeamId, g.awayTeamId], { kind: 'game.final', result }));
     }

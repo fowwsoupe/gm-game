@@ -1,7 +1,7 @@
 /**
- * Core domain types shared by every package.
- * Sport-agnostic where possible; sport-specific details live under a `sport` key
- * so NBA and NFL can be added later without rewriting the core.
+ * Core domain types shared by every sport. Nothing here is hockey-, basketball- or
+ * football-specific: positions and ratings are open shapes that each sport module types
+ * (see ./sports/hockey.ts). We start with the NHL only; NBA and NFL reuse everything here.
  */
 
 export type Sport = 'nhl' | 'nba' | 'nfl';
@@ -12,26 +12,6 @@ export type LeagueId = Brand<string, 'LeagueId'>;
 export type TeamId = Brand<string, 'TeamId'>;
 export type PlayerId = Brand<string, 'PlayerId'>;
 export type GameId = Brand<string, 'GameId'>;
-
-export type HockeyPosition = 'C' | 'LW' | 'RW' | 'D' | 'G';
-
-/** Ratings are 1–99. Kept flat and numeric so ML models can consume them directly. */
-export interface HockeySkaterRatings {
-  skating: number;
-  shooting: number;
-  passing: number;
-  puckHandling: number;
-  defense: number;
-  physical: number;
-  hockeyIq: number;
-}
-
-export interface HockeyGoalieRatings {
-  reflexes: number;
-  positioning: number;
-  reboundControl: number;
-  consistency: number;
-}
 
 export interface Contract {
   /** Cap hit in whole dollars. Integers only: never store money as floats. */
@@ -46,11 +26,15 @@ export interface Player {
   lastName: string;
   birthYear: number;
   teamId: TeamId | null;
-  position: HockeyPosition;
+  /** Sport-specific position code (hockey: 'C' | 'LW' | 'RW' | 'D' | 'G'). */
+  position: string;
   /** Hidden ceiling the player can develop towards. Not shown directly in the UI. */
   potential: number;
-  skater?: HockeySkaterRatings;
-  goalie?: HockeyGoalieRatings;
+  /**
+   * Hidden ratings, 1–99, flat and numeric so ML models can consume them directly.
+   * Which keys exist is defined by the sport (hockey: ./sports/hockey.ts).
+   */
+  ratings: Record<string, number>;
   contract?: Contract;
 }
 
@@ -63,6 +47,7 @@ export interface Team {
   userControlled: boolean;
 }
 
+/** Generic standings row. `otl` stays 0 in sports without overtime-loss points. */
 export interface StandingsRow {
   teamId: TeamId;
   gp: number;
@@ -70,18 +55,20 @@ export interface StandingsRow {
   l: number;
   otl: number;
   pts: number;
+  /** Points / goals for and against (whatever the sport scores). */
   gf: number;
   ga: number;
 }
 
+/** Result of any game in any sport. Sport-specific numbers go in `stats`. */
 export interface GameResult {
   id: GameId;
   homeTeamId: TeamId;
   awayTeamId: TeamId;
-  homeGoals: number;
-  awayGoals: number;
+  homeScore: number;
+  awayScore: number;
+  /** Decided after regulation (overtime, shootout, extra innings...). */
   overtime: boolean;
-  shootout: boolean;
-  homeShots: number;
-  awayShots: number;
+  /** Sport-specific box-score numbers, typed by the sport module (hockey: HockeyGameStats). */
+  stats: Record<string, number>;
 }

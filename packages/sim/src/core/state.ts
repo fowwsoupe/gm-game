@@ -3,6 +3,7 @@ import type {
   GameResult,
   LeagueEvent,
   Player,
+  Sport,
   Team,
   TeamId,
   TeamStatus,
@@ -23,6 +24,7 @@ export interface ScheduledGame {
 }
 
 export interface LeagueState {
+  sport: Sport;
   rulesetId: string;
   date: GameDate;
   /** Seeded RNG position, so the next sim continues exactly where the last stopped. */

@@ -1,6 +1,7 @@
 /**
- * Schema migrations, applied in order. NEVER edit a migration that has shipped:
- * players' save files already ran it. Add a new one instead.
+ * Schema migrations, applied in order. NEVER edit a migration once a public build has
+ * shipped: players' save files already ran it. Add a new one instead.
+ * (Pre-release, until the first public build, editing is OK; old dev saves are simply recreated.)
  * The save's current version is stored in SQLite's `user_version` pragma.
  */
 export const migrations: readonly string[] = [
@@ -27,7 +28,7 @@ export const migrations: readonly string[] = [
     birth_year INTEGER NOT NULL,
     position TEXT NOT NULL,
     potential INTEGER NOT NULL,
-    -- Ratings and contract as JSON keeps the schema stable while the rating model evolves.
+    -- Ratings (sport-specific keys) and contract as JSON keep the schema the same for every sport.
     ratings_json TEXT NOT NULL,
     contract_json TEXT
   );
@@ -40,12 +41,11 @@ export const migrations: readonly string[] = [
     home_team_id TEXT NOT NULL REFERENCES teams(id),
     away_team_id TEXT NOT NULL REFERENCES teams(id),
     played INTEGER NOT NULL DEFAULT 0,
-    home_goals INTEGER,
-    away_goals INTEGER,
+    home_score INTEGER,
+    away_score INTEGER,
     overtime INTEGER,
-    shootout INTEGER,
-    home_shots INTEGER,
-    away_shots INTEGER
+    -- Sport-specific box-score numbers (hockey: shots, shootout) as JSON.
+    stats_json TEXT
   );
   CREATE INDEX games_season_day ON games(season, day);
   `,

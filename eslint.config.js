@@ -13,7 +13,7 @@ const simPurity = [
 
 // Engines talk to each other only through their index.ts (their public API).
 const engineBoundary = {
-  group: ['../*/*', '!../*/index', '!../../core'],
+  group: ['../*/*', '!../*/index', '!../../*'],
   message: "Import another engine through its index (e.g. '../cba'), never its internal files",
 };
 

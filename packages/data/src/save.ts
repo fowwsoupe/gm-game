@@ -4,6 +4,7 @@ import type {
   Importance,
   LeagueEvent,
   Player,
+  Sport,
   Team,
   TeamId,
   TeamStatus,
@@ -112,13 +113,14 @@ export class SaveFile {
           p.birthYear,
           p.position,
           p.potential,
-          JSON.stringify(p.skater ?? p.goalie ?? {}),
+          JSON.stringify(p.ratings),
           p.contract ? JSON.stringify(p.contract) : null,
         );
       }
       for (const g of state.schedule)
         insertGame.run(g.id, g.date.season, g.date.day, g.homeTeamId, g.awayTeamId);
       this.writeClock(state);
+      this.setMeta('sport', state.sport);
       this.setMeta('rulesetId', state.rulesetId);
     })();
   }
@@ -143,6 +145,7 @@ export class SaveFile {
       awayTeamId: TeamId;
     }[];
     return {
+      sport: (this.getMeta('sport') ?? 'nhl') as Sport,
       rulesetId: this.getMeta('rulesetId') ?? 'nhl-2026',
       date: { season, day: Number(this.getMeta('day')) },
       rngState: Number(this.getMeta('rngState')),
@@ -170,8 +173,7 @@ export class SaveFile {
        VALUES (?, ?, ?, ?, ?, ?, ?)`,
     );
     const recordGame = this.db.prepare(
-      `UPDATE games SET played = 1, home_goals = ?, away_goals = ?, overtime = ?, shootout = ?, home_shots = ?, away_shots = ?
-       WHERE id = ?`,
+      `UPDATE games SET played = 1, home_score = ?, away_score = ?, overtime = ?, stats_json = ? WHERE id = ?`,
     );
     const setStatus = this.db.prepare('UPDATE teams SET status = ? WHERE id = ?');
     const setControl = this.db.prepare('UPDATE teams SET user_controlled = ? WHERE id = ?');
@@ -194,12 +196,10 @@ export class SaveFile {
           case 'game.final': {
             const r = e.result;
             recordGame.run(
-              r.homeGoals,
-              r.awayGoals,
+              r.homeScore,
+              r.awayScore,
               r.overtime ? 1 : 0,
-              r.shootout ? 1 : 0,
-              r.homeShots,
-              r.awayShots,
+              JSON.stringify(r.stats),
               r.id,
             );
             break;
@@ -266,7 +266,6 @@ export class SaveFile {
   listPlayers(): Player[] {
     const rows = this.db.prepare('SELECT * FROM players').all() as PlayerRow[];
     return rows.map((r) => {
-      const ratings = JSON.parse(r.ratings_json);
       const p: Player = {
         id: r.id as Player['id'],
         teamId: r.team_id as Player['teamId'],
@@ -275,9 +274,8 @@ export class SaveFile {
         birthYear: r.birth_year,
         position: r.position,
         potential: r.potential,
+        ratings: JSON.parse(r.ratings_json),
       };
-      if (r.position === 'G') p.goalie = ratings;
-      else p.skater = ratings;
       if (r.contract_json) p.contract = JSON.parse(r.contract_json);
       return p;
     });
@@ -286,14 +284,18 @@ export class SaveFile {
   playedResults(season: number): GameResult[] {
     const rows = this.db
       .prepare(
-        `SELECT id, home_team_id AS homeTeamId, away_team_id AS awayTeamId, home_goals AS homeGoals,
-                away_goals AS awayGoals, overtime, shootout, home_shots AS homeShots, away_shots AS awayShots
+        `SELECT id, home_team_id AS homeTeamId, away_team_id AS awayTeamId, home_score AS homeScore,
+                away_score AS awayScore, overtime, stats_json
          FROM games WHERE season = ? AND played = 1 ORDER BY day, rowid`,
       )
-      .all(season) as (Omit<GameResult, 'overtime' | 'shootout'> & {
+      .all(season) as (Omit<GameResult, 'overtime' | 'stats'> & {
       overtime: number;
-      shootout: number;
+      stats_json: string | null;
     })[];
-    return rows.map((r) => ({ ...r, overtime: r.overtime === 1, shootout: r.shootout === 1 }));
+    return rows.map(({ stats_json, ...r }) => ({
+      ...r,
+      overtime: r.overtime === 1,
+      stats: stats_json ? JSON.parse(stats_json) : {},
+    }));
   }
 }

@@ -1,5 +1,5 @@
 import type { HockeyPosition, Player, PlayerId, Team, TeamId } from '@gm/shared';
-import type { Rng } from '../core';
+import type { Rng } from '../../core';
 
 const FIRST = [
   'Alex',
@@ -126,13 +126,14 @@ export function generateFictionalLeague(
         birthYear: rng.int(1990, 2007),
         teamId: id,
         position,
+        ratings: {},
         potential: clamp(base + rng.int(0, 15)),
         contract: { capHit: rng.int(8, 100) * 100_000, expiresAfterSeason: 2027 + rng.int(0, 5) },
       };
       if (position === 'G') {
-        p.goalie = { reflexes: r(), positioning: r(), reboundControl: r(), consistency: r() };
+        p.ratings = { reflexes: r(), positioning: r(), reboundControl: r(), consistency: r() };
       } else {
-        p.skater = {
+        p.ratings = {
           skating: r(),
           shooting: r(),
           passing: r(),

@@ -49,7 +49,7 @@ describe('season sim', () => {
     const { state } = simSeason(3);
     const results = Object.values(state.results);
     expect(results.length).toBe(state.schedule.length);
-    for (const g of results) expect(g.homeGoals).not.toEqual(g.awayGoals);
+    for (const g of results) expect(g.homeScore).not.toEqual(g.awayScore);
   });
 
   it('gives each team the ruleset number of games', () => {
@@ -64,7 +64,7 @@ describe('season sim', () => {
   it('scoring lands in a realistic NHL range', () => {
     const results = Object.values(simSeason(11).state.results);
     const perTeam =
-      results.reduce((s, g) => s + g.homeGoals + g.awayGoals, 0) / (results.length * 2);
+      results.reduce((s, g) => s + g.homeScore + g.awayScore, 0) / (results.length * 2);
     expect(perTeam).toBeGreaterThan(2.5);
     expect(perTeam).toBeLessThan(3.8);
   });

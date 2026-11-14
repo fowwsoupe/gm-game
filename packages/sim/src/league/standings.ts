@@ -13,14 +13,14 @@ export function computeStandings(
     const home = rows.get(g.homeTeamId);
     const away = rows.get(g.awayTeamId);
     if (!home || !away) continue;
-    const homeWon = g.homeGoals > g.awayGoals;
+    const homeWon = g.homeScore > g.awayScore;
     const [winner, loser] = homeWon ? [home, away] : [away, home];
     home.gp++;
     away.gp++;
-    home.gf += g.homeGoals;
-    home.ga += g.awayGoals;
-    away.gf += g.awayGoals;
-    away.ga += g.homeGoals;
+    home.gf += g.homeScore;
+    home.ga += g.awayScore;
+    away.gf += g.awayScore;
+    away.ga += g.homeScore;
     winner.w++;
     winner.pts += points.win;
     if (g.overtime) {

@@ -23,13 +23,34 @@ Three ideas carry everything:
 2. **Events out.** Everything that happens is a `LeagueEvent` (`packages/shared/src/events.ts`).
    The sim returns events; one reducer, `applyEvent`, turns them into state changes. The news
    feed, Home "To do", history and multiplayer sync all read events.
-3. **Rules and models are data and plug-ins.** League rules live in a `Ruleset`
-   (`packages/sim/src/cba`); swappable brains (goal model, development, valuation) live in
-   `Models`. Both reach the sim through `SimContext`, never globals.
+3. **Sport, rules and models are plug-ins.** The sport is a `SportModule` (hockey today);
+   league rules live in a `Ruleset`; swappable brains (development, valuation, the sport's
+   game model) are interfaces with rules-based defaults. All reach the sim through
+   `SimContext`, never globals.
 
 Because the sim is seeded and state only changes through events, **any copy of the state
 that applies the same events ends up identical.** Tests check this. It is what makes
 multiplayer, replays and debugging work.
+
+## Multi-sport: shared engines, one module per sport
+
+We will ship NHL, then NBA, then NFL. **We are building the NHL only for now**, but the code
+is split so the other sports slot in without touching shared engines:
+
+- **Shared by every sport:** core, CBA math (`Ruleset` shape, contract checks), value,
+  people, finance, league (calendar, schedule, standings, team status), events and commands,
+  saves, and the UI shell and design system. Features built on these (trades, free agency,
+  cap sheet, news feed, owner layer...) work for any sport.
+- **Per sport** (`packages/sim/src/sports/<sport>/`): positions and rating keys, the game sim
+  and its tuning, the fictional league generator, default rulesets, sport-specific models
+  (hockey's `GoalModel`), and its balance-lab ranges. Each implements `SportModule`
+  (`sports/sport.ts`) and is registered in `context.ts`.
+- **Shared types stay neutral:** `Player.position` is a string, `Player.ratings` is a map of
+  rating keys, `GameResult` has `homeScore` / `awayScore` / `overtime` plus sport-specific
+  `stats`. Sport-specific types live in `packages/shared/src/sports/<sport>.ts`.
+
+Rule: if code only makes sense for one sport, it goes in that sport's folder. If two sports
+would need the same thing, it belongs in a shared engine.
 
 ## Packages
 
@@ -51,11 +72,12 @@ src/
   players/   percentiles, development model interface, (later) builds, injuries
   people/    personalities, priorities, (later) morale, chemistry
   finance/   team finances, (later) revenue, budgets
-  game/      game sim, team strength, GoalModel
   value/     PlayerValuator: per-team surplus value (can be negative)
-  league/    schedule, standings, team status (league pulse), league generation
-  models.ts  Models: every swappable brain + rules-based defaults
-  context.ts SimContext: ruleset + models
+  league/    schedule, standings, team status (league pulse)
+  sports/    SportModule interface + one folder per sport
+    hockey/  NHL: game sim, team strength, GoalModel, generator, NHL_2026 ruleset
+  models.ts  Models: shared swappable brains + rules-based defaults
+  context.ts SimContext: sport + ruleset + models; SPORTS and RULESETS registries
   create.ts  createLeague(seed, ctx)
   commands.ts handleCommand(state, command, actor, ctx) → events
   index.ts   the public API
@@ -80,7 +102,7 @@ through their `index.ts`** (`'../cba'`, never `'../cba/ruleset'`). Apps import o
 5. **Models behind interfaces.** ML models implement the same interface as the rules-based
    default (`GoalModel`, `DevelopmentModel`, `PlayerValuator`) and are swapped in `Models`.
    Check a new model in the balance lab against the default with fixed seeds first.
-6. **SQL only in `packages/data`.** Never edit a shipped migration; add a new one.
+6. **SQL only in `packages/data`.** Never edit a migration after the first public build; add a new one.
 7. **Money is integer dollars** (`dollars(5.5)` → 5_500_000). Never floats.
 8. **Community roster files are untrusted.** Always through `parseRosterFile()`.
 9. **The UI never touches game state.** It reads via `window.gm` queries and changes things
@@ -93,7 +115,7 @@ through their `index.ts`** (`'../cba'`, never `'../cba/ruleset'`). Apps import o
 ## How to add a feature (checklist)
 
 1. Shared contract: new types, event kinds and command kinds in `packages/shared`.
-2. Engine logic in the right `packages/sim/src/<engine>/`, exported from its `index.ts`, with tests.
+2. Engine logic in the right place: a shared engine if every sport needs it, else `sports/hockey/`. Export it from the folder's `index.ts`, with tests.
 3. `applyEvent` and `SaveFile.persist` handle the new events; add a migration if new columns/tables.
 4. A `handleCommand` case if players can trigger it.
 5. A query in `GmApi` if the UI needs to read new data; then the screen, from `ui/` components.

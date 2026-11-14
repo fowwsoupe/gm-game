@@ -1,4 +1,4 @@
-import type { Player } from '@gm/shared';
+import { isGoalie, type Player } from '@gm/shared';
 
 export interface TeamStrength {
   offense: number;
@@ -13,15 +13,29 @@ const avg = (xs: number[]) => (xs.length ? xs.reduce((a, b) => a + b, 0) / xs.le
  * this is one of the first places an ML model (trained in /ml) can replace hand-tuned weights.
  */
 export function teamStrength(players: readonly Player[]): TeamStrength {
+  const r = (p: Player, k: string) => p.ratings[k] ?? 50;
   const skaters = players
-    .filter((p) => p.position !== 'G' && p.skater)
-    .map((p) => p.skater!)
+    .filter((p) => !isGoalie(p.position))
+    .map((p) => ({
+      skating: r(p, 'skating'),
+      shooting: r(p, 'shooting'),
+      passing: r(p, 'passing'),
+      puckHandling: r(p, 'puckHandling'),
+      defense: r(p, 'defense'),
+      physical: r(p, 'physical'),
+      hockeyIq: r(p, 'hockeyIq'),
+    }))
     .sort((a, b) => b.shooting + b.passing - (a.shooting + a.passing));
   const top = skaters.slice(0, 18);
 
   const goalies = players
-    .filter((p) => p.position === 'G' && p.goalie)
-    .map((p) => p.goalie!)
+    .filter((p) => isGoalie(p.position))
+    .map((p) => ({
+      reflexes: r(p, 'reflexes'),
+      positioning: r(p, 'positioning'),
+      reboundControl: r(p, 'reboundControl'),
+      consistency: r(p, 'consistency'),
+    }))
     .sort((a, b) => b.reflexes + b.positioning - (a.reflexes + a.positioning));
   const starter = goalies[0];
 

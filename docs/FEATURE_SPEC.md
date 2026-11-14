@@ -4,7 +4,7 @@ Living copy of the team's feature spec. Phases and status live in [ROADMAP.md](R
 
 ## Vision and pillars
 
-A hockey GM game for Steam where the league feels alive, every decision has a visible consequence, and the AI thinks like a real front office. NHL first; NBA and NFL later on the same engines.
+A sports GM game for Steam where the league feels alive, every decision has a visible consequence, and the AI thinks like a real front office. **NHL, NBA and NFL**, starting with the **NHL only**. Each sport is its own module (game sim, positions, ratings, rules), while features (trades, contracts, free agency, draft, owner layer, news, UI) are shared and work the same way across sports.
 
 1. **A living league.** You always know who is contending, who is in trouble and who just made a move. Trade requests, disputes, injuries and slumps happen to every team, not only yours.
 2. **Smart, honest AI.** AI GMs value players per team, understand bad contracts, and explain their decisions. Harder difficulty means smarter AI, never cheating.

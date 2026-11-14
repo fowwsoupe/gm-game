@@ -1,5 +1,5 @@
 import { dollars } from '../../core';
-import type { Ruleset } from '../ruleset';
+import type { Ruleset } from '../../cba';
 
 /**
  * Default ruleset, modelled on the real league for the 2026-27 season.
@@ -11,6 +11,7 @@ import type { Ruleset } from '../ruleset';
  */
 export const NHL_2026: Ruleset = {
   id: 'nhl-2026',
+  sport: 'nhl',
   name: 'Modern rules (2026-27)',
   season: {
     gamesPerTeam: 84,

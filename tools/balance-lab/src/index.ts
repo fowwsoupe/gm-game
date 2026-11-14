@@ -1,5 +1,6 @@
 /**
  * Balance lab: simulates many seasons with no UI and reports league health.
+ * Checks below are for hockey (NHL); each sport will get its own set of healthy ranges.
  * Run before and after any change to the sim's numbers, and paste both reports in the PR.
  *
  *   pnpm lab                 # 20 seasons, default seeds
@@ -52,8 +53,8 @@ for (let i = 0; i < seasons; i++) {
 
 const ms = performance.now() - started;
 const games = all.length;
-const goals = all.reduce((s, g) => s + g.homeGoals + g.awayGoals, 0);
-const shots = all.reduce((s, g) => s + g.homeShots + g.awayShots, 0);
+const goals = all.reduce((s, g) => s + g.homeScore + g.awayScore, 0);
+const shots = all.reduce((s, g) => s + (g.stats.homeShots ?? 0) + (g.stats.awayShots ?? 0), 0);
 const avg = (xs: number[]) => xs.reduce((a, b) => a + b, 0) / xs.length;
 
 const checks: Check[] = [
@@ -62,7 +63,7 @@ const checks: Check[] = [
   { name: 'Save percentage', value: 1 - goals / shots, min: 0.895, max: 0.91 },
   {
     name: 'Home win %',
-    value: (100 * all.filter((g) => g.homeGoals > g.awayGoals).length) / games,
+    value: (100 * all.filter((g) => g.homeScore > g.awayScore).length) / games,
     min: 52,
     max: 56,
     unit: '%',
@@ -76,7 +77,7 @@ const checks: Check[] = [
   },
   {
     name: 'Shootout %',
-    value: (100 * all.filter((g) => g.shootout).length) / games,
+    value: (100 * all.filter((g) => g.stats.shootout === 1).length) / games,
     min: 6,
     max: 12,
     unit: '%',

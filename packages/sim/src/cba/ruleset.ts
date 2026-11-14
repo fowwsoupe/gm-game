@@ -1,3 +1,4 @@
+import type { Sport } from '@gm/shared';
 import type { CalendarConfig } from '../core';
 import type { Dollars } from '../core';
 
@@ -11,6 +12,8 @@ import type { Dollars } from '../core';
 export interface Ruleset {
   id: string;
   name: string;
+  /** Which sport these rules are for. */
+  sport: Sport;
 
   season: {
     gamesPerTeam: number;
@@ -19,6 +22,7 @@ export interface Ruleset {
     points: { win: number; overtimeLoss: number };
   };
 
+  /** TODO(nba/nfl): soft cap + luxury tax (NBA) and hard cap specifics (NFL) when those sports arrive. */
   cap: {
     upperLimit: Dollars;
     lowerLimit: Dollars;
