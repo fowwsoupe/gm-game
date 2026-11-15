@@ -4,9 +4,11 @@ import type { TeamStrength } from './strength';
 
 /** Knobs to tune league-wide scoring. Kept in one place so balance changes are easy to find. */
 export const HOCKEY_TUNING = {
-  leagueAvgGoalsPerTeam: 3.05,
-  leagueAvgShotsPerTeam: 30,
-  homeIceBoost: 1.04,
+  leagueAvgGoalsPerTeam: 2.82,
+  leagueAvgShotsPerTeam: 26.6,
+  /** The average starting goalie's rating: a team with this goalie gets no edge or penalty. */
+  leagueAvgGoaltending: 67,
+  homeIceBoost: 1.07,
   /** How strongly a rating gap moves expected goals. Higher = less parity. */
   ratingSensitivity: 0.012,
   overtimeGoalChance: 0.6,
@@ -26,7 +28,7 @@ export const rulesGoalModel: GoalModel = {
     const edge = (atk: TeamStrength, def: TeamStrength) =>
       Math.exp(
         t.ratingSensitivity * (atk.offense - def.defense) -
-          t.ratingSensitivity * (def.goaltending - 70),
+          t.ratingSensitivity * (def.goaltending - t.leagueAvgGoaltending),
       );
     return {
       home: t.leagueAvgGoalsPerTeam * edge(home, away) * t.homeIceBoost,
@@ -42,6 +44,9 @@ export interface MatchupInput {
   home: TeamStrength;
   away: TeamStrength;
   playoff?: boolean;
+  /** The team played yesterday: its backup goalie starts. */
+  homeBackToBack?: boolean;
+  awayBackToBack?: boolean;
 }
 
 export function simGame(
@@ -49,7 +54,12 @@ export function simGame(
   rng: Rng,
   model: GoalModel = rulesGoalModel,
 ): GameResult {
-  const xg = model.expectedGoals(input.home, input.away);
+  const tired = (s: TeamStrength, backToBack?: boolean): TeamStrength =>
+    backToBack && !input.playoff ? { ...s, goaltending: s.backupGoaltending } : s;
+  const xg = model.expectedGoals(
+    tired(input.home, input.homeBackToBack),
+    tired(input.away, input.awayBackToBack),
+  );
   let homeGoals = rng.poisson(xg.home);
   let awayGoals = rng.poisson(xg.away);
   let overtime = false;

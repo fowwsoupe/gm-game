@@ -12,9 +12,12 @@ export {
   HOCKEY_TUNING,
   HOCKEY_DEVELOPMENT,
   teamStrength,
+  autoLineup,
+  ICE_TIME,
   importHockeyRoster,
   exportHockeyRoster,
   type GoalModel,
   type MatchupInput,
   type TeamStrength,
+  type Lineup,
 } from './hockey';

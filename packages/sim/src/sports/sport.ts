@@ -68,6 +68,9 @@ export interface SportModule<Strength = unknown> {
       home: Strength;
       away: Strength;
       playoff?: boolean;
+      /** The team also played yesterday (hockey: its backup goalie starts). */
+      homeBackToBack?: boolean;
+      awayBackToBack?: boolean;
     },
     rng: Rng,
   ): GameResult;

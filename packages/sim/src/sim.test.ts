@@ -1,16 +1,21 @@
 import { describe, expect, it } from 'vitest';
-import type { Actor, LeagueEvent, TeamId } from '@gm/shared';
+import type { Actor, GameId, LeagueEvent, TeamId } from '@gm/shared';
 import {
   applyEvent,
+  autoLineup,
   bracketSeeds,
   computeStandings,
   createLeague,
   defaultContext,
   elcYears,
   handleCommand,
+  ICE_TIME,
   NHL_2026,
+  overall,
   percentileRank,
   Rng,
+  simGame,
+  teamStrength,
   validateContract,
   dollars,
   type LeagueState,
@@ -233,5 +238,72 @@ describe('players', () => {
   it('percentile ranks', () => {
     expect(percentileRank(90, [10, 20, 30, 90])).toBe(88);
     expect(percentileRank(5, [10, 20])).toBe(0);
+  });
+});
+
+describe('lines and goalies', () => {
+  const roster = () => {
+    const state = createLeague(4, ctx);
+    return Object.values(state.players).filter((p) => p.teamId === 't1');
+  };
+
+  it('puts the best players of each position together on the top line', () => {
+    const lineup = autoLineup(roster());
+    const [first, second] = lineup.forwards;
+    expect(first!.map((p) => p.position)).toEqual(['C', 'LW', 'RW']);
+    expect(overall(first![0]!)).toBeGreaterThanOrEqual(overall(second![0]!));
+    expect(lineup.defense).toHaveLength(3);
+    expect(lineup.goalies.length).toBeGreaterThanOrEqual(2);
+  });
+
+  it('a small boost counts in proportion to the ice time of the line it is on', () => {
+    const players = roster();
+    const lineup = autoLineup(players);
+    const base = teamStrength(players).offense;
+    const gain = (line: (typeof players)[number][]) => {
+      const ids = new Set(line.map((p) => p.id));
+      const boosted = players.map((p) =>
+        ids.has(p.id)
+          ? {
+              ...p,
+              ratings: Object.fromEntries(Object.entries(p.ratings).map(([k, v]) => [k, v + 0.01])),
+            }
+          : p,
+      );
+      return teamStrength(boosted).offense - base;
+    };
+    const [top, second, , fourth] = ICE_TIME.forwardLines;
+    expect(gain(lineup.forwards[0]!) / gain(lineup.forwards[1]!)).toBeCloseTo(top / second, 3);
+    expect(gain(lineup.forwards[0]!) / gain(lineup.forwards[3]!)).toBeCloseTo(top / fourth, 3);
+    for (const weights of [ICE_TIME.forwardLines, ICE_TIME.defensePairs]) {
+      expect(weights.reduce((a, b) => a + b, 0)).toBeCloseTo(1);
+    }
+  });
+
+  it('the backup goalie starts the second night of a back-to-back, but never in the playoffs', () => {
+    const strength = teamStrength(roster());
+    expect(strength.goaltending).not.toBe(strength.backupGoaltending);
+    const goalieUsed = (input: { homeBackToBack?: boolean; playoff?: boolean }) => {
+      let used = 0;
+      const model = {
+        expectedGoals: (home: typeof strength) => ((used = home.goaltending), { home: 1, away: 1 }),
+      };
+      simGame(
+        {
+          id: 'g' as GameId,
+          homeTeamId: 't1' as TeamId,
+          awayTeamId: 't2' as TeamId,
+          home: strength,
+          away: strength,
+          ...input,
+        },
+        new Rng(1),
+        model,
+      );
+      return used;
+    };
+    expect(goalieUsed({})).toBe(strength.goaltending);
+    expect(goalieUsed({ homeBackToBack: true })).toBe(strength.backupGoaltending);
+    expect(goalieUsed({ homeBackToBack: true, playoff: true })).toBe(strength.goaltending);
   });
 });
