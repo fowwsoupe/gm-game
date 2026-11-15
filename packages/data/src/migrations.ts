@@ -100,4 +100,8 @@ export const migrations: readonly string[] = [
   ALTER TABLE teams ADD COLUMN conference TEXT;
   ALTER TABLE teams ADD COLUMN division TEXT;
   `,
+  // 7: box score (player lines and shots) of each played game, as JSON.
+  `
+  ALTER TABLE games ADD COLUMN box_json TEXT;
+  `,
 ];

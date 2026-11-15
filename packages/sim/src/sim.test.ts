@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest';
-import type { Actor, GameId, LeagueEvent, TeamId } from '@gm/shared';
+import type { Actor, GameId, HockeyBoxScore, LeagueEvent, TeamId } from '@gm/shared';
 import {
   applyEvent,
   autoLineup,
@@ -305,5 +305,50 @@ describe('lines and goalies', () => {
     expect(goalieUsed({})).toBe(strength.goaltending);
     expect(goalieUsed({ homeBackToBack: true })).toBe(strength.backupGoaltending);
     expect(goalieUsed({ homeBackToBack: true, playoff: true })).toBe(strength.goaltending);
+  });
+});
+
+describe('box scores', () => {
+  const { state } = simSeason(21);
+  const games = Object.values(state.results).filter((g) => g.box);
+
+  it('every game has one, and it adds up to the score', () => {
+    expect(games.length).toBe(Object.keys(state.results).length);
+    for (const g of games) {
+      const box = g.box as HockeyBoxScore;
+      const shootout = g.stats.shootout === 1;
+      for (const [key, goals, against] of [
+        ['home', g.homeScore, g.awayScore],
+        ['away', g.awayScore, g.homeScore],
+      ] as const) {
+        const side = box[key];
+        const credited = goals - (shootout && goals > against ? 1 : 0);
+        if (side.skaters.length === 0) continue;
+        expect(side.skaters.reduce((n, s) => n + s.goals, 0)).toBe(credited);
+        expect(side.skaters.reduce((n, s) => n + s.toi, 0)).toBeCloseTo(300, 0);
+        const goalie = box[key === 'home' ? 'away' : 'home'].goalie;
+        expect(goalie.shotsAgainst - goalie.saves).toBe(credited);
+      }
+      expect(box.shots.length).toBe((g.stats.homeShots ?? 0) + (g.stats.awayShots ?? 0));
+      expect(box.shots.filter((s) => s[5] === 1).length).toBe(
+        g.homeScore + g.awayScore - (shootout ? 1 : 0),
+      );
+      for (const side of [box.home, box.away]) {
+        for (const p of side.skaters) expect(p.assists).toBeGreaterThanOrEqual(0);
+      }
+    }
+  });
+
+  it('plus-minus nets to zero, assists never exceed two a goal, nobody assists his own goal', () => {
+    for (const g of games) {
+      const box = g.box as HockeyBoxScore;
+      const all = [...box.home.skaters, ...box.away.skaters];
+      expect(all.reduce((n, p) => n + p.plusMinus, 0)).toBe(0);
+      for (const shot of box.shots.filter((s) => s[5] === 1)) {
+        expect(shot[6]).not.toBe(shot[4]);
+        expect(shot[7]).not.toBe(shot[4]);
+        if (shot[7] >= 0) expect(shot[6]).toBeGreaterThanOrEqual(0);
+      }
+    }
   });
 });

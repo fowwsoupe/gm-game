@@ -9,6 +9,8 @@ export interface TeamStrength {
   /** The starting goalie's rating, and the backup's (who plays the second night of a back-to-back). */
   goaltending: number;
   backupGoaltending: number;
+  /** The depth chart these numbers come from (also who is credited in the box score). */
+  lineup: Lineup;
 }
 
 /** A depth chart: forward lines (C, LW, RW), defence pairs, goalies. Best first. */
@@ -89,7 +91,8 @@ function weighted(
  * play more. One of the places an ML model (trained in /ml) can replace hand-tuned weights.
  */
 export function teamStrength(players: readonly Player[]): TeamStrength {
-  const { forwards, defense, goalies } = autoLineup(players);
+  const lineup = autoLineup(players);
+  const { forwards, defense, goalies } = lineup;
   const f = ICE_TIME.forwardLines;
   const d = ICE_TIME.defensePairs;
   const mix = (w: { forwards: number; defense: number }, skill: (p: Player) => number) =>
@@ -99,5 +102,6 @@ export function teamStrength(players: readonly Player[]): TeamStrength {
     defense: mix(UNIT_WEIGHT.defense, defence),
     goaltending: goalies[0] ? goalieScore(goalies[0]) : 40,
     backupGoaltending: goalies[1] ? goalieScore(goalies[1]) : 40,
+    lineup,
   };
 }

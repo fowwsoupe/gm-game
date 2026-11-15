@@ -76,6 +76,8 @@ export interface GameResult {
   overtime: boolean;
   /** Sport-specific box-score numbers, typed by the sport module (hockey: HockeyGameStats). */
   stats: Record<string, number>;
+  /** Sport-specific box score with player lines (hockey: HockeyBoxScore). */
+  box?: unknown;
 }
 
 export interface PlayoffSeries {

@@ -208,7 +208,7 @@ export class SaveFile {
        VALUES (?, ?, ?, ?, ?, ?, ?)`,
     );
     const recordGame = this.db.prepare(
-      `UPDATE games SET played = 1, home_score = ?, away_score = ?, overtime = ?, stats_json = ? WHERE id = ?`,
+      `UPDATE games SET played = 1, home_score = ?, away_score = ?, overtime = ?, stats_json = ?, box_json = ? WHERE id = ?`,
     );
     const insertPlayoffGame = this.db.prepare(
       `INSERT OR IGNORE INTO games (id, season, day, home_team_id, away_team_id, playoff_series_id)
@@ -254,7 +254,10 @@ export class SaveFile {
             e.kind,
             e.importance,
             JSON.stringify(e.teamIds),
-            JSON.stringify(e),
+            // The box score lives in the games table; keeping it here too would double the save.
+            JSON.stringify(
+              e.kind === 'game.final' ? { ...e, result: { ...e.result, box: undefined } } : e,
+            ),
           );
         }
         switch (e.kind) {
@@ -275,6 +278,7 @@ export class SaveFile {
               r.awayScore,
               r.overtime ? 1 : 0,
               JSON.stringify(r.stats),
+              r.box ? JSON.stringify(r.box) : null,
               r.id,
             );
             break;
@@ -456,18 +460,20 @@ export class SaveFile {
     const rows = this.db
       .prepare(
         `SELECT id, home_team_id AS homeTeamId, away_team_id AS awayTeamId, home_score AS homeScore,
-                away_score AS awayScore, overtime, stats_json, playoff_series_id
+                away_score AS awayScore, overtime, stats_json, box_json, playoff_series_id
          FROM games WHERE season = ? AND played = 1 ORDER BY day, rowid`,
       )
       .all(season) as (Omit<GameResult, 'overtime' | 'stats'> & {
       overtime: number;
       stats_json: string | null;
+      box_json: string | null;
       playoff_series_id: string | null;
     })[];
-    return rows.map(({ stats_json, playoff_series_id, ...r }) => ({
+    return rows.map(({ stats_json, box_json, playoff_series_id, ...r }) => ({
       ...r,
       overtime: r.overtime === 1,
       stats: stats_json ? JSON.parse(stats_json) : {},
+      ...(box_json ? { box: JSON.parse(box_json) } : {}),
       ...(playoff_series_id ? { playoffSeriesId: playoff_series_id } : {}),
     }));
   }
