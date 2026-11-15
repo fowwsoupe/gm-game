@@ -36,6 +36,8 @@ export interface Player {
    */
   ratings: Record<string, number>;
   contract?: Contract;
+  /** Injured: first day (of the current season) he can play again. Absent = healthy. Heals over the summer. */
+  injuredUntil?: number;
 }
 
 export interface Team {
@@ -78,6 +80,11 @@ export interface GameResult {
   stats: Record<string, number>;
   /** Sport-specific box score with player lines (hockey: HockeyBoxScore). */
   box?: unknown;
+  /**
+   * Players hurt in this game and how many days they miss. Not stored with the game: the engine
+   * turns it into `player.injured` events and strips it.
+   */
+  injuries?: { playerId: PlayerId; days: number }[];
 }
 
 export interface PlayoffSeries {

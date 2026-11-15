@@ -40,13 +40,20 @@ const byRating = (a: Player, b: Player) => overall(b) - overall(a) || a.id.local
 /**
  * The lineup a coach would pick: the best centre, left wing and right wing together on line 1,
  * the next best on line 2, and so on; defence in pairs by rating; goalies by rating.
- * TODO(feature): user-set lines, injuries, chemistry, line matching.
+ * Injured players are left out by the caller (the engine passes only healthy players).
+ * TODO(feature): user-set lines, chemistry, line matching.
  */
 export function autoLineup(players: readonly Player[]): Lineup {
   const at = (position: string) => players.filter((p) => p.position === position).sort(byRating);
   const [c, lw, rw, d] = [at('C'), at('LW'), at('RW'), at('D')];
+  // A line short of a centre or winger (injuries) takes the best spare forward of any position.
+  const spares = [c, lw, rw]
+    .flatMap((list) => list.slice(ICE_TIME.forwardLines.length))
+    .sort(byRating);
   const lines = ICE_TIME.forwardLines.map((_, i) =>
-    [c[i], lw[i], rw[i]].filter((p) => p !== undefined),
+    [c[i] ?? spares.shift(), lw[i] ?? spares.shift(), rw[i] ?? spares.shift()].filter(
+      (p) => p !== undefined,
+    ),
   );
   const pairs = ICE_TIME.defensePairs.map((_, i) =>
     [d[2 * i], d[2 * i + 1]].filter((p) => p !== undefined),

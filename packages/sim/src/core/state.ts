@@ -86,6 +86,12 @@ export function applyEvent(state: LeagueState, event: LeagueEvent): void {
         p.potential = c.potential;
       }
       return;
+    case 'player.injured': {
+      const p = state.players[event.playerId];
+      if (!p) throw new Error(`unknown player ${event.playerId}`);
+      p.injuredUntil = event.until;
+      return;
+    }
     case 'player.retired':
       delete state.players[event.playerId];
       return;
@@ -111,6 +117,7 @@ export function applyEvent(state: LeagueState, event: LeagueEvent): void {
       state.rngState = event.rngState;
       state.schedule = event.schedule.map((g) => ({ ...g, date: { ...g.date } }));
       state.results = {};
+      for (const p of Object.values(state.players)) delete p.injuredUntil;
       state.playoffSeries = {};
       state.championTeamId = null;
       return;

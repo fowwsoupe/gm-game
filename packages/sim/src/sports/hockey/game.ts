@@ -104,7 +104,7 @@ export function simGame(
     awayShots: shots(awayGoals, xg.away),
     shootout: shootout ? 1 : 0,
   };
-  const box = makeBoxScore(
+  const { box, injuries } = makeBoxScore(
     {
       home: input.home,
       away: input.away,
@@ -125,5 +125,6 @@ export function simGame(
     overtime,
     stats,
     box,
+    ...(injuries.length ? { injuries } : {}),
   };
 }

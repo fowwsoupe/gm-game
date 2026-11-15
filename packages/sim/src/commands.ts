@@ -1,4 +1,13 @@
-import type { Actor, Command, CommandResult, GameId, LeagueEvent, TeamId } from '@gm/shared';
+import type {
+  Actor,
+  Command,
+  CommandResult,
+  GameId,
+  GameResult,
+  LeagueEvent,
+  Player,
+  TeamId,
+} from '@gm/shared';
 import {
   applyEvent,
   emitter,
@@ -82,13 +91,46 @@ function advance(
   const rng = new Rng(state.rngState);
   const cal = ctx.ruleset.season.calendar;
 
-  // Precompute once per call: team strength and games by day.
+  // Rosters once per call; a team's strength is rebuilt only when its set of injured players changes.
   const sport = ctx.sport;
-  const strength = new Map<TeamId, unknown>();
-  const players = Object.values(state.players);
-  for (const id of Object.keys(state.teams) as TeamId[]) {
-    strength.set(id, sport.teamStrength(players.filter((p) => p.teamId === id)));
+  const rosters = new Map<TeamId, Player[]>();
+  for (const p of Object.values(state.players)) {
+    if (p.teamId) rosters.set(p.teamId, [...(rosters.get(p.teamId) ?? []), p]);
   }
+  const strengths = new Map<TeamId, { out: string; strength: unknown }>();
+  const strengthOf = (team: TeamId, day: number) => {
+    const roster = rosters.get(team) ?? [];
+    const hurt = roster.filter((p) => (p.injuredUntil ?? 0) > day);
+    const out = hurt.map((p) => p.id).join();
+    let cached = strengths.get(team);
+    if (!cached || cached.out !== out) {
+      const healthy = hurt.length ? roster.filter((p) => !hurt.includes(p)) : roster;
+      cached = { out, strength: sport.teamStrength(healthy) };
+      strengths.set(team, cached);
+    }
+    return cached.strength;
+  };
+  /** Records a finished game and the injuries it caused (the injuries are not kept on the result). */
+  const finishGame = (result: GameResult, day: number) => {
+    const { injuries = [], ...game } = result;
+    emit(
+      makeEvent(state, 'minor', [game.homeTeamId, game.awayTeamId], {
+        kind: 'game.final',
+        result: game,
+      }),
+    );
+    for (const { playerId, days } of injuries) {
+      const teamId = state.players[playerId]?.teamId;
+      emit(
+        makeEvent(state, 'notable', teamId ? [teamId] : [], {
+          kind: 'player.injured',
+          playerId,
+          days,
+          until: day + 1 + days,
+        }),
+      );
+    }
+  };
   // Who plays on which day, so the second night of a back-to-back is known.
   const playing = new Map<number, Set<TeamId>>();
   for (const g of state.schedule) {
@@ -115,14 +157,14 @@ function advance(
           id: g.id as GameId,
           homeTeamId: g.homeTeamId,
           awayTeamId: g.awayTeamId,
-          home: strength.get(g.homeTeamId),
-          away: strength.get(g.awayTeamId),
+          home: strengthOf(g.homeTeamId, today.day),
+          away: strengthOf(g.awayTeamId, today.day),
           homeBackToBack: backToBack(g.homeTeamId, today.day),
           awayBackToBack: backToBack(g.awayTeamId, today.day),
         },
         rng,
       );
-      emit(makeEvent(state, 'minor', [g.homeTeamId, g.awayTeamId], { kind: 'game.final', result }));
+      finishGame(result, today.day);
     }
 
     if (phaseOf(cal, today) === 'playoffs' && !state.championTeamId) {
@@ -140,14 +182,14 @@ function advance(
             id: `p${today.season}_${series.id}_${gameIndex + 1}` as GameId,
             homeTeamId,
             awayTeamId,
-            home: strength.get(homeTeamId),
-            away: strength.get(awayTeamId),
+            home: strengthOf(homeTeamId, today.day),
+            away: strengthOf(awayTeamId, today.day),
             playoff: true,
           },
           rng,
         );
         result.playoffSeriesId = series.id;
-        emit(makeEvent(state, 'minor', [homeTeamId, awayTeamId], { kind: 'game.final', result }));
+        finishGame(result, today.day);
         if (series.higherWins === winsNeeded || series.lowerWins === winsNeeded) {
           const winnerTeamId =
             series.higherWins === winsNeeded ? series.higherTeamId : series.lowerTeamId;
