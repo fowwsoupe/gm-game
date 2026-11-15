@@ -1,4 +1,4 @@
-import { useAwards, useTeams } from '@/lib/queries';
+import { useAwards, useRecords, useTeams } from '@/lib/queries';
 import { useT, type MessageKey } from '@/i18n';
 import { Card } from '@/ui';
 
@@ -7,6 +7,7 @@ export function History() {
   const t = useT();
   const { data: awards = [] } = useAwards();
   const { data: teams = [] } = useTeams();
+  const { data: records = [] } = useRecords();
   const teamName = (id: string) => {
     const team = teams.find((x) => x.id === id);
     return team ? `${team.city} ${team.name}` : id;
@@ -16,6 +17,19 @@ export function History() {
   const seasons = [...new Set(awards.map((a) => a.season))];
   return (
     <div className="grid max-w-4xl gap-4 md:grid-cols-2">
+      <Card title={t('history.records')}>
+        <ul className="space-y-1 text-sm">
+          {records.map((r) => (
+            <li key={r.key} className="flex justify-between gap-4">
+              <span className="text-muted">{t(`record.${r.key}` as MessageKey)}</span>
+              <span>
+                {r.value} · {teamName(r.teamId)}
+                {r.season ? ` (${r.season})` : ''}
+              </span>
+            </li>
+          ))}
+        </ul>
+      </Card>
       {seasons.map((season) => (
         <Card key={season} title={t('history.season', { season })}>
           <ul className="space-y-1 text-sm">

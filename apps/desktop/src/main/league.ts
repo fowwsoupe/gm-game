@@ -8,6 +8,7 @@ import {
   computeStandings,
   createLeague,
   defaultContext,
+  teamRecords,
   type LeagueState,
 } from '@gm/sim';
 import type { Actor, Command, CommandResult, Importance, LeagueEvent, TeamId } from '@gm/shared';
@@ -91,6 +92,25 @@ export class LeagueService {
 
   awards() {
     return this.open().save.listAwards();
+  }
+
+  records() {
+    const { save, state } = this.open();
+    const points = defaultContext(state.rulesetId).ruleset.season.points;
+    const teamIds = Object.keys(state.teams) as TeamId[];
+    const seasons = save.finishedSeasons().map((season) => ({
+      season,
+      rows: computeStandings(
+        teamIds,
+        save.playedResults(season).filter((g) => !g.playoffSeriesId),
+        points,
+      ),
+    }));
+    const champions = save
+      .listAwards()
+      .filter((a) => a.award === 'champion')
+      .map((a) => a.teamId);
+    return teamRecords(seasons, champions);
   }
 
   feed(limit: number, minImportance?: Importance): LeagueEvent[] {

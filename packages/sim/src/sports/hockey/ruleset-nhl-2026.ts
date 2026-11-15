@@ -33,7 +33,7 @@ export const NHL_2026: Ruleset = {
     maxPlayerPctOfUpper: 20,
     minSalary: dollars(0.85),
     offseasonOveragePct: 10,
-    playoffCap: true,
+    playoffCap: { skaters: 18, goalies: 2 },
   },
   contracts: {
     maxYearsResign: 7,

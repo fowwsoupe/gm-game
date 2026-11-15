@@ -444,6 +444,14 @@ export class SaveFile {
     });
   }
 
+  /** Seasons that have a champion, oldest first. */
+  finishedSeasons(): number[] {
+    const rows = this.db
+      .prepare("SELECT season FROM awards WHERE award = 'champion' ORDER BY season")
+      .all() as { season: number }[];
+    return rows.map((r) => r.season);
+  }
+
   playedResults(season: number): GameResult[] {
     const rows = this.db
       .prepare(

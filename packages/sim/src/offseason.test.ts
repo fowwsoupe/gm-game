@@ -7,6 +7,8 @@ import {
   defaultContext,
   elcYears,
   handleCommand,
+  playoffCapBreaches,
+  teamRecords,
   validateContract,
   type LeagueState,
 } from './index';
@@ -34,6 +36,7 @@ function playSeasonAndRollOver(state: LeagueState) {
 }
 
 function checkLeagueIsLegal(state: LeagueState) {
+  expect(playoffCapBreaches(Object.values(state.players), ruleset)).toEqual([]);
   for (const id of Object.keys(state.teams) as TeamId[]) {
     const roster = Object.values(state.players).filter((p) => p.teamId === id);
     const payroll = roster.reduce((s, p) => s + (p.contract?.capHit ?? 0), 0);
@@ -195,5 +198,39 @@ describe('offseason steps', () => {
           Object.values(before[p.id]!.ratings).reduce((a, b) => a + b, 0),
     );
     expect(improved.length).toBeGreaterThan(0);
+  });
+});
+
+describe('playoff cap', () => {
+  it('flags a team whose best 18 skaters and 2 goalies cost more than the cap', () => {
+    const state = createLeague(3, ctx);
+    const players = Object.values(state.players);
+    expect(playoffCapBreaches(players, ruleset)).toEqual([]);
+    const victim = players.find((p) => p.teamId === 't0' && p.position !== 'G')!;
+    victim.contract = { ...victim.contract!, capHit: ruleset.cap.upperLimit + 1 };
+    expect(playoffCapBreaches(players, ruleset)).toEqual(['t0']);
+    expect(
+      playoffCapBreaches(players, { ...ruleset, cap: { ...ruleset.cap, playoffCap: null } }),
+    ).toEqual([]);
+  });
+});
+
+describe('records', () => {
+  it('picks the best team seasons and the most titles', () => {
+    const row = (teamId: string, pts: number, w: number, gf: number, ga: number) =>
+      ({ teamId, gp: 84, w, l: 0, otl: 0, pts, gf, ga }) as never;
+    const records = teamRecords(
+      [
+        { season: 2027, rows: [row('a', 100, 45, 250, 200), row('b', 90, 40, 260, 180)] },
+        { season: 2028, rows: [row('a', 100, 50, 240, 180), row('b', 80, 35, 200, 210)] },
+      ],
+      ['a', 'b', 'a'] as never,
+    );
+    const by = Object.fromEntries(records.map((r) => [r.key, r]));
+    expect(by.points).toMatchObject({ teamId: 'a', season: 2027, value: 100 }); // tie: earliest
+    expect(by.wins).toMatchObject({ teamId: 'a', season: 2028, value: 50 });
+    expect(by.goalsFor).toMatchObject({ teamId: 'b', season: 2027, value: 260 });
+    expect(by.goalsAgainst).toMatchObject({ teamId: 'b', season: 2027, value: 180 }); // tie: earliest
+    expect(by.titles).toMatchObject({ teamId: 'a', value: 2 });
   });
 });

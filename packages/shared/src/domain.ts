@@ -100,6 +100,15 @@ export interface AwardEntry {
   playerName?: string;
 }
 
+/** One league record: best (or most) of something, by a team in one season, or all-time for titles. */
+export interface RecordEntry {
+  key: 'points' | 'wins' | 'goalsFor' | 'goalsAgainst' | 'titles';
+  teamId: TeamId;
+  /** Absent for all-time records (titles). */
+  season?: number;
+  value: number;
+}
+
 /** One scheduled regular-season game. */
 export interface ScheduledGame {
   id: string;

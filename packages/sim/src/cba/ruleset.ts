@@ -39,8 +39,8 @@ export interface Ruleset {
     minSalary: Dollars;
     /** Allowed overage in the offseason, as % of the upper limit. */
     offseasonOveragePct: number;
-    /** Whether the cap also applies to the playoff roster. */
-    playoffCap: boolean;
+    /** The playoff cap: a team's best N skaters and goalies must fit under the upper limit. Null = no playoff cap. */
+    playoffCap: { skaters: number; goalies: number } | null;
   };
 
   contracts: {

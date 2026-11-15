@@ -18,6 +18,7 @@ import {
   defaultContext,
   handleCommand,
   overall,
+  playoffCapBreaches,
   rulesGoalModel,
   teamStrength,
   type LeagueState,
@@ -99,6 +100,7 @@ let payrollShare = 0;
 let payrollSamples = 0;
 let teamsOverCap = 0;
 let teamsUnderMinimum = 0;
+let teamsOverPlayoffCap = 0;
 let maxPool = 0;
 for (let l = 0; l < leagues; l++) {
   const state = createLeague(firstSeed + l, ctx);
@@ -115,6 +117,7 @@ for (let l = 0; l < leagues; l++) {
     titles.set(state.championTeamId!, (titles.get(state.championTeamId!) ?? 0) + 1);
     const rolled = handleCommand(state, { kind: 'season.rollover' }, actor, ctx);
     if (!rolled.ok) throw new Error(rolled.error.message);
+    teamsOverPlayoffCap += playoffCapBreaches(Object.values(state.players), ctx.ruleset).length;
     maxDrift = Math.max(maxDrift, Math.abs(meanOverall(state) - startRating));
     for (const id of Object.keys(state.teams)) {
       const roster = rosterOf(state, id);
@@ -184,6 +187,7 @@ const checks: Check[] = [
     unit: '%',
   },
   { name: 'Teams over the cap', value: teamsOverCap, min: 0, max: 0 },
+  { name: 'Teams over the playoff cap', value: teamsOverPlayoffCap, min: 0, max: 0 },
   { name: 'Teams below roster minimum', value: teamsUnderMinimum, min: 0, max: 0 },
   { name: 'Free-agent pool, largest (unverified)', value: maxPool, min: 0, max: 150 },
 ];

@@ -1,5 +1,12 @@
-import type { PlayoffSeries, StandingsRow, TeamId } from '@gm/shared';
+import {
+  isGoalie,
+  type Player,
+  type PlayoffSeries,
+  type StandingsRow,
+  type TeamId,
+} from '@gm/shared';
 import type { Ruleset } from '../cba';
+import { overall } from '../players';
 
 /** A fixed bracket: adjacent slots meet, so the top two seeds cannot meet early. */
 export function bracketSeeds(teamCount: number): number[] {
@@ -72,4 +79,32 @@ export function nextRound(won: readonly PlayoffSeries[]): PlayoffSeries[] {
     const season = Number(a.id.split('_')[0]!.slice(1));
     return makeSeries(season, a.round + 1, i, seedA, a.winnerTeamId!, seedB, b.winnerTeamId!);
   });
+}
+
+/**
+ * Teams that break the playoff cap: the best skaters and goalies (by rating, as the lineup
+ * would dress them) cost more in cap hits than the upper limit. Nobody can today, since the
+ * whole roster must fit under the cap; this guards the day in-season overage or retention exists.
+ * TODO(M5): the consequence (a compliance warning, forced moves) once the cap sheet exists.
+ */
+export function playoffCapBreaches(players: readonly Player[], ruleset: Ruleset): TeamId[] {
+  const rule = ruleset.cap.playoffCap;
+  if (!rule) return [];
+  const byTeam = new Map<TeamId, Player[]>();
+  for (const p of players) {
+    if (p.teamId) byTeam.set(p.teamId, [...(byTeam.get(p.teamId) ?? []), p]);
+  }
+  const cost = (roster: Player[], goalie: boolean, n: number) =>
+    roster
+      .filter((p) => isGoalie(p.position) === goalie)
+      .sort((a, b) => overall(b) - overall(a))
+      .slice(0, n)
+      .reduce((sum, p) => sum + (p.contract?.capHit ?? 0), 0);
+  return [...byTeam]
+    .filter(
+      ([, roster]) =>
+        cost(roster, false, rule.skaters) + cost(roster, true, rule.goalies) >
+        ruleset.cap.upperLimit,
+    )
+    .map(([id]) => id);
 }
