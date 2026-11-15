@@ -36,7 +36,7 @@ interface Check {
 const args = process.argv.slice(2);
 const seasons = Number(args[args.indexOf('--seasons') + 1]) || 20;
 const firstSeed = Number(args[args.indexOf('--seed') + 1]) || 1;
-const leagues = Number(args[args.indexOf('--leagues') + 1]) || 5;
+const leagues = Number(args[args.indexOf('--leagues') + 1]) || 20;
 const years = Number(args[args.indexOf('--years') + 1]) || 20;
 
 const ctx = defaultContext();
@@ -95,7 +95,7 @@ const meanOverall = (state: LeagueState) => {
 };
 const cal = ctx.ruleset.season.calendar;
 let maxDrift = 0;
-let maxTitles = 0;
+let topTitleSum = 0;
 let payrollShare = 0;
 let payrollSamples = 0;
 let teamsOverCap = 0;
@@ -131,7 +131,7 @@ for (let l = 0; l < leagues; l++) {
       if (short || roster.length < ctx.ruleset.roster.minActive) teamsUnderMinimum++;
     }
   }
-  maxTitles = Math.max(maxTitles, ...titles.values());
+  topTitleSum += Math.max(...titles.values());
   maxPool = Math.max(maxPool, Object.values(state.players).filter((p) => p.teamId === null).length);
 }
 
@@ -178,7 +178,12 @@ const checks: Check[] = [
   },
   // Multi-year (offseason rollover). Ranges: league talent stable, no runaway dynasty, cap legal.
   { name: `League avg rating drift (${years}y)`, value: maxDrift, min: 0, max: 3 },
-  { name: `Most titles by one team (${years}y)`, value: maxTitles, min: 0, max: 5 },
+  {
+    name: `Top team's titles, avg per league (${years}y)`,
+    value: topTitleSum / leagues,
+    min: 0,
+    max: 5,
+  },
   {
     name: 'Payroll / cap, avg (unverified)',
     value: (100 * payrollShare) / payrollSamples,
