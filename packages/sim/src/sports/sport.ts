@@ -74,6 +74,8 @@ export interface SportModule<Strength = unknown> {
       home: Strength;
       away: Strength;
       playoff?: boolean;
+      /** Score only (no box score, no injuries): the fast mode for playoff odds. */
+      resultOnly?: boolean;
       /** The team also played yesterday (hockey: its backup goalie starts). */
       homeBackToBack?: boolean;
       awayBackToBack?: boolean;

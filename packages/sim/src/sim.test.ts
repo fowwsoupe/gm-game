@@ -480,3 +480,38 @@ describe('injuries', () => {
     expect(lineup.forwards.every((line) => line.length === 3)).toBe(true);
   });
 });
+
+describe('result-only mode', () => {
+  it('skips the box score, keeps the score model, and is much faster', () => {
+    const state = createLeague(31, ctx);
+    const [a, b] = Object.keys(state.teams) as TeamId[];
+    const strength = (id: TeamId) =>
+      teamStrength(Object.values(state.players).filter((p) => p.teamId === id));
+    const game = (resultOnly: boolean) => ({
+      id: 'g' as GameId,
+      homeTeamId: a!,
+      awayTeamId: b!,
+      home: strength(a!),
+      away: strength(b!),
+      resultOnly,
+    });
+    const run = (resultOnly: boolean) => {
+      const rng = new Rng(5);
+      const t0 = performance.now();
+      let goals = 0;
+      for (let i = 0; i < 1500; i++) {
+        const r = simGame(game(resultOnly), rng);
+        goals += r.homeScore + r.awayScore;
+        if (resultOnly) {
+          expect(r.box).toBeUndefined();
+          expect(r.injuries).toBeUndefined();
+        }
+      }
+      return { goals: goals / 1500, ms: performance.now() - t0 };
+    };
+    const full = run(false);
+    const fast = run(true);
+    expect(Math.abs(fast.goals - full.goals)).toBeLessThan(0.35);
+    expect(fast.ms).toBeLessThan(full.ms);
+  });
+});
