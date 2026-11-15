@@ -27,13 +27,15 @@ export function bracketSeeds(teamCount: number): number[] {
  * `teamsQualifying / 2` teams into its own bracket, and the two conference winners meet in the
  * final. A series' seed is always the team's rank in the whole league, so the final's higher seed
  * (home ice) is the better regular season. Without usable conferences it is one league-wide bracket.
- * TODO(feature): wild cards and division brackets.
+ * With `wildcard` seeding (NHL style) each conference sends its top three per division plus the two
+ * best remaining teams. A division winner meets a wild card, the other two division teams meet each
+ * other, and the bracket slots keep a division's teams on the same side until the conference final.
  */
 export function seedPlayoffs(
   rows: readonly StandingsRow[],
   ruleset: Ruleset,
   season: number,
-  teams: readonly Pick<Team, 'id' | 'conference'>[] = [],
+  teams: readonly Pick<Team, 'id' | 'conference' | 'division'>[] = [],
 ): PlayoffSeries[] {
   const count = ruleset.playoffs.teamsQualifying;
   if (rows.length < count) throw new Error('invalid playoff field');
@@ -44,8 +46,11 @@ export function seedPlayoffs(
   const rank = new Map(ranked.map((r, i) => [r.teamId, i + 1]));
   const conferenceOf = new Map(teams.map((t) => [t.id, t.conference]));
   const conferences = [...new Set(ranked.map((r) => conferenceOf.get(r.teamId)))];
+  const wildcard =
+    ruleset.playoffs.seeding === 'wildcard' && wildcardSeries(ranked, teams, count, season, rank);
+  if (wildcard) return wildcard;
   const groups =
-    ruleset.playoffs.seeding === 'conference' &&
+    ruleset.playoffs.seeding !== 'points' &&
     conferences.length === 2 &&
     !conferences.includes(undefined)
       ? conferences.map((c) =>
@@ -67,6 +72,55 @@ export function seedPlayoffs(
       const a = group[slots[i * 2]! - 1]!.teamId;
       const b = group[slots[i * 2 + 1]! - 1]!.teamId;
       out.push(makeSeries(season, 1, out.length, rank.get(a)!, a, rank.get(b)!, b));
+    }
+  }
+  return out;
+}
+
+/**
+ * Wild-card bracket, or null when the league has no two-conference, two-division layout with
+ * enough teams (the caller then falls back to plain conference seeding).
+ */
+function wildcardSeries(
+  ranked: readonly StandingsRow[],
+  teams: readonly Pick<Team, 'id' | 'conference' | 'division'>[],
+  count: number,
+  season: number,
+  rank: ReadonlyMap<TeamId, number>,
+): PlayoffSeries[] | null {
+  const info = new Map(teams.map((t) => [t.id, t]));
+  const conferences = [...new Set(teams.map((t) => t.conference))];
+  if (conferences.length !== 2 || conferences.includes(undefined) || count !== 16) return null;
+  const out: PlayoffSeries[] = [];
+  for (const c of conferences) {
+    const inConf = ranked.filter((r) => info.get(r.teamId)?.conference === c);
+    const divisions = [...new Set(inConf.map((r) => info.get(r.teamId)!.division))];
+    if (divisions.length !== 2 || divisions.includes(undefined)) return null;
+    const [a, b] = divisions.map((d) => inConf.filter((r) => info.get(r.teamId)!.division === d));
+    if (a!.length < 3 || b!.length < 3) return null;
+    const top = new Set([...a!.slice(0, 3), ...b!.slice(0, 3)]);
+    const wild = inConf.filter((r) => !top.has(r)).slice(0, 2);
+    if (wild.length < 2) return null;
+    // The division winner with the better record plays the lower wild card.
+    const [first, second] = a![0]!.pts >= b![0]!.pts ? [a!, b!] : [b!, a!];
+    const pairs = [
+      [first[0]!, wild[1]!],
+      [first[1]!, first[2]!],
+      [second[1]!, second[2]!],
+      [second[0]!, wild[0]!],
+    ];
+    for (const [x, y] of pairs) {
+      out.push(
+        makeSeries(
+          season,
+          1,
+          out.length,
+          rank.get(x!.teamId)!,
+          x!.teamId,
+          rank.get(y!.teamId)!,
+          y!.teamId,
+        ),
+      );
     }
   }
   return out;

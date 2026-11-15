@@ -14,6 +14,7 @@ import {
   overall,
   percentileRank,
   Rng,
+  seedPlayoffs,
   simGame,
   teamStrength,
   validateContract,
@@ -130,6 +131,40 @@ describe('playoffs', () => {
     expect(conf(final.higherTeamId)).not.toBe(conf(final.lowerTeamId));
     // Home ice in the final goes to the better regular season.
     expect(final.higherSeed).toBeLessThan(final.lowerSeed);
+  });
+
+  it('seeds NHL-style wild cards: top three per division plus two per conference', () => {
+    // 32 teams t00..t31: conference by half, division by quarter; t00 is the best record.
+    const teams = Array.from({ length: 32 }, (_, i) => ({
+      id: `t${String(i).padStart(2, '0')}` as TeamId,
+      conference: i % 2 === 0 ? 'East' : 'West',
+      division: `${i % 2 === 0 ? 'E' : 'W'}${Math.floor(i / 16)}`,
+    }));
+    const rows = teams.map((t, i) => ({
+      teamId: t.id,
+      gp: 84,
+      w: 60 - i,
+      l: i,
+      otl: 0,
+      pts: 120 - i,
+      gf: 250,
+      ga: 250,
+    }));
+    const series = seedPlayoffs(rows, NHL_2026, 1, teams);
+    expect(series).toHaveLength(8);
+    const east = series.filter((s) => s.id.endsWith('_0') || Number(s.id.split('_')[2]) < 4);
+    // Division winner (t00) meets the lower wild card; wild cards are the best non-top-three teams.
+    const first = east.find((s) => s.higherTeamId === 't00')!;
+    expect(first.lowerTeamId).toBe('t08');
+    const eastTeams = new Set<string>(east.flatMap((s) => [s.higherTeamId, s.lowerTeamId]));
+    expect(eastTeams.size).toBe(8);
+    expect(eastTeams.has('t06')).toBe(true);
+    expect(eastTeams.has('t08')).toBe(true);
+    for (const s of series) {
+      expect(teams.find((t) => t.id === s.higherTeamId)!.conference).toBe(
+        teams.find((t) => t.id === s.lowerTeamId)!.conference,
+      );
+    }
   });
 
   it('keeps the NHL ruleset at sixteen qualifiers', () => {
