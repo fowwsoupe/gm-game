@@ -11,7 +11,7 @@ export const HOCKEY_TUNING = {
   leagueAvgGoaltending: 67,
   homeIceBoost: 1.07,
   /** How strongly a rating gap moves expected goals. Higher = less parity. */
-  ratingSensitivity: 0.012,
+  ratingSensitivity: 0.0118,
   overtimeGoalChance: 0.6,
   /** A team down one goal late pulls its goalie and ties it this often (why real games go to overtime more than independent scoring says). */
   lateEqualizerChance: 0.25,
