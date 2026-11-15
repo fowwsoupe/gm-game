@@ -5,14 +5,16 @@ import type { TeamStrength } from './strength';
 
 /** Knobs to tune league-wide scoring. Kept in one place so balance changes are easy to find. */
 export const HOCKEY_TUNING = {
-  leagueAvgGoalsPerTeam: 2.82,
-  leagueAvgShotsPerTeam: 26.6,
+  leagueAvgGoalsPerTeam: 2.74,
+  leagueAvgShotsPerTeam: 26.4,
   /** The average starting goalie's rating: a team with this goalie gets no edge or penalty. */
   leagueAvgGoaltending: 67,
   homeIceBoost: 1.07,
   /** How strongly a rating gap moves expected goals. Higher = less parity. */
   ratingSensitivity: 0.012,
   overtimeGoalChance: 0.6,
+  /** A team down one goal late pulls its goalie and ties it this often (why real games go to overtime more than independent scoring says). */
+  lateEqualizerChance: 0.25,
 } as const;
 
 /**
@@ -64,6 +66,10 @@ export function simGame(
   );
   let homeGoals = rng.poisson(xg.home);
   let awayGoals = rng.poisson(xg.away);
+  if (Math.abs(homeGoals - awayGoals) === 1 && rng.chance(HOCKEY_TUNING.lateEqualizerChance)) {
+    if (homeGoals < awayGoals) homeGoals++;
+    else awayGoals++;
+  }
   let overtime = false;
   let shootout = false;
   let overtimeGoal: 'home' | 'away' | null = null;
