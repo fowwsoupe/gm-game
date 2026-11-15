@@ -22,6 +22,14 @@ export interface Ruleset {
     points: { win: number; overtimeLoss: number };
   };
 
+  playoffs: {
+    teamsQualifying: number;
+    seriesLength: number;
+    seeding: 'points';
+    /** 0 = higher seed at home, 1 = lower seed at home. */
+    homeIcePattern: number[];
+  };
+
   /** TODO(nba/nfl): soft cap + luxury tax (NBA) and hard cap specifics (NFL) when those sports arrive. */
   cap: {
     upperLimit: Dollars;

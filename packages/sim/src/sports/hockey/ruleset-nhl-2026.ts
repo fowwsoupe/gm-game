@@ -21,6 +21,12 @@ export const NHL_2026: Ruleset = {
     calendar: { preseasonDays: 21, regularSeasonDays: 190, tradeDeadlineDay: 140, playoffDays: 62 },
     points: { win: 2, overtimeLoss: 1 },
   },
+  playoffs: {
+    teamsQualifying: 16,
+    seriesLength: 7,
+    seeding: 'points',
+    homeIcePattern: [0, 0, 1, 1, 0, 1, 0],
+  },
   cap: {
     upperLimit: dollars(104),
     lowerLimit: dollars(76.9),
@@ -51,4 +57,12 @@ export const NHL_2026: Ruleset = {
     termMultiplier: 2,
   },
   roster: { maxActive: 23, minActive: 20 },
+};
+
+/** The default 16-team fictional league sends its top eight to the playoffs. */
+export const FICTIONAL_2026: Ruleset = {
+  ...NHL_2026,
+  id: 'fictional-2026',
+  name: 'Fictional league rules (2026-27)',
+  playoffs: { ...NHL_2026.playoffs, teamsQualifying: 8 },
 };

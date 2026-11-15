@@ -1,7 +1,7 @@
 import type { Sport } from '@gm/shared';
 import type { Ruleset } from './cba';
 import { defaultModels, type Models } from './models';
-import { hockeySport, NHL_2026, type SportModule } from './sports';
+import { hockeySport, NHL_2026, FICTIONAL_2026, type SportModule } from './sports';
 
 /**
  * Everything a sim call needs besides the league state: the sport, its rules and the
@@ -19,9 +19,12 @@ export const SPORTS: Partial<Record<Sport, () => SportModule>> = {
 };
 
 /** Every shipped ruleset, by id. */
-export const RULESETS: Record<string, Ruleset> = { [NHL_2026.id]: NHL_2026 };
+export const RULESETS: Record<string, Ruleset> = {
+  [NHL_2026.id]: NHL_2026,
+  [FICTIONAL_2026.id]: FICTIONAL_2026,
+};
 
-export function defaultContext(rulesetId = NHL_2026.id): SimContext {
+export function defaultContext(rulesetId = FICTIONAL_2026.id): SimContext {
   const ruleset = RULESETS[rulesetId];
   if (!ruleset) throw new Error(`Unknown ruleset ${rulesetId}`);
   const makeSport = SPORTS[ruleset.sport];

@@ -4,6 +4,7 @@ import type {
   Importance,
   LeagueEvent,
   Player,
+  PlayoffSeries,
   Sport,
   Team,
   TeamId,
@@ -135,7 +136,7 @@ export class SaveFile {
     const schedule = this.db
       .prepare(
         `SELECT id, season, day, home_team_id AS homeTeamId, away_team_id AS awayTeamId
-         FROM games WHERE season = ? ORDER BY day, rowid`,
+         FROM games WHERE season = ? AND playoff_series_id IS NULL ORDER BY day, rowid`,
       )
       .all(season) as {
       id: string;
@@ -143,6 +144,19 @@ export class SaveFile {
       day: number;
       homeTeamId: TeamId;
       awayTeamId: TeamId;
+    }[];
+    const playoffRows = this.db
+      .prepare('SELECT * FROM playoff_series WHERE id GLOB ?')
+      .all(`s${season}_*`) as {
+      id: string;
+      round: number;
+      higher_seed: number;
+      lower_seed: number;
+      higher_team_id: TeamId;
+      lower_team_id: TeamId;
+      higher_wins: number;
+      lower_wins: number;
+      winner_team_id: TeamId | null;
     }[];
     return {
       sport: (this.getMeta('sport') ?? 'nhl') as Sport,
@@ -163,6 +177,23 @@ export class SaveFile {
         awayTeamId: g.awayTeamId,
       })),
       results: Object.fromEntries(this.playedResults(season).map((r) => [r.id, r])),
+      playoffSeries: Object.fromEntries(
+        playoffRows.map((r) => [
+          r.id,
+          {
+            id: r.id,
+            round: r.round,
+            higherSeed: r.higher_seed,
+            lowerSeed: r.lower_seed,
+            higherTeamId: r.higher_team_id,
+            lowerTeamId: r.lower_team_id,
+            higherWins: r.higher_wins,
+            lowerWins: r.lower_wins,
+            ...(r.winner_team_id ? { winnerTeamId: r.winner_team_id } : {}),
+          } satisfies PlayoffSeries,
+        ]),
+      ),
+      championTeamId: (this.getMeta('championTeamId') as TeamId | undefined) ?? null,
     };
   }
 
@@ -174,6 +205,17 @@ export class SaveFile {
     );
     const recordGame = this.db.prepare(
       `UPDATE games SET played = 1, home_score = ?, away_score = ?, overtime = ?, stats_json = ? WHERE id = ?`,
+    );
+    const insertPlayoffGame = this.db.prepare(
+      `INSERT OR IGNORE INTO games (id, season, day, home_team_id, away_team_id, playoff_series_id)
+       VALUES (?, ?, ?, ?, ?, ?)`,
+    );
+    const insertSeries = this.db.prepare(
+      `INSERT INTO playoff_series (id, round, higher_seed, lower_seed, higher_team_id, lower_team_id,
+       higher_wins, lower_wins) VALUES (?, ?, ?, ?, ?, ?, 0, 0)`,
+    );
+    const updateSeries = this.db.prepare(
+      `UPDATE playoff_series SET higher_wins = ?, lower_wins = ?, winner_team_id = ? WHERE id = ?`,
     );
     const setStatus = this.db.prepare('UPDATE teams SET status = ? WHERE id = ?');
     const setControl = this.db.prepare('UPDATE teams SET user_controlled = ? WHERE id = ?');
@@ -195,6 +237,16 @@ export class SaveFile {
         switch (e.kind) {
           case 'game.final': {
             const r = e.result;
+            if (r.playoffSeriesId) {
+              insertPlayoffGame.run(
+                r.id,
+                e.date.season,
+                e.date.day,
+                r.homeTeamId,
+                r.awayTeamId,
+                r.playoffSeriesId,
+              );
+            }
             recordGame.run(
               r.homeScore,
               r.awayScore,
@@ -204,6 +256,21 @@ export class SaveFile {
             );
             break;
           }
+          case 'series.started': {
+            const s = e.series;
+            insertSeries.run(
+              s.id,
+              s.round,
+              s.higherSeed,
+              s.lowerSeed,
+              s.higherTeamId,
+              s.lowerTeamId,
+            );
+            break;
+          }
+          case 'series.won':
+          case 'champion.crowned':
+            break;
           case 'team.statusChanged':
             setStatus.run(e.to, e.teamId);
             break;
@@ -220,6 +287,10 @@ export class SaveFile {
           }
         }
       }
+      for (const s of Object.values(state.playoffSeries)) {
+        updateSeries.run(s.higherWins, s.lowerWins, s.winnerTeamId ?? null, s.id);
+      }
+      if (state.championTeamId) this.setMeta('championTeamId', state.championTeamId);
       this.writeClock(state);
     })();
   }
@@ -285,17 +356,19 @@ export class SaveFile {
     const rows = this.db
       .prepare(
         `SELECT id, home_team_id AS homeTeamId, away_team_id AS awayTeamId, home_score AS homeScore,
-                away_score AS awayScore, overtime, stats_json
+                away_score AS awayScore, overtime, stats_json, playoff_series_id
          FROM games WHERE season = ? AND played = 1 ORDER BY day, rowid`,
       )
       .all(season) as (Omit<GameResult, 'overtime' | 'stats'> & {
       overtime: number;
       stats_json: string | null;
+      playoff_series_id: string | null;
     })[];
-    return rows.map(({ stats_json, ...r }) => ({
+    return rows.map(({ stats_json, playoff_series_id, ...r }) => ({
       ...r,
       overtime: r.overtime === 1,
       stats: stats_json ? JSON.parse(stats_json) : {},
+      ...(playoff_series_id ? { playoffSeriesId: playoff_series_id } : {}),
     }));
   }
 }

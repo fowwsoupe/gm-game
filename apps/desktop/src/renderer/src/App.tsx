@@ -5,6 +5,7 @@ import {
   useFeed,
   useNewLeague,
   useNewLeagueFromRoster,
+  usePlayoffs,
   useSteam,
   useTeams,
 } from '@/lib/queries';
@@ -132,6 +133,7 @@ function Home({
         {lastSim && <p className="mt-2 text-sm text-muted">{lastSim}</p>}
       </Card>
       <FeedCard />
+      <PlayoffCard />
     </div>
   );
 }
@@ -149,6 +151,8 @@ function FeedCard() {
       case 'season.phaseChanged':
         return t('event.phaseChanged', { phase: t(`phase.${e.to}`) });
       case 'news.posted':
+        if (e.headline === 'event.seriesWon' || e.headline === 'event.championCrowned')
+          return t(e.headline, e.params);
         return e.headline;
       default:
         return null;
@@ -167,6 +171,39 @@ function FeedCard() {
           ))}
         </ul>
       )}
+    </Card>
+  );
+}
+
+function PlayoffCard() {
+  const t = useT();
+  const { data } = usePlayoffs();
+  const { data: teams = [] } = useTeams();
+  if (!data?.series.length) return null;
+  const teamName = (id: string) => {
+    const team = teams.find((x) => x.id === id);
+    return team ? `${team.city} ${team.name}` : id;
+  };
+  return (
+    <Card title={t('playoffs.title')}>
+      {data.championTeamId && (
+        <p className="mb-3 font-semibold text-accent">
+          {t('playoffs.champion', { team: teamName(data.championTeamId) })}
+        </p>
+      )}
+      <div className="space-y-3 text-sm">
+        {data.series.map((series) => (
+          <div key={series.id} className="border-b border-line pb-2">
+            <p className="text-xs text-muted">{t('playoffs.round', { round: series.round })}</p>
+            <p>
+              {series.higherSeed}. {teamName(series.higherTeamId)} {series.higherWins}
+            </p>
+            <p>
+              {series.lowerSeed}. {teamName(series.lowerTeamId)} {series.lowerWins}
+            </p>
+          </div>
+        ))}
+      </div>
     </Card>
   );
 }

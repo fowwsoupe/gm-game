@@ -8,7 +8,7 @@ import type {
   TeamId,
 } from '@gm/shared';
 import { applyEvent, eventId, phaseOf, Rng, type LeagueState, type ScheduledGame } from './core';
-import { classifyTeams, computeStandings } from './league';
+import { classifyTeams, computeStandings, nextRound, seedPlayoffs } from './league';
 import type { SimContext } from './context';
 
 /**
@@ -128,8 +128,82 @@ function advance(
       emit(makeEvent(state, 'minor', [g.homeTeamId, g.awayTeamId], { kind: 'game.final', result }));
     }
 
+    if (phaseOf(cal, today) === 'playoffs' && !state.championTeamId) {
+      const allSeries = Object.values(state.playoffSeries);
+      const round = Math.max(0, ...allSeries.map((s) => s.round));
+      const active = allSeries.filter((s) => s.round === round && !s.winnerTeamId);
+      const winsNeeded = Math.floor(ctx.ruleset.playoffs.seriesLength / 2) + 1;
+      for (const series of active) {
+        const gameIndex = series.higherWins + series.lowerWins;
+        const lowerHome = ctx.ruleset.playoffs.homeIcePattern[gameIndex] === 1;
+        const homeTeamId = lowerHome ? series.lowerTeamId : series.higherTeamId;
+        const awayTeamId = lowerHome ? series.higherTeamId : series.lowerTeamId;
+        const result = sport.simGame(
+          {
+            id: `p${today.season}_${series.id}_${gameIndex + 1}` as GameId,
+            homeTeamId,
+            awayTeamId,
+            home: strength.get(homeTeamId),
+            away: strength.get(awayTeamId),
+            playoff: true,
+          },
+          rng,
+        );
+        result.playoffSeriesId = series.id;
+        emit(makeEvent(state, 'minor', [homeTeamId, awayTeamId], { kind: 'game.final', result }));
+        if (series.higherWins === winsNeeded || series.lowerWins === winsNeeded) {
+          const winnerTeamId =
+            series.higherWins === winsNeeded ? series.higherTeamId : series.lowerTeamId;
+          emit(
+            makeEvent(state, 'major', [series.higherTeamId, series.lowerTeamId], {
+              kind: 'series.won',
+              seriesId: series.id,
+              winnerTeamId,
+            }),
+          );
+          const winner = state.teams[winnerTeamId]!;
+          emit(
+            makeEvent(state, 'notable', [winnerTeamId], {
+              kind: 'news.posted',
+              headline: 'event.seriesWon',
+              params: { team: `${winner.city} ${winner.name}`, round: series.round },
+            }),
+          );
+        }
+      }
+      const current = Object.values(state.playoffSeries).filter((s) => s.round === round);
+      if (current.length && current.every((s) => s.winnerTeamId)) {
+        if (current.length === 1) {
+          const championTeamId = current[0]!.winnerTeamId!;
+          emit(
+            makeEvent(state, 'major', [championTeamId], {
+              kind: 'champion.crowned',
+              championTeamId,
+            }),
+          );
+          const champion = state.teams[championTeamId]!;
+          emit(
+            makeEvent(state, 'major', [championTeamId], {
+              kind: 'news.posted',
+              headline: 'event.championCrowned',
+              params: { team: `${champion.city} ${champion.name}` },
+            }),
+          );
+        } else {
+          for (const series of nextRound(current)) {
+            emit(
+              makeEvent(state, 'notable', [series.higherTeamId, series.lowerTeamId], {
+                kind: 'series.started',
+                series,
+              }),
+            );
+          }
+        }
+      }
+    }
+
     // League pulse once a week.
-    if (today.day % 7 === 6) {
+    if (phaseOf(cal, today) === 'regular' && today.day % 7 === 6) {
       const rows = computeStandings(
         Object.keys(state.teams) as TeamId[],
         Object.values(state.results),
@@ -157,6 +231,21 @@ function advance(
           to: toPhase,
         }),
       );
+      if (toPhase === 'playoffs') {
+        const rows = computeStandings(
+          Object.keys(state.teams) as TeamId[],
+          Object.values(state.results),
+          ctx.ruleset.season.points,
+        );
+        for (const series of seedPlayoffs(rows, ctx.ruleset, today.season)) {
+          emit(
+            makeEvent(state, 'notable', [series.higherTeamId, series.lowerTeamId], {
+              kind: 'series.started',
+              series,
+            }),
+          );
+        }
+      }
     }
 
     emit(

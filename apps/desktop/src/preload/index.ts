@@ -11,6 +11,7 @@ const api: GmApi = {
     newLeagueFromRoster: (input) => ipcRenderer.invoke(IPC.newLeagueFromRoster, input),
     listTeams: () => ipcRenderer.invoke(IPC.listTeams),
     standings: () => ipcRenderer.invoke(IPC.standings),
+    playoffs: () => ipcRenderer.invoke(IPC.playoffs),
   },
   feed: {
     list: (input) => ipcRenderer.invoke(IPC.feedList, input),

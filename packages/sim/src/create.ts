@@ -38,6 +38,8 @@ export function createLeague(
     >,
     schedule,
     results: {},
+    playoffSeries: {},
+    championTeamId: null,
     eventSeq: 0,
   };
 }

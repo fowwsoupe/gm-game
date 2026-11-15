@@ -26,6 +26,25 @@ describe('SaveFile', () => {
     save.close();
   });
 
+  it('resumes a playoff series and saves the champion', () => {
+    const save = openSave(':memory:');
+    const state = createLeague(17, ctx);
+    save.saveNewLeague(state);
+    for (const days of [ctx.ruleset.season.calendar.regularSeasonDays + 2, 30]) {
+      const res = handleCommand(state, { kind: 'sim.advance', days }, local, ctx);
+      if (!res.ok) throw new Error(res.error.message);
+      save.persist(res.events, state);
+      expect(save.loadState()).toEqual(state);
+    }
+    expect(state.championTeamId).not.toBeNull();
+    const resumed = save.loadState();
+    const direct = handleCommand(state, { kind: 'sim.advance', days: 5 }, local, ctx);
+    const afterLoad = handleCommand(resumed, { kind: 'sim.advance', days: 5 }, local, ctx);
+    expect(afterLoad).toEqual(direct);
+    expect(resumed).toEqual(state);
+    save.close();
+  });
+
   it('filters the event log by importance', () => {
     const save = openSave(':memory:');
     const state = createLeague(8, ctx);

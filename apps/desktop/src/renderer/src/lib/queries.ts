@@ -5,6 +5,7 @@ import type { Command } from '@gm/shared';
 export const keys = {
   teams: ['league', 'teams'] as const,
   standings: ['league', 'standings'] as const,
+  playoffs: ['league', 'playoffs'] as const,
   feed: ['league', 'feed'] as const,
   steam: ['steam'] as const,
 };
@@ -13,6 +14,8 @@ export const useTeams = () =>
   useQuery({ queryKey: keys.teams, queryFn: () => window.gm.league.listTeams() });
 export const useStandings = () =>
   useQuery({ queryKey: keys.standings, queryFn: () => window.gm.league.standings() });
+export const usePlayoffs = () =>
+  useQuery({ queryKey: keys.playoffs, queryFn: () => window.gm.league.playoffs() });
 export const useSteam = () =>
   useQuery({ queryKey: keys.steam, queryFn: () => window.gm.steam.status() });
 

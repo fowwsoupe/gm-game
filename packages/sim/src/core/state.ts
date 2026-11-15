@@ -2,6 +2,7 @@ import type {
   GameDate,
   GameResult,
   LeagueEvent,
+  PlayoffSeries,
   Player,
   Sport,
   Team,
@@ -35,6 +36,8 @@ export interface LeagueState {
   schedule: ScheduledGame[];
   /** Results of the current season only; older seasons are archived by the data layer. */
   results: Record<string, GameResult>;
+  playoffSeries: Record<string, PlayoffSeries>;
+  championTeamId: TeamId | null;
   /** Count of events applied so far; the next event's id is built from it. */
   eventSeq: number;
 }
@@ -58,6 +61,26 @@ export function applyEvent(state: LeagueState, event: LeagueEvent): void {
     }
     case 'game.final':
       state.results[event.result.id] = event.result;
+      if (event.result.playoffSeriesId) {
+        const series = state.playoffSeries[event.result.playoffSeriesId];
+        if (!series) throw new Error(`unknown playoff series ${event.result.playoffSeriesId}`);
+        const winner =
+          event.result.homeScore > event.result.awayScore
+            ? event.result.homeTeamId
+            : event.result.awayTeamId;
+        if (winner === series.higherTeamId) series.higherWins++;
+        else if (winner === series.lowerTeamId) series.lowerWins++;
+        else throw new Error('playoff winner not in series');
+      }
+      return;
+    case 'series.started':
+      state.playoffSeries[event.series.id] = { ...event.series };
+      return;
+    case 'series.won':
+      state.playoffSeries[event.seriesId]!.winnerTeamId = event.winnerTeamId;
+      return;
+    case 'champion.crowned':
+      state.championTeamId = event.championTeamId;
       return;
     case 'team.statusChanged':
       state.teamStatus[event.teamId] = event.to;

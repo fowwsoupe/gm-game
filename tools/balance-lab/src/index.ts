@@ -11,7 +11,14 @@
  * and add aging, contract and dynasty checks.
  */
 import type { Actor, GameResult, TeamId } from '@gm/shared';
-import { computeStandings, createLeague, defaultContext, handleCommand } from '@gm/sim';
+import {
+  computeStandings,
+  createLeague,
+  defaultContext,
+  handleCommand,
+  rulesGoalModel,
+  teamStrength,
+} from '@gm/sim';
 
 interface Check {
   name: string;
@@ -30,19 +37,41 @@ const ctx = defaultContext();
 const actor: Actor = { id: 'lab', controls: [] };
 const all: GameResult[] = [];
 const pointSpreads: number[] = [];
+let betterTeamSeriesWins = 0;
+let measuredSeries = 0;
 const started = performance.now();
 
 for (let i = 0; i < seasons; i++) {
   const state = createLeague(firstSeed + i, ctx);
   const res = handleCommand(
     state,
-    { kind: 'sim.advance', days: ctx.ruleset.season.calendar.regularSeasonDays },
+    {
+      kind: 'sim.advance',
+      days: ctx.ruleset.season.calendar.regularSeasonDays + ctx.ruleset.season.calendar.playoffDays,
+    },
     actor,
     ctx,
   );
   if (!res.ok) throw new Error(res.error.message);
-  const results = Object.values(state.results);
+  const results = Object.values(state.results).filter((g) => !g.playoffSeriesId);
   all.push(...results);
+  const strengths = new Map(
+    Object.keys(state.teams).map((id) => [
+      id,
+      teamStrength(Object.values(state.players).filter((p) => p.teamId === id)),
+    ]),
+  );
+  for (const series of Object.values(state.playoffSeries)) {
+    if (!series.winnerTeamId) continue;
+    const high = strengths.get(series.higherTeamId)!;
+    const low = strengths.get(series.lowerTeamId)!;
+    const forward = rulesGoalModel.expectedGoals(high, low);
+    const reverse = rulesGoalModel.expectedGoals(low, high);
+    const highEdge = forward.home - forward.away + (reverse.away - reverse.home);
+    const better = highEdge >= 0 ? series.higherTeamId : series.lowerTeamId;
+    measuredSeries++;
+    if (series.winnerTeamId === better) betterTeamSeriesWins++;
+  }
   const rows = computeStandings(
     Object.keys(state.teams) as TeamId[],
     results,
@@ -85,9 +114,16 @@ const checks: Check[] = [
     unit: '%',
   },
   { name: 'Points gap 1st-last (unverified)', value: avg(pointSpreads), min: 40, max: 70 },
+  {
+    name: 'Better team wins best-of-7',
+    value: (100 * betterTeamSeriesWins) / measuredSeries,
+    min: 60,
+    max: 65,
+    unit: '%',
+  },
 ];
-// TODO (from research): favorite wins ~60% of single games; better team wins a best-of-7
-// 60-65%; goalie SV% year-to-year r 0.12-0.30; 5-7 of 16 playoff teams turn over each year.
+// TODO (from research): favorite wins ~60% of single games; goalie SV% year-to-year
+// r 0.12-0.30; 5-7 of 16 playoff teams turn over each year.
 
 const pad = (s: string, n: number) => s.padEnd(n);
 console.log(`\nBalance lab: ${seasons} seasons, ${games} games, ${(ms / 1000).toFixed(1)}s\n`);

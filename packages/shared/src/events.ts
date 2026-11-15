@@ -1,4 +1,4 @@
-import type { GameResult, PlayerId, TeamId } from './domain';
+import type { GameResult, PlayerId, PlayoffSeries, TeamId } from './domain';
 
 /**
  * Everything that happens in a league is an event. The sim produces events, a reducer
@@ -37,9 +37,17 @@ export type LeagueEvent =
   /** End of a sim day: new date + RNG position, so every copy of the state stays identical. */
   | (EventBase & { kind: 'clock.advanced'; to: GameDate; rngState: number })
   | (EventBase & { kind: 'game.final'; result: GameResult })
+  | (EventBase & { kind: 'series.started'; series: PlayoffSeries })
+  | (EventBase & { kind: 'series.won'; seriesId: string; winnerTeamId: TeamId })
+  | (EventBase & { kind: 'champion.crowned'; championTeamId: TeamId })
   | (EventBase & { kind: 'team.controlChanged'; teamId: TeamId; userControlled: boolean })
   | (EventBase & { kind: 'season.phaseChanged'; from: SeasonPhase; to: SeasonPhase })
   | (EventBase & { kind: 'team.statusChanged'; teamId: TeamId; from: TeamStatus; to: TeamStatus })
-  | (EventBase & { kind: 'news.posted'; headline: string; body?: string });
+  | (EventBase & {
+      kind: 'news.posted';
+      headline: string;
+      body?: string;
+      params?: Record<string, string | number>;
+    });
 
 export type LeagueEventKind = LeagueEvent['kind'];

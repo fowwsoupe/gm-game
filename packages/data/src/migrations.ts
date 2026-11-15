@@ -66,4 +66,19 @@ export const migrations: readonly string[] = [
 
   ALTER TABLE teams ADD COLUMN status TEXT NOT NULL DEFAULT 'bubble';
   `,
+  // 3: playoff game identity and series state.
+  `
+  ALTER TABLE games ADD COLUMN playoff_series_id TEXT;
+  CREATE TABLE playoff_series (
+    id TEXT PRIMARY KEY,
+    round INTEGER NOT NULL,
+    higher_seed INTEGER NOT NULL,
+    lower_seed INTEGER NOT NULL,
+    higher_team_id TEXT NOT NULL REFERENCES teams(id),
+    lower_team_id TEXT NOT NULL REFERENCES teams(id),
+    higher_wins INTEGER NOT NULL DEFAULT 0,
+    lower_wins INTEGER NOT NULL DEFAULT 0,
+    winner_team_id TEXT REFERENCES teams(id)
+  );
+  `,
 ];

@@ -84,6 +84,11 @@ export class LeagueService {
     );
   }
 
+  playoffs() {
+    const { state } = this.open();
+    return { series: Object.values(state.playoffSeries), championTeamId: state.championTeamId };
+  }
+
   feed(limit: number, minImportance?: Importance): LeagueEvent[] {
     return this.open().save.listEvents(limit, minImportance);
   }

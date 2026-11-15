@@ -63,6 +63,8 @@ export interface StandingsRow {
 /** Result of any game in any sport. Sport-specific numbers go in `stats`. */
 export interface GameResult {
   id: GameId;
+  /** Present only for a playoff game; keeps regular-season standings separate. */
+  playoffSeriesId?: string;
   homeTeamId: TeamId;
   awayTeamId: TeamId;
   homeScore: number;
@@ -71,4 +73,16 @@ export interface GameResult {
   overtime: boolean;
   /** Sport-specific box-score numbers, typed by the sport module (hockey: HockeyGameStats). */
   stats: Record<string, number>;
+}
+
+export interface PlayoffSeries {
+  id: string;
+  round: number;
+  higherSeed: number;
+  lowerSeed: number;
+  higherTeamId: TeamId;
+  lowerTeamId: TeamId;
+  higherWins: number;
+  lowerWins: number;
+  winnerTeamId?: TeamId;
 }

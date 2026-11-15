@@ -38,7 +38,14 @@ export interface SportModule<Strength = unknown> {
 
   /** Simulates one game. Must use only `rng` for randomness. */
   simGame(
-    game: { id: GameId; homeTeamId: TeamId; awayTeamId: TeamId; home: Strength; away: Strength },
+    game: {
+      id: GameId;
+      homeTeamId: TeamId;
+      awayTeamId: TeamId;
+      home: Strength;
+      away: Strength;
+      playoff?: boolean;
+    },
     rng: Rng,
   ): GameResult;
 }
