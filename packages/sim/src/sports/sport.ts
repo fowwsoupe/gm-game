@@ -5,7 +5,6 @@ import type {
   Player,
   PlayerId,
   Sport,
-  StandingsRow,
   Team,
   TeamId,
 } from '@gm/shared';
@@ -45,13 +44,13 @@ export interface SportModule<Strength = unknown> {
 
   /**
    * Picks the player award winners (not the champion) from the finished regular season:
-   * team standings plus player ratings. Deterministic: no randomness.
+   * the box scores of its games. Deterministic: no randomness.
    */
   pickAwards(input: {
     season: number;
     rules: Ruleset;
     players: readonly Player[];
-    standings: readonly StandingsRow[];
+    results: readonly GameResult[];
   }): { award: string; playerId: PlayerId }[];
 
   /**

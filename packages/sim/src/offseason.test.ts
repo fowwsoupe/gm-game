@@ -7,6 +7,7 @@ import {
   defaultContext,
   elcYears,
   handleCommand,
+  hockeySeasonStats,
   lotteryOrder,
   playoffCapBreaches,
   Rng,
@@ -132,6 +133,12 @@ describe('awards', () => {
     ]);
     expect(given[0]!.teamId).toBe(live.championTeamId);
     const byAward = Object.fromEntries(given.map((e) => [e.award, live.players[e.playerId ?? '']]));
+    // The MVP leads the league in points; the goalie award goes to a qualified goalie.
+    const { skaters } = hockeySeasonStats(
+      Object.values(live.results).filter((g) => !g.playoffSeriesId),
+    );
+    const points = (id: string) => (skaters.get(id)?.goals ?? 0) + (skaters.get(id)?.assists ?? 0);
+    expect(points(byAward.mvp!.id)).toBe(Math.max(...[...skaters.keys()].map(points)));
     expect(byAward.topGoalie!.position).toBe('G');
     expect(byAward.topDefender!.position).toBe('D');
     expect(live.date.season - byAward.topRookie!.birthYear).toBeLessThanOrEqual(
