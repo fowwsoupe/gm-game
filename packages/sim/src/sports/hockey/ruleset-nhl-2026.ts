@@ -24,7 +24,7 @@ export const NHL_2026: Ruleset = {
   playoffs: {
     teamsQualifying: 16,
     seriesLength: 7,
-    seeding: 'points',
+    seeding: 'conference',
     homeIcePattern: [0, 0, 1, 1, 0, 1, 0],
   },
   cap: {

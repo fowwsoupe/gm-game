@@ -225,7 +225,12 @@ function advance(
           Object.values(state.results),
           ctx.ruleset.season.points,
         );
-        for (const series of seedPlayoffs(rows, ctx.ruleset, today.season)) {
+        for (const series of seedPlayoffs(
+          rows,
+          ctx.ruleset,
+          today.season,
+          Object.values(state.teams),
+        )) {
           emit(
             makeEvent(state, 'notable', [series.higherTeamId, series.lowerTeamId], {
               kind: 'series.started',

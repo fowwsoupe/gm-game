@@ -114,6 +114,19 @@ describe('playoffs', () => {
     }
   });
 
+  it('plays one bracket per conference, then a cross-conference final', () => {
+    const { state } = simSeason(12);
+    const conf = (id: TeamId) => state.teams[id]!.conference;
+    const all = Object.values(state.playoffSeries);
+    for (const s of all.filter((x) => x.round < 3)) {
+      expect(conf(s.higherTeamId)).toBe(conf(s.lowerTeamId));
+    }
+    const final = all.find((x) => x.round === 3)!;
+    expect(conf(final.higherTeamId)).not.toBe(conf(final.lowerTeamId));
+    // Home ice in the final goes to the better regular season.
+    expect(final.higherSeed).toBeLessThan(final.lowerSeed);
+  });
+
   it('keeps the NHL ruleset at sixteen qualifiers', () => {
     expect(NHL_2026.playoffs.teamsQualifying).toBe(16);
     expect(bracketSeeds(NHL_2026.playoffs.teamsQualifying)).toHaveLength(16);

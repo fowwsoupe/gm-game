@@ -3,6 +3,7 @@ import {
   type Player,
   type PlayoffSeries,
   type StandingsRow,
+  type Team,
   type TeamId,
 } from '@gm/shared';
 import type { Ruleset } from '../cba';
@@ -21,25 +22,54 @@ export function bracketSeeds(teamCount: number): number[] {
   return slots;
 }
 
+/**
+ * First-round series. With conference seeding, each of two conferences sends its best
+ * `teamsQualifying / 2` teams into its own bracket, and the two conference winners meet in the
+ * final. A series' seed is always the team's rank in the whole league, so the final's higher seed
+ * (home ice) is the better regular season. Without usable conferences it is one league-wide bracket.
+ * TODO(feature): wild cards and division brackets.
+ */
 export function seedPlayoffs(
   rows: readonly StandingsRow[],
   ruleset: Ruleset,
   season: number,
+  teams: readonly Pick<Team, 'id' | 'conference'>[] = [],
 ): PlayoffSeries[] {
   const count = ruleset.playoffs.teamsQualifying;
-  if (rows.length < count || ruleset.playoffs.seeding !== 'points') {
-    throw new Error('invalid playoff field');
-  }
+  if (rows.length < count) throw new Error('invalid playoff field');
   const ranked = [...rows].sort(
     (a, b) =>
       b.pts - a.pts || b.w - a.w || b.gf - b.ga - (a.gf - a.ga) || a.teamId.localeCompare(b.teamId),
   );
-  const slots = bracketSeeds(count);
-  return Array.from({ length: count / 2 }, (_, i) => {
-    const a = slots[i * 2]!;
-    const b = slots[i * 2 + 1]!;
-    return makeSeries(season, 1, i, a, ranked[a - 1]!.teamId, b, ranked[b - 1]!.teamId);
-  });
+  const rank = new Map(ranked.map((r, i) => [r.teamId, i + 1]));
+  const conferenceOf = new Map(teams.map((t) => [t.id, t.conference]));
+  const conferences = [...new Set(ranked.map((r) => conferenceOf.get(r.teamId)))];
+  const groups =
+    ruleset.playoffs.seeding === 'conference' &&
+    conferences.length === 2 &&
+    !conferences.includes(undefined)
+      ? conferences.map((c) =>
+          ranked.filter((r) => conferenceOf.get(r.teamId) === c).slice(0, count / 2),
+        )
+      : [ranked.slice(0, count)];
+  if (groups.some((g) => g.length * groups.length < count)) {
+    return seedPlayoffs(
+      rows,
+      { ...ruleset, playoffs: { ...ruleset.playoffs, seeding: 'points' } },
+      season,
+    );
+  }
+
+  const out: PlayoffSeries[] = [];
+  for (const group of groups) {
+    const slots = bracketSeeds(group.length);
+    for (let i = 0; i < group.length / 2; i++) {
+      const a = group[slots[i * 2]! - 1]!.teamId;
+      const b = group[slots[i * 2 + 1]! - 1]!.teamId;
+      out.push(makeSeries(season, 1, out.length, rank.get(a)!, a, rank.get(b)!, b));
+    }
+  }
+  return out;
 }
 
 export function makeSeries(

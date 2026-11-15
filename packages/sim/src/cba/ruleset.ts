@@ -25,7 +25,8 @@ export interface Ruleset {
   playoffs: {
     teamsQualifying: number;
     seriesLength: number;
-    seeding: 'points';
+    /** 'conference': the best teams of each conference meet in a bracket per conference, then a final. */
+    seeding: 'points' | 'conference';
     /** 0 = higher seed at home, 1 = lower seed at home. */
     homeIcePattern: number[];
   };
