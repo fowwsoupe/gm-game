@@ -6,6 +6,7 @@ export const keys = {
   teams: ['league', 'teams'] as const,
   standings: ['league', 'standings'] as const,
   playoffs: ['league', 'playoffs'] as const,
+  awards: ['league', 'awards'] as const,
   feed: ['league', 'feed'] as const,
   steam: ['steam'] as const,
 };
@@ -16,6 +17,8 @@ export const useStandings = () =>
   useQuery({ queryKey: keys.standings, queryFn: () => window.gm.league.standings() });
 export const usePlayoffs = () =>
   useQuery({ queryKey: keys.playoffs, queryFn: () => window.gm.league.playoffs() });
+export const useAwards = () =>
+  useQuery({ queryKey: keys.awards, queryFn: () => window.gm.league.awards() });
 export const useSteam = () =>
   useQuery({ queryKey: keys.steam, queryFn: () => window.gm.steam.status() });
 

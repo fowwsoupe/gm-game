@@ -9,6 +9,7 @@ import {
   type ScheduledGame,
 } from './core';
 import { classifyTeams, computeStandings, nextRound, seedPlayoffs } from './league';
+import { giveSeasonAwards } from './awards';
 import { rolloverSeason } from './offseason';
 import type { SimContext } from './context';
 
@@ -175,6 +176,7 @@ function advance(
               params: { team: `${champion.city} ${champion.name}` },
             }),
           );
+          giveSeasonAwards(state, ctx, emitter(state, events));
         } else {
           for (const series of nextRound(current)) {
             emit(

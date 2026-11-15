@@ -50,6 +50,7 @@ export const NHL_2026: Ruleset = {
   // The real draft has 7 rounds, but most picks stay in junior or college and never take an NHL
   // roster spot. Until prospects exist as a separate pool, only the picks that sign are drafted.
   draft: { rounds: 2 },
+  awards: { rookieMaxAge: 20 },
   trades: {
     maxRetentionPct: 50,
     maxRetainedContracts: 3,

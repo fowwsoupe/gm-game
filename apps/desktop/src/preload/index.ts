@@ -12,6 +12,7 @@ const api: GmApi = {
     listTeams: () => ipcRenderer.invoke(IPC.listTeams),
     standings: () => ipcRenderer.invoke(IPC.standings),
     playoffs: () => ipcRenderer.invoke(IPC.playoffs),
+    awards: () => ipcRenderer.invoke(IPC.awards),
   },
   feed: {
     list: (input) => ipcRenderer.invoke(IPC.feedList, input),

@@ -89,6 +89,10 @@ export class LeagueService {
     return { series: Object.values(state.playoffSeries), championTeamId: state.championTeamId };
   }
 
+  awards() {
+    return this.open().save.listAwards();
+  }
+
   feed(limit: number, minImportance?: Importance): LeagueEvent[] {
     return this.open().save.listEvents(limit, minImportance);
   }

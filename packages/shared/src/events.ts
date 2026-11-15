@@ -63,6 +63,14 @@ export type LeagueEvent =
   | (EventBase & { kind: 'player.drafted'; player: Player; round: number; pick: number })
   /** Re-signing, free agency or an undrafted free agent: player joins `teamId` on `contract`. */
   | (EventBase & { kind: 'player.signed'; playerId: PlayerId; teamId: TeamId; contract: Contract })
+  /** End of season: who won an award. `playerId` is absent for team awards (champion). */
+  | (EventBase & {
+      kind: 'award.given';
+      award: string;
+      season: number;
+      teamId: TeamId;
+      playerId?: PlayerId;
+    })
   /** A new season: fresh schedule, clock back to opening night, results cleared. */
   | (EventBase & {
       kind: 'season.started';

@@ -4,6 +4,7 @@ import { simGame, rulesGoalModel, type GoalModel } from './game';
 import { teamStrength, type TeamStrength } from './strength';
 import { generateFictionalLeague, generateProspect } from './generate';
 import { NHL_2026 } from './ruleset-nhl-2026';
+import { pickAwards } from './awards';
 import { importHockeyRoster } from './roster';
 
 /**
@@ -21,6 +22,7 @@ export function hockeySport(goalModel: GoalModel = rulesGoalModel): SportModule<
     defaultRuleset: NHL_2026,
     generateLeague: generateFictionalLeague,
     generateProspect,
+    pickAwards,
     importRoster: importHockeyRoster,
     teamStrength,
     simGame: (game, rng) => simGame(game, rng, goalModel),

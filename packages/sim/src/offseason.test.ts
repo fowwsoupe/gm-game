@@ -106,6 +106,37 @@ describe('offseason rollover', () => {
   });
 });
 
+describe('awards', () => {
+  it('gives the champion and four player awards once the season ends, and replays identically', () => {
+    const live = createLeague(41, ctx);
+    const replica: LeagueState = structuredClone(live);
+    const events = run(live, {
+      kind: 'sim.advance',
+      days: calendar.regularSeasonDays + calendar.playoffDays,
+    });
+    events.forEach((e) => applyEvent(replica, e));
+    expect(replica).toEqual(live);
+    const given = events.flatMap((e) => (e.kind === 'award.given' ? [e] : []));
+    expect(given.map((e) => e.award)).toEqual([
+      'champion',
+      'mvp',
+      'topGoalie',
+      'topDefender',
+      'topRookie',
+    ]);
+    expect(given[0]!.teamId).toBe(live.championTeamId);
+    const byAward = Object.fromEntries(given.map((e) => [e.award, live.players[e.playerId ?? '']]));
+    expect(byAward.topGoalie!.position).toBe('G');
+    expect(byAward.topDefender!.position).toBe('D');
+    expect(live.date.season - byAward.topRookie!.birthYear).toBeLessThanOrEqual(
+      ruleset.awards.rookieMaxAge,
+    );
+    expect(events.some((e) => e.kind === 'news.posted' && e.headline === 'event.awardWon')).toBe(
+      true,
+    );
+  });
+});
+
 describe('offseason steps', () => {
   it('free agents that nobody can use never block a team from filling its roster', () => {
     const state = createLeague(8, ctx);

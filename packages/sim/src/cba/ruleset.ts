@@ -60,6 +60,11 @@ export interface Ruleset {
     rounds: number;
   };
 
+  awards: {
+    /** Players this age or younger are rookie-award eligible. */
+    rookieMaxAge: number;
+  };
+
   trades: {
     maxRetentionPct: number;
     maxRetainedContracts: number;

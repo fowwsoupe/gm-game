@@ -85,4 +85,14 @@ export const migrations: readonly string[] = [
   `
   ALTER TABLE players ADD COLUMN retired_season INTEGER;
   `,
+  // 5: end-of-season awards. player_id is NULL for team awards (champion).
+  `
+  CREATE TABLE awards (
+    season INTEGER NOT NULL,
+    award TEXT NOT NULL,
+    team_id TEXT NOT NULL REFERENCES teams(id),
+    player_id TEXT REFERENCES players(id),
+    PRIMARY KEY (season, award)
+  );
+  `,
 ];

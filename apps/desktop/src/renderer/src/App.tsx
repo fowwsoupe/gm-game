@@ -13,11 +13,13 @@ import { useUi, type Screen } from '@/stores/ui';
 import { useT, type MessageKey } from '@/i18n';
 import { Button, Card } from '@/ui';
 import { Standings } from '@/screens/Standings';
+import { History } from '@/screens/History';
 
 const NAV: { id: Screen; label: MessageKey }[] = [
   { id: 'home', label: 'nav.home' },
   { id: 'standings', label: 'nav.standings' },
   { id: 'roster', label: 'nav.roster' },
+  { id: 'history', label: 'nav.history' },
 ];
 
 export function App() {
@@ -121,6 +123,7 @@ export function App() {
           <Home hasLeague={hasLeague} teamCount={teams.length} lastSim={lastSim} />
         )}
         {screen === 'standings' && <Standings />}
+        {screen === 'history' && <History />}
         {screen === 'roster' && <p className="text-muted">{t('roster.placeholder')}</p>}
       </main>
     </div>
@@ -165,6 +168,11 @@ function FeedCard() {
       case 'news.posted':
         if (e.headline === 'event.seriesWon' || e.headline === 'event.championCrowned')
           return t(e.headline, e.params);
+        if (e.headline === 'event.awardWon')
+          return t(e.headline, {
+            ...e.params,
+            award: t(`award.${e.params?.award}` as MessageKey),
+          });
         return e.headline;
       default:
         return null;

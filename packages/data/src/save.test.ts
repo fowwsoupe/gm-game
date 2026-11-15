@@ -62,6 +62,16 @@ describe('SaveFile', () => {
       expect(save.loadState()).toEqual(state);
     }
     expect(state.date.season).toBe(2029);
+    const awards = save.listAwards();
+    expect(awards.filter((a) => a.season === 2027).map((a) => a.award)).toEqual([
+      'champion',
+      'mvp',
+      'topGoalie',
+      'topDefender',
+      'topRookie',
+    ]);
+    expect(awards[0]!.season).toBe(2028);
+    expect(awards.find((a) => a.award === 'mvp')!.playerName).toMatch(/\S+ \S+/);
     const resumed = save.loadState();
     const direct = handleCommand(state, { kind: 'sim.advance', days: 30 }, local, ctx);
     const afterLoad = handleCommand(resumed, { kind: 'sim.advance', days: 30 }, local, ctx);

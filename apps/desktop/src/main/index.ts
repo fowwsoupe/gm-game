@@ -52,6 +52,7 @@ function registerIpc() {
   ipcMain.handle(IPC.listTeams, () => league.listTeams());
   ipcMain.handle(IPC.standings, () => league.standings());
   ipcMain.handle(IPC.playoffs, () => league.playoffs());
+  ipcMain.handle(IPC.awards, () => league.awards());
   ipcMain.handle(IPC.feedList, (_e, input: { limit: number; minImportance?: Importance }) =>
     league.feed(input.limit, input.minImportance),
   );

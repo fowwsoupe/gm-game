@@ -1,9 +1,11 @@
 import Database from 'better-sqlite3';
 import type {
+  AwardEntry,
   GameResult,
   Importance,
   LeagueEvent,
   Player,
+  PlayerId,
   PlayoffSeries,
   Sport,
   Team,
@@ -233,6 +235,9 @@ export class SaveFile {
     const insertScheduled = this.db.prepare(
       'INSERT INTO games (id, season, day, home_team_id, away_team_id) VALUES (?, ?, ?, ?, ?)',
     );
+    const insertAward = this.db.prepare(
+      'INSERT OR REPLACE INTO awards (season, award, team_id, player_id) VALUES (?, ?, ?, ?)',
+    );
     const setStatus = this.db.prepare('UPDATE teams SET status = ? WHERE id = ?');
     const setControl = this.db.prepare('UPDATE teams SET user_controlled = ? WHERE id = ?');
 
@@ -290,6 +295,9 @@ export class SaveFile {
           case 'players.developed':
             for (const c of e.changes)
               setRatings.run(JSON.stringify(c.ratings), c.potential, c.playerId);
+            break;
+          case 'award.given':
+            insertAward.run(e.season, e.award, e.teamId, e.playerId ?? null);
             break;
           case 'player.retired':
             retire.run(e.date.season, e.playerId);
@@ -365,6 +373,32 @@ export class SaveFile {
       )
       .all(...allowed, limit) as { payload_json: string }[];
     return rows.map((r) => JSON.parse(r.payload_json) as LeagueEvent);
+  }
+
+  /** Every award given, newest season first. Player names come from the players table (retired ones stay). */
+  listAwards(): AwardEntry[] {
+    const rows = this.db
+      .prepare(
+        `SELECT a.season, a.award, a.team_id, a.player_id, p.first_name, p.last_name
+         FROM awards a LEFT JOIN players p ON p.id = a.player_id
+         ORDER BY a.season DESC, a.rowid`,
+      )
+      .all() as {
+      season: number;
+      award: string;
+      team_id: TeamId;
+      player_id: PlayerId | null;
+      first_name: string | null;
+      last_name: string | null;
+    }[];
+    return rows.map((r) => ({
+      season: r.season,
+      award: r.award,
+      teamId: r.team_id,
+      ...(r.player_id
+        ? { playerId: r.player_id, playerName: `${r.first_name} ${r.last_name}` }
+        : {}),
+    }));
   }
 
   listTeams(): Team[] {

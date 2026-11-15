@@ -87,6 +87,16 @@ export interface PlayoffSeries {
   winnerTeamId?: TeamId;
 }
 
+/** One award a season (sport-defined keys like 'mvp', plus 'champion'), as the History screen lists it. */
+export interface AwardEntry {
+  season: number;
+  award: string;
+  teamId: TeamId;
+  /** Absent for team awards (champion). */
+  playerId?: PlayerId;
+  playerName?: string;
+}
+
 /** One scheduled regular-season game. */
 export interface ScheduledGame {
   id: string;
