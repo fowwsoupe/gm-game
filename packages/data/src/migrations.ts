@@ -81,4 +81,8 @@ export const migrations: readonly string[] = [
     winner_team_id TEXT REFERENCES teams(id)
   );
   `,
+  // 4: retired players stay in the table (career history later) but leave the league.
+  `
+  ALTER TABLE players ADD COLUMN retired_season INTEGER;
+  `,
 ];

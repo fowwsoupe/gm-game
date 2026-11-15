@@ -29,6 +29,7 @@ export function App() {
   const fromRoster = useNewLeagueFromRoster();
   const dispatch = useDispatch();
   const [lastSim, setLastSim] = useState<string | null>(null);
+  const { data: playoffs } = usePlayoffs();
   const hasLeague = !isError && teams.length > 0;
 
   const sim = (days: number, stopOn: 'never' | 'major' = 'never') =>
@@ -102,6 +103,17 @@ export function App() {
           </Button>
           <Button disabled={!hasLeague || dispatch.isPending} onClick={() => sim(400, 'major')}>
             {t('actions.simToNext')}
+          </Button>
+          <Button
+            disabled={!playoffs?.championTeamId || dispatch.isPending}
+            onClick={() =>
+              dispatch.mutate(
+                { kind: 'season.rollover' },
+                { onSuccess: (res) => !res.ok && setLastSim(res.error.message) },
+              )
+            }
+          >
+            {t('actions.nextSeason')}
           </Button>
         </div>
 

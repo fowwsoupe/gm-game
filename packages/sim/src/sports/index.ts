@@ -10,6 +10,7 @@ export {
   simGame,
   rulesGoalModel,
   HOCKEY_TUNING,
+  HOCKEY_DEVELOPMENT,
   teamStrength,
   importHockeyRoster,
   exportHockeyRoster,

@@ -45,6 +45,30 @@ describe('SaveFile', () => {
     save.close();
   });
 
+  it('saves a full offseason and loads the identical league, then plays on the same way', () => {
+    const save = openSave(':memory:');
+    const state = createLeague(21, ctx);
+    save.saveNewLeague(state);
+    const { regularSeasonDays, playoffDays } = ctx.ruleset.season.calendar;
+    for (const command of [
+      { kind: 'sim.advance', days: regularSeasonDays + playoffDays },
+      { kind: 'season.rollover' },
+      { kind: 'sim.advance', days: regularSeasonDays + playoffDays },
+      { kind: 'season.rollover' },
+    ] as const) {
+      const res = handleCommand(state, command, local, ctx);
+      if (!res.ok) throw new Error(res.error.message);
+      save.persist(res.events, state);
+      expect(save.loadState()).toEqual(state);
+    }
+    expect(state.date.season).toBe(2029);
+    const resumed = save.loadState();
+    const direct = handleCommand(state, { kind: 'sim.advance', days: 30 }, local, ctx);
+    const afterLoad = handleCommand(resumed, { kind: 'sim.advance', days: 30 }, local, ctx);
+    expect(afterLoad).toEqual(direct);
+    save.close();
+  });
+
   it('filters the event log by importance', () => {
     const save = openSave(':memory:');
     const state = createLeague(8, ctx);

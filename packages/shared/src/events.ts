@@ -1,4 +1,12 @@
-import type { GameResult, PlayerId, PlayoffSeries, TeamId } from './domain';
+import type {
+  Contract,
+  GameResult,
+  Player,
+  PlayerId,
+  PlayoffSeries,
+  ScheduledGame,
+  TeamId,
+} from './domain';
 
 /**
  * Everything that happens in a league is an event. The sim produces events, a reducer
@@ -40,6 +48,28 @@ export type LeagueEvent =
   | (EventBase & { kind: 'series.started'; series: PlayoffSeries })
   | (EventBase & { kind: 'series.won'; seriesId: string; winnerTeamId: TeamId })
   | (EventBase & { kind: 'champion.crowned'; championTeamId: TeamId })
+  /** Offseason: one batch for the whole league, so the log holds one entry per year, not per player. */
+  | (EventBase & {
+      kind: 'players.developed';
+      changes: { playerId: PlayerId; ratings: Record<string, number>; potential: number }[];
+    })
+  | (EventBase & { kind: 'player.retired'; playerId: PlayerId })
+  /** Contract ran out: the player becomes a free agent. */
+  | (EventBase & { kind: 'contract.expired'; playerId: PlayerId })
+  /**
+   * A new player enters the league through the draft (the event carries the whole player).
+   * `round` and `pick` are 0 for an undrafted free agent signed to fill a roster.
+   */
+  | (EventBase & { kind: 'player.drafted'; player: Player; round: number; pick: number })
+  /** Re-signing, free agency or an undrafted free agent: player joins `teamId` on `contract`. */
+  | (EventBase & { kind: 'player.signed'; playerId: PlayerId; teamId: TeamId; contract: Contract })
+  /** A new season: fresh schedule, clock back to opening night, results cleared. */
+  | (EventBase & {
+      kind: 'season.started';
+      season: number;
+      schedule: ScheduledGame[];
+      rngState: number;
+    })
   | (EventBase & { kind: 'team.controlChanged'; teamId: TeamId; userControlled: boolean })
   | (EventBase & { kind: 'season.phaseChanged'; from: SeasonPhase; to: SeasonPhase })
   | (EventBase & { kind: 'team.statusChanged'; teamId: TeamId; from: TeamStatus; to: TeamStatus })

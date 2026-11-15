@@ -4,11 +4,14 @@ import type {
   LeagueEvent,
   PlayoffSeries,
   Player,
+  ScheduledGame,
   Sport,
   Team,
   TeamId,
   TeamStatus,
 } from '@gm/shared';
+
+export type { ScheduledGame };
 
 /**
  * The whole league as plain data, held in memory while a save is open.
@@ -17,13 +20,6 @@ import type {
  *
  * Keep it serializable (no classes, no functions): it crosses into the sim worker.
  */
-export interface ScheduledGame {
-  id: string;
-  date: GameDate;
-  homeTeamId: TeamId;
-  awayTeamId: TeamId;
-}
-
 export interface LeagueState {
   sport: Sport;
   rulesetId: string;
@@ -81,6 +77,42 @@ export function applyEvent(state: LeagueState, event: LeagueEvent): void {
       return;
     case 'champion.crowned':
       state.championTeamId = event.championTeamId;
+      return;
+    case 'players.developed':
+      for (const c of event.changes) {
+        const p = state.players[c.playerId];
+        if (!p) throw new Error(`unknown player ${c.playerId}`);
+        p.ratings = { ...c.ratings };
+        p.potential = c.potential;
+      }
+      return;
+    case 'player.retired':
+      delete state.players[event.playerId];
+      return;
+    case 'contract.expired': {
+      const p = state.players[event.playerId];
+      if (!p) throw new Error(`unknown player ${event.playerId}`);
+      p.teamId = null;
+      delete p.contract;
+      return;
+    }
+    case 'player.drafted':
+      state.players[event.player.id] = structuredClone(event.player);
+      return;
+    case 'player.signed': {
+      const p = state.players[event.playerId];
+      if (!p) throw new Error(`unknown player ${event.playerId}`);
+      p.teamId = event.teamId;
+      p.contract = { ...event.contract };
+      return;
+    }
+    case 'season.started':
+      state.date = { season: event.season, day: 0 };
+      state.rngState = event.rngState;
+      state.schedule = event.schedule.map((g) => ({ ...g, date: { ...g.date } }));
+      state.results = {};
+      state.playoffSeries = {};
+      state.championTeamId = null;
       return;
     case 'team.statusChanged':
       state.teamStatus[event.teamId] = event.to;

@@ -52,6 +52,12 @@ export interface Ruleset {
     minYearPctOfHighestYear: number;
     /** Entry-level contract length by signing age (inclusive ranges). */
     elcYearsByAge: { minAge: number; maxAge: number; years: number }[];
+    /** Yearly salary of an entry-level contract. */
+    elcSalary: Dollars;
+  };
+
+  draft: {
+    rounds: number;
   };
 
   trades: {
@@ -72,5 +78,7 @@ export interface Ruleset {
   roster: {
     maxActive: number;
     minActive: number;
+    /** Fewest players a team must carry at each position (sport-specific codes). */
+    positionMin: Record<string, number>;
   };
 }

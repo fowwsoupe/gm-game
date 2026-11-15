@@ -1,20 +1,18 @@
-import type {
-  Actor,
-  Command,
-  CommandResult,
-  GameId,
-  Importance,
-  LeagueEvent,
-  TeamId,
-} from '@gm/shared';
-import { applyEvent, eventId, phaseOf, Rng, type LeagueState, type ScheduledGame } from './core';
+import type { Actor, Command, CommandResult, GameId, LeagueEvent, TeamId } from '@gm/shared';
+import {
+  applyEvent,
+  emitter,
+  makeEvent,
+  phaseOf,
+  Rng,
+  type LeagueState,
+  type ScheduledGame,
+} from './core';
 import { classifyTeams, computeStandings, nextRound, seedPlayoffs } from './league';
+import { rolloverSeason } from './offseason';
 import type { SimContext } from './context';
 
 /**
- * Note: every event made with `makeEvent` must be applied (via `applyEvent`) before the next
- * one is made: ids come from `state.eventSeq`, which only the reducer advances.
- *
  * The single entry point for changing a league. Every command, from any human (local or,
  * later, remote) or AI GM, goes through here and comes back as events.
  *
@@ -50,6 +48,15 @@ export function handleCommand(
       return { ok: true, events: [ev] };
     }
 
+    case 'season.rollover': {
+      if (!state.championTeamId) {
+        return { ok: false, error: { code: 'invalid', message: 'the season is not over yet' } };
+      }
+      const events: LeagueEvent[] = [];
+      rolloverSeason(state, ctx, emitter(state, events));
+      return { ok: true, events };
+    }
+
     default: {
       const unhandled: never = command;
       return {
@@ -58,27 +65,6 @@ export function handleCommand(
       };
     }
   }
-}
-
-type EventBody = LeagueEvent extends infer E
-  ? E extends LeagueEvent
-    ? Omit<E, 'id' | 'date' | 'importance' | 'teamIds'>
-    : never
-  : never;
-
-function makeEvent(
-  state: LeagueState,
-  importance: Importance,
-  teamIds: TeamId[],
-  body: EventBody,
-): LeagueEvent {
-  return {
-    ...body,
-    id: eventId(state.date.season, state.date.day, state.eventSeq),
-    date: { ...state.date },
-    importance,
-    teamIds,
-  } as LeagueEvent;
 }
 
 function advance(

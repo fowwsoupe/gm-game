@@ -45,7 +45,11 @@ export const NHL_2026: Ruleset = {
       { minAge: 22, maxAge: 23, years: 2 },
       { minAge: 24, maxAge: 24, years: 1 },
     ],
+    elcSalary: dollars(1),
   },
+  // The real draft has 7 rounds, but most picks stay in junior or college and never take an NHL
+  // roster spot. Until prospects exist as a separate pool, only the picks that sign are drafted.
+  draft: { rounds: 2 },
   trades: {
     maxRetentionPct: 50,
     maxRetainedContracts: 3,
@@ -56,7 +60,11 @@ export const NHL_2026: Ruleset = {
     shareOwedOtherwise: 2 / 3,
     termMultiplier: 2,
   },
-  roster: { maxActive: 23, minActive: 20 },
+  roster: {
+    maxActive: 23,
+    minActive: 20,
+    positionMin: { C: 4, LW: 4, RW: 4, D: 6, G: 2 },
+  },
 };
 
 /** The default 16-team fictional league sends its top eight to the playoffs. */

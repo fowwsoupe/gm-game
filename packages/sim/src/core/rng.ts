@@ -25,6 +25,12 @@ export class Rng {
     return min + Math.floor(this.next() * (max - min + 1));
   }
 
+  /** Normally distributed number (Box-Muller). */
+  normal(mean = 0, sd = 1): number {
+    const u = 1 - this.next(); // (0, 1]: log(0) is impossible
+    return mean + sd * Math.sqrt(-2 * Math.log(u)) * Math.cos(2 * Math.PI * this.next());
+  }
+
   chance(p: number): boolean {
     return this.next() < p;
   }

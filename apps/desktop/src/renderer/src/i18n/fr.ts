@@ -11,6 +11,7 @@ export const fr: Record<MessageKey, string> = {
   'actions.simDay': 'Simuler un jour',
   'actions.simWeek': 'Simuler une semaine',
   'actions.simToNext': 'Simuler jusqu’au prochain événement',
+  'actions.nextSeason': 'Commencer la saison suivante',
   'home.empty': 'Créez une nouvelle ligue pour commencer.',
   'home.teamsLoaded': '{count} équipes chargées.',
   'home.simmed': '{days} jour(s) simulé(s) : {games} matchs joués.',

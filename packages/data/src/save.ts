@@ -217,6 +217,22 @@ export class SaveFile {
     const updateSeries = this.db.prepare(
       `UPDATE playoff_series SET higher_wins = ?, lower_wins = ?, winner_team_id = ? WHERE id = ?`,
     );
+    const insertPlayer = this.db.prepare(
+      `INSERT INTO players (id, team_id, first_name, last_name, birth_year, position, potential, ratings_json, contract_json)
+       VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)`,
+    );
+    const setRatings = this.db.prepare(
+      'UPDATE players SET ratings_json = ?, potential = ? WHERE id = ?',
+    );
+    const setContract = this.db.prepare(
+      'UPDATE players SET team_id = ?, contract_json = ? WHERE id = ?',
+    );
+    const retire = this.db.prepare(
+      'UPDATE players SET retired_season = ?, team_id = NULL, contract_json = NULL WHERE id = ?',
+    );
+    const insertScheduled = this.db.prepare(
+      'INSERT INTO games (id, season, day, home_team_id, away_team_id) VALUES (?, ?, ?, ?, ?)',
+    );
     const setStatus = this.db.prepare('UPDATE teams SET status = ? WHERE id = ?');
     const setControl = this.db.prepare('UPDATE teams SET user_controlled = ? WHERE id = ?');
 
@@ -270,6 +286,40 @@ export class SaveFile {
           }
           case 'series.won':
           case 'champion.crowned':
+            break;
+          case 'players.developed':
+            for (const c of e.changes)
+              setRatings.run(JSON.stringify(c.ratings), c.potential, c.playerId);
+            break;
+          case 'player.retired':
+            retire.run(e.date.season, e.playerId);
+            break;
+          case 'contract.expired':
+            setContract.run(null, null, e.playerId);
+            break;
+          case 'player.drafted': {
+            const p = e.player;
+            insertPlayer.run(
+              p.id,
+              p.teamId,
+              p.firstName,
+              p.lastName,
+              p.birthYear,
+              p.position,
+              p.potential,
+              JSON.stringify(p.ratings),
+              p.contract ? JSON.stringify(p.contract) : null,
+            );
+            break;
+          }
+          case 'player.signed':
+            setContract.run(e.teamId, JSON.stringify(e.contract), e.playerId);
+            break;
+          case 'season.started':
+            for (const g of e.schedule) {
+              insertScheduled.run(g.id, g.date.season, g.date.day, g.homeTeamId, g.awayTeamId);
+            }
+            this.db.prepare("DELETE FROM meta WHERE key = 'championTeamId'").run();
             break;
           case 'team.statusChanged':
             setStatus.run(e.to, e.teamId);
@@ -335,7 +385,9 @@ export class SaveFile {
   }
 
   listPlayers(): Player[] {
-    const rows = this.db.prepare('SELECT * FROM players').all() as PlayerRow[];
+    const rows = this.db
+      .prepare('SELECT * FROM players WHERE retired_season IS NULL')
+      .all() as PlayerRow[];
     return rows.map((r) => {
       const p: Player = {
         id: r.id as Player['id'],

@@ -86,3 +86,11 @@ export interface PlayoffSeries {
   lowerWins: number;
   winnerTeamId?: TeamId;
 }
+
+/** One scheduled regular-season game. */
+export interface ScheduledGame {
+  id: string;
+  date: { season: number; day: number };
+  homeTeamId: TeamId;
+  awayTeamId: TeamId;
+}

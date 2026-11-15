@@ -5,10 +5,11 @@
  *
  *   pnpm lab                 # 20 seasons, default seeds
  *   pnpm lab --seasons 100   # more seasons = more confidence
+ *   pnpm lab --leagues 10 --years 30   # multi-year section: leagues x years
  *
- * Each "season" today is a fresh league from a different seed (there is no offseason
- * rollover yet). When multi-year saves exist, extend this to run one league for N years
- * and add aging, contract and dynasty checks.
+ * Single-season checks: each "season" is a fresh league from a different seed.
+ * Multi-year checks: each league plays `years` seasons in a row with the offseason rollover
+ * (aging, retirements, draft, free agency) between them.
  */
 import type { Actor, GameResult, TeamId } from '@gm/shared';
 import {
@@ -16,8 +17,10 @@ import {
   createLeague,
   defaultContext,
   handleCommand,
+  overall,
   rulesGoalModel,
   teamStrength,
+  type LeagueState,
 } from '@gm/sim';
 
 interface Check {
@@ -32,6 +35,8 @@ interface Check {
 const args = process.argv.slice(2);
 const seasons = Number(args[args.indexOf('--seasons') + 1]) || 20;
 const firstSeed = Number(args[args.indexOf('--seed') + 1]) || 1;
+const leagues = Number(args[args.indexOf('--leagues') + 1]) || 5;
+const years = Number(args[args.indexOf('--years') + 1]) || 20;
 
 const ctx = defaultContext();
 const actor: Actor = { id: 'lab', controls: [] };
@@ -80,6 +85,53 @@ for (let i = 0; i < seasons; i++) {
   pointSpreads.push(rows[0]!.pts - rows[rows.length - 1]!.pts);
 }
 
+// ---------- multi-year: one league played for `years` seasons, with the offseason in between ----------
+const rosterOf = (state: LeagueState, id: string) =>
+  Object.values(state.players).filter((p) => p.teamId === id);
+const meanOverall = (state: LeagueState) => {
+  const rostered = Object.values(state.players).filter((p) => p.teamId !== null);
+  return rostered.reduce((s, p) => s + overall(p), 0) / rostered.length;
+};
+const cal = ctx.ruleset.season.calendar;
+let maxDrift = 0;
+let maxTitles = 0;
+let payrollShare = 0;
+let payrollSamples = 0;
+let teamsOverCap = 0;
+let teamsUnderMinimum = 0;
+let maxPool = 0;
+for (let l = 0; l < leagues; l++) {
+  const state = createLeague(firstSeed + l, ctx);
+  const startRating = meanOverall(state);
+  const titles = new Map<TeamId, number>();
+  for (let y = 0; y < years; y++) {
+    const played = handleCommand(
+      state,
+      { kind: 'sim.advance', days: cal.regularSeasonDays + cal.playoffDays },
+      actor,
+      ctx,
+    );
+    if (!played.ok) throw new Error(played.error.message);
+    titles.set(state.championTeamId!, (titles.get(state.championTeamId!) ?? 0) + 1);
+    const rolled = handleCommand(state, { kind: 'season.rollover' }, actor, ctx);
+    if (!rolled.ok) throw new Error(rolled.error.message);
+    maxDrift = Math.max(maxDrift, Math.abs(meanOverall(state) - startRating));
+    for (const id of Object.keys(state.teams)) {
+      const roster = rosterOf(state, id);
+      const payroll = roster.reduce((s, p) => s + (p.contract?.capHit ?? 0), 0);
+      payrollShare += payroll / ctx.ruleset.cap.upperLimit;
+      payrollSamples++;
+      if (payroll > ctx.ruleset.cap.upperLimit) teamsOverCap++;
+      const short = Object.entries(ctx.ruleset.roster.positionMin).some(
+        ([pos, min]) => roster.filter((p) => p.position === pos).length < min,
+      );
+      if (short || roster.length < ctx.ruleset.roster.minActive) teamsUnderMinimum++;
+    }
+  }
+  maxTitles = Math.max(maxTitles, ...titles.values());
+  maxPool = Math.max(maxPool, Object.values(state.players).filter((p) => p.teamId === null).length);
+}
+
 const ms = performance.now() - started;
 const games = all.length;
 const goals = all.reduce((s, g) => s + g.homeScore + g.awayScore, 0);
@@ -121,12 +173,27 @@ const checks: Check[] = [
     max: 65,
     unit: '%',
   },
+  // Multi-year (offseason rollover). Ranges: league talent stable, no runaway dynasty, cap legal.
+  { name: `League avg rating drift (${years}y)`, value: maxDrift, min: 0, max: 3 },
+  { name: `Most titles by one team (${years}y)`, value: maxTitles, min: 0, max: 5 },
+  {
+    name: 'Payroll / cap, avg (unverified)',
+    value: (100 * payrollShare) / payrollSamples,
+    min: 75,
+    max: 100,
+    unit: '%',
+  },
+  { name: 'Teams over the cap', value: teamsOverCap, min: 0, max: 0 },
+  { name: 'Teams below roster minimum', value: teamsUnderMinimum, min: 0, max: 0 },
+  { name: 'Free-agent pool, largest (unverified)', value: maxPool, min: 0, max: 150 },
 ];
 // TODO (from research): favorite wins ~60% of single games; goalie SV% year-to-year
 // r 0.12-0.30; 5-7 of 16 playoff teams turn over each year.
 
 const pad = (s: string, n: number) => s.padEnd(n);
-console.log(`\nBalance lab: ${seasons} seasons, ${games} games, ${(ms / 1000).toFixed(1)}s\n`);
+console.log(
+  `\nBalance lab: ${seasons} seasons, ${games} games; ${leagues} leagues x ${years} years with rollover; ${(ms / 1000).toFixed(1)}s\n`,
+);
 console.log(`${pad('Check', 36)}${pad('Value', 10)}${pad('Healthy', 16)}Result`);
 let failures = 0;
 for (const c of checks) {

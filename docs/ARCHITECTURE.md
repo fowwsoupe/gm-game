@@ -73,7 +73,8 @@ src/
   people/    personalities, priorities, (later) morale, chemistry
   finance/   team finances, (later) revenue, budgets
   value/     PlayerValuator: per-team surplus value (can be negative)
-  league/    schedule, standings, team status (league pulse)
+  league/    schedule, standings, playoffs, team status (league pulse)
+  offseason/ yearly rollover: development, retirements, expiries, draft, re-sign, free agency, next schedule
   sports/    SportModule interface + one folder per sport
     hockey/  NHL: game sim, team strength, GoalModel, generator, NHL_2026 ruleset
   models.ts  Models: shared swappable brains + rules-based defaults

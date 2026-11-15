@@ -13,6 +13,7 @@ export const en = {
   'actions.simDay': 'Sim day',
   'actions.simWeek': 'Sim week',
   'actions.simToNext': 'Sim to next event',
+  'actions.nextSeason': 'Start next season',
   'home.empty': 'Start a new league to begin.',
   'home.teamsLoaded': '{count} teams loaded.',
   'home.simmed': 'Simmed {days} day(s): {games} games played.',
