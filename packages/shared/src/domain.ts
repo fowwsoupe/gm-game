@@ -108,10 +108,22 @@ export interface Leaderboard {
   rows: { playerId: PlayerId; name: string; teamId: TeamId | null; gp: number; value: number }[];
 }
 
-/** One league record: best (or most) of something, by a team in one season, or all-time for titles. */
+/** One league record: best (or most) of something, by a team or player in one season, or all-time for titles. */
 export interface RecordEntry {
-  key: 'points' | 'wins' | 'goalsFor' | 'goalsAgainst' | 'titles';
-  teamId: TeamId;
+  key:
+    | 'points'
+    | 'wins'
+    | 'goalsFor'
+    | 'goalsAgainst'
+    | 'titles'
+    | 'playerGoals'
+    | 'playerAssists'
+    | 'playerPoints'
+    | 'playerSavePct';
+  /** Team records only. */
+  teamId?: TeamId;
+  /** Player records only (retired players have no team any more). */
+  playerName?: string;
   /** Absent for all-time records (titles). */
   season?: number;
   value: number;

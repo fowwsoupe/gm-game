@@ -428,9 +428,10 @@ export class SaveFile {
     }));
   }
 
-  listPlayers(): Player[] {
+  /** Active players; `withRetired` adds the ones who retired (for history such as records). */
+  listPlayers(withRetired = false): Player[] {
     const rows = this.db
-      .prepare('SELECT * FROM players WHERE retired_season IS NULL')
+      .prepare(`SELECT * FROM players${withRetired ? '' : ' WHERE retired_season IS NULL'}`)
       .all() as PlayerRow[];
     return rows.map((r) => {
       const p: Player = {

@@ -11,6 +11,7 @@ import {
   lotteryOrder,
   playoffCapBreaches,
   Rng,
+  playerRecords,
   teamRecords,
   validateContract,
   type LeagueState,
@@ -245,6 +246,21 @@ describe('records', () => {
     expect(by.goalsFor).toMatchObject({ teamId: 'b', season: 2027, value: 260 });
     expect(by.goalsAgainst).toMatchObject({ teamId: 'b', season: 2027, value: 180 }); // tie: earliest
     expect(by.titles).toMatchObject({ teamId: 'a', value: 2 });
+  });
+});
+
+describe('player records', () => {
+  it('keeps the best season per stat, earliest on a tie', () => {
+    const board = (key: string, name: string, value: number) =>
+      ({ key, rows: [{ playerId: name, name, teamId: null, gp: 80, value }] }) as never;
+    const by = Object.fromEntries(
+      playerRecords([
+        { season: 2028, boards: [board('goals', 'B', 50), board('savePct', 'B', 0.92)] },
+        { season: 2027, boards: [board('goals', 'A', 50), board('savePct', 'A', 0.91)] },
+      ]).map((r) => [r.key, r]),
+    );
+    expect(by.playerGoals).toMatchObject({ playerName: 'A', season: 2027, value: 50 });
+    expect(by.playerSavePct).toMatchObject({ playerName: 'B', season: 2028 });
   });
 });
 
