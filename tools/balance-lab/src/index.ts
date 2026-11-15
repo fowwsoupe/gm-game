@@ -11,7 +11,7 @@
  * Multi-year checks: each league plays `years` seasons in a row with the offseason rollover
  * (aging, retirements, draft, free agency) between them.
  */
-import type { Actor, GameResult, TeamId } from '@gm/shared';
+import type { Actor, GameResult, HockeyBoxScore, TeamId } from '@gm/shared';
 import {
   computeStandings,
   createLeague,
@@ -46,6 +46,8 @@ const pointSpreads: number[] = [];
 const topScorer: number[] = [];
 const topGoals: number[] = [];
 const topSavePct: number[] = [];
+let ppGoals = 0;
+let ppChances = 0;
 let betterTeamSeriesWins = 0;
 let measuredSeries = 0;
 const started = performance.now();
@@ -84,6 +86,11 @@ for (let i = 0; i < seasons; i++) {
   const top = (key: string) =>
     ctx.sport.leaders(results, Object.values(state.players), 1).find((b) => b.key === key)?.rows[0]
       ?.value ?? 0;
+  for (const g of results) {
+    const box = g.box as HockeyBoxScore;
+    ppChances += box.penalties.length;
+    for (const side of [box.home, box.away]) for (const p of side.skaters) ppGoals += p.ppGoals;
+  }
   topScorer.push(top('points'));
   topGoals.push(top('goals'));
   topSavePct.push(top('savePct'));
@@ -178,6 +185,13 @@ const checks: Check[] = [
     unit: '%',
   },
   { name: 'Points gap 1st-last (unverified)', value: avg(pointSpreads), min: 40, max: 70 },
+  {
+    name: 'Power-play % (unverified)',
+    value: (100 * ppGoals) / ppChances,
+    min: 17,
+    max: 24,
+    unit: '%',
+  },
   // 16 teams and 84 games; a 32-team league has a bit higher leaders. Refine with real data.
   { name: 'Top scorer points (unverified)', value: avg(topScorer), min: 80, max: 140 },
   { name: 'Top goal scorer goals (unverified)', value: avg(topGoals), min: 40, max: 70 },

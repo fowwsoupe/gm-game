@@ -325,7 +325,11 @@ describe('box scores', () => {
         const credited = goals - (shootout && goals > against ? 1 : 0);
         if (side.skaters.length === 0) continue;
         expect(side.skaters.reduce((n, s) => n + s.goals, 0)).toBe(credited);
-        expect(side.skaters.reduce((n, s) => n + s.toi, 0)).toBeCloseTo(300, 0);
+        // Five skaters for 60 minutes, minus the minutes a man down on a penalty.
+        const shorthanded =
+          box.penalties.filter((p) => p[1] === (key === 'home' ? 0 : 1)).length * 2;
+        const toi = side.skaters.reduce((n, s) => n + s.toi, 0);
+        expect(Math.abs(toi - (300 - shorthanded))).toBeLessThan(1.5);
         const goalie = box[key === 'home' ? 'away' : 'home'].goalie;
         expect(goalie.shotsAgainst - goalie.saves).toBe(credited);
       }
@@ -337,6 +341,30 @@ describe('box scores', () => {
         for (const p of side.skaters) expect(p.assists).toBeGreaterThanOrEqual(0);
       }
     }
+  });
+
+  it('penalties and the power play line up', () => {
+    let ppGoals = 0;
+    let goals = 0;
+    for (const g of games) {
+      const box = g.box as HockeyBoxScore;
+      for (const shot of box.shots.filter((x) => x[8] === 1)) {
+        // A power-play shot happens inside a two-minute penalty the other team took.
+        expect(
+          box.penalties.some((p) => p[1] !== shot[1] && shot[0] >= p[0] && shot[0] < p[0] + 120),
+        ).toBe(true);
+      }
+      for (const side of [box.home, box.away]) {
+        ppGoals += side.skaters.reduce((n, s) => n + s.ppGoals, 0);
+        goals += side.skaters.reduce((n, s) => n + s.goals, 0);
+        expect(side.skaters.reduce((n, s) => n + s.pim, 0)).toBe(
+          box.penalties.filter((p) => box[p[1] === 0 ? 'home' : 'away'] === side).length * 2,
+        );
+      }
+    }
+    // Roughly a fifth of goals come on the power play.
+    expect(ppGoals / goals).toBeGreaterThan(0.15);
+    expect(ppGoals / goals).toBeLessThan(0.3);
   });
 
   it('plus-minus nets to zero, assists never exceed two a goal, nobody assists his own goal', () => {
