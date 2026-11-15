@@ -14,11 +14,13 @@ import { useT, type MessageKey } from '@/i18n';
 import { Button, Card } from '@/ui';
 import { Standings } from '@/screens/Standings';
 import { History } from '@/screens/History';
+import { Leaders } from '@/screens/Leaders';
 
 const NAV: { id: Screen; label: MessageKey }[] = [
   { id: 'home', label: 'nav.home' },
   { id: 'standings', label: 'nav.standings' },
   { id: 'roster', label: 'nav.roster' },
+  { id: 'leaders', label: 'nav.leaders' },
   { id: 'history', label: 'nav.history' },
 ];
 
@@ -123,6 +125,7 @@ export function App() {
           <Home hasLeague={hasLeague} teamCount={teams.length} lastSim={lastSim} />
         )}
         {screen === 'standings' && <Standings />}
+        {screen === 'leaders' && <Leaders />}
         {screen === 'history' && <History />}
         {screen === 'roster' && <p className="text-muted">{t('roster.placeholder')}</p>}
       </main>

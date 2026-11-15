@@ -1,6 +1,7 @@
 import type {
   GameId,
   GameResult,
+  Leaderboard,
   Player,
   PlayerId,
   Sport,
@@ -52,6 +53,12 @@ export interface SportModule<Strength = unknown> {
     players: readonly Player[];
     standings: readonly StandingsRow[];
   }): { award: string; playerId: PlayerId }[];
+
+  /**
+   * Stat leaderboards from regular-season results (hockey: points, goals, assists, save %).
+   * Players are only used for names and current teams.
+   */
+  leaders(results: readonly GameResult[], players: readonly Player[], limit: number): Leaderboard[];
 
   /** Loads a community roster file (untrusted JSON) for this sport. */
   importRoster(json: unknown): RosterImport;

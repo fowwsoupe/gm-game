@@ -13,6 +13,8 @@ export {
   HOCKEY_DEVELOPMENT,
   teamStrength,
   autoLineup,
+  hockeyLeaders,
+  hockeySeasonStats,
   ICE_TIME,
   importHockeyRoster,
   exportHockeyRoster,

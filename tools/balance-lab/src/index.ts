@@ -3,7 +3,7 @@
  * Checks below are for hockey (NHL); each sport will get its own set of healthy ranges.
  * Run before and after any change to the sim's numbers, and paste both reports in the PR.
  *
- *   pnpm lab                 # 20 seasons, default seeds
+ *   pnpm lab                 # 60 seasons, default seeds
  *   pnpm lab --seasons 100   # more seasons = more confidence
  *   pnpm lab --leagues 10 --years 30   # multi-year section: leagues x years
  *
@@ -34,7 +34,7 @@ interface Check {
 }
 
 const args = process.argv.slice(2);
-const seasons = Number(args[args.indexOf('--seasons') + 1]) || 20;
+const seasons = Number(args[args.indexOf('--seasons') + 1]) || 60;
 const firstSeed = Number(args[args.indexOf('--seed') + 1]) || 1;
 const leagues = Number(args[args.indexOf('--leagues') + 1]) || 20;
 const years = Number(args[args.indexOf('--years') + 1]) || 20;
@@ -43,6 +43,9 @@ const ctx = defaultContext();
 const actor: Actor = { id: 'lab', controls: [] };
 const all: GameResult[] = [];
 const pointSpreads: number[] = [];
+const topScorer: number[] = [];
+const topGoals: number[] = [];
+const topSavePct: number[] = [];
 let betterTeamSeriesWins = 0;
 let measuredSeries = 0;
 const started = performance.now();
@@ -78,6 +81,12 @@ for (let i = 0; i < seasons; i++) {
     measuredSeries++;
     if (series.winnerTeamId === better) betterTeamSeriesWins++;
   }
+  const top = (key: string) =>
+    ctx.sport.leaders(results, Object.values(state.players), 1).find((b) => b.key === key)?.rows[0]
+      ?.value ?? 0;
+  topScorer.push(top('points'));
+  topGoals.push(top('goals'));
+  topSavePct.push(top('savePct'));
   const rows = computeStandings(
     Object.keys(state.teams) as TeamId[],
     results,
@@ -169,6 +178,15 @@ const checks: Check[] = [
     unit: '%',
   },
   { name: 'Points gap 1st-last (unverified)', value: avg(pointSpreads), min: 40, max: 70 },
+  // 16 teams and 84 games; a 32-team league has a bit higher leaders. Refine with real data.
+  { name: 'Top scorer points (unverified)', value: avg(topScorer), min: 80, max: 140 },
+  { name: 'Top goal scorer goals (unverified)', value: avg(topGoals), min: 40, max: 70 },
+  {
+    name: 'Best save % of qualified goalies (unverified)',
+    value: avg(topSavePct),
+    min: 0.905,
+    max: 0.935,
+  },
   {
     name: 'Better team wins best-of-7',
     value: (100 * betterTeamSeriesWins) / measuredSeries,

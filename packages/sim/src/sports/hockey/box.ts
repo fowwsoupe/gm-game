@@ -10,6 +10,8 @@ import { ICE_TIME, type TeamStrength } from './strength';
 
 /** Who shoots: defencemen take far fewer shots than forwards. */
 const D_SHOOTING = 0.35;
+/** Talent concentrates: a 90 shooter takes and scores far more than twice a 60 shooter's goals. */
+const SKILL_POWER = 3;
 /** Chance a goal has a first and a second assist. */
 const ASSIST = [0.93, 0.62] as const;
 /** Overtime lasts up to five minutes (seconds after regulation). */
@@ -108,7 +110,7 @@ export function makeBoxScore(
       const weights = unit.map((k) => {
         const p = attack.players[k]!;
         const isDefense = attack.pairs.some((pair) => pair.includes(k));
-        return (rating(p, 'shooting') / 50) ** 2 * (isDefense ? D_SHOOTING : 1);
+        return (rating(p, 'shooting') / 50) ** SKILL_POWER * (isDefense ? D_SHOOTING : 1);
       });
       const shooter = unit[pick(weights, rng)]!;
       const distance = 8 + Math.min(52, Math.abs(rng.normal(0, 22)));
@@ -149,7 +151,7 @@ export function makeBoxScore(
         if (!rng.chance(ASSIST[slot - 6]!)) break;
         const k = others.splice(
           pick(
-            others.map((o) => 0.5 + rating(attack.players[o]!, 'passing') / 50),
+            others.map((o) => (rating(attack.players[o]!, 'passing') / 50) ** SKILL_POWER),
             rng,
           ),
           1,

@@ -102,6 +102,12 @@ export interface AwardEntry {
   playerName?: string;
 }
 
+/** A stat table: the top players for one stat ('points', 'goals', 'savePct' in hockey). */
+export interface Leaderboard {
+  key: string;
+  rows: { playerId: PlayerId; name: string; teamId: TeamId | null; gp: number; value: number }[];
+}
+
 /** One league record: best (or most) of something, by a team in one season, or all-time for titles. */
 export interface RecordEntry {
   key: 'points' | 'wins' | 'goalsFor' | 'goalsAgainst' | 'titles';

@@ -1,4 +1,12 @@
-import type { AwardEntry, PlayoffSeries, RecordEntry, StandingsRow, Team, TeamId } from './domain';
+import type {
+  AwardEntry,
+  Leaderboard,
+  PlayoffSeries,
+  RecordEntry,
+  StandingsRow,
+  Team,
+  TeamId,
+} from './domain';
 import type { Command, CommandResult } from './commands';
 import type { Importance, LeagueEvent } from './events';
 
@@ -24,6 +32,8 @@ export interface GmApi {
     playoffs(): Promise<{ series: PlayoffSeries[]; championTeamId: TeamId | null }>;
     /** Every award given so far, newest season first. */
     awards(): Promise<AwardEntry[]>;
+    /** Stat leaders of the season so far. */
+    leaders(): Promise<Leaderboard[]>;
     /** Team records over all finished seasons. */
     records(): Promise<RecordEntry[]>;
   };
@@ -49,6 +59,7 @@ export const IPC = {
   playoffs: 'league:playoffs',
   awards: 'league:awards',
   records: 'league:records',
+  leaders: 'league:leaders',
   feedList: 'feed:list',
   dispatch: 'commands:dispatch',
   steamStatus: 'steam:status',
