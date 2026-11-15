@@ -25,7 +25,7 @@ Builds the engines everything else depends on.
 - [ ] Hidden ratings model + stats-to-ratings model
 - [ ] Line-by-line game sim (`sim/game`) + fast "result only" odds sim
 - [~] Balance lab: league-health report works (`pnpm lab`); multi-year checks once seasons roll over
-- [~] Speed test in CI: day and season budgets in place; year-20 save and screen timing to add
+- [~] Speed test in CI: day, season and year-20 budgets in place; screen timing to add
 - [~] Design system: tokens, team theming, Card, Button, PercentileBar; player card and broadcast captions to add
 - [x] Command layer + event log + single reducer (multiplayer-ready)
 - [x] Translation-ready text (English + French)

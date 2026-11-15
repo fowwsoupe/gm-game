@@ -3,7 +3,7 @@
  * Checks below are for hockey (NHL); each sport will get its own set of healthy ranges.
  * Run before and after any change to the sim's numbers, and paste both reports in the PR.
  *
- *   pnpm lab                 # 60 seasons, default seeds
+ *   pnpm lab                 # 100 seasons, default seeds
  *   pnpm lab --seasons 100   # more seasons = more confidence
  *   pnpm lab --leagues 10 --years 30   # multi-year section: leagues x years
  *
@@ -34,7 +34,7 @@ interface Check {
 }
 
 const args = process.argv.slice(2);
-const seasons = Number(args[args.indexOf('--seasons') + 1]) || 60;
+const seasons = Number(args[args.indexOf('--seasons') + 1]) || 100;
 const firstSeed = Number(args[args.indexOf('--seed') + 1]) || 1;
 const leagues = Number(args[args.indexOf('--leagues') + 1]) || 20;
 const years = Number(args[args.indexOf('--years') + 1]) || 20;
