@@ -7,7 +7,9 @@ import {
   defaultContext,
   elcYears,
   handleCommand,
+  lotteryOrder,
   playoffCapBreaches,
+  Rng,
   teamRecords,
   validateContract,
   type LeagueState,
@@ -156,7 +158,7 @@ describe('offseason steps', () => {
     checkLeagueIsLegal(state);
   });
 
-  it('worst team drafts first and drafted players get entry-level contracts', () => {
+  it('a lottery team drafts first and drafted players get entry-level contracts', () => {
     const state = createLeague(9, ctx);
     run(state, { kind: 'sim.advance', days: calendar.regularSeasonDays + calendar.playoffDays });
     const standings = computeStandings(
@@ -164,7 +166,11 @@ describe('offseason steps', () => {
       Object.values(state.results),
       ruleset.season.points,
     );
-    const worst = standings.at(-1)!.teamId;
+    // The lottery pool: every team that missed the playoffs, up to the number of odds.
+    const pool = standings
+      .slice(ruleset.playoffs.teamsQualifying)
+      .map((r) => r.teamId)
+      .slice(-ruleset.draft.lottery!.odds.length);
     const picks = run(state, { kind: 'season.rollover' }).filter(
       (e) => e.kind === 'player.drafted' && e.round > 0,
     );
@@ -172,7 +178,7 @@ describe('offseason steps', () => {
     const first = picks[0]!;
     if (first.kind !== 'player.drafted') throw new Error();
     expect(first.pick).toBe(1);
-    expect(first.teamIds).toEqual([worst]);
+    expect(pool).toContain(first.teamIds[0]);
     expect(first.player.contract?.capHit).toBe(ruleset.contracts.elcSalary);
     expect(elcYears(ruleset, state.date.season - first.player.birthYear)).toBe(
       first.player.contract!.expiresAfterSeason - state.date.season + 1,
@@ -232,5 +238,32 @@ describe('records', () => {
     expect(by.goalsFor).toMatchObject({ teamId: 'b', season: 2027, value: 260 });
     expect(by.goalsAgainst).toMatchObject({ teamId: 'b', season: 2027, value: 180 }); // tie: earliest
     expect(by.titles).toMatchObject({ teamId: 'a', value: 2 });
+  });
+});
+
+describe('draft lottery', () => {
+  const rule = ruleset.draft.lottery!;
+  const order = Array.from({ length: 16 }, (_, i) => `t${i}` as TeamId); // worst first
+
+  it('moves at most `draws` teams up, nobody falls more than that, and keeps everyone', () => {
+    for (let seed = 1; seed <= 200; seed++) {
+      const result = lotteryOrder(order, rule, 16, new Rng(seed));
+      expect([...result].sort()).toEqual([...order].sort());
+      result.forEach((id, i) => expect(i - order.indexOf(id)).toBeLessThanOrEqual(rule.draws));
+    }
+    expect(lotteryOrder(order, null, 16, new Rng(1))).toEqual(order);
+  });
+
+  it('gives the worst team its listed chance, and playoff teams never move', () => {
+    let worstFirst = 0;
+    const trials = 4000;
+    for (let seed = 1; seed <= trials; seed++) {
+      const result = lotteryOrder(order, rule, 8, new Rng(seed));
+      if (result[0] === order[0]) worstFirst++;
+      expect(result.slice(8)).toEqual(order.slice(8));
+    }
+    // 8 teams in the lottery: the worst has 18.5 of the first eight teams' 77 points.
+    const expected = 18.5 / rule.odds.slice(0, 8).reduce((a, b) => a + b, 0);
+    expect(Math.abs(worstFirst / trials - expected)).toBeLessThan(0.03);
   });
 });

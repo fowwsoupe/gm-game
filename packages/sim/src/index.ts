@@ -22,7 +22,7 @@ export * from './people';
 export * from './finance';
 export * from './value';
 export * from './league';
-export { rolloverSeason } from './offseason';
+export { rolloverSeason, lotteryOrder } from './offseason';
 export { giveSeasonAwards } from './awards';
 export * from './sports';
 export { defaultModels, type Models } from './models';

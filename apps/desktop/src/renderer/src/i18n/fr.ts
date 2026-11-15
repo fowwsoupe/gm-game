@@ -25,6 +25,7 @@ export const fr: Record<MessageKey, string> = {
   'event.statusChanged': '{team} est maintenant {status}',
   'event.phaseChanged': 'Début : {phase}',
   'event.seriesWon': '{team} a remporté une série du tour {round}',
+  'event.lotteryWon': '{team} a remporté la loterie du repêchage',
   'event.championCrowned': '{team} a remporté le championnat',
   'event.awardWon': '{player} ({team}) a remporté le titre de {award}',
   'award.champion': 'Champion',

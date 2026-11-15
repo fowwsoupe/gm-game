@@ -12,6 +12,8 @@ import { Rng, phaseOf, type Emit, type LeagueState } from '../core';
 import { computeStandings, makeSchedule } from '../league';
 import type { SimContext } from '../context';
 import { runDraft } from './draft';
+
+export { lotteryOrder } from './draft';
 import { expireContracts, fillRosters, reSignPlayers } from './freeAgency';
 import { developPlayers, retirePlayers } from './progression';
 

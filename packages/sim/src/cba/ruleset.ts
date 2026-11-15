@@ -59,6 +59,11 @@ export interface Ruleset {
 
   draft: {
     rounds: number;
+    /**
+     * Lottery for the first round: teams that missed the playoffs, worst first, with each one's
+     * chance (in %) of winning a draw. `draws` teams jump to the front of round one. Null = worst picks first.
+     */
+    lottery: { draws: number; odds: number[] } | null;
   };
 
   awards: {

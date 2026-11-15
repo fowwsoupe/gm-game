@@ -27,6 +27,7 @@ export const en = {
   'event.statusChanged': '{team} is now a {status}',
   'event.phaseChanged': 'The {phase} has begun',
   'event.seriesWon': '{team} won a round {round} series',
+  'event.lotteryWon': '{team} won the draft lottery',
   'event.championCrowned': '{team} won the championship',
   'event.awardWon': '{player} ({team}) won {award}',
   'award.champion': 'Champion',

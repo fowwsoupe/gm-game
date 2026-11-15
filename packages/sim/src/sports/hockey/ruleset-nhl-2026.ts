@@ -49,7 +49,15 @@ export const NHL_2026: Ruleset = {
   },
   // The real draft has 7 rounds, but most picks stay in junior or college and never take an NHL
   // roster spot. Until prospects exist as a separate pool, only the picks that sign are drafted.
-  draft: { rounds: 2 },
+  draft: {
+    rounds: 2,
+    // Odds for the 16 non-playoff teams, worst first (the league's 2021 lottery). Two draws, so a team
+    // can fall at most two spots.
+    lottery: {
+      draws: 2,
+      odds: [18.5, 13.5, 11.5, 9.5, 8.5, 7.5, 6.5, 6, 5, 3.5, 3, 2.5, 2, 1.5, 0.5, 0.5],
+    },
+  },
   awards: { rookieMaxAge: 20 },
   trades: {
     maxRetentionPct: 50,

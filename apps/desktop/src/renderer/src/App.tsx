@@ -166,7 +166,11 @@ function FeedCard() {
       case 'season.phaseChanged':
         return t('event.phaseChanged', { phase: t(`phase.${e.to}`) });
       case 'news.posted':
-        if (e.headline === 'event.seriesWon' || e.headline === 'event.championCrowned')
+        if (
+          e.headline === 'event.seriesWon' ||
+          e.headline === 'event.championCrowned' ||
+          e.headline === 'event.lotteryWon'
+        )
           return t(e.headline, e.params);
         if (e.headline === 'event.awardWon')
           return t(e.headline, {
