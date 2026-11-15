@@ -9,7 +9,7 @@
  */
 import type { TeamId } from '@gm/shared';
 import { Rng, phaseOf, type Emit, type LeagueState } from '../core';
-import { computeStandings, roundRobinSchedule } from '../league';
+import { computeStandings, makeSchedule } from '../league';
 import type { SimContext } from '../context';
 import { runDraft } from './draft';
 import { expireContracts, fillRosters, reSignPlayers } from './freeAgency';
@@ -35,10 +35,11 @@ export function rolloverSeason(state: LeagueState, ctx: SimContext, emit: Emit):
   emit('minor', [], {
     kind: 'season.started',
     season,
-    schedule: roundRobinSchedule(
+    schedule: makeSchedule(
       season,
-      teamIds,
+      Object.values(state.teams).sort((a, b) => a.id.localeCompare(b.id)),
       ctx.ruleset.season.gamesPerTeam,
+      ctx.ruleset.season.calendar.regularSeasonDays,
       rng.fork('schedule'),
     ),
     rngState: rng.fork('games').state,

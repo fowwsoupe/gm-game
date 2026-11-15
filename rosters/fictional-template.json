@@ -8,82 +8,114 @@
     {
       "abbreviation": "AUR",
       "city": "Aurora",
-      "name": "Wolves"
+      "name": "Wolves",
+      "conference": "East",
+      "division": "East A"
     },
     {
       "abbreviation": "BAY",
       "city": "Bayview",
-      "name": "Comets"
+      "name": "Comets",
+      "conference": "West",
+      "division": "West A"
     },
     {
       "abbreviation": "CED",
       "city": "Cedar Falls",
-      "name": "Blizzard"
+      "name": "Blizzard",
+      "conference": "East",
+      "division": "East A"
     },
     {
       "abbreviation": "DUN",
       "city": "Dunmore",
-      "name": "Lumberjacks"
+      "name": "Lumberjacks",
+      "conference": "West",
+      "division": "West A"
     },
     {
       "abbreviation": "EAS",
       "city": "Eastport",
-      "name": "Admirals"
+      "name": "Admirals",
+      "conference": "East",
+      "division": "East A"
     },
     {
       "abbreviation": "FAI",
       "city": "Fairhaven",
-      "name": "Foxes"
+      "name": "Foxes",
+      "conference": "West",
+      "division": "West A"
     },
     {
       "abbreviation": "GLE",
       "city": "Glenrock",
-      "name": "Thunder"
+      "name": "Thunder",
+      "conference": "East",
+      "division": "East A"
     },
     {
       "abbreviation": "HAR",
       "city": "Harbor City",
-      "name": "Ravens"
+      "name": "Ravens",
+      "conference": "West",
+      "division": "West A"
     },
     {
       "abbreviation": "IRO",
       "city": "Ironwood",
-      "name": "Miners"
+      "name": "Miners",
+      "conference": "East",
+      "division": "East B"
     },
     {
       "abbreviation": "JUN",
       "city": "Juniper",
-      "name": "Sentinels"
+      "name": "Sentinels",
+      "conference": "West",
+      "division": "West B"
     },
     {
       "abbreviation": "KIN",
       "city": "Kingsbridge",
-      "name": "Stallions"
+      "name": "Stallions",
+      "conference": "East",
+      "division": "East B"
     },
     {
       "abbreviation": "LAK",
       "city": "Lakeshore",
-      "name": "Pilots"
+      "name": "Pilots",
+      "conference": "West",
+      "division": "West B"
     },
     {
       "abbreviation": "MAP",
       "city": "Maple Ridge",
-      "name": "Grizzlies"
+      "name": "Grizzlies",
+      "conference": "East",
+      "division": "East B"
     },
     {
       "abbreviation": "NOR",
       "city": "Northgate",
-      "name": "Owls"
+      "name": "Owls",
+      "conference": "West",
+      "division": "West B"
     },
     {
       "abbreviation": "OAK",
       "city": "Oakmont",
-      "name": "Storm"
+      "name": "Storm",
+      "conference": "East",
+      "division": "East B"
     },
     {
       "abbreviation": "PIN",
       "city": "Pinecrest",
-      "name": "Knights"
+      "name": "Knights",
+      "conference": "West",
+      "division": "West B"
     }
   ],
   "players": [
@@ -105,7 +137,7 @@
         "hockeyIq": 65
       },
       "contract": {
-        "capHit": 7800000,
+        "capHit": 4200000,
         "expiresAfterSeason": 2031
       }
     },
@@ -127,7 +159,7 @@
         "hockeyIq": 75
       },
       "contract": {
-        "capHit": 9400000,
+        "capHit": 5000000,
         "expiresAfterSeason": 2030
       }
     },
@@ -149,7 +181,7 @@
         "hockeyIq": 68
       },
       "contract": {
-        "capHit": 1700000,
+        "capHit": 900000,
         "expiresAfterSeason": 2031
       }
     },
@@ -171,7 +203,7 @@
         "hockeyIq": 57
       },
       "contract": {
-        "capHit": 2300000,
+        "capHit": 1200000,
         "expiresAfterSeason": 2027
       }
     },
@@ -193,7 +225,7 @@
         "hockeyIq": 65
       },
       "contract": {
-        "capHit": 9200000,
+        "capHit": 4900000,
         "expiresAfterSeason": 2027
       }
     },
@@ -215,7 +247,7 @@
         "hockeyIq": 74
       },
       "contract": {
-        "capHit": 5400000,
+        "capHit": 2900000,
         "expiresAfterSeason": 2027
       }
     },
@@ -237,7 +269,7 @@
         "hockeyIq": 79
       },
       "contract": {
-        "capHit": 9100000,
+        "capHit": 4800000,
         "expiresAfterSeason": 2029
       }
     },
@@ -259,7 +291,7 @@
         "hockeyIq": 64
       },
       "contract": {
-        "capHit": 9300000,
+        "capHit": 5000000,
         "expiresAfterSeason": 2029
       }
     },
@@ -281,7 +313,7 @@
         "hockeyIq": 79
       },
       "contract": {
-        "capHit": 10000000,
+        "capHit": 5300000,
         "expiresAfterSeason": 2029
       }
     },
@@ -303,7 +335,7 @@
         "hockeyIq": 73
       },
       "contract": {
-        "capHit": 8400000,
+        "capHit": 4500000,
         "expiresAfterSeason": 2029
       }
     },
@@ -325,7 +357,7 @@
         "hockeyIq": 59
       },
       "contract": {
-        "capHit": 2600000,
+        "capHit": 1400000,
         "expiresAfterSeason": 2032
       }
     },
@@ -347,7 +379,7 @@
         "hockeyIq": 77
       },
       "contract": {
-        "capHit": 9600000,
+        "capHit": 5100000,
         "expiresAfterSeason": 2031
       }
     },
@@ -369,7 +401,7 @@
         "hockeyIq": 71
       },
       "contract": {
-        "capHit": 5800000,
+        "capHit": 3100000,
         "expiresAfterSeason": 2032
       }
     },
@@ -391,7 +423,7 @@
         "hockeyIq": 66
       },
       "contract": {
-        "capHit": 2800000,
+        "capHit": 1500000,
         "expiresAfterSeason": 2029
       }
     },
@@ -413,7 +445,7 @@
         "hockeyIq": 62
       },
       "contract": {
-        "capHit": 8400000,
+        "capHit": 4500000,
         "expiresAfterSeason": 2032
       }
     },
@@ -435,7 +467,7 @@
         "hockeyIq": 61
       },
       "contract": {
-        "capHit": 7500000,
+        "capHit": 4000000,
         "expiresAfterSeason": 2031
       }
     },
@@ -457,7 +489,7 @@
         "hockeyIq": 58
       },
       "contract": {
-        "capHit": 9000000,
+        "capHit": 4800000,
         "expiresAfterSeason": 2032
       }
     },
@@ -479,7 +511,7 @@
         "hockeyIq": 76
       },
       "contract": {
-        "capHit": 1000000,
+        "capHit": 850000,
         "expiresAfterSeason": 2028
       }
     },
@@ -501,7 +533,7 @@
         "hockeyIq": 82
       },
       "contract": {
-        "capHit": 9900000,
+        "capHit": 5300000,
         "expiresAfterSeason": 2030
       }
     },
@@ -523,7 +555,7 @@
         "hockeyIq": 59
       },
       "contract": {
-        "capHit": 4400000,
+        "capHit": 2300000,
         "expiresAfterSeason": 2029
       }
     },
@@ -545,7 +577,7 @@
         "hockeyIq": 65
       },
       "contract": {
-        "capHit": 8000000,
+        "capHit": 4300000,
         "expiresAfterSeason": 2031
       }
     },
@@ -567,7 +599,7 @@
         "hockeyIq": 65
       },
       "contract": {
-        "capHit": 2900000,
+        "capHit": 1500000,
         "expiresAfterSeason": 2028
       }
     },
@@ -589,7 +621,7 @@
         "hockeyIq": 68
       },
       "contract": {
-        "capHit": 1100000,
+        "capHit": 850000,
         "expiresAfterSeason": 2031
       }
     },
@@ -608,7 +640,7 @@
         "consistency": 58
       },
       "contract": {
-        "capHit": 10000000,
+        "capHit": 5300000,
         "expiresAfterSeason": 2030
       }
     },
@@ -627,7 +659,7 @@
         "consistency": 77
       },
       "contract": {
-        "capHit": 4500000,
+        "capHit": 2400000,
         "expiresAfterSeason": 2027
       }
     },
@@ -649,7 +681,7 @@
         "hockeyIq": 59
       },
       "contract": {
-        "capHit": 6200000,
+        "capHit": 4100000,
         "expiresAfterSeason": 2031
       }
     },
@@ -671,7 +703,7 @@
         "hockeyIq": 54
       },
       "contract": {
-        "capHit": 1000000,
+        "capHit": 850000,
         "expiresAfterSeason": 2032
       }
     },
@@ -693,7 +725,7 @@
         "hockeyIq": 78
       },
       "contract": {
-        "capHit": 4300000,
+        "capHit": 2800000,
         "expiresAfterSeason": 2032
       }
     },
@@ -715,7 +747,7 @@
         "hockeyIq": 62
       },
       "contract": {
-        "capHit": 7900000,
+        "capHit": 5200000,
         "expiresAfterSeason": 2030
       }
     },
@@ -737,7 +769,7 @@
         "hockeyIq": 78
       },
       "contract": {
-        "capHit": 9600000,
+        "capHit": 6300000,
         "expiresAfterSeason": 2031
       }
     },
@@ -759,7 +791,7 @@
         "hockeyIq": 78
       },
       "contract": {
-        "capHit": 5700000,
+        "capHit": 3700000,
         "expiresAfterSeason": 2031
       }
     },
@@ -781,7 +813,7 @@
         "hockeyIq": 65
       },
       "contract": {
-        "capHit": 3500000,
+        "capHit": 2300000,
         "expiresAfterSeason": 2027
       }
     },
@@ -803,7 +835,7 @@
         "hockeyIq": 61
       },
       "contract": {
-        "capHit": 6700000,
+        "capHit": 4400000,
         "expiresAfterSeason": 2030
       }
     },
@@ -825,7 +857,7 @@
         "hockeyIq": 83
       },
       "contract": {
-        "capHit": 1500000,
+        "capHit": 1000000,
         "expiresAfterSeason": 2032
       }
     },
@@ -847,7 +879,7 @@
         "hockeyIq": 81
       },
       "contract": {
-        "capHit": 7100000,
+        "capHit": 4600000,
         "expiresAfterSeason": 2032
       }
     },
@@ -869,7 +901,7 @@
         "hockeyIq": 65
       },
       "contract": {
-        "capHit": 7400000,
+        "capHit": 4800000,
         "expiresAfterSeason": 2032
       }
     },
@@ -891,7 +923,7 @@
         "hockeyIq": 66
       },
       "contract": {
-        "capHit": 2300000,
+        "capHit": 1500000,
         "expiresAfterSeason": 2030
       }
     },
@@ -913,7 +945,7 @@
         "hockeyIq": 80
       },
       "contract": {
-        "capHit": 8200000,
+        "capHit": 5400000,
         "expiresAfterSeason": 2030
       }
     },
@@ -935,7 +967,7 @@
         "hockeyIq": 72
       },
       "contract": {
-        "capHit": 5900000,
+        "capHit": 3900000,
         "expiresAfterSeason": 2029
       }
     },
@@ -957,7 +989,7 @@
         "hockeyIq": 66
       },
       "contract": {
-        "capHit": 7500000,
+        "capHit": 4900000,
         "expiresAfterSeason": 2032
       }
     },
@@ -979,7 +1011,7 @@
         "hockeyIq": 68
       },
       "contract": {
-        "capHit": 8800000,
+        "capHit": 5800000,
         "expiresAfterSeason": 2027
       }
     },
@@ -1001,7 +1033,7 @@
         "hockeyIq": 72
       },
       "contract": {
-        "capHit": 5200000,
+        "capHit": 3400000,
         "expiresAfterSeason": 2030
       }
     },
@@ -1023,7 +1055,7 @@
         "hockeyIq": 60
       },
       "contract": {
-        "capHit": 9900000,
+        "capHit": 6500000,
         "expiresAfterSeason": 2032
       }
     },
@@ -1045,7 +1077,7 @@
         "hockeyIq": 70
       },
       "contract": {
-        "capHit": 5700000,
+        "capHit": 3700000,
         "expiresAfterSeason": 2029
       }
     },
@@ -1067,7 +1099,7 @@
         "hockeyIq": 67
       },
       "contract": {
-        "capHit": 3700000,
+        "capHit": 2400000,
         "expiresAfterSeason": 2029
       }
     },
@@ -1089,7 +1121,7 @@
         "hockeyIq": 73
       },
       "contract": {
-        "capHit": 5300000,
+        "capHit": 3500000,
         "expiresAfterSeason": 2032
       }
     },
@@ -1111,7 +1143,7 @@
         "hockeyIq": 63
       },
       "contract": {
-        "capHit": 5400000,
+        "capHit": 3500000,
         "expiresAfterSeason": 2029
       }
     },
@@ -1133,7 +1165,7 @@
         "hockeyIq": 90
       },
       "contract": {
-        "capHit": 1500000,
+        "capHit": 1000000,
         "expiresAfterSeason": 2030
       }
     },
@@ -1152,7 +1184,7 @@
         "consistency": 81
       },
       "contract": {
-        "capHit": 2000000,
+        "capHit": 1300000,
         "expiresAfterSeason": 2030
       }
     },
@@ -1171,7 +1203,7 @@
         "consistency": 67
       },
       "contract": {
-        "capHit": 7500000,
+        "capHit": 4900000,
         "expiresAfterSeason": 2031
       }
     },
@@ -1193,7 +1225,7 @@
         "hockeyIq": 57
       },
       "contract": {
-        "capHit": 8700000,
+        "capHit": 6000000,
         "expiresAfterSeason": 2027
       }
     },
@@ -1215,7 +1247,7 @@
         "hockeyIq": 68
       },
       "contract": {
-        "capHit": 5400000,
+        "capHit": 3700000,
         "expiresAfterSeason": 2031
       }
     },
@@ -1237,7 +1269,7 @@
         "hockeyIq": 81
       },
       "contract": {
-        "capHit": 4700000,
+        "capHit": 3200000,
         "expiresAfterSeason": 2032
       }
     },
@@ -1259,7 +1291,7 @@
         "hockeyIq": 78
       },
       "contract": {
-        "capHit": 6200000,
+        "capHit": 4300000,
         "expiresAfterSeason": 2032
       }
     },
@@ -1281,7 +1313,7 @@
         "hockeyIq": 79
       },
       "contract": {
-        "capHit": 9800000,
+        "capHit": 6800000,
         "expiresAfterSeason": 2028
       }
     },
@@ -1303,7 +1335,7 @@
         "hockeyIq": 76
       },
       "contract": {
-        "capHit": 4200000,
+        "capHit": 2900000,
         "expiresAfterSeason": 2030
       }
     },
@@ -1325,7 +1357,7 @@
         "hockeyIq": 87
       },
       "contract": {
-        "capHit": 5300000,
+        "capHit": 3700000,
         "expiresAfterSeason": 2027
       }
     },
@@ -1347,7 +1379,7 @@
         "hockeyIq": 58
       },
       "contract": {
-        "capHit": 5300000,
+        "capHit": 3700000,
         "expiresAfterSeason": 2028
       }
     },
@@ -1369,7 +1401,7 @@
         "hockeyIq": 74
       },
       "contract": {
-        "capHit": 3200000,
+        "capHit": 2200000,
         "expiresAfterSeason": 2030
       }
     },
@@ -1391,7 +1423,7 @@
         "hockeyIq": 58
       },
       "contract": {
-        "capHit": 4700000,
+        "capHit": 3200000,
         "expiresAfterSeason": 2029
       }
     },
@@ -1413,7 +1445,7 @@
         "hockeyIq": 59
       },
       "contract": {
-        "capHit": 7000000,
+        "capHit": 4800000,
         "expiresAfterSeason": 2028
       }
     },
@@ -1435,7 +1467,7 @@
         "hockeyIq": 69
       },
       "contract": {
-        "capHit": 900000,
+        "capHit": 850000,
         "expiresAfterSeason": 2031
       }
     },
@@ -1457,7 +1489,7 @@
         "hockeyIq": 67
       },
       "contract": {
-        "capHit": 2700000,
+        "capHit": 1900000,
         "expiresAfterSeason": 2030
       }
     },
@@ -1479,7 +1511,7 @@
         "hockeyIq": 55
       },
       "contract": {
-        "capHit": 5700000,
+        "capHit": 3900000,
         "expiresAfterSeason": 2027
       }
     },
@@ -1501,7 +1533,7 @@
         "hockeyIq": 80
       },
       "contract": {
-        "capHit": 1200000,
+        "capHit": 850000,
         "expiresAfterSeason": 2028
       }
     },
@@ -1523,7 +1555,7 @@
         "hockeyIq": 63
       },
       "contract": {
-        "capHit": 5900000,
+        "capHit": 4100000,
         "expiresAfterSeason": 2028
       }
     },
@@ -1545,7 +1577,7 @@
         "hockeyIq": 69
       },
       "contract": {
-        "capHit": 4700000,
+        "capHit": 3200000,
         "expiresAfterSeason": 2028
       }
     },
@@ -1567,7 +1599,7 @@
         "hockeyIq": 74
       },
       "contract": {
-        "capHit": 6400000,
+        "capHit": 4400000,
         "expiresAfterSeason": 2031
       }
     },
@@ -1589,7 +1621,7 @@
         "hockeyIq": 80
       },
       "contract": {
-        "capHit": 4900000,
+        "capHit": 3400000,
         "expiresAfterSeason": 2032
       }
     },
@@ -1611,7 +1643,7 @@
         "hockeyIq": 83
       },
       "contract": {
-        "capHit": 9800000,
+        "capHit": 6800000,
         "expiresAfterSeason": 2029
       }
     },
@@ -1633,7 +1665,7 @@
         "hockeyIq": 74
       },
       "contract": {
-        "capHit": 5400000,
+        "capHit": 3700000,
         "expiresAfterSeason": 2032
       }
     },
@@ -1655,7 +1687,7 @@
         "hockeyIq": 61
       },
       "contract": {
-        "capHit": 6200000,
+        "capHit": 4300000,
         "expiresAfterSeason": 2031
       }
     },
@@ -1677,7 +1709,7 @@
         "hockeyIq": 75
       },
       "contract": {
-        "capHit": 2200000,
+        "capHit": 1500000,
         "expiresAfterSeason": 2029
       }
     },
@@ -1696,7 +1728,7 @@
         "consistency": 77
       },
       "contract": {
-        "capHit": 5600000,
+        "capHit": 3900000,
         "expiresAfterSeason": 2032
       }
     },
@@ -1715,7 +1747,7 @@
         "consistency": 75
       },
       "contract": {
-        "capHit": 3500000,
+        "capHit": 2400000,
         "expiresAfterSeason": 2028
       }
     },
@@ -1737,7 +1769,7 @@
         "hockeyIq": 68
       },
       "contract": {
-        "capHit": 1600000,
+        "capHit": 1200000,
         "expiresAfterSeason": 2028
       }
     },
@@ -1759,7 +1791,7 @@
         "hockeyIq": 71
       },
       "contract": {
-        "capHit": 2200000,
+        "capHit": 1600000,
         "expiresAfterSeason": 2031
       }
     },
@@ -1781,7 +1813,7 @@
         "hockeyIq": 61
       },
       "contract": {
-        "capHit": 9500000,
+        "capHit": 6900000,
         "expiresAfterSeason": 2027
       }
     },
@@ -1803,7 +1835,7 @@
         "hockeyIq": 68
       },
       "contract": {
-        "capHit": 7200000,
+        "capHit": 5200000,
         "expiresAfterSeason": 2032
       }
     },
@@ -1825,7 +1857,7 @@
         "hockeyIq": 73
       },
       "contract": {
-        "capHit": 9600000,
+        "capHit": 6900000,
         "expiresAfterSeason": 2031
       }
     },
@@ -1847,7 +1879,7 @@
         "hockeyIq": 62
       },
       "contract": {
-        "capHit": 8600000,
+        "capHit": 6200000,
         "expiresAfterSeason": 2030
       }
     },
@@ -1869,7 +1901,7 @@
         "hockeyIq": 70
       },
       "contract": {
-        "capHit": 3900000,
+        "capHit": 2800000,
         "expiresAfterSeason": 2030
       }
     },
@@ -1891,7 +1923,7 @@
         "hockeyIq": 80
       },
       "contract": {
-        "capHit": 8200000,
+        "capHit": 5900000,
         "expiresAfterSeason": 2032
       }
     },
@@ -1913,7 +1945,7 @@
         "hockeyIq": 56
       },
       "contract": {
-        "capHit": 7800000,
+        "capHit": 5600000,
         "expiresAfterSeason": 2031
       }
     },
@@ -1935,7 +1967,7 @@
         "hockeyIq": 47
       },
       "contract": {
-        "capHit": 5400000,
+        "capHit": 3900000,
         "expiresAfterSeason": 2030
       }
     },
@@ -1957,7 +1989,7 @@
         "hockeyIq": 70
       },
       "contract": {
-        "capHit": 1200000,
+        "capHit": 900000,
         "expiresAfterSeason": 2028
       }
     },
@@ -1979,7 +2011,7 @@
         "hockeyIq": 70
       },
       "contract": {
-        "capHit": 1000000,
+        "capHit": 850000,
         "expiresAfterSeason": 2031
       }
     },
@@ -2001,7 +2033,7 @@
         "hockeyIq": 63
       },
       "contract": {
-        "capHit": 2800000,
+        "capHit": 2000000,
         "expiresAfterSeason": 2029
       }
     },
@@ -2023,7 +2055,7 @@
         "hockeyIq": 67
       },
       "contract": {
-        "capHit": 1300000,
+        "capHit": 900000,
         "expiresAfterSeason": 2030
       }
     },
@@ -2045,7 +2077,7 @@
         "hockeyIq": 44
       },
       "contract": {
-        "capHit": 7000000,
+        "capHit": 5000000,
         "expiresAfterSeason": 2029
       }
     },
@@ -2067,7 +2099,7 @@
         "hockeyIq": 68
       },
       "contract": {
-        "capHit": 3200000,
+        "capHit": 2300000,
         "expiresAfterSeason": 2032
       }
     },
@@ -2089,7 +2121,7 @@
         "hockeyIq": 55
       },
       "contract": {
-        "capHit": 1500000,
+        "capHit": 1100000,
         "expiresAfterSeason": 2027
       }
     },
@@ -2111,7 +2143,7 @@
         "hockeyIq": 67
       },
       "contract": {
-        "capHit": 5700000,
+        "capHit": 4100000,
         "expiresAfterSeason": 2029
       }
     },
@@ -2133,7 +2165,7 @@
         "hockeyIq": 52
       },
       "contract": {
-        "capHit": 8200000,
+        "capHit": 5900000,
         "expiresAfterSeason": 2028
       }
     },
@@ -2155,7 +2187,7 @@
         "hockeyIq": 71
       },
       "contract": {
-        "capHit": 7700000,
+        "capHit": 5600000,
         "expiresAfterSeason": 2027
       }
     },
@@ -2177,7 +2209,7 @@
         "hockeyIq": 78
       },
       "contract": {
-        "capHit": 3800000,
+        "capHit": 2700000,
         "expiresAfterSeason": 2032
       }
     },
@@ -2199,7 +2231,7 @@
         "hockeyIq": 49
       },
       "contract": {
-        "capHit": 6800000,
+        "capHit": 4900000,
         "expiresAfterSeason": 2027
       }
     },
@@ -2221,7 +2253,7 @@
         "hockeyIq": 46
       },
       "contract": {
-        "capHit": 2800000,
+        "capHit": 2000000,
         "expiresAfterSeason": 2027
       }
     },
@@ -2240,7 +2272,7 @@
         "consistency": 58
       },
       "contract": {
-        "capHit": 1300000,
+        "capHit": 900000,
         "expiresAfterSeason": 2029
       }
     },
@@ -2259,7 +2291,7 @@
         "consistency": 66
       },
       "contract": {
-        "capHit": 1400000,
+        "capHit": 1000000,
         "expiresAfterSeason": 2028
       }
     },
@@ -2281,7 +2313,7 @@
         "hockeyIq": 54
       },
       "contract": {
-        "capHit": 3700000,
+        "capHit": 2200000,
         "expiresAfterSeason": 2027
       }
     },
@@ -2303,7 +2335,7 @@
         "hockeyIq": 61
       },
       "contract": {
-        "capHit": 4100000,
+        "capHit": 2500000,
         "expiresAfterSeason": 2032
       }
     },
@@ -2325,7 +2357,7 @@
         "hockeyIq": 71
       },
       "contract": {
-        "capHit": 1700000,
+        "capHit": 1000000,
         "expiresAfterSeason": 2028
       }
     },
@@ -2347,7 +2379,7 @@
         "hockeyIq": 65
       },
       "contract": {
-        "capHit": 1500000,
+        "capHit": 900000,
         "expiresAfterSeason": 2027
       }
     },
@@ -2369,7 +2401,7 @@
         "hockeyIq": 65
       },
       "contract": {
-        "capHit": 6000000,
+        "capHit": 3600000,
         "expiresAfterSeason": 2032
       }
     },
@@ -2391,7 +2423,7 @@
         "hockeyIq": 59
       },
       "contract": {
-        "capHit": 8300000,
+        "capHit": 5000000,
         "expiresAfterSeason": 2029
       }
     },
@@ -2413,7 +2445,7 @@
         "hockeyIq": 71
       },
       "contract": {
-        "capHit": 8600000,
+        "capHit": 5200000,
         "expiresAfterSeason": 2027
       }
     },
@@ -2435,7 +2467,7 @@
         "hockeyIq": 50
       },
       "contract": {
-        "capHit": 9200000,
+        "capHit": 5500000,
         "expiresAfterSeason": 2032
       }
     },
@@ -2457,7 +2489,7 @@
         "hockeyIq": 52
       },
       "contract": {
-        "capHit": 1600000,
+        "capHit": 1000000,
         "expiresAfterSeason": 2031
       }
     },
@@ -2479,7 +2511,7 @@
         "hockeyIq": 47
       },
       "contract": {
-        "capHit": 9800000,
+        "capHit": 5900000,
         "expiresAfterSeason": 2031
       }
     },
@@ -2501,7 +2533,7 @@
         "hockeyIq": 55
       },
       "contract": {
-        "capHit": 9900000,
+        "capHit": 6000000,
         "expiresAfterSeason": 2027
       }
     },
@@ -2523,7 +2555,7 @@
         "hockeyIq": 45
       },
       "contract": {
-        "capHit": 1000000,
+        "capHit": 850000,
         "expiresAfterSeason": 2032
       }
     },
@@ -2545,7 +2577,7 @@
         "hockeyIq": 53
       },
       "contract": {
-        "capHit": 9700000,
+        "capHit": 5800000,
         "expiresAfterSeason": 2030
       }
     },
@@ -2567,7 +2599,7 @@
         "hockeyIq": 64
       },
       "contract": {
-        "capHit": 3500000,
+        "capHit": 2100000,
         "expiresAfterSeason": 2029
       }
     },
@@ -2589,7 +2621,7 @@
         "hockeyIq": 60
       },
       "contract": {
-        "capHit": 1600000,
+        "capHit": 1000000,
         "expiresAfterSeason": 2032
       }
     },
@@ -2611,7 +2643,7 @@
         "hockeyIq": 64
       },
       "contract": {
-        "capHit": 9600000,
+        "capHit": 5800000,
         "expiresAfterSeason": 2029
       }
     },
@@ -2633,7 +2665,7 @@
         "hockeyIq": 63
       },
       "contract": {
-        "capHit": 6600000,
+        "capHit": 4000000,
         "expiresAfterSeason": 2027
       }
     },
@@ -2655,7 +2687,7 @@
         "hockeyIq": 50
       },
       "contract": {
-        "capHit": 5400000,
+        "capHit": 3300000,
         "expiresAfterSeason": 2030
       }
     },
@@ -2677,7 +2709,7 @@
         "hockeyIq": 49
       },
       "contract": {
-        "capHit": 4400000,
+        "capHit": 2700000,
         "expiresAfterSeason": 2032
       }
     },
@@ -2699,7 +2731,7 @@
         "hockeyIq": 55
       },
       "contract": {
-        "capHit": 1300000,
+        "capHit": 850000,
         "expiresAfterSeason": 2027
       }
     },
@@ -2721,7 +2753,7 @@
         "hockeyIq": 59
       },
       "contract": {
-        "capHit": 9700000,
+        "capHit": 5800000,
         "expiresAfterSeason": 2029
       }
     },
@@ -2743,7 +2775,7 @@
         "hockeyIq": 61
       },
       "contract": {
-        "capHit": 5700000,
+        "capHit": 3400000,
         "expiresAfterSeason": 2031
       }
     },
@@ -2765,7 +2797,7 @@
         "hockeyIq": 47
       },
       "contract": {
-        "capHit": 5000000,
+        "capHit": 3000000,
         "expiresAfterSeason": 2029
       }
     },
@@ -2784,7 +2816,7 @@
         "consistency": 49
       },
       "contract": {
-        "capHit": 6800000,
+        "capHit": 4100000,
         "expiresAfterSeason": 2027
       }
     },
@@ -2803,7 +2835,7 @@
         "consistency": 68
       },
       "contract": {
-        "capHit": 8600000,
+        "capHit": 5200000,
         "expiresAfterSeason": 2028
       }
     },
@@ -2825,7 +2857,7 @@
         "hockeyIq": 69
       },
       "contract": {
-        "capHit": 5700000,
+        "capHit": 3700000,
         "expiresAfterSeason": 2032
       }
     },
@@ -2847,7 +2879,7 @@
         "hockeyIq": 86
       },
       "contract": {
-        "capHit": 9200000,
+        "capHit": 6000000,
         "expiresAfterSeason": 2032
       }
     },
@@ -2869,7 +2901,7 @@
         "hockeyIq": 70
       },
       "contract": {
-        "capHit": 8900000,
+        "capHit": 5800000,
         "expiresAfterSeason": 2028
       }
     },
@@ -2891,7 +2923,7 @@
         "hockeyIq": 75
       },
       "contract": {
-        "capHit": 2300000,
+        "capHit": 1500000,
         "expiresAfterSeason": 2032
       }
     },
@@ -2913,7 +2945,7 @@
         "hockeyIq": 72
       },
       "contract": {
-        "capHit": 2300000,
+        "capHit": 1500000,
         "expiresAfterSeason": 2032
       }
     },
@@ -2935,7 +2967,7 @@
         "hockeyIq": 62
       },
       "contract": {
-        "capHit": 2600000,
+        "capHit": 1700000,
         "expiresAfterSeason": 2030
       }
     },
@@ -2957,7 +2989,7 @@
         "hockeyIq": 59
       },
       "contract": {
-        "capHit": 3200000,
+        "capHit": 2100000,
         "expiresAfterSeason": 2030
       }
     },
@@ -2979,7 +3011,7 @@
         "hockeyIq": 72
       },
       "contract": {
-        "capHit": 9000000,
+        "capHit": 5900000,
         "expiresAfterSeason": 2032
       }
     },
@@ -3001,7 +3033,7 @@
         "hockeyIq": 78
       },
       "contract": {
-        "capHit": 6600000,
+        "capHit": 4300000,
         "expiresAfterSeason": 2027
       }
     },
@@ -3023,7 +3055,7 @@
         "hockeyIq": 67
       },
       "contract": {
-        "capHit": 9500000,
+        "capHit": 6200000,
         "expiresAfterSeason": 2032
       }
     },
@@ -3045,7 +3077,7 @@
         "hockeyIq": 82
       },
       "contract": {
-        "capHit": 9500000,
+        "capHit": 6200000,
         "expiresAfterSeason": 2029
       }
     },
@@ -3067,7 +3099,7 @@
         "hockeyIq": 72
       },
       "contract": {
-        "capHit": 6000000,
+        "capHit": 3900000,
         "expiresAfterSeason": 2029
       }
     },
@@ -3089,7 +3121,7 @@
         "hockeyIq": 70
       },
       "contract": {
-        "capHit": 7200000,
+        "capHit": 4700000,
         "expiresAfterSeason": 2030
       }
     },
@@ -3111,7 +3143,7 @@
         "hockeyIq": 64
       },
       "contract": {
-        "capHit": 2400000,
+        "capHit": 1600000,
         "expiresAfterSeason": 2027
       }
     },
@@ -3133,7 +3165,7 @@
         "hockeyIq": 80
       },
       "contract": {
-        "capHit": 2700000,
+        "capHit": 1800000,
         "expiresAfterSeason": 2030
       }
     },
@@ -3155,7 +3187,7 @@
         "hockeyIq": 73
       },
       "contract": {
-        "capHit": 5300000,
+        "capHit": 3500000,
         "expiresAfterSeason": 2028
       }
     },
@@ -3177,7 +3209,7 @@
         "hockeyIq": 63
       },
       "contract": {
-        "capHit": 4000000,
+        "capHit": 2600000,
         "expiresAfterSeason": 2028
       }
     },
@@ -3199,7 +3231,7 @@
         "hockeyIq": 63
       },
       "contract": {
-        "capHit": 1400000,
+        "capHit": 900000,
         "expiresAfterSeason": 2029
       }
     },
@@ -3221,7 +3253,7 @@
         "hockeyIq": 74
       },
       "contract": {
-        "capHit": 2700000,
+        "capHit": 1800000,
         "expiresAfterSeason": 2029
       }
     },
@@ -3243,7 +3275,7 @@
         "hockeyIq": 56
       },
       "contract": {
-        "capHit": 8300000,
+        "capHit": 5500000,
         "expiresAfterSeason": 2029
       }
     },
@@ -3265,7 +3297,7 @@
         "hockeyIq": 79
       },
       "contract": {
-        "capHit": 6900000,
+        "capHit": 4500000,
         "expiresAfterSeason": 2031
       }
     },
@@ -3287,7 +3319,7 @@
         "hockeyIq": 58
       },
       "contract": {
-        "capHit": 4500000,
+        "capHit": 3000000,
         "expiresAfterSeason": 2030
       }
     },
@@ -3309,7 +3341,7 @@
         "hockeyIq": 75
       },
       "contract": {
-        "capHit": 1700000,
+        "capHit": 1100000,
         "expiresAfterSeason": 2028
       }
     },
@@ -3328,7 +3360,7 @@
         "consistency": 70
       },
       "contract": {
-        "capHit": 9800000,
+        "capHit": 6400000,
         "expiresAfterSeason": 2027
       }
     },
@@ -3347,7 +3379,7 @@
         "consistency": 77
       },
       "contract": {
-        "capHit": 9200000,
+        "capHit": 6000000,
         "expiresAfterSeason": 2027
       }
     },
@@ -3369,7 +3401,7 @@
         "hockeyIq": 74
       },
       "contract": {
-        "capHit": 6600000,
+        "capHit": 4300000,
         "expiresAfterSeason": 2032
       }
     },
@@ -3391,7 +3423,7 @@
         "hockeyIq": 76
       },
       "contract": {
-        "capHit": 2400000,
+        "capHit": 1600000,
         "expiresAfterSeason": 2031
       }
     },
@@ -3413,7 +3445,7 @@
         "hockeyIq": 70
       },
       "contract": {
-        "capHit": 6800000,
+        "capHit": 4400000,
         "expiresAfterSeason": 2028
       }
     },
@@ -3435,7 +3467,7 @@
         "hockeyIq": 76
       },
       "contract": {
-        "capHit": 4700000,
+        "capHit": 3100000,
         "expiresAfterSeason": 2029
       }
     },
@@ -3457,7 +3489,7 @@
         "hockeyIq": 61
       },
       "contract": {
-        "capHit": 7500000,
+        "capHit": 4900000,
         "expiresAfterSeason": 2032
       }
     },
@@ -3479,7 +3511,7 @@
         "hockeyIq": 86
       },
       "contract": {
-        "capHit": 8200000,
+        "capHit": 5300000,
         "expiresAfterSeason": 2031
       }
     },
@@ -3501,7 +3533,7 @@
         "hockeyIq": 66
       },
       "contract": {
-        "capHit": 6400000,
+        "capHit": 4200000,
         "expiresAfterSeason": 2029
       }
     },
@@ -3523,7 +3555,7 @@
         "hockeyIq": 67
       },
       "contract": {
-        "capHit": 8600000,
+        "capHit": 5600000,
         "expiresAfterSeason": 2030
       }
     },
@@ -3545,7 +3577,7 @@
         "hockeyIq": 75
       },
       "contract": {
-        "capHit": 6900000,
+        "capHit": 4500000,
         "expiresAfterSeason": 2027
       }
     },
@@ -3567,7 +3599,7 @@
         "hockeyIq": 75
       },
       "contract": {
-        "capHit": 6800000,
+        "capHit": 4400000,
         "expiresAfterSeason": 2032
       }
     },
@@ -3589,7 +3621,7 @@
         "hockeyIq": 76
       },
       "contract": {
-        "capHit": 9800000,
+        "capHit": 6400000,
         "expiresAfterSeason": 2030
       }
     },
@@ -3611,7 +3643,7 @@
         "hockeyIq": 66
       },
       "contract": {
-        "capHit": 4400000,
+        "capHit": 2900000,
         "expiresAfterSeason": 2028
       }
     },
@@ -3633,7 +3665,7 @@
         "hockeyIq": 75
       },
       "contract": {
-        "capHit": 10000000,
+        "capHit": 6500000,
         "expiresAfterSeason": 2029
       }
     },
@@ -3655,7 +3687,7 @@
         "hockeyIq": 59
       },
       "contract": {
-        "capHit": 3500000,
+        "capHit": 2300000,
         "expiresAfterSeason": 2031
       }
     },
@@ -3677,7 +3709,7 @@
         "hockeyIq": 74
       },
       "contract": {
-        "capHit": 1100000,
+        "capHit": 850000,
         "expiresAfterSeason": 2030
       }
     },
@@ -3699,7 +3731,7 @@
         "hockeyIq": 65
       },
       "contract": {
-        "capHit": 1200000,
+        "capHit": 850000,
         "expiresAfterSeason": 2032
       }
     },
@@ -3721,7 +3753,7 @@
         "hockeyIq": 71
       },
       "contract": {
-        "capHit": 2800000,
+        "capHit": 1800000,
         "expiresAfterSeason": 2028
       }
     },
@@ -3743,7 +3775,7 @@
         "hockeyIq": 77
       },
       "contract": {
-        "capHit": 1600000,
+        "capHit": 1000000,
         "expiresAfterSeason": 2029
       }
     },
@@ -3765,7 +3797,7 @@
         "hockeyIq": 64
       },
       "contract": {
-        "capHit": 9300000,
+        "capHit": 6100000,
         "expiresAfterSeason": 2032
       }
     },
@@ -3787,7 +3819,7 @@
         "hockeyIq": 50
       },
       "contract": {
-        "capHit": 8600000,
+        "capHit": 5600000,
         "expiresAfterSeason": 2027
       }
     },
@@ -3809,7 +3841,7 @@
         "hockeyIq": 68
       },
       "contract": {
-        "capHit": 4200000,
+        "capHit": 2700000,
         "expiresAfterSeason": 2032
       }
     },
@@ -3831,7 +3863,7 @@
         "hockeyIq": 62
       },
       "contract": {
-        "capHit": 5800000,
+        "capHit": 3800000,
         "expiresAfterSeason": 2031
       }
     },
@@ -3853,7 +3885,7 @@
         "hockeyIq": 67
       },
       "contract": {
-        "capHit": 6800000,
+        "capHit": 4400000,
         "expiresAfterSeason": 2027
       }
     },
@@ -3872,7 +3904,7 @@
         "consistency": 86
       },
       "contract": {
-        "capHit": 7500000,
+        "capHit": 4900000,
         "expiresAfterSeason": 2032
       }
     },
@@ -3891,7 +3923,7 @@
         "consistency": 83
       },
       "contract": {
-        "capHit": 2000000,
+        "capHit": 1300000,
         "expiresAfterSeason": 2030
       }
     },
@@ -3913,7 +3945,7 @@
         "hockeyIq": 69
       },
       "contract": {
-        "capHit": 5600000,
+        "capHit": 3800000,
         "expiresAfterSeason": 2029
       }
     },
@@ -3935,7 +3967,7 @@
         "hockeyIq": 67
       },
       "contract": {
-        "capHit": 4400000,
+        "capHit": 2900000,
         "expiresAfterSeason": 2027
       }
     },
@@ -3957,7 +3989,7 @@
         "hockeyIq": 72
       },
       "contract": {
-        "capHit": 8200000,
+        "capHit": 5500000,
         "expiresAfterSeason": 2032
       }
     },
@@ -3979,7 +4011,7 @@
         "hockeyIq": 71
       },
       "contract": {
-        "capHit": 4800000,
+        "capHit": 3200000,
         "expiresAfterSeason": 2027
       }
     },
@@ -4001,7 +4033,7 @@
         "hockeyIq": 85
       },
       "contract": {
-        "capHit": 8800000,
+        "capHit": 5900000,
         "expiresAfterSeason": 2028
       }
     },
@@ -4023,7 +4055,7 @@
         "hockeyIq": 58
       },
       "contract": {
-        "capHit": 4700000,
+        "capHit": 3100000,
         "expiresAfterSeason": 2027
       }
     },
@@ -4045,7 +4077,7 @@
         "hockeyIq": 54
       },
       "contract": {
-        "capHit": 4300000,
+        "capHit": 2900000,
         "expiresAfterSeason": 2028
       }
     },
@@ -4067,7 +4099,7 @@
         "hockeyIq": 57
       },
       "contract": {
-        "capHit": 9400000,
+        "capHit": 6300000,
         "expiresAfterSeason": 2030
       }
     },
@@ -4089,7 +4121,7 @@
         "hockeyIq": 68
       },
       "contract": {
-        "capHit": 5300000,
+        "capHit": 3600000,
         "expiresAfterSeason": 2029
       }
     },
@@ -4111,7 +4143,7 @@
         "hockeyIq": 76
       },
       "contract": {
-        "capHit": 2500000,
+        "capHit": 1700000,
         "expiresAfterSeason": 2029
       }
     },
@@ -4133,7 +4165,7 @@
         "hockeyIq": 76
       },
       "contract": {
-        "capHit": 3100000,
+        "capHit": 2100000,
         "expiresAfterSeason": 2031
       }
     },
@@ -4155,7 +4187,7 @@
         "hockeyIq": 70
       },
       "contract": {
-        "capHit": 5300000,
+        "capHit": 3600000,
         "expiresAfterSeason": 2028
       }
     },
@@ -4177,7 +4209,7 @@
         "hockeyIq": 62
       },
       "contract": {
-        "capHit": 9600000,
+        "capHit": 6400000,
         "expiresAfterSeason": 2027
       }
     },
@@ -4199,7 +4231,7 @@
         "hockeyIq": 66
       },
       "contract": {
-        "capHit": 1200000,
+        "capHit": 850000,
         "expiresAfterSeason": 2027
       }
     },
@@ -4221,7 +4253,7 @@
         "hockeyIq": 66
       },
       "contract": {
-        "capHit": 6900000,
+        "capHit": 4600000,
         "expiresAfterSeason": 2027
       }
     },
@@ -4243,7 +4275,7 @@
         "hockeyIq": 73
       },
       "contract": {
-        "capHit": 2600000,
+        "capHit": 1700000,
         "expiresAfterSeason": 2027
       }
     },
@@ -4265,7 +4297,7 @@
         "hockeyIq": 83
       },
       "contract": {
-        "capHit": 8100000,
+        "capHit": 5400000,
         "expiresAfterSeason": 2029
       }
     },
@@ -4287,7 +4319,7 @@
         "hockeyIq": 78
       },
       "contract": {
-        "capHit": 7700000,
+        "capHit": 5200000,
         "expiresAfterSeason": 2032
       }
     },
@@ -4309,7 +4341,7 @@
         "hockeyIq": 66
       },
       "contract": {
-        "capHit": 2500000,
+        "capHit": 1700000,
         "expiresAfterSeason": 2031
       }
     },
@@ -4331,7 +4363,7 @@
         "hockeyIq": 58
       },
       "contract": {
-        "capHit": 2300000,
+        "capHit": 1500000,
         "expiresAfterSeason": 2029
       }
     },
@@ -4353,7 +4385,7 @@
         "hockeyIq": 71
       },
       "contract": {
-        "capHit": 1000000,
+        "capHit": 850000,
         "expiresAfterSeason": 2027
       }
     },
@@ -4375,7 +4407,7 @@
         "hockeyIq": 66
       },
       "contract": {
-        "capHit": 7400000,
+        "capHit": 5000000,
         "expiresAfterSeason": 2027
       }
     },
@@ -4397,7 +4429,7 @@
         "hockeyIq": 51
       },
       "contract": {
-        "capHit": 5800000,
+        "capHit": 3900000,
         "expiresAfterSeason": 2031
       }
     },
@@ -4416,7 +4448,7 @@
         "consistency": 70
       },
       "contract": {
-        "capHit": 1500000,
+        "capHit": 1000000,
         "expiresAfterSeason": 2031
       }
     },
@@ -4435,7 +4467,7 @@
         "consistency": 62
       },
       "contract": {
-        "capHit": 1200000,
+        "capHit": 850000,
         "expiresAfterSeason": 2027
       }
     },
@@ -4457,7 +4489,7 @@
         "hockeyIq": 71
       },
       "contract": {
-        "capHit": 4500000,
+        "capHit": 2800000,
         "expiresAfterSeason": 2027
       }
     },
@@ -4479,7 +4511,7 @@
         "hockeyIq": 68
       },
       "contract": {
-        "capHit": 9100000,
+        "capHit": 5700000,
         "expiresAfterSeason": 2032
       }
     },
@@ -4501,7 +4533,7 @@
         "hockeyIq": 72
       },
       "contract": {
-        "capHit": 7700000,
+        "capHit": 4800000,
         "expiresAfterSeason": 2032
       }
     },
@@ -4523,7 +4555,7 @@
         "hockeyIq": 55
       },
       "contract": {
-        "capHit": 7000000,
+        "capHit": 4300000,
         "expiresAfterSeason": 2030
       }
     },
@@ -4545,7 +4577,7 @@
         "hockeyIq": 78
       },
       "contract": {
-        "capHit": 2100000,
+        "capHit": 1300000,
         "expiresAfterSeason": 2031
       }
     },
@@ -4567,7 +4599,7 @@
         "hockeyIq": 70
       },
       "contract": {
-        "capHit": 1000000,
+        "capHit": 850000,
         "expiresAfterSeason": 2030
       }
     },
@@ -4589,7 +4621,7 @@
         "hockeyIq": 58
       },
       "contract": {
-        "capHit": 1700000,
+        "capHit": 1100000,
         "expiresAfterSeason": 2032
       }
     },
@@ -4611,7 +4643,7 @@
         "hockeyIq": 77
       },
       "contract": {
-        "capHit": 2100000,
+        "capHit": 1300000,
         "expiresAfterSeason": 2031
       }
     },
@@ -4633,7 +4665,7 @@
         "hockeyIq": 69
       },
       "contract": {
-        "capHit": 8100000,
+        "capHit": 5000000,
         "expiresAfterSeason": 2028
       }
     },
@@ -4655,7 +4687,7 @@
         "hockeyIq": 59
       },
       "contract": {
-        "capHit": 4300000,
+        "capHit": 2700000,
         "expiresAfterSeason": 2031
       }
     },
@@ -4677,7 +4709,7 @@
         "hockeyIq": 74
       },
       "contract": {
-        "capHit": 3200000,
+        "capHit": 2000000,
         "expiresAfterSeason": 2027
       }
     },
@@ -4699,7 +4731,7 @@
         "hockeyIq": 77
       },
       "contract": {
-        "capHit": 9200000,
+        "capHit": 5700000,
         "expiresAfterSeason": 2032
       }
     },
@@ -4721,7 +4753,7 @@
         "hockeyIq": 72
       },
       "contract": {
-        "capHit": 8200000,
+        "capHit": 5100000,
         "expiresAfterSeason": 2028
       }
     },
@@ -4743,7 +4775,7 @@
         "hockeyIq": 65
       },
       "contract": {
-        "capHit": 8600000,
+        "capHit": 5300000,
         "expiresAfterSeason": 2030
       }
     },
@@ -4765,7 +4797,7 @@
         "hockeyIq": 71
       },
       "contract": {
-        "capHit": 2500000,
+        "capHit": 1600000,
         "expiresAfterSeason": 2027
       }
     },
@@ -4787,7 +4819,7 @@
         "hockeyIq": 65
       },
       "contract": {
-        "capHit": 8200000,
+        "capHit": 5100000,
         "expiresAfterSeason": 2031
       }
     },
@@ -4809,7 +4841,7 @@
         "hockeyIq": 48
       },
       "contract": {
-        "capHit": 5100000,
+        "capHit": 3200000,
         "expiresAfterSeason": 2030
       }
     },
@@ -4831,7 +4863,7 @@
         "hockeyIq": 69
       },
       "contract": {
-        "capHit": 2500000,
+        "capHit": 1600000,
         "expiresAfterSeason": 2027
       }
     },
@@ -4853,7 +4885,7 @@
         "hockeyIq": 78
       },
       "contract": {
-        "capHit": 9800000,
+        "capHit": 6100000,
         "expiresAfterSeason": 2031
       }
     },
@@ -4875,7 +4907,7 @@
         "hockeyIq": 70
       },
       "contract": {
-        "capHit": 5200000,
+        "capHit": 3200000,
         "expiresAfterSeason": 2031
       }
     },
@@ -4897,7 +4929,7 @@
         "hockeyIq": 53
       },
       "contract": {
-        "capHit": 7300000,
+        "capHit": 4500000,
         "expiresAfterSeason": 2032
       }
     },
@@ -4919,7 +4951,7 @@
         "hockeyIq": 57
       },
       "contract": {
-        "capHit": 2800000,
+        "capHit": 1700000,
         "expiresAfterSeason": 2030
       }
     },
@@ -4941,7 +4973,7 @@
         "hockeyIq": 79
       },
       "contract": {
-        "capHit": 6600000,
+        "capHit": 4100000,
         "expiresAfterSeason": 2027
       }
     },
@@ -4960,7 +4992,7 @@
         "consistency": 52
       },
       "contract": {
-        "capHit": 5700000,
+        "capHit": 3500000,
         "expiresAfterSeason": 2027
       }
     },
@@ -4979,7 +5011,7 @@
         "consistency": 70
       },
       "contract": {
-        "capHit": 8200000,
+        "capHit": 5100000,
         "expiresAfterSeason": 2030
       }
     },
@@ -5001,7 +5033,7 @@
         "hockeyIq": 68
       },
       "contract": {
-        "capHit": 5200000,
+        "capHit": 4000000,
         "expiresAfterSeason": 2032
       }
     },
@@ -5023,7 +5055,7 @@
         "hockeyIq": 56
       },
       "contract": {
-        "capHit": 4700000,
+        "capHit": 3600000,
         "expiresAfterSeason": 2028
       }
     },
@@ -5045,7 +5077,7 @@
         "hockeyIq": 38
       },
       "contract": {
-        "capHit": 8400000,
+        "capHit": 6400000,
         "expiresAfterSeason": 2029
       }
     },
@@ -5067,7 +5099,7 @@
         "hockeyIq": 57
       },
       "contract": {
-        "capHit": 3700000,
+        "capHit": 2800000,
         "expiresAfterSeason": 2028
       }
     },
@@ -5089,7 +5121,7 @@
         "hockeyIq": 55
       },
       "contract": {
-        "capHit": 6900000,
+        "capHit": 5300000,
         "expiresAfterSeason": 2031
       }
     },
@@ -5111,7 +5143,7 @@
         "hockeyIq": 54
       },
       "contract": {
-        "capHit": 4400000,
+        "capHit": 3400000,
         "expiresAfterSeason": 2028
       }
     },
@@ -5133,7 +5165,7 @@
         "hockeyIq": 42
       },
       "contract": {
-        "capHit": 8400000,
+        "capHit": 6400000,
         "expiresAfterSeason": 2028
       }
     },
@@ -5155,7 +5187,7 @@
         "hockeyIq": 59
       },
       "contract": {
-        "capHit": 8800000,
+        "capHit": 6700000,
         "expiresAfterSeason": 2031
       }
     },
@@ -5177,7 +5209,7 @@
         "hockeyIq": 52
       },
       "contract": {
-        "capHit": 1200000,
+        "capHit": 900000,
         "expiresAfterSeason": 2031
       }
     },
@@ -5199,7 +5231,7 @@
         "hockeyIq": 51
       },
       "contract": {
-        "capHit": 3400000,
+        "capHit": 2600000,
         "expiresAfterSeason": 2028
       }
     },
@@ -5221,7 +5253,7 @@
         "hockeyIq": 60
       },
       "contract": {
-        "capHit": 2700000,
+        "capHit": 2100000,
         "expiresAfterSeason": 2031
       }
     },
@@ -5243,7 +5275,7 @@
         "hockeyIq": 55
       },
       "contract": {
-        "capHit": 4300000,
+        "capHit": 3300000,
         "expiresAfterSeason": 2028
       }
     },
@@ -5265,7 +5297,7 @@
         "hockeyIq": 56
       },
       "contract": {
-        "capHit": 1700000,
+        "capHit": 1300000,
         "expiresAfterSeason": 2030
       }
     },
@@ -5287,7 +5319,7 @@
         "hockeyIq": 56
       },
       "contract": {
-        "capHit": 3300000,
+        "capHit": 2500000,
         "expiresAfterSeason": 2028
       }
     },
@@ -5309,7 +5341,7 @@
         "hockeyIq": 53
       },
       "contract": {
-        "capHit": 4900000,
+        "capHit": 3700000,
         "expiresAfterSeason": 2028
       }
     },
@@ -5331,7 +5363,7 @@
         "hockeyIq": 57
       },
       "contract": {
-        "capHit": 2000000,
+        "capHit": 1500000,
         "expiresAfterSeason": 2029
       }
     },
@@ -5353,7 +5385,7 @@
         "hockeyIq": 42
       },
       "contract": {
-        "capHit": 3500000,
+        "capHit": 2700000,
         "expiresAfterSeason": 2031
       }
     },
@@ -5375,7 +5407,7 @@
         "hockeyIq": 57
       },
       "contract": {
-        "capHit": 9400000,
+        "capHit": 7200000,
         "expiresAfterSeason": 2027
       }
     },
@@ -5397,7 +5429,7 @@
         "hockeyIq": 46
       },
       "contract": {
-        "capHit": 4300000,
+        "capHit": 3300000,
         "expiresAfterSeason": 2032
       }
     },
@@ -5419,7 +5451,7 @@
         "hockeyIq": 58
       },
       "contract": {
-        "capHit": 1600000,
+        "capHit": 1200000,
         "expiresAfterSeason": 2030
       }
     },
@@ -5441,7 +5473,7 @@
         "hockeyIq": 46
       },
       "contract": {
-        "capHit": 3000000,
+        "capHit": 2300000,
         "expiresAfterSeason": 2032
       }
     },
@@ -5463,7 +5495,7 @@
         "hockeyIq": 50
       },
       "contract": {
-        "capHit": 3500000,
+        "capHit": 2700000,
         "expiresAfterSeason": 2030
       }
     },
@@ -5485,7 +5517,7 @@
         "hockeyIq": 53
       },
       "contract": {
-        "capHit": 2100000,
+        "capHit": 1600000,
         "expiresAfterSeason": 2032
       }
     },
@@ -5504,7 +5536,7 @@
         "consistency": 47
       },
       "contract": {
-        "capHit": 5000000,
+        "capHit": 3800000,
         "expiresAfterSeason": 2030
       }
     },
@@ -5523,7 +5555,7 @@
         "consistency": 56
       },
       "contract": {
-        "capHit": 6800000,
+        "capHit": 5200000,
         "expiresAfterSeason": 2030
       }
     },
@@ -5545,7 +5577,7 @@
         "hockeyIq": 55
       },
       "contract": {
-        "capHit": 4400000,
+        "capHit": 3200000,
         "expiresAfterSeason": 2027
       }
     },
@@ -5567,7 +5599,7 @@
         "hockeyIq": 50
       },
       "contract": {
-        "capHit": 2000000,
+        "capHit": 1500000,
         "expiresAfterSeason": 2028
       }
     },
@@ -5589,7 +5621,7 @@
         "hockeyIq": 63
       },
       "contract": {
-        "capHit": 3100000,
+        "capHit": 2200000,
         "expiresAfterSeason": 2029
       }
     },
@@ -5611,7 +5643,7 @@
         "hockeyIq": 72
       },
       "contract": {
-        "capHit": 9800000,
+        "capHit": 7100000,
         "expiresAfterSeason": 2030
       }
     },
@@ -5633,7 +5665,7 @@
         "hockeyIq": 63
       },
       "contract": {
-        "capHit": 7900000,
+        "capHit": 5700000,
         "expiresAfterSeason": 2030
       }
     },
@@ -5655,7 +5687,7 @@
         "hockeyIq": 59
       },
       "contract": {
-        "capHit": 1000000,
+        "capHit": 850000,
         "expiresAfterSeason": 2027
       }
     },
@@ -5677,7 +5709,7 @@
         "hockeyIq": 66
       },
       "contract": {
-        "capHit": 9600000,
+        "capHit": 7000000,
         "expiresAfterSeason": 2029
       }
     },
@@ -5699,7 +5731,7 @@
         "hockeyIq": 56
       },
       "contract": {
-        "capHit": 6400000,
+        "capHit": 4600000,
         "expiresAfterSeason": 2032
       }
     },
@@ -5721,7 +5753,7 @@
         "hockeyIq": 66
       },
       "contract": {
-        "capHit": 5600000,
+        "capHit": 4100000,
         "expiresAfterSeason": 2032
       }
     },
@@ -5743,7 +5775,7 @@
         "hockeyIq": 65
       },
       "contract": {
-        "capHit": 1500000,
+        "capHit": 1100000,
         "expiresAfterSeason": 2028
       }
     },
@@ -5765,7 +5797,7 @@
         "hockeyIq": 55
       },
       "contract": {
-        "capHit": 3200000,
+        "capHit": 2300000,
         "expiresAfterSeason": 2027
       }
     },
@@ -5787,7 +5819,7 @@
         "hockeyIq": 57
       },
       "contract": {
-        "capHit": 2000000,
+        "capHit": 1500000,
         "expiresAfterSeason": 2031
       }
     },
@@ -5809,7 +5841,7 @@
         "hockeyIq": 52
       },
       "contract": {
-        "capHit": 8800000,
+        "capHit": 6400000,
         "expiresAfterSeason": 2031
       }
     },
@@ -5831,7 +5863,7 @@
         "hockeyIq": 74
       },
       "contract": {
-        "capHit": 2300000,
+        "capHit": 1700000,
         "expiresAfterSeason": 2031
       }
     },
@@ -5853,7 +5885,7 @@
         "hockeyIq": 52
       },
       "contract": {
-        "capHit": 8000000,
+        "capHit": 5800000,
         "expiresAfterSeason": 2028
       }
     },
@@ -5875,7 +5907,7 @@
         "hockeyIq": 62
       },
       "contract": {
-        "capHit": 3400000,
+        "capHit": 2500000,
         "expiresAfterSeason": 2029
       }
     },
@@ -5897,7 +5929,7 @@
         "hockeyIq": 62
       },
       "contract": {
-        "capHit": 4400000,
+        "capHit": 3200000,
         "expiresAfterSeason": 2031
       }
     },
@@ -5919,7 +5951,7 @@
         "hockeyIq": 54
       },
       "contract": {
-        "capHit": 7400000,
+        "capHit": 5400000,
         "expiresAfterSeason": 2032
       }
     },
@@ -5941,7 +5973,7 @@
         "hockeyIq": 53
       },
       "contract": {
-        "capHit": 4400000,
+        "capHit": 3200000,
         "expiresAfterSeason": 2027
       }
     },
@@ -5963,7 +5995,7 @@
         "hockeyIq": 56
       },
       "contract": {
-        "capHit": 8400000,
+        "capHit": 6100000,
         "expiresAfterSeason": 2030
       }
     },
@@ -5985,7 +6017,7 @@
         "hockeyIq": 60
       },
       "contract": {
-        "capHit": 7100000,
+        "capHit": 5200000,
         "expiresAfterSeason": 2027
       }
     },
@@ -6007,7 +6039,7 @@
         "hockeyIq": 49
       },
       "contract": {
-        "capHit": 3800000,
+        "capHit": 2800000,
         "expiresAfterSeason": 2028
       }
     },
@@ -6029,7 +6061,7 @@
         "hockeyIq": 55
       },
       "contract": {
-        "capHit": 4500000,
+        "capHit": 3300000,
         "expiresAfterSeason": 2030
       }
     },
@@ -6048,7 +6080,7 @@
         "consistency": 53
       },
       "contract": {
-        "capHit": 3300000,
+        "capHit": 2400000,
         "expiresAfterSeason": 2030
       }
     },
@@ -6067,7 +6099,7 @@
         "consistency": 71
       },
       "contract": {
-        "capHit": 9600000,
+        "capHit": 7000000,
         "expiresAfterSeason": 2030
       }
     },
@@ -6089,7 +6121,7 @@
         "hockeyIq": 64
       },
       "contract": {
-        "capHit": 6400000,
+        "capHit": 5300000,
         "expiresAfterSeason": 2030
       }
     },
@@ -6111,7 +6143,7 @@
         "hockeyIq": 65
       },
       "contract": {
-        "capHit": 2000000,
+        "capHit": 1700000,
         "expiresAfterSeason": 2028
       }
     },
@@ -6133,7 +6165,7 @@
         "hockeyIq": 74
       },
       "contract": {
-        "capHit": 4600000,
+        "capHit": 3800000,
         "expiresAfterSeason": 2027
       }
     },
@@ -6155,7 +6187,7 @@
         "hockeyIq": 64
       },
       "contract": {
-        "capHit": 3700000,
+        "capHit": 3100000,
         "expiresAfterSeason": 2030
       }
     },
@@ -6177,7 +6209,7 @@
         "hockeyIq": 81
       },
       "contract": {
-        "capHit": 1300000,
+        "capHit": 1100000,
         "expiresAfterSeason": 2027
       }
     },
@@ -6199,7 +6231,7 @@
         "hockeyIq": 60
       },
       "contract": {
-        "capHit": 1400000,
+        "capHit": 1200000,
         "expiresAfterSeason": 2028
       }
     },
@@ -6221,7 +6253,7 @@
         "hockeyIq": 70
       },
       "contract": {
-        "capHit": 4200000,
+        "capHit": 3500000,
         "expiresAfterSeason": 2027
       }
     },
@@ -6243,7 +6275,7 @@
         "hockeyIq": 57
       },
       "contract": {
-        "capHit": 3400000,
+        "capHit": 2800000,
         "expiresAfterSeason": 2027
       }
     },
@@ -6265,7 +6297,7 @@
         "hockeyIq": 52
       },
       "contract": {
-        "capHit": 7800000,
+        "capHit": 6500000,
         "expiresAfterSeason": 2031
       }
     },
@@ -6287,7 +6319,7 @@
         "hockeyIq": 70
       },
       "contract": {
-        "capHit": 2800000,
+        "capHit": 2300000,
         "expiresAfterSeason": 2030
       }
     },
@@ -6309,7 +6341,7 @@
         "hockeyIq": 67
       },
       "contract": {
-        "capHit": 4000000,
+        "capHit": 3300000,
         "expiresAfterSeason": 2029
       }
     },
@@ -6331,7 +6363,7 @@
         "hockeyIq": 67
       },
       "contract": {
-        "capHit": 4700000,
+        "capHit": 3900000,
         "expiresAfterSeason": 2028
       }
     },
@@ -6353,7 +6385,7 @@
         "hockeyIq": 67
       },
       "contract": {
-        "capHit": 4600000,
+        "capHit": 3800000,
         "expiresAfterSeason": 2030
       }
     },
@@ -6375,7 +6407,7 @@
         "hockeyIq": 69
       },
       "contract": {
-        "capHit": 9100000,
+        "capHit": 7600000,
         "expiresAfterSeason": 2029
       }
     },
@@ -6397,7 +6429,7 @@
         "hockeyIq": 70
       },
       "contract": {
-        "capHit": 3000000,
+        "capHit": 2500000,
         "expiresAfterSeason": 2027
       }
     },
@@ -6419,7 +6451,7 @@
         "hockeyIq": 73
       },
       "contract": {
-        "capHit": 4300000,
+        "capHit": 3600000,
         "expiresAfterSeason": 2030
       }
     },
@@ -6441,7 +6473,7 @@
         "hockeyIq": 56
       },
       "contract": {
-        "capHit": 6400000,
+        "capHit": 5300000,
         "expiresAfterSeason": 2030
       }
     },
@@ -6463,7 +6495,7 @@
         "hockeyIq": 63
       },
       "contract": {
-        "capHit": 3100000,
+        "capHit": 2600000,
         "expiresAfterSeason": 2028
       }
     },
@@ -6485,7 +6517,7 @@
         "hockeyIq": 54
       },
       "contract": {
-        "capHit": 3500000,
+        "capHit": 2900000,
         "expiresAfterSeason": 2031
       }
     },
@@ -6507,7 +6539,7 @@
         "hockeyIq": 71
       },
       "contract": {
-        "capHit": 6800000,
+        "capHit": 5700000,
         "expiresAfterSeason": 2031
       }
     },
@@ -6529,7 +6561,7 @@
         "hockeyIq": 79
       },
       "contract": {
-        "capHit": 3500000,
+        "capHit": 2900000,
         "expiresAfterSeason": 2032
       }
     },
@@ -6551,7 +6583,7 @@
         "hockeyIq": 70
       },
       "contract": {
-        "capHit": 8500000,
+        "capHit": 7100000,
         "expiresAfterSeason": 2031
       }
     },
@@ -6573,7 +6605,7 @@
         "hockeyIq": 80
       },
       "contract": {
-        "capHit": 2700000,
+        "capHit": 2300000,
         "expiresAfterSeason": 2028
       }
     },
@@ -6592,7 +6624,7 @@
         "consistency": 68
       },
       "contract": {
-        "capHit": 9500000,
+        "capHit": 7900000,
         "expiresAfterSeason": 2031
       }
     },
@@ -6611,7 +6643,7 @@
         "consistency": 81
       },
       "contract": {
-        "capHit": 3500000,
+        "capHit": 2900000,
         "expiresAfterSeason": 2028
       }
     },
@@ -6633,7 +6665,7 @@
         "hockeyIq": 56
       },
       "contract": {
-        "capHit": 7600000,
+        "capHit": 4700000,
         "expiresAfterSeason": 2031
       }
     },
@@ -6655,7 +6687,7 @@
         "hockeyIq": 64
       },
       "contract": {
-        "capHit": 9100000,
+        "capHit": 5600000,
         "expiresAfterSeason": 2028
       }
     },
@@ -6677,7 +6709,7 @@
         "hockeyIq": 73
       },
       "contract": {
-        "capHit": 9700000,
+        "capHit": 5900000,
         "expiresAfterSeason": 2029
       }
     },
@@ -6699,7 +6731,7 @@
         "hockeyIq": 54
       },
       "contract": {
-        "capHit": 2600000,
+        "capHit": 1600000,
         "expiresAfterSeason": 2028
       }
     },
@@ -6721,7 +6753,7 @@
         "hockeyIq": 49
       },
       "contract": {
-        "capHit": 3200000,
+        "capHit": 2000000,
         "expiresAfterSeason": 2032
       }
     },
@@ -6743,7 +6775,7 @@
         "hockeyIq": 52
       },
       "contract": {
-        "capHit": 7600000,
+        "capHit": 4700000,
         "expiresAfterSeason": 2031
       }
     },
@@ -6765,7 +6797,7 @@
         "hockeyIq": 56
       },
       "contract": {
-        "capHit": 3600000,
+        "capHit": 2200000,
         "expiresAfterSeason": 2032
       }
     },
@@ -6787,7 +6819,7 @@
         "hockeyIq": 56
       },
       "contract": {
-        "capHit": 5200000,
+        "capHit": 3200000,
         "expiresAfterSeason": 2030
       }
     },
@@ -6809,7 +6841,7 @@
         "hockeyIq": 54
       },
       "contract": {
-        "capHit": 8300000,
+        "capHit": 5100000,
         "expiresAfterSeason": 2027
       }
     },
@@ -6831,7 +6863,7 @@
         "hockeyIq": 52
       },
       "contract": {
-        "capHit": 4000000,
+        "capHit": 2500000,
         "expiresAfterSeason": 2028
       }
     },
@@ -6853,7 +6885,7 @@
         "hockeyIq": 60
       },
       "contract": {
-        "capHit": 1500000,
+        "capHit": 900000,
         "expiresAfterSeason": 2030
       }
     },
@@ -6875,7 +6907,7 @@
         "hockeyIq": 50
       },
       "contract": {
-        "capHit": 7200000,
+        "capHit": 4400000,
         "expiresAfterSeason": 2028
       }
     },
@@ -6897,7 +6929,7 @@
         "hockeyIq": 50
       },
       "contract": {
-        "capHit": 3900000,
+        "capHit": 2400000,
         "expiresAfterSeason": 2030
       }
     },
@@ -6919,7 +6951,7 @@
         "hockeyIq": 60
       },
       "contract": {
-        "capHit": 8300000,
+        "capHit": 5100000,
         "expiresAfterSeason": 2028
       }
     },
@@ -6941,7 +6973,7 @@
         "hockeyIq": 58
       },
       "contract": {
-        "capHit": 3800000,
+        "capHit": 2300000,
         "expiresAfterSeason": 2028
       }
     },
@@ -6963,7 +6995,7 @@
         "hockeyIq": 70
       },
       "contract": {
-        "capHit": 2600000,
+        "capHit": 1600000,
         "expiresAfterSeason": 2029
       }
     },
@@ -6985,7 +7017,7 @@
         "hockeyIq": 60
       },
       "contract": {
-        "capHit": 4600000,
+        "capHit": 2800000,
         "expiresAfterSeason": 2029
       }
     },
@@ -7007,7 +7039,7 @@
         "hockeyIq": 49
       },
       "contract": {
-        "capHit": 9300000,
+        "capHit": 5700000,
         "expiresAfterSeason": 2030
       }
     },
@@ -7029,7 +7061,7 @@
         "hockeyIq": 61
       },
       "contract": {
-        "capHit": 1300000,
+        "capHit": 850000,
         "expiresAfterSeason": 2030
       }
     },
@@ -7051,7 +7083,7 @@
         "hockeyIq": 74
       },
       "contract": {
-        "capHit": 9500000,
+        "capHit": 5800000,
         "expiresAfterSeason": 2032
       }
     },
@@ -7073,7 +7105,7 @@
         "hockeyIq": 57
       },
       "contract": {
-        "capHit": 6200000,
+        "capHit": 3800000,
         "expiresAfterSeason": 2030
       }
     },
@@ -7095,7 +7127,7 @@
         "hockeyIq": 66
       },
       "contract": {
-        "capHit": 1400000,
+        "capHit": 900000,
         "expiresAfterSeason": 2032
       }
     },
@@ -7117,7 +7149,7 @@
         "hockeyIq": 64
       },
       "contract": {
-        "capHit": 5700000,
+        "capHit": 3500000,
         "expiresAfterSeason": 2029
       }
     },
@@ -7136,7 +7168,7 @@
         "consistency": 70
       },
       "contract": {
-        "capHit": 8500000,
+        "capHit": 5200000,
         "expiresAfterSeason": 2029
       }
     },
@@ -7155,7 +7187,7 @@
         "consistency": 55
       },
       "contract": {
-        "capHit": 4400000,
+        "capHit": 2700000,
         "expiresAfterSeason": 2029
       }
     },
@@ -7177,7 +7209,7 @@
         "hockeyIq": 64
       },
       "contract": {
-        "capHit": 9800000,
+        "capHit": 6000000,
         "expiresAfterSeason": 2031
       }
     },
@@ -7199,7 +7231,7 @@
         "hockeyIq": 77
       },
       "contract": {
-        "capHit": 9400000,
+        "capHit": 5800000,
         "expiresAfterSeason": 2030
       }
     },
@@ -7221,7 +7253,7 @@
         "hockeyIq": 52
       },
       "contract": {
-        "capHit": 2400000,
+        "capHit": 1500000,
         "expiresAfterSeason": 2030
       }
     },
@@ -7243,7 +7275,7 @@
         "hockeyIq": 62
       },
       "contract": {
-        "capHit": 9200000,
+        "capHit": 5600000,
         "expiresAfterSeason": 2032
       }
     },
@@ -7265,7 +7297,7 @@
         "hockeyIq": 48
       },
       "contract": {
-        "capHit": 3500000,
+        "capHit": 2100000,
         "expiresAfterSeason": 2031
       }
     },
@@ -7287,7 +7319,7 @@
         "hockeyIq": 71
       },
       "contract": {
-        "capHit": 5900000,
+        "capHit": 3600000,
         "expiresAfterSeason": 2030
       }
     },
@@ -7309,7 +7341,7 @@
         "hockeyIq": 63
       },
       "contract": {
-        "capHit": 1600000,
+        "capHit": 1000000,
         "expiresAfterSeason": 2030
       }
     },
@@ -7331,7 +7363,7 @@
         "hockeyIq": 73
       },
       "contract": {
-        "capHit": 8700000,
+        "capHit": 5300000,
         "expiresAfterSeason": 2029
       }
     },
@@ -7353,7 +7385,7 @@
         "hockeyIq": 63
       },
       "contract": {
-        "capHit": 5900000,
+        "capHit": 3600000,
         "expiresAfterSeason": 2029
       }
     },
@@ -7375,7 +7407,7 @@
         "hockeyIq": 54
       },
       "contract": {
-        "capHit": 4500000,
+        "capHit": 2800000,
         "expiresAfterSeason": 2031
       }
     },
@@ -7397,7 +7429,7 @@
         "hockeyIq": 59
       },
       "contract": {
-        "capHit": 1100000,
+        "capHit": 850000,
         "expiresAfterSeason": 2027
       }
     },
@@ -7419,7 +7451,7 @@
         "hockeyIq": 64
       },
       "contract": {
-        "capHit": 7700000,
+        "capHit": 4700000,
         "expiresAfterSeason": 2031
       }
     },
@@ -7441,7 +7473,7 @@
         "hockeyIq": 50
       },
       "contract": {
-        "capHit": 5900000,
+        "capHit": 3600000,
         "expiresAfterSeason": 2031
       }
     },
@@ -7463,7 +7495,7 @@
         "hockeyIq": 49
       },
       "contract": {
-        "capHit": 3600000,
+        "capHit": 2200000,
         "expiresAfterSeason": 2030
       }
     },
@@ -7485,7 +7517,7 @@
         "hockeyIq": 70
       },
       "contract": {
-        "capHit": 7300000,
+        "capHit": 4500000,
         "expiresAfterSeason": 2032
       }
     },
@@ -7507,7 +7539,7 @@
         "hockeyIq": 52
       },
       "contract": {
-        "capHit": 6200000,
+        "capHit": 3800000,
         "expiresAfterSeason": 2030
       }
     },
@@ -7529,7 +7561,7 @@
         "hockeyIq": 50
       },
       "contract": {
-        "capHit": 9800000,
+        "capHit": 6000000,
         "expiresAfterSeason": 2027
       }
     },
@@ -7551,7 +7583,7 @@
         "hockeyIq": 64
       },
       "contract": {
-        "capHit": 8000000,
+        "capHit": 4900000,
         "expiresAfterSeason": 2028
       }
     },
@@ -7573,7 +7605,7 @@
         "hockeyIq": 62
       },
       "contract": {
-        "capHit": 8600000,
+        "capHit": 5300000,
         "expiresAfterSeason": 2029
       }
     },
@@ -7595,7 +7627,7 @@
         "hockeyIq": 58
       },
       "contract": {
-        "capHit": 7500000,
+        "capHit": 4600000,
         "expiresAfterSeason": 2028
       }
     },
@@ -7617,7 +7649,7 @@
         "hockeyIq": 70
       },
       "contract": {
-        "capHit": 3000000,
+        "capHit": 1800000,
         "expiresAfterSeason": 2029
       }
     },
@@ -7639,7 +7671,7 @@
         "hockeyIq": 65
       },
       "contract": {
-        "capHit": 7200000,
+        "capHit": 4400000,
         "expiresAfterSeason": 2031
       }
     },
@@ -7661,7 +7693,7 @@
         "hockeyIq": 57
       },
       "contract": {
-        "capHit": 3200000,
+        "capHit": 2000000,
         "expiresAfterSeason": 2032
       }
     },
@@ -7680,7 +7712,7 @@
         "consistency": 62
       },
       "contract": {
-        "capHit": 9700000,
+        "capHit": 5900000,
         "expiresAfterSeason": 2029
       }
     },
@@ -7699,7 +7731,7 @@
         "consistency": 77
       },
       "contract": {
-        "capHit": 4700000,
+        "capHit": 2900000,
         "expiresAfterSeason": 2028
       }
     },
@@ -7721,7 +7753,7 @@
         "hockeyIq": 73
       },
       "contract": {
-        "capHit": 7100000,
+        "capHit": 4300000,
         "expiresAfterSeason": 2032
       }
     },
@@ -7743,7 +7775,7 @@
         "hockeyIq": 61
       },
       "contract": {
-        "capHit": 6000000,
+        "capHit": 3600000,
         "expiresAfterSeason": 2031
       }
     },
@@ -7765,7 +7797,7 @@
         "hockeyIq": 55
       },
       "contract": {
-        "capHit": 1800000,
+        "capHit": 1100000,
         "expiresAfterSeason": 2028
       }
     },
@@ -7787,7 +7819,7 @@
         "hockeyIq": 55
       },
       "contract": {
-        "capHit": 8900000,
+        "capHit": 5400000,
         "expiresAfterSeason": 2028
       }
     },
@@ -7809,7 +7841,7 @@
         "hockeyIq": 45
       },
       "contract": {
-        "capHit": 8800000,
+        "capHit": 5300000,
         "expiresAfterSeason": 2029
       }
     },
@@ -7831,7 +7863,7 @@
         "hockeyIq": 69
       },
       "contract": {
-        "capHit": 8100000,
+        "capHit": 4900000,
         "expiresAfterSeason": 2031
       }
     },
@@ -7853,7 +7885,7 @@
         "hockeyIq": 58
       },
       "contract": {
-        "capHit": 3500000,
+        "capHit": 2100000,
         "expiresAfterSeason": 2030
       }
     },
@@ -7875,7 +7907,7 @@
         "hockeyIq": 70
       },
       "contract": {
-        "capHit": 5200000,
+        "capHit": 3100000,
         "expiresAfterSeason": 2032
       }
     },
@@ -7897,7 +7929,7 @@
         "hockeyIq": 70
       },
       "contract": {
-        "capHit": 3400000,
+        "capHit": 2000000,
         "expiresAfterSeason": 2030
       }
     },
@@ -7919,7 +7951,7 @@
         "hockeyIq": 52
       },
       "contract": {
-        "capHit": 9600000,
+        "capHit": 5800000,
         "expiresAfterSeason": 2031
       }
     },
@@ -7941,7 +7973,7 @@
         "hockeyIq": 54
       },
       "contract": {
-        "capHit": 6600000,
+        "capHit": 4000000,
         "expiresAfterSeason": 2028
       }
     },
@@ -7963,7 +7995,7 @@
         "hockeyIq": 69
       },
       "contract": {
-        "capHit": 6600000,
+        "capHit": 4000000,
         "expiresAfterSeason": 2027
       }
     },
@@ -7985,7 +8017,7 @@
         "hockeyIq": 65
       },
       "contract": {
-        "capHit": 6800000,
+        "capHit": 4100000,
         "expiresAfterSeason": 2029
       }
     },
@@ -8007,7 +8039,7 @@
         "hockeyIq": 55
       },
       "contract": {
-        "capHit": 7200000,
+        "capHit": 4300000,
         "expiresAfterSeason": 2032
       }
     },
@@ -8029,7 +8061,7 @@
         "hockeyIq": 55
       },
       "contract": {
-        "capHit": 8000000,
+        "capHit": 4800000,
         "expiresAfterSeason": 2030
       }
     },
@@ -8051,7 +8083,7 @@
         "hockeyIq": 61
       },
       "contract": {
-        "capHit": 1100000,
+        "capHit": 850000,
         "expiresAfterSeason": 2027
       }
     },
@@ -8073,7 +8105,7 @@
         "hockeyIq": 64
       },
       "contract": {
-        "capHit": 5200000,
+        "capHit": 3100000,
         "expiresAfterSeason": 2029
       }
     },
@@ -8095,7 +8127,7 @@
         "hockeyIq": 55
       },
       "contract": {
-        "capHit": 1100000,
+        "capHit": 850000,
         "expiresAfterSeason": 2028
       }
     },
@@ -8117,7 +8149,7 @@
         "hockeyIq": 60
       },
       "contract": {
-        "capHit": 4300000,
+        "capHit": 2600000,
         "expiresAfterSeason": 2031
       }
     },
@@ -8139,7 +8171,7 @@
         "hockeyIq": 49
       },
       "contract": {
-        "capHit": 3100000,
+        "capHit": 1900000,
         "expiresAfterSeason": 2032
       }
     },
@@ -8161,7 +8193,7 @@
         "hockeyIq": 58
       },
       "contract": {
-        "capHit": 8200000,
+        "capHit": 4900000,
         "expiresAfterSeason": 2028
       }
     },
@@ -8183,7 +8215,7 @@
         "hockeyIq": 56
       },
       "contract": {
-        "capHit": 4500000,
+        "capHit": 2700000,
         "expiresAfterSeason": 2029
       }
     },
@@ -8205,7 +8237,7 @@
         "hockeyIq": 52
       },
       "contract": {
-        "capHit": 6500000,
+        "capHit": 3900000,
         "expiresAfterSeason": 2030
       }
     },
@@ -8224,7 +8256,7 @@
         "consistency": 60
       },
       "contract": {
-        "capHit": 7700000,
+        "capHit": 4600000,
         "expiresAfterSeason": 2032
       }
     },
@@ -8243,7 +8275,7 @@
         "consistency": 42
       },
       "contract": {
-        "capHit": 9200000,
+        "capHit": 5500000,
         "expiresAfterSeason": 2027
       }
     },
@@ -8265,7 +8297,7 @@
         "hockeyIq": 76
       },
       "contract": {
-        "capHit": 2500000,
+        "capHit": 1700000,
         "expiresAfterSeason": 2030
       }
     },
@@ -8287,7 +8319,7 @@
         "hockeyIq": 69
       },
       "contract": {
-        "capHit": 2700000,
+        "capHit": 1800000,
         "expiresAfterSeason": 2027
       }
     },
@@ -8309,7 +8341,7 @@
         "hockeyIq": 60
       },
       "contract": {
-        "capHit": 3600000,
+        "capHit": 2400000,
         "expiresAfterSeason": 2027
       }
     },
@@ -8331,7 +8363,7 @@
         "hockeyIq": 58
       },
       "contract": {
-        "capHit": 900000,
+        "capHit": 850000,
         "expiresAfterSeason": 2029
       }
     },
@@ -8353,7 +8385,7 @@
         "hockeyIq": 58
       },
       "contract": {
-        "capHit": 8200000,
+        "capHit": 5500000,
         "expiresAfterSeason": 2032
       }
     },
@@ -8375,7 +8407,7 @@
         "hockeyIq": 66
       },
       "contract": {
-        "capHit": 8100000,
+        "capHit": 5400000,
         "expiresAfterSeason": 2029
       }
     },
@@ -8397,7 +8429,7 @@
         "hockeyIq": 70
       },
       "contract": {
-        "capHit": 9700000,
+        "capHit": 6500000,
         "expiresAfterSeason": 2032
       }
     },
@@ -8419,7 +8451,7 @@
         "hockeyIq": 66
       },
       "contract": {
-        "capHit": 9100000,
+        "capHit": 6100000,
         "expiresAfterSeason": 2027
       }
     },
@@ -8441,7 +8473,7 @@
         "hockeyIq": 52
       },
       "contract": {
-        "capHit": 2900000,
+        "capHit": 1900000,
         "expiresAfterSeason": 2028
       }
     },
@@ -8463,7 +8495,7 @@
         "hockeyIq": 69
       },
       "contract": {
-        "capHit": 2800000,
+        "capHit": 1900000,
         "expiresAfterSeason": 2028
       }
     },
@@ -8485,7 +8517,7 @@
         "hockeyIq": 77
       },
       "contract": {
-        "capHit": 8300000,
+        "capHit": 5600000,
         "expiresAfterSeason": 2031
       }
     },
@@ -8507,7 +8539,7 @@
         "hockeyIq": 64
       },
       "contract": {
-        "capHit": 3200000,
+        "capHit": 2100000,
         "expiresAfterSeason": 2032
       }
     },
@@ -8529,7 +8561,7 @@
         "hockeyIq": 72
       },
       "contract": {
-        "capHit": 8400000,
+        "capHit": 5600000,
         "expiresAfterSeason": 2030
       }
     },
@@ -8551,7 +8583,7 @@
         "hockeyIq": 69
       },
       "contract": {
-        "capHit": 1000000,
+        "capHit": 850000,
         "expiresAfterSeason": 2030
       }
     },
@@ -8573,7 +8605,7 @@
         "hockeyIq": 80
       },
       "contract": {
-        "capHit": 4500000,
+        "capHit": 3000000,
         "expiresAfterSeason": 2028
       }
     },
@@ -8595,7 +8627,7 @@
         "hockeyIq": 81
       },
       "contract": {
-        "capHit": 6200000,
+        "capHit": 4200000,
         "expiresAfterSeason": 2032
       }
     },
@@ -8617,7 +8649,7 @@
         "hockeyIq": 84
       },
       "contract": {
-        "capHit": 4300000,
+        "capHit": 2900000,
         "expiresAfterSeason": 2030
       }
     },
@@ -8639,7 +8671,7 @@
         "hockeyIq": 79
       },
       "contract": {
-        "capHit": 9200000,
+        "capHit": 6200000,
         "expiresAfterSeason": 2028
       }
     },
@@ -8661,7 +8693,7 @@
         "hockeyIq": 72
       },
       "contract": {
-        "capHit": 1400000,
+        "capHit": 900000,
         "expiresAfterSeason": 2029
       }
     },
@@ -8683,7 +8715,7 @@
         "hockeyIq": 63
       },
       "contract": {
-        "capHit": 8300000,
+        "capHit": 5600000,
         "expiresAfterSeason": 2030
       }
     },
@@ -8705,7 +8737,7 @@
         "hockeyIq": 67
       },
       "contract": {
-        "capHit": 2200000,
+        "capHit": 1500000,
         "expiresAfterSeason": 2031
       }
     },
@@ -8727,7 +8759,7 @@
         "hockeyIq": 82
       },
       "contract": {
-        "capHit": 2700000,
+        "capHit": 1800000,
         "expiresAfterSeason": 2029
       }
     },
@@ -8749,7 +8781,7 @@
         "hockeyIq": 71
       },
       "contract": {
-        "capHit": 10000000,
+        "capHit": 6700000,
         "expiresAfterSeason": 2028
       }
     },
@@ -8768,7 +8800,7 @@
         "consistency": 75
       },
       "contract": {
-        "capHit": 1100000,
+        "capHit": 850000,
         "expiresAfterSeason": 2029
       }
     },
@@ -8787,7 +8819,7 @@
         "consistency": 56
       },
       "contract": {
-        "capHit": 7500000,
+        "capHit": 5000000,
         "expiresAfterSeason": 2027
       }
     }

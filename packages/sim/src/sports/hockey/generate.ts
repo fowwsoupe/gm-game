@@ -130,6 +130,9 @@ export function generateFictionalLeague(
       city,
       name: nick,
       abbreviation: city.slice(0, 3).toUpperCase(),
+      // Two conferences, each split into divisions of four.
+      conference: t % 2 === 0 ? 'East' : 'West',
+      division: `${t % 2 === 0 ? 'East' : 'West'} ${Math.floor(t / 2 / 4) % 2 === 0 ? 'A' : 'B'}`,
       userControlled: t === 0,
     });
 

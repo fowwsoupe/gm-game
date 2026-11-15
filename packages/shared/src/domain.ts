@@ -43,6 +43,9 @@ export interface Team {
   city: string;
   name: string;
   abbreviation: string;
+  /** Optional league structure. The schedule plays division rivals most, then the conference. */
+  conference?: string;
+  division?: string;
   /** Owned by the human player(s). The game supports running several teams. */
   userControlled: boolean;
 }

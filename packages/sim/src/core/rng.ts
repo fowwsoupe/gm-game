@@ -52,6 +52,16 @@ export class Rng {
     return items[Math.floor(this.next() * items.length)] as T;
   }
 
+  /** A shuffled copy (Fisher-Yates). */
+  shuffle<T>(items: readonly T[]): T[] {
+    const a = [...items];
+    for (let i = a.length - 1; i > 0; i--) {
+      const j = this.int(0, i);
+      [a[i], a[j]] = [a[j]!, a[i]!];
+    }
+    return a;
+  }
+
   /** Independent child stream, so adding randomness in one system doesn't shift another. */
   fork(label: string): Rng {
     let h = this.state ^ 0x9e3779b9;

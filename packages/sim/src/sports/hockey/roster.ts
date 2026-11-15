@@ -35,6 +35,8 @@ export function importHockeyRoster(json: unknown): RosterImport {
     city: t.city,
     name: t.name,
     abbreviation: t.abbreviation,
+    ...(t.conference ? { conference: t.conference } : {}),
+    ...(t.division ? { division: t.division } : {}),
     userControlled: i === 0,
   }));
   const players: Player[] = file.players.map((p) => ({
@@ -74,7 +76,13 @@ export function exportHockeyRoster(
     season: meta.season,
     name: meta.name,
     ...(meta.author ? { author: meta.author } : {}),
-    teams: league.teams.map((t) => ({ abbreviation: t.abbreviation, city: t.city, name: t.name })),
+    teams: league.teams.map((t) => ({
+      abbreviation: t.abbreviation,
+      city: t.city,
+      name: t.name,
+      ...(t.conference ? { conference: t.conference } : {}),
+      ...(t.division ? { division: t.division } : {}),
+    })),
     players: league.players.map((p) => ({
       id: p.id,
       firstName: p.firstName,

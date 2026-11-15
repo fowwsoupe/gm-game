@@ -1,6 +1,6 @@
 import type { Player, Team, TeamId, TeamStatus } from '@gm/shared';
 import { Rng, type LeagueState } from './core';
-import { roundRobinSchedule } from './league';
+import { makeSchedule } from './league';
 import type { SimContext } from './context';
 
 /** First season of a new league. 2027 = the 2026-27 season. */
@@ -19,10 +19,11 @@ export function createLeague(
   const rng = new Rng(seed);
   const { teams, players } = initial ?? ctx.sport.generateLeague(rng.fork('league'));
   const season = initial?.season ?? START_SEASON;
-  const schedule = roundRobinSchedule(
+  const schedule = makeSchedule(
     season,
-    teams.map((t) => t.id),
+    teams,
     ctx.ruleset.season.gamesPerTeam,
+    ctx.ruleset.season.calendar.regularSeasonDays,
     rng.fork('schedule'),
   );
   return {

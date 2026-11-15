@@ -87,7 +87,7 @@ export class SaveFile {
 
   saveNewLeague(state: LeagueState) {
     const insertTeam = this.db.prepare(
-      'INSERT INTO teams (id, city, name, abbreviation, user_controlled, status) VALUES (?, ?, ?, ?, ?, ?)',
+      'INSERT INTO teams (id, city, name, abbreviation, user_controlled, status, conference, division) VALUES (?, ?, ?, ?, ?, ?, ?, ?)',
     );
     const insertPlayer = this.db.prepare(
       `INSERT INTO players (id, team_id, first_name, last_name, birth_year, position, potential, ratings_json, contract_json)
@@ -105,6 +105,8 @@ export class SaveFile {
           t.abbreviation,
           t.userControlled ? 1 : 0,
           state.teamStatus[t.id] ?? 'bubble',
+          t.conference ?? null,
+          t.division ?? null,
         );
       }
       for (const p of Object.values(state.players)) {
@@ -408,12 +410,16 @@ export class SaveFile {
       name: string;
       abbreviation: string;
       user_controlled: number;
+      conference: string | null;
+      division: string | null;
     }[];
     return rows.map((r) => ({
       id: r.id as Team['id'],
       city: r.city,
       name: r.name,
       abbreviation: r.abbreviation,
+      ...(r.conference ? { conference: r.conference } : {}),
+      ...(r.division ? { division: r.division } : {}),
       userControlled: r.user_controlled === 1,
     }));
   }

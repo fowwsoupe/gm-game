@@ -95,4 +95,9 @@ export const migrations: readonly string[] = [
     PRIMARY KEY (season, award)
   );
   `,
+  // 6: league structure (optional: roster files without it play a flat schedule).
+  `
+  ALTER TABLE teams ADD COLUMN conference TEXT;
+  ALTER TABLE teams ADD COLUMN division TEXT;
+  `,
 ];
