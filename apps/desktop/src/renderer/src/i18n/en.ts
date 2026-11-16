@@ -299,6 +299,7 @@ export const en = {
   'trait.leadership': 'Leader',
   'trait.professionalism': 'Professional',
   'trait.hotHeaded': 'Hot-headed',
+  'home.raceNight': 'next game: win {win} · lose {lose}',
 } as const;
 
 export type MessageKey = keyof typeof en;

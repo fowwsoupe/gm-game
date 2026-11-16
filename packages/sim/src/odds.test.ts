@@ -6,6 +6,7 @@ import {
   defaultContext,
   handleCommand,
   playoffOdds,
+  raceNight,
   Rng,
   teamRatings,
   type LeagueState,
@@ -68,5 +69,26 @@ describe('playoff odds', () => {
     );
     expect(ratings.get('a' as TeamId)!).toBeGreaterThan(0.5);
     expect(ratings.get('b' as TeamId)!).toBeLessThan(0.5);
+  });
+});
+
+describe('race night', () => {
+  it('a win helps your odds and a loss hurts them', () => {
+    const state = createLeague(42, ctx);
+    handleCommand(state, { kind: 'sim.advance', days: 150 }, local, ctx);
+    const teamId = Object.keys(state.teams)[3] as TeamId;
+    const night = raceNight({
+      teams: Object.values(state.teams),
+      schedule: state.schedule,
+      results: Object.values(state.results),
+      ruleset: ctx.ruleset,
+      season: state.date.season,
+      exponent: 2,
+      sims: 400,
+      teamId,
+      seed: 3,
+    });
+    expect(night).not.toBeNull();
+    expect(night!.ifWin).toBeGreaterThanOrEqual(night!.ifLose);
   });
 });

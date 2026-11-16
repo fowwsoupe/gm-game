@@ -367,6 +367,8 @@ export interface TodoItem {
 export interface Dashboard {
   todo: TodoItem[];
   nextGame: { opponentId: TeamId; home: boolean; day: number } | null;
+  /** Playoff odds if the next regular-season game is won or lost (absent outside the season). */
+  raceNight?: { ifWin: number; ifLose: number };
 }
 
 /** One season of a player's career: his team at the end of it and his regular-season line. */

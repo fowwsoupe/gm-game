@@ -297,4 +297,5 @@ export const fr: Record<MessageKey, string> = {
   'trait.leadership': 'Leader',
   'trait.professionalism': 'Professionnel',
   'trait.hotHeaded': 'Tête brûlée',
+  'home.raceNight': 'prochain match : victoire {win} · défaite {lose}',
 };

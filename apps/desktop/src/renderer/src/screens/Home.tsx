@@ -52,7 +52,8 @@ function TeamStrip({ teamId }: { teamId: TeamId }) {
   const odds = pulse.find((p) => p.teamId === teamId)?.playoffOdds;
   const space = sheet?.seasons[0]?.space;
   const opponent = teams.find((x) => x.id === home?.nextGame?.opponentId);
-  const stats: { label: string; value: string }[] = [
+  const pct = (n: number) => `${Math.round(n * 100)}%`;
+  const stats: { label: string; value: string; note?: string }[] = [
     {
       label: t('home.record'),
       value: row ? `${row.w}-${row.l}-${row.otl}` : '–',
@@ -61,7 +62,16 @@ function TeamStrip({ teamId }: { teamId: TeamId }) {
       label: t('home.place'),
       value: row ? t('home.placeValue', { n: rows.indexOf(row) + 1, of: rows.length }) : '–',
     },
-    { label: t('home.odds'), value: odds === undefined ? '–' : `${Math.round(odds * 100)}%` },
+    {
+      label: t('home.odds'),
+      value: odds === undefined ? '–' : pct(odds),
+      ...(home?.raceNight && {
+        note: t('home.raceNight', {
+          win: pct(home.raceNight.ifWin),
+          lose: pct(home.raceNight.ifLose),
+        }),
+      }),
+    },
     { label: t('home.capSpace'), value: space === undefined ? '–' : money(space) },
     {
       label: t('home.nextGame'),
@@ -78,6 +88,7 @@ function TeamStrip({ teamId }: { teamId: TeamId }) {
           <div key={s.label}>
             <div className="text-xs uppercase tracking-wider text-muted">{s.label}</div>
             <div className="tabular text-lg font-semibold">{s.value}</div>
+            {s.note && <div className="tabular text-xs text-muted">{s.note}</div>}
           </div>
         ))}
       </div>
