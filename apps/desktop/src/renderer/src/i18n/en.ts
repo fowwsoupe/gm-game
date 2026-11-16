@@ -309,6 +309,9 @@ export const en = {
   'actions.simToSummer': 'Sim to end of playoffs',
   'home.yourTeam': 'Your team',
   'home.noTeam': 'Watch only (no team)',
+  'standings.view.league': 'League',
+  'standings.view.conference': 'Conference',
+  'standings.view.division': 'Division',
 } as const;
 
 export type MessageKey = keyof typeof en;
