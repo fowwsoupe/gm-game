@@ -4,6 +4,7 @@ import {
   useNewLeague,
   useNewLeagueFromRoster,
   usePlayoffs,
+  useStatus,
   useSteam,
   useTeams,
 } from '@/lib/queries';
@@ -40,6 +41,7 @@ export function App() {
   const dispatch = useDispatch();
   const [lastSim, setLastSim] = useState<string | null>(null);
   const { data: playoffs } = usePlayoffs();
+  const { data: status } = useStatus();
   const hasLeague = !isError && teams.length > 0;
 
   const sim = (days: number, stopOn: 'never' | 'major' = 'never') =>
@@ -114,6 +116,22 @@ export function App() {
           <Button disabled={!hasLeague || dispatch.isPending} onClick={() => sim(400, 'major')}>
             {t('actions.simToNext')}
           </Button>
+          {status?.championTeamId && !status.freeAgencyOpen && (
+            <Button
+              disabled={dispatch.isPending}
+              onClick={() =>
+                dispatch.mutate(
+                  { kind: 'offseason.openFreeAgency' },
+                  {
+                    onSuccess: (res) =>
+                      setLastSim(res.ok ? t('home.freeAgencyOpen') : res.error.message),
+                  },
+                )
+              }
+            >
+              {t('actions.openFreeAgency')}
+            </Button>
+          )}
           <Button
             disabled={!playoffs?.championTeamId || dispatch.isPending}
             onClick={() =>

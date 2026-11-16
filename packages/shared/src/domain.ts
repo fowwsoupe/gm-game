@@ -95,6 +95,8 @@ export interface PlayerProfile extends RosterPlayer {
   percentiles: { key: string; value: number }[];
   /** This regular season's stat line, sport-defined keys (hockey: gp, goals, assists...). */
   stats: Record<string, number>;
+  /** What he would ask per year on a new contract today, whole dollars. */
+  ask: number;
 }
 
 export interface Player {
@@ -270,4 +272,31 @@ export interface TradeEvaluation {
   accepted: boolean;
   value: number;
   reasons: TradeReason[];
+}
+
+/** Where the league is, for the Home screen and the buttons that depend on it. */
+export interface LeagueStatus {
+  season: number;
+  day: number;
+  phase: 'preseason' | 'regular' | 'playoffs' | 'offseason';
+  championTeamId: TeamId | null;
+  /** Between opening free agency and starting the next season. */
+  freeAgencyOpen: boolean;
+  tradeDeadlineDay: number;
+  /** Trades allowed right now. */
+  tradesOpen: boolean;
+}
+
+/**
+ * How a free agent feels about an offer. Each factor is scored 0–100 and weighted by what a
+ * player of his age cares about; he signs when `interest` reaches `threshold`.
+ */
+export interface SigningInterest {
+  playerId: PlayerId;
+  /** His asking salary per year, whole dollars. */
+  ask: number;
+  maxYears: number;
+  interest: number;
+  threshold: number;
+  factors: { key: 'money' | 'winning' | 'role' | 'term'; score: number; weight: number }[];
 }

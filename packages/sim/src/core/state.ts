@@ -37,6 +37,8 @@ export interface LeagueState {
   championTeamId: TeamId | null;
   /** Dead cap (buyouts) for this season and later ones. Older seasons are dropped. */
   capCharges: CapCharge[];
+  /** The offseason free-agency window is open (after `offseason.openFreeAgency`, until the next season starts). */
+  freeAgencyOpen: boolean;
   /** Count of events applied so far; the next event's id is built from it. */
   eventSeq: number;
 }
@@ -132,6 +134,10 @@ export function applyEvent(state: LeagueState, event: LeagueEvent): void {
       state.playoffSeries = {};
       state.championTeamId = null;
       state.capCharges = state.capCharges.filter((c) => c.season >= event.season);
+      state.freeAgencyOpen = false;
+      return;
+    case 'freeAgency.opened':
+      state.freeAgencyOpen = true;
       return;
     case 'team.statusChanged':
       state.teamStatus[event.teamId] = event.to;

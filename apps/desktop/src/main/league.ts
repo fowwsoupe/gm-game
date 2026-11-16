@@ -13,6 +13,8 @@ import {
   parseXgTable,
   playerProfiles,
   evaluateTrade,
+  signingInterest,
+  tradeWindowOpen,
   playerRecords,
   resignOffers,
   Rng,
@@ -29,6 +31,7 @@ import type {
   GameSummary,
   Importance,
   LeagueEvent,
+  LeagueStatus,
   RosterPlayer,
   TeamId,
   TradeProposal,
@@ -286,6 +289,28 @@ export class LeagueService {
   evaluateTrade(proposal: TradeProposal) {
     const { state } = this.open();
     return evaluateTrade(state, defaultContext(state.rulesetId), proposal);
+  }
+
+  status(): LeagueStatus {
+    const { state } = this.open();
+    const ctx = defaultContext(state.rulesetId);
+    const cal = ctx.ruleset.season.calendar;
+    return {
+      season: state.date.season,
+      day: state.date.day,
+      phase: phaseOf(cal, state.date),
+      championTeamId: state.championTeamId,
+      freeAgencyOpen: state.freeAgencyOpen,
+      tradeDeadlineDay: cal.tradeDeadlineDay,
+      tradesOpen: tradeWindowOpen(state, ctx),
+    };
+  }
+
+  signingInterest(playerId: string, teamId: TeamId, offer: { salary: number; years: number }) {
+    const { state } = this.open();
+    const player = state.players[playerId];
+    if (!player || player.teamId !== null || !state.teams[teamId]) return null;
+    return signingInterest(state, defaultContext(state.rulesetId), player, teamId, offer);
   }
 
   feed(limit: number, minImportance?: Importance): LeagueEvent[] {

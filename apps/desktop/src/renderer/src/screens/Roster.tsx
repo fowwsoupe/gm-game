@@ -1,8 +1,8 @@
 import { useState } from 'react';
 import type { PlayerProfile, TeamId } from '@gm/shared';
-import { usePlayers, useTeams } from '@/lib/queries';
+import { useDispatch, usePlayers, useSigningInterest, useTeams } from '@/lib/queries';
 import { useT, type MessageKey } from '@/i18n';
-import { Card, PlayerCard } from '@/ui';
+import { Button, Card, PercentileBar, PlayerCard } from '@/ui';
 import { money, statValue } from '@/lib/format';
 
 const FREE_AGENTS = 'fa';
@@ -58,7 +58,7 @@ export function Roster() {
             />
           ))}
         </div>
-        {card && <Profile player={card} />}
+        {card && <Profile player={card} signFor={teams.find((x) => x.userControlled)?.id} />}
       </div>
     </div>
   );
@@ -122,7 +122,7 @@ function PlayerTable({
   );
 }
 
-function Profile({ player: p }: { player: PlayerProfile }) {
+function Profile({ player: p, signFor }: { player: PlayerProfile; signFor: TeamId | undefined }) {
   const t = useT();
   const strengths = [...p.percentiles].sort((a, b) => b.value - a.value).slice(0, 2);
   return (
@@ -153,6 +153,77 @@ function Profile({ player: p }: { player: PlayerProfile }) {
           <p className="mt-1 text-sm text-bad">{t('roster.injured', { day: p.injuredUntil })}</p>
         )}
       </Card>
+      {p.teamId === null && signFor && <Offer key={p.id} player={p} teamId={signFor} />}
     </div>
+  );
+}
+
+/** Offer a free agent a contract; his interest meter answers before you send it. */
+function Offer({ player, teamId }: { player: PlayerProfile; teamId: TeamId }) {
+  const t = useT();
+  const [salary, setSalary] = useState(player.ask);
+  const [years, setYears] = useState(2);
+  const [message, setMessage] = useState<string | null>(null);
+  const { data: view } = useSigningInterest({ playerId: player.id, teamId, salary, years });
+  const dispatch = useDispatch();
+  return (
+    <Card title={t('sign.title')}>
+      <p className="mb-2 text-sm text-muted">{t('sign.ask', { amount: money(player.ask) })}</p>
+      <div className="mb-3 flex items-center gap-2 text-sm">
+        <input
+          type="number"
+          min={0}
+          step={0.1}
+          aria-label={t('sign.salary')}
+          value={(salary / 1e6).toFixed(2)}
+          onChange={(e) => setSalary(Math.round(Number(e.target.value) * 1e6))}
+          className="w-24 rounded border border-line bg-panel px-2 py-1"
+        />
+        <span className="text-muted">{t('sign.perYear')}</span>
+        <select
+          aria-label={t('resign.years')}
+          value={years}
+          onChange={(e) => setYears(Number(e.target.value))}
+          className="rounded border border-line bg-panel px-2 py-1"
+        >
+          {Array.from({ length: view?.maxYears ?? 1 }, (_, i) => i + 1).map((y) => (
+            <option key={y} value={y}>
+              {t('sign.years', { n: y })}
+            </option>
+          ))}
+        </select>
+      </div>
+      {view && (
+        <div className="space-y-1.5">
+          <PercentileBar label={t('sign.interest')} value={view.interest} />
+          {view.factors.map((f) => (
+            <PercentileBar
+              key={f.key}
+              label={t('sign.factor', {
+                factor: t(`sign.factor.${f.key}` as MessageKey),
+                weight: Math.round(f.weight * 100),
+              })}
+              value={f.score}
+            />
+          ))}
+          <p className="text-xs text-muted">{t('sign.threshold', { n: view.threshold })}</p>
+        </div>
+      )}
+      <div className="mt-3 flex items-center gap-3">
+        <Button
+          variant="primary"
+          disabled={!view || view.interest < view.threshold || dispatch.isPending}
+          onClick={() =>
+            dispatch.mutate(
+              { kind: 'contract.sign', playerId: player.id, teamId, salary, years },
+              { onSuccess: (res) => setMessage(res.ok ? t('sign.done') : res.error.message) },
+            )
+          }
+        >
+          {t('sign.action')}
+        </Button>
+        {message && <span className="text-sm text-muted">{message}</span>}
+      </div>
+    </Card>
   );
 }

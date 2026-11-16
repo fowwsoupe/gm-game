@@ -1,6 +1,6 @@
 import type { Player, TeamId, TradeEvaluation, TradeProposal, TradeReason } from '@gm/shared';
 import { pct, phaseOf, type LeagueState } from '../core';
-import { capIssues, payroll } from '../cba';
+import { capYearIssues, capYearOf, teamCapTotal } from '../cba';
 import type { TeamContext } from '../value';
 import type { SimContext } from '../context';
 
@@ -26,20 +26,6 @@ export function tradeWindowOpen(state: LeagueState, ctx: SimContext): boolean {
   );
 }
 
-/** The season trades are judged for: next season once the champion is crowned (expiring deals are off the books). */
-const capYear = (state: LeagueState) => state.date.season + (state.championTeamId ? 1 : 0);
-
-function capTotal(state: LeagueState, players: readonly Player[], teamId: TeamId): number {
-  const season = capYear(state);
-  const signed = players.filter(
-    (p) => p.teamId === teamId && p.contract && p.contract.expiresAfterSeason >= season,
-  );
-  const dead = state.capCharges
-    .filter((c) => c.teamId === teamId && c.season === season)
-    .reduce((sum, c) => sum + c.amount, 0);
-  return payroll(signed) + dead;
-}
-
 const count = (players: readonly Player[], teamId: TeamId, position: string) =>
   players.filter((p) => p.teamId === teamId && p.position === position).length;
 
@@ -51,9 +37,9 @@ export function teamContext(state: LeagueState, ctx: SimContext, teamId: TeamId)
   const inSeason = !state.championTeamId && state.date.day >= 0;
   return {
     status: state.teamStatus[teamId] ?? 'bubble',
-    season: capYear(state),
+    season: capYearOf(state),
     seasonLeft: inSeason ? Math.max(0, 1 - state.date.day / days) : 1,
-    capSpace: ruleset.cap.upperLimit - capTotal(state, players, teamId),
+    capSpace: ruleset.cap.upperLimit - teamCapTotal(state, teamId, players),
     needs: Object.entries(ruleset.roster.positionMin)
       .filter(([position, min]) => count(players, teamId, position) < min)
       .map(([position]) => position),
@@ -102,10 +88,12 @@ export function evaluateTrade(
   const after = before.map((p) =>
     give.includes(p.id) ? { ...p, teamId: to } : get.includes(p.id) ? { ...p, teamId: from } : p,
   );
-  const phase = state.championTeamId ? 'offseason' : 'future'; // 'future' checks the ceiling only
   for (const teamId of [from, to]) {
-    const total = capTotal(state, after, teamId);
-    if (capIssues(ruleset, total, phase).length && total > capTotal(state, before, teamId)) {
+    const total = teamCapTotal(state, teamId, after);
+    if (
+      capYearIssues(ruleset, state, total).length &&
+      total > teamCapTotal(state, teamId, before)
+    ) {
       return refuse('over_cap', { team: state.teams[teamId]!.abbreviation });
     }
   }

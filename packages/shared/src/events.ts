@@ -81,6 +81,8 @@ export type LeagueEvent =
       teamId: TeamId;
       playerId?: PlayerId;
     })
+  /** The offseason's free-agency window opened (closes when the next season starts). */
+  | (EventBase & { kind: 'freeAgency.opened' })
   /** A new season: fresh schedule, clock back to opening night, results cleared. */
   | (EventBase & {
       kind: 'season.started';

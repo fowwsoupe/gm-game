@@ -4,8 +4,9 @@
  *   1 development  2 retirements  3 contract expiries  4 draft
  *   5 re-signing  6 free agency  7 reaching the cap floor  8 next season's schedule and clock
  * Every change goes out as an event through `emit`, so replays and saves stay identical.
- * AI only for now: user-controlled teams are handled like any other until draft and
- * free-agency screens exist.
+ * The summer runs in two halves so a human GM can shop free agency in between:
+ * `openFreeAgency` (steps 1-5), then `finishRollover` (6-8). AI teams draft and fill rosters for
+ * human teams too, until the draft screen exists.
  */
 import type { TeamId } from '@gm/shared';
 import { Rng, phaseOf, type Emit, type LeagueState } from '../core';
@@ -14,25 +15,42 @@ import type { SimContext } from '../context';
 import { runDraft } from './draft';
 
 export { lotteryOrder } from './draft';
+export { signingInterest, signFreeAgent } from './signing';
 export { resignOffers, resignContract, isExpiring } from './resign';
 import { expireContracts, fillRosters, meetCapFloor, reSignPlayers } from './freeAgency';
 import { developPlayers, retirePlayers } from './progression';
 
-export function rolloverSeason(state: LeagueState, ctx: SimContext, emit: Emit): void {
-  const season = state.date.season + 1;
-  const rng = new Rng(state.rngState);
+/** Worst team first, from this season's standings (taken before anything changes). */
+function worstFirst(state: LeagueState, ctx: SimContext): TeamId[] {
   const teamIds = Object.keys(state.teams).sort() as TeamId[];
-  const from = phaseOf(ctx.ruleset.season.calendar, state.date);
-  // Worst team first, from this season's standings (taken before anything changes).
-  const order = computeStandings(teamIds, Object.values(state.results), ctx.ruleset.season.points)
+  return computeStandings(teamIds, Object.values(state.results), ctx.ruleset.season.points)
     .map((row) => row.teamId)
     .reverse();
+}
 
+/**
+ * First half of the summer (steps 1-5), then free agency opens for human GMs. Ages are for the
+ * season about to start; the date stays in the old season until `finishRollover`.
+ */
+export function openFreeAgency(state: LeagueState, ctx: SimContext, emit: Emit): void {
+  const season = state.date.season + 1;
+  const rng = new Rng(state.rngState);
+  const order = worstFirst(state, ctx);
   developPlayers(state, ctx.models.development, rng.fork('development'), emit, season);
   retirePlayers(state, ctx.models.development, rng.fork('retirement'), emit, season);
   const expiring = expireContracts(state, emit);
   runDraft(state, ctx, rng.fork('draft'), emit, season, order);
   reSignPlayers(state, ctx, rng.fork('resign'), emit, season, expiring);
+  emit('notable', [], { kind: 'freeAgency.opened' });
+}
+
+/** Second half (steps 6-8): AI teams fill their rosters and reach the floor, then the new season starts. */
+export function finishRollover(state: LeagueState, ctx: SimContext, emit: Emit): void {
+  const season = state.date.season + 1;
+  // Forks do not advance the parent stream, so splitting the summer draws the same numbers.
+  const rng = new Rng(state.rngState);
+  const order = worstFirst(state, ctx);
+  const from = phaseOf(ctx.ruleset.season.calendar, state.date);
   fillRosters(state, ctx, rng.fork('freeAgency'), emit, season, order);
   meetCapFloor(state, ctx, rng.fork('capFloor'), emit, season, order);
 
@@ -49,4 +67,10 @@ export function rolloverSeason(state: LeagueState, ctx: SimContext, emit: Emit):
     rngState: rng.fork('games').state,
   });
   emit('major', [], { kind: 'season.phaseChanged', from, to: 'regular' });
+}
+
+/** The whole summer at once (free agency is opened first if a human has not done it). */
+export function rolloverSeason(state: LeagueState, ctx: SimContext, emit: Emit): void {
+  if (!state.freeAgencyOpen) openFreeAgency(state, ctx, emit);
+  finishRollover(state, ctx, emit);
 }

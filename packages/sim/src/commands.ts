@@ -20,7 +20,13 @@ import {
 import { buyoutCharges } from './cba';
 import { classifyTeams, computeStandings, nextRound, seedPlayoffs } from './league';
 import { giveSeasonAwards } from './awards';
-import { isExpiring, resignContract, rolloverSeason } from './offseason';
+import {
+  isExpiring,
+  openFreeAgency,
+  resignContract,
+  rolloverSeason,
+  signFreeAgent,
+} from './offseason';
 import { evaluateTrade } from './trades';
 import type { SimContext } from './context';
 
@@ -171,6 +177,39 @@ export function handleCommand(
       });
       applyEvent(state, news);
       return { ok: true, events: [ev, news] };
+    }
+
+    case 'offseason.openFreeAgency': {
+      if (!state.championTeamId || state.freeAgencyOpen) {
+        return {
+          ok: false,
+          error: { code: 'invalid', message: 'free agency opens once, after the season' },
+        };
+      }
+      const events: LeagueEvent[] = [];
+      openFreeAgency(state, ctx, emitter(state, events));
+      return { ok: true, events };
+    }
+
+    case 'contract.sign': {
+      const player = state.players[command.playerId];
+      const team = state.teams[command.teamId];
+      if (!player || !team) {
+        return { ok: false, error: { code: 'invalid', message: 'unknown player or team' } };
+      }
+      const yours =
+        actor.controls.includes(team.id) || (actor.id === 'local' && team.userControlled);
+      if (!yours) return { ok: false, error: { code: 'not_allowed', message: 'not your team' } };
+      const deal = signFreeAgent(state, ctx, player, team.id, command);
+      if ('error' in deal) return { ok: false, error: { code: 'invalid', message: deal.error } };
+      const ev = makeEvent(state, 'notable', [team.id], {
+        kind: 'player.signed',
+        playerId: player.id,
+        teamId: team.id,
+        contract: deal.contract,
+      });
+      applyEvent(state, ev);
+      return { ok: true, events: [ev] };
     }
 
     case 'season.rollover': {

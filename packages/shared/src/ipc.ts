@@ -11,6 +11,8 @@ import type {
   RosterPlayer,
   StandingsRow,
   Team,
+  LeagueStatus,
+  SigningInterest,
   TeamId,
   TradeEvaluation,
   TradeProposal,
@@ -67,6 +69,15 @@ export interface GmApi {
     players(input: { teamId: TeamId | null }): Promise<PlayerProfile[]>;
     /** What the other team would say to a trade, without making it. */
     evaluateTrade(input: TradeProposal): Promise<TradeEvaluation>;
+    /** Date, phase and which windows (trades, free agency) are open. */
+    status(): Promise<LeagueStatus>;
+    /** How a free agent feels about an offer from `teamId` (null if he is not a free agent). */
+    signingInterest(input: {
+      playerId: string;
+      teamId: TeamId;
+      salary: number;
+      years: number;
+    }): Promise<SigningInterest | null>;
   };
   feed: {
     list(input: { limit: number; minImportance?: Importance }): Promise<LeagueEvent[]>;
@@ -99,6 +110,8 @@ export const IPC = {
   resignOffers: 'league:resignOffers',
   players: 'league:players',
   evaluateTrade: 'league:evaluateTrade',
+  status: 'league:status',
+  signingInterest: 'league:signingInterest',
   feedList: 'feed:list',
   dispatch: 'commands:dispatch',
   steamStatus: 'steam:status',

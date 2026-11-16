@@ -42,6 +42,7 @@ export function createLeague(
     playoffSeries: {},
     championTeamId: null,
     capCharges: [],
+    freeAgencyOpen: false,
     eventSeq: 0,
   };
 }
