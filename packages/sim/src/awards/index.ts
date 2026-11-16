@@ -17,6 +17,8 @@ export function giveSeasonAwards(state: LeagueState, ctx: SimContext, emit: Emit
     rules: ctx.ruleset,
     players: Object.values(state.players).sort((a, b) => a.id.localeCompare(b.id)),
     results: Object.values(state.results).filter((g) => !g.playoffSeriesId),
+    playoffResults: Object.values(state.results).filter((g) => g.playoffSeriesId),
+    championTeamId: champion,
   });
   for (const { award, playerId } of winners) {
     const player = state.players[playerId]!;

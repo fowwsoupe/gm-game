@@ -44,13 +44,13 @@ Build order, owners and "done when" for each step: **[V0.1_PLAN.md](V0.1_PLAN.md
 
 **Features**
 
-- [ ] Full season calendar: camp → 84 games → deadline → playoffs → awards → draft → re-sign → FA
+- [~] Full season calendar: 84 games (divisions, conferences, back-to-backs) → playoffs → awards → draft → re-sign → FA done; camp and a trade deadline that matters wait for trades (M6)
 - [ ] Trades v1: team status, rentals, leverage, scarcity, trade block, conditional picks, retention, AI explains
 - [~] Contracts & cap: CBA checks, buyouts, cap sheet screen, cap advisor and offseason re-signing done; RFA / UFA, bonuses, trade protection, in-season extensions to do
 - [ ] Free agency v1: player priorities + interest meter
 - [ ] Draft v1: visual board, follow list, floor/ceiling ranges, scout reports
-- [ ] Playoffs: honest momentum (goalie form), own cup + Playoff MVP, playoff cap
-- [ ] Awards, records, history (own award names)
+- [x] Playoffs: bracket, NHL-style wild cards, honest momentum (per-game goalie form, calibrated), Playoff MVP, playoff cap; the cup is "Champion" until it is named
+- [x] Awards, records, history (own award names, Playoff MVP included)
 - [ ] Living league: feed, league pulse, sim until it matters, playoff odds + race nights
 - [ ] Chemistry: visible, changeable, capped
 

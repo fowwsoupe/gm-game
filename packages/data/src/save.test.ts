@@ -69,6 +69,7 @@ describe('SaveFile', () => {
       'topGoalie',
       'topDefender',
       'topRookie',
+      'playoffMvp',
     ]);
     expect(awards[0]!.season).toBe(2028);
     expect(awards.find((a) => a.award === 'mvp')!.playerName).toMatch(/\S+ \S+/);

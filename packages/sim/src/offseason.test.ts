@@ -116,7 +116,7 @@ describe('offseason rollover', () => {
 });
 
 describe('awards', () => {
-  it('gives the champion and four player awards once the season ends, and replays identically', () => {
+  it('gives the champion and five player awards once the season ends, and replays identically', () => {
     const live = createLeague(41, ctx);
     const replica: LeagueState = structuredClone(live);
     const events = run(live, {
@@ -132,6 +132,7 @@ describe('awards', () => {
       'topGoalie',
       'topDefender',
       'topRookie',
+      'playoffMvp',
     ]);
     expect(given[0]!.teamId).toBe(live.championTeamId);
     const byAward = Object.fromEntries(given.map((e) => [e.award, live.players[e.playerId ?? '']]));
@@ -146,6 +147,8 @@ describe('awards', () => {
     expect(live.date.season - byAward.topRookie!.birthYear).toBeLessThanOrEqual(
       ruleset.awards.rookieMaxAge,
     );
+    // Playoff MVP: a champion, the best by goals (skater) or goals saved above average (goalie).
+    expect(byAward.playoffMvp!.teamId).toBe(live.championTeamId);
     expect(events.some((e) => e.kind === 'news.posted' && e.headline === 'event.awardWon')).toBe(
       true,
     );
