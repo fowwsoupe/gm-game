@@ -103,8 +103,9 @@ describe('offseason rollover', () => {
     }
     expect(live.date.season).toBe(2027 + 20);
     expect(replica).toEqual(live);
-    // A single league's top title count is noisy (3-9 seen over 100 leagues); this only catches a runaway.
-    expect(Math.max(...titles.values())).toBeLessThanOrEqual(9);
+    // A single league's top title count is noisy (2-10 seen over 120 leagues, average 4.6), so this
+    // only catches a runaway: one team taking over half the titles. The balance lab checks the average.
+    expect(Math.max(...titles.values())).toBeLessThanOrEqual(10);
     // Retired players leave the league and the free-agent pool stays small.
     const pool = Object.values(live.players).filter((p) => p.teamId === null);
     expect(pool.length).toBeLessThan(150);
