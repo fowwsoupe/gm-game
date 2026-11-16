@@ -20,6 +20,7 @@ export { signingInterest, signFreeAgent } from './signing';
 export { marketDay, roomFor } from './market';
 export { resignOffers, resignContract, isExpiring, resignWindowOpen } from './resign';
 export { RFA_DISCOUNT, resignAsk } from './roster';
+export { stayChance } from './freeAgency';
 import { expireContracts, fillRosters, meetCapFloor, reSignPlayers } from './freeAgency';
 import { MARKET_DAYS, decideOffers, marketDay } from './market';
 import { developPlayers, retirePlayers } from './progression';

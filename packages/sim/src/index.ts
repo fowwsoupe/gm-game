@@ -33,6 +33,7 @@ export {
   roomFor,
   signFreeAgent,
   signingInterest,
+  stayChance,
 } from './offseason';
 export { giveSeasonAwards } from './awards';
 export * from './trades';
