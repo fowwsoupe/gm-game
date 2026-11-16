@@ -8,7 +8,8 @@ import type {
 } from '@gm/shared';
 import { pct, phaseOf, type LeagueState } from '../core';
 import { capYearIssues, capYearOf, retentionIssues, teamCapTotal } from '../cba';
-import type { TeamContext } from '../value';
+import { pickValue, type TeamContext } from '../value';
+import { computeStandings, draftPicks, nextDraftSeason } from '../league';
 import type { SimContext } from '../context';
 
 /** The other team wants to win a trade by at least this share of the cap. */
@@ -130,11 +131,24 @@ export function evaluateTrade(
 
   if (!tradeWindowOpen(state, ctx)) return refuse('closed');
   if (from === to || !state.teams[from] || !state.teams[to]) return refuse('not_on_team');
-  if (
-    give.length + get.length === 0 ||
-    new Set([...give, ...get]).size !== give.length + get.length
-  ) {
-    return refuse('empty');
+  const givePicks = proposal.givePicks ?? [];
+  const getPicks = proposal.getPicks ?? [];
+  const assets = [...give, ...get, ...givePicks, ...getPicks];
+  if (assets.length === 0 || new Set(assets).size !== assets.length) return refuse('empty');
+  const picks = new Map(draftPicks(state, ruleset.draft.rounds).map((p) => [p.id, p]));
+  const label = (id: string) => {
+    const p = picks.get(id);
+    return p ? `${p.season} R${p.round} ${state.teams[p.originalTeamId]?.abbreviation ?? ''}` : id;
+  };
+  for (const [ids, owner] of [
+    [givePicks, from],
+    [getPicks, to],
+  ] as const) {
+    for (const id of ids) {
+      const pick = picks.get(id);
+      if (!pick) return refuse('pick', { pick: id });
+      if (pick.ownerTeamId !== owner) return refuse('not_your_pick', { pick: label(id) });
+    }
   }
   for (const [ids, owner] of [
     [give, from],
@@ -189,8 +203,36 @@ export function evaluateTrade(
     const p = afterById.get(id)!;
     return { p, ...ctx.models.valuation.value(p, team, ruleset) };
   };
-  const incoming = give.map(valueOf).sort((a, b) => b.surplus - a.surplus);
-  const outgoing = get.map(valueOf);
+  // A pick in the next draft lands where its original team finishes (worst first, from today's
+  // standings); later drafts are guessed at the middle of the round.
+  const teamCount = Object.keys(state.teams).length;
+  const worstFirst = computeStandings(
+    Object.keys(state.teams) as TeamId[],
+    Object.values(state.results),
+    ruleset.season.points,
+  )
+    .map((r) => r.teamId)
+    .reverse();
+  const next = nextDraftSeason(state);
+  const pickOf = (id: string) => {
+    const pick = picks.get(id)!;
+    const slot =
+      pick.season === next ? worstFirst.indexOf(pick.originalTeamId) + 1 : Math.ceil(teamCount / 2);
+    return {
+      p: undefined,
+      label: label(id),
+      surplus: pickValue(
+        ruleset,
+        { slot, teams: teamCount, round: pick.round, yearsAway: pick.season - next },
+        team.status,
+      ),
+      reasons: [] as const,
+    };
+  };
+  const incoming = [...give.map(valueOf), ...givePicks.map(pickOf)].sort(
+    (a, b) => b.surplus - a.surplus,
+  );
+  const outgoing = [...get.map(valueOf), ...getPicks.map(pickOf)];
   let rank = 0;
   let received = 0;
   let positive = 0;
@@ -210,6 +252,7 @@ export function evaluateTrade(
   else reasons.push({ code: 'value_short', params: { amount: margin - value } });
   if (!accepted && lostToDepth > positive / 4) reasons.push({ code: 'quantity' });
   for (const v of incoming) {
+    if (!v.p) continue;
     for (const r of v.reasons) {
       const code = r === 'negative_contract' ? 'bad_contract' : r;
       reasons.push({ code, params: { player: name(v.p) } });

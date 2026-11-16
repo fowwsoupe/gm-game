@@ -253,6 +253,9 @@ export interface TradeProposal {
   give: PlayerId[];
   get: PlayerId[];
   retain?: { playerId: PlayerId; pct: number }[];
+  /** Draft picks (ids like `2028-1-t3`: draft season, round, original team) each way. */
+  givePicks?: string[];
+  getPicks?: string[];
 }
 
 /** Salary kept in a trade: the player's new cap hit, and what the old team owes each season. */
@@ -277,7 +280,9 @@ export interface TradeReason {
     | 'closed'
     | 'empty'
     | 'not_on_team'
-    | 'retention';
+    | 'retention'
+    | 'not_your_pick'
+    | 'pick';
   params?: Record<string, string | number>;
 }
 
@@ -364,4 +369,13 @@ export interface CareerLine {
   season: number;
   teamId: TeamId | null;
   stats: Record<string, number>;
+}
+
+/** A draft pick a team owns. `season` is the draft's (the class joins that season). */
+export interface DraftPick {
+  id: string;
+  season: number;
+  round: number;
+  originalTeamId: TeamId;
+  ownerTeamId: TeamId;
 }

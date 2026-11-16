@@ -271,6 +271,10 @@ export const en = {
   'cap.deadCap': 'Dead / retained',
   'trade.reason.retention':
     "You can't keep that share of {player}'s salary (at most {max}%, {contracts} contracts at once, and never twice on one contract).",
+  'trade.picks': 'Picks:',
+  'trade.pick': '{season} round {round} ({team})',
+  'trade.reason.not_your_pick': '{pick} is not theirs to trade.',
+  'trade.reason.pick': '{pick} is not a pick that can be traded.',
 } as const;
 
 export type MessageKey = keyof typeof en;

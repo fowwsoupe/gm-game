@@ -37,7 +37,7 @@ Build order, owners and "done when" for each step: **[V0.1_PLAN.md](V0.1_PLAN.md
 **Engines**
 
 - [ ] Players (`sim/players`): percentiles, builds, role tags, traits, non-linear development, injuries
-- [~] Value (`sim/value`): per-team surplus value (can be negative) and market value done; pick value curve to do
+- [x] Value (`sim/value`): per-team surplus value (can be negative), market value, pick value curve (rules-based; calibrated curve is Azmi's)
 - [ ] People (`sim/people`): personalities, morale, player priorities, AI GM styles
 - [ ] League & events (`sim/league`): calendar, team status (league pulse), event engine, news
 - [ ] Minor / junior / European leagues: light stats-only sim for prospects
@@ -45,7 +45,7 @@ Build order, owners and "done when" for each step: **[V0.1_PLAN.md](V0.1_PLAN.md
 **Features**
 
 - [~] Full season calendar: 84 games (divisions, conferences, back-to-backs) → playoffs → awards → draft → re-sign → FA done; camp and a trade deadline that matters wait for trades (M6)
-- [~] Trades v1: surplus value per team (status, rentals, negative contracts), anti-quantity, cap and position checks, AI explains itself, trade screen, AI-to-AI trades (both GMs must accept), retained salary done; picks, trade block to do
+- [~] Trades v1: surplus value per team (status, rentals, negative contracts), anti-quantity, cap and position checks, AI explains itself, trade screen, AI-to-AI trades (both GMs must accept), retained salary, draft picks (next three drafts, value curve by projected slot) done; trade block, conditional picks, AI pick trades to do
 - [~] Contracts & cap: CBA checks, buyouts, cap sheet screen, cap advisor, offseason re-signing and in-season extensions done; RFA / UFA, bonuses, trade protection to do
 - [~] Free agency v1: free-agency window in the summer, offers with an interest meter (money, winning, role, term weighted by age), signings any time outside the playoffs done; personalities, loyalty and hometown discounts, AI bidding to do
 - [~] Draft v1: class announced after the playoffs with scouted potential ranges (AI sees the same ranges), your ranked list drives your picks; scout reports and draft-room trades to do

@@ -269,4 +269,8 @@ export const fr: Record<MessageKey, string> = {
   'cap.deadCap': 'Rachats / retenues',
   'trade.reason.retention':
     'Impossible de retenir cette part du salaire de {player} ({max} % au plus, {contracts} contrats à la fois, jamais deux fois sur un même contrat).',
+  'trade.picks': 'Choix :',
+  'trade.pick': '{season}, ronde {round} ({team})',
+  'trade.reason.not_your_pick': 'Le choix {pick} ne leur appartient pas.',
+  'trade.reason.pick': '{pick} n’est pas un choix échangeable.',
 };

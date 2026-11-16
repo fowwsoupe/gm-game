@@ -46,6 +46,8 @@ export interface LeagueState {
   draftBoards: Record<string, string[]>;
   /** Each human team's depth order for its lines, best first (absent = by rating). */
   depthCharts: Record<string, string[]>;
+  /** Owners of traded draft picks, by pick id (`season-round-originalTeam`). Untraded picks are absent. */
+  pickOwners: Record<string, TeamId>;
   /** Count of events applied so far; the next event's id is built from it. */
   eventSeq: number;
 }
@@ -163,6 +165,10 @@ export function applyEvent(state: LeagueState, event: LeagueEvent): void {
       state.freeAgencyOpen = false;
       state.draftClass = [];
       state.draftBoards = {};
+      // This season's draft is done: only later drafts' picks still matter.
+      for (const id of Object.keys(state.pickOwners)) {
+        if (Number(id.split('-')[0]) <= event.season) delete state.pickOwners[id];
+      }
       return;
     case 'freeAgency.opened':
       state.freeAgencyOpen = true;
@@ -180,6 +186,8 @@ export function applyEvent(state: LeagueState, event: LeagueEvent): void {
       };
       move(event.give, event.toTeamId);
       move(event.get, event.fromTeamId);
+      for (const id of event.givePicks ?? []) state.pickOwners[id] = event.toTeamId;
+      for (const id of event.getPicks ?? []) state.pickOwners[id] = event.fromTeamId;
       for (const r of event.retained ?? []) {
         const p = state.players[r.playerId]!;
         if (p.contract) p.contract = { ...p.contract, capHit: r.capHit };

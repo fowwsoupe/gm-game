@@ -68,6 +68,12 @@ export const useDashboard = (teamId: TeamId | undefined) =>
   });
 export const usePulse = () =>
   useQuery({ queryKey: ['league', 'pulse'] as const, queryFn: () => window.gm.league.pulse() });
+export const usePicks = (teamId: TeamId | undefined) =>
+  useQuery({
+    queryKey: ['league', 'picks', teamId] as const,
+    queryFn: () => window.gm.league.picks({ teamId: teamId! }),
+    enabled: !!teamId,
+  });
 export const useLines = (teamId: TeamId | undefined) =>
   useQuery({
     queryKey: ['league', 'lines', teamId] as const,
