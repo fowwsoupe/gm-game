@@ -82,6 +82,21 @@ export interface RosterPlayer {
   contract?: Contract;
 }
 
+/**
+ * A player as the roster screen and player card see him: no hidden ratings, only where he
+ * ranks. `percentiles` (0–100) compare each rating with every rostered player who has the same
+ * rating keys (hockey: skaters with skaters, goalies with goalies).
+ */
+export interface PlayerProfile extends RosterPlayer {
+  teamId: TeamId | null;
+  age: number;
+  /** First day back from injury, if hurt. */
+  injuredUntil?: number;
+  percentiles: { key: string; value: number }[];
+  /** This regular season's stat line, sport-defined keys (hockey: gp, goals, assists...). */
+  stats: Record<string, number>;
+}
+
 export interface Player {
   id: PlayerId;
   firstName: string;

@@ -62,6 +62,9 @@ export interface SportModule<Strength = unknown> {
    */
   leaders(results: readonly GameResult[], players: readonly Player[], limit: number): Leaderboard[];
 
+  /** Each player's stat line over these games, by player id (hockey: gp, goals, assists, points...). */
+  playerLines(results: readonly GameResult[]): Map<string, Record<string, number>>;
+
   /** Loads a community roster file (untrusted JSON) for this sport. */
   importRoster(json: unknown, rules: Ruleset): RosterImport;
 

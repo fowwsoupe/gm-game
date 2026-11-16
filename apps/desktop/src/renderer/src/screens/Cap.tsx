@@ -3,8 +3,7 @@ import type { CapIssue, CapSheet, ResignOffer, RosterPlayer, TeamId } from '@gm/
 import { useCapSheet, useDispatch, useResignOffers, useRoster, useTeams } from '@/lib/queries';
 import { useT } from '@/i18n';
 import { Button, Card } from '@/ui';
-
-const money = (n: number) => `$${(n / 1e6).toFixed(2)}M`;
+import { money } from '@/lib/format';
 const issueAmount = (i: CapIssue) => ('over' in i ? i.over : i.short);
 const years = (n: number) => Array.from({ length: n }, (_, i) => i + 1);
 

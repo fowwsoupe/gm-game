@@ -69,6 +69,9 @@ function registerIpc() {
   ipcMain.handle(IPC.resignOffers, (_e, input: { teamId: TeamId }) =>
     league.resignOffers(input.teamId),
   );
+  ipcMain.handle(IPC.players, (_e, input: { teamId: TeamId | null }) =>
+    league.players(input.teamId),
+  );
   ipcMain.handle(IPC.feedList, (_e, input: { limit: number; minImportance?: Importance }) =>
     league.feed(input.limit, input.minImportance),
   );

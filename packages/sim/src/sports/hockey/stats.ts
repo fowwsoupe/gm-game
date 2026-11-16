@@ -53,6 +53,31 @@ export function hockeySeasonStats(results: readonly GameResult[]) {
   return { skaters, goalies };
 }
 
+/** Stat lines for player cards: skaters get points and shots, goalies saves and save %. */
+export function hockeyPlayerLines(results: readonly GameResult[]) {
+  const { skaters, goalies } = hockeySeasonStats(results);
+  const lines = new Map<string, Record<string, number>>();
+  for (const [id, t] of skaters) {
+    lines.set(id, {
+      gp: t.gp,
+      goals: t.goals,
+      assists: t.assists,
+      points: t.goals + t.assists,
+      plusMinus: t.plusMinus,
+      shots: t.shots,
+    });
+  }
+  for (const [id, g] of goalies) {
+    lines.set(id, {
+      gp: g.gp,
+      shotsAgainst: g.shotsAgainst,
+      saves: g.saves,
+      savePct: g.shotsAgainst > 0 ? g.saves / g.shotsAgainst : 0,
+    });
+  }
+  return lines;
+}
+
 /**
  * Top players by points, goals, assists and save percentage. A goalie needs a quarter of the
  * games the busiest goalie played to qualify for save percentage.

@@ -4,6 +4,7 @@ import type {
   GameDetail,
   GameSummary,
   Leaderboard,
+  PlayerProfile,
   PlayoffSeries,
   RecordEntry,
   ResignOffer,
@@ -60,6 +61,8 @@ export interface GmApi {
     roster(input: { teamId: TeamId }): Promise<RosterPlayer[]>;
     /** Expiring players a team may re-sign now (empty until the champion is crowned). */
     resignOffers(input: { teamId: TeamId }): Promise<ResignOffer[]>;
+    /** Player cards for a team's players, or the free agents (`teamId: null`). */
+    players(input: { teamId: TeamId | null }): Promise<PlayerProfile[]>;
   };
   feed: {
     list(input: { limit: number; minImportance?: Importance }): Promise<LeagueEvent[]>;
@@ -90,6 +93,7 @@ export const IPC = {
   game: 'league:game',
   exhibition: 'league:exhibition',
   resignOffers: 'league:resignOffers',
+  players: 'league:players',
   feedList: 'feed:list',
   dispatch: 'commands:dispatch',
   steamStatus: 'steam:status',

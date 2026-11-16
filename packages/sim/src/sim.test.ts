@@ -10,6 +10,7 @@ import {
   handleCommand,
   NHL_2026,
   percentileRank,
+  playerProfiles,
   Rng,
   seedPlayoffs,
   validateContract,
@@ -268,5 +269,25 @@ describe('players', () => {
   it('percentile ranks', () => {
     expect(percentileRank(90, [10, 20, 30, 90])).toBe(88);
     expect(percentileRank(5, [10, 20])).toBe(0);
+  });
+});
+
+describe('player profiles', () => {
+  it('ranks every rating within its group and carries the season line', () => {
+    const { state } = simSeason(11);
+    const teamId = Object.keys(state.teams)[0] as TeamId;
+    const cards = playerProfiles(state, ctx, teamId);
+    expect(cards.length).toBeGreaterThan(15);
+    for (const c of cards) {
+      expect(c.teamId).toBe(teamId);
+      expect(c.percentiles.length).toBe(c.position === 'G' ? 4 : 8);
+      for (const p of c.percentiles) expect(p.value).toBeGreaterThanOrEqual(0);
+      for (const p of c.percentiles) expect(p.value).toBeLessThanOrEqual(100);
+    }
+    // Position order: centres first, goalies last.
+    expect(cards[0]!.position).toBe('C');
+    expect(cards.at(-1)!.position).toBe('G');
+    expect(cards.some((c) => (c.stats.gp ?? 0) > 50)).toBe(true);
+    expect(cards.find((c) => c.position === 'G' && c.stats.gp)?.stats.savePct).toBeGreaterThan(0.8);
   });
 });

@@ -11,6 +11,7 @@ import {
   defaultContext,
   phaseOf,
   parseXgTable,
+  playerProfiles,
   playerRecords,
   resignOffers,
   Rng,
@@ -273,6 +274,11 @@ export class LeagueService {
   resignOffers(teamId: TeamId) {
     const { state } = this.open();
     return resignOffers(state, defaultContext(state.rulesetId), teamId);
+  }
+
+  players(teamId: TeamId | null) {
+    const { state } = this.open();
+    return playerProfiles(state, defaultContext(state.rulesetId), teamId);
   }
 
   feed(limit: number, minImportance?: Importance): LeagueEvent[] {

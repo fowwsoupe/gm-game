@@ -57,8 +57,8 @@ Build order, owners and "done when" for each step: **[V0.1_PLAN.md](V0.1_PLAN.md
 **Screens**
 
 - [ ] Home hub (one screen, To do clears to zero, sim bar)
-- [ ] Roster & lines (drag-and-drop, PP/PK formations, goalie rules)
-- [ ] Player profile, stats & leaders, standings, team pages, game center
+- [~] Roster & lines: roster screen with stats and player cards done; drag-and-drop lines, PP/PK formations, goalie rules to do
+- [~] Player profile, stats & leaders, standings, team pages, game center: percentile player card, leaders, standings, game center done; full profile (career stats, history) to do
 - [ ] Generated faces
 
 **Rosters**
