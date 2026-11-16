@@ -10,6 +10,7 @@ import { pct, phaseOf, type LeagueState } from '../core';
 import { capYearIssues, capYearOf, retentionIssues, teamCapTotal } from '../cba';
 import { pickValue, type TeamContext } from '../value';
 import { computeStandings, draftPicks, nextDraftSeason } from '../league';
+import { GM_LEAN, gmOf, seenBy } from '../people';
 import type { SimContext } from '../context';
 
 /** The other team wants to win a trade by at least this share of the cap. */
@@ -106,6 +107,7 @@ export function teamContext(state: LeagueState, ctx: SimContext, teamId: TeamId)
     needs: Object.entries(ruleset.roster.positionMin)
       .filter(([position, min]) => count(players, teamId, position) < min)
       .map(([position]) => position),
+    lean: state.teams[teamId]?.userControlled ? 0 : GM_LEAN[gmOf(state.teams[teamId]!).style],
   };
 }
 
@@ -207,7 +209,7 @@ export function evaluateTrade(
   // Incoming players are valued at their cap hit after any retention.
   const valueOf = (id: string) => {
     const p = afterById.get(id)!;
-    return { p, ...ctx.models.valuation.value(p, team, ruleset) };
+    return { p, ...ctx.models.valuation.value(seenBy(state.teams[to]!, p), team, ruleset) };
   };
   // A pick in the next draft lands where its original team finishes (worst first, from today's
   // standings); later drafts are guessed at the middle of the round.

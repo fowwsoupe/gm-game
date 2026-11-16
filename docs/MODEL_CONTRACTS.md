@@ -43,7 +43,8 @@ default model is used.
 What a player asks to sign (re-signing and free agency). Placed in `Models.contractDemand`
 (default `rulesContractDemand`, which is `marketSalary`). Should work in percent of cap through
 `rules.cap`, never hard-code dollars. Term limits, minimum and maximum are enforced after it by
-the CBA engine, so a model cannot create an illegal contract. Check: the lab's payroll / cap and
+the CBA engine, so a model cannot create an illegal contract. A restricted player (under the
+UFA age) re-signs at `RFA_DISCOUNT` of the ask (`resignAsk`). Check: the lab's payroll / cap and
 teams-over-the-cap lines.
 
 ## 3. Player value: `PlayerValuator.value(player, team) -> Valuation` (M6)

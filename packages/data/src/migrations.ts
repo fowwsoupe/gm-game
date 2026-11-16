@@ -146,4 +146,8 @@ export const migrations: readonly string[] = [
   `
   ALTER TABLE players ADD COLUMN joined_season INTEGER;
   `,
+  // 14: the AI GM running each team (style and skill). NULL = derived from the team id.
+  `
+  ALTER TABLE teams ADD COLUMN gm_json TEXT;
+  `,
 ];

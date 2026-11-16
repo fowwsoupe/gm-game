@@ -97,6 +97,8 @@ export const en = {
   'event.phaseChanged': 'The {phase} has begun',
   'event.seriesWon': '{team} won a round {round} series',
   'event.lotteryWon': '{team} won the draft lottery',
+  'event.gmFired': '{team} fire their general manager',
+  'event.gmLeft': "{team}'s general manager moves on",
   'event.championCrowned': '{team} won the championship',
   'event.awardWon': '{player} ({team}) won {award}',
   'award.champion': 'Champion',

@@ -5,6 +5,7 @@ import {
   handleCommand,
   parseXgTable,
   resignOffers,
+  RFA_DISCOUNT,
   rulesGoalModel,
   simGame,
   teamStrength,
@@ -85,7 +86,7 @@ describe('table shot model', () => {
 });
 
 describe('contract demand model', () => {
-  it('a replacement model sets the asking price for re-signing', () => {
+  it('a replacement model sets the asking price for re-signing (less the RFA discount)', () => {
     const ctx = defaultContext(undefined, { models: { contractDemand: { ask: () => 2_500_000 } } });
     const state = createLeague(7, ctx);
     const local = { id: 'local', controls: [] };
@@ -93,6 +94,11 @@ describe('contract demand model', () => {
     const team = Object.values(state.teams).find((t) => t.userControlled)!.id;
     const offers = resignOffers(state, ctx, team);
     expect(offers.length).toBeGreaterThan(0);
-    expect(offers.every((o) => o.ask === 2_500_000)).toBe(true);
+    const season = state.date.season + 1;
+    for (const o of offers) {
+      const restricted =
+        season - state.players[o.playerId]!.birthYear < ctx.ruleset.contracts.ufaAge;
+      expect(o.ask).toBe(restricted ? 2_500_000 * RFA_DISCOUNT : 2_500_000);
+    }
   });
 });

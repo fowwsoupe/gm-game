@@ -17,6 +17,8 @@ export interface TeamContext {
   capSpace: Dollars;
   /** Positions the team is short of, e.g. ['D']. */
   needs: string[];
+  /** The GM's lean, -1 (builder: the future) to 1 (win now). Absent or 0: the situation alone. */
+  lean?: number;
 }
 
 export type ValueReason = 'negative_contract' | 'rental' | 'prospect' | 'fills_need';
@@ -45,6 +47,10 @@ const HORIZON: Record<TeamStatus, { now: number; later: number }> = {
   rebuilder: { now: 0.45, later: 0.95 },
   crisis: { now: 0.6, later: 0.9 },
 };
+
+/** How far a GM's lean moves this season's weight, and each later season's. */
+const LEAN_NOW = 0.2;
+const LEAN_LATER = 0.06;
 
 /** After his deal a restricted player re-signs this far below his worth. */
 const CONTROL_DISCOUNT = 0.25;
@@ -82,8 +88,11 @@ export function projectedOverall(player: Player, age: number, years: number): nu
 export const surplusValuator: PlayerValuator = {
   value(player, team, rules) {
     const age = team.season - player.birthYear;
+    const lean = team.lean ?? 0;
     const h = HORIZON[team.status];
-    const weight = (y: number) => (y === 0 ? h.now * team.seasonLeft : h.later ** y);
+    const now = h.now * (1 + LEAN_NOW * lean);
+    const later = Math.min(0.99, h.later * (1 - LEAN_LATER * lean));
+    const weight = (y: number) => (y === 0 ? now * team.seasonLeft : later ** y);
     const cost = player.contract?.capHit ?? 0;
     const years = player.contract
       ? Math.max(0, player.contract.expiresAfterSeason - team.season + 1)

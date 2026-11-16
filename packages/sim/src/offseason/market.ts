@@ -3,6 +3,7 @@ import type { Emit, LeagueState, Rng } from '../core';
 import type { SimContext } from '../context';
 import { overall } from '../players';
 import { capYearOf } from '../cba';
+import { GM_LEAN, gmOf, seenBy } from '../people';
 import { signFreeAgent, signingInterest } from './signing';
 import { capRoom, freeAgents, rosterOf, neededPosition } from './roster';
 import { wantedYears } from './freeAgency';
@@ -22,6 +23,8 @@ const UPGRADE_MARGIN = 3;
 
 /** Asking price times this is what an AI team offers (some pay a little over to win him). */
 const PREMIUMS = [1, 1.05, 1.1, 1.15];
+/** A win-now GM pays this much more again; a builder this much less. */
+const LEAN_PREMIUM = 0.08;
 
 /** An AI team also keeps a minimum salary free for every slot it still has to fill. */
 function aiCanPay(state: LeagueState, ctx: SimContext, p: Player, teamId: TeamId, salary: number) {
@@ -72,12 +75,13 @@ export function decideOffers(state: LeagueState, ctx: SimContext, emit: Emit): v
 /** Each AI team with a need offers its best-rated free agent who would take it. */
 function makeOffers(state: LeagueState, ctx: SimContext, rng: Rng, emit: Emit): void {
   const { ruleset } = ctx;
-  const pool = freeAgents(state).sort(
-    (a, b) => overall(b) - overall(a) || a.id.localeCompare(b.id),
-  );
   const season = capYearOf(state);
   for (const teamId of (Object.keys(state.teams) as TeamId[]).sort()) {
-    if (state.teams[teamId]!.userControlled) continue;
+    const team = state.teams[teamId]!;
+    if (team.userControlled) continue;
+    // Each GM ranks the pool (and his own roster) as he sees them.
+    const seen = (p: Player) => overall(seenBy(team, p));
+    const pool = freeAgents(state).sort((a, b) => seen(b) - seen(a) || a.id.localeCompare(b.id));
     const roster = rosterOf(state, teamId);
     const needed = neededPosition(ruleset, roster);
     const short = needed !== null || roster.length < ruleset.roster.minActive;
@@ -86,16 +90,18 @@ function makeOffers(state: LeagueState, ctx: SimContext, rng: Rng, emit: Emit): 
       if (needed !== null) return p.position === needed;
       if (short) return true;
       const worst = Math.min(
-        ...roster.filter((r) => r.position === p.position).map(overall),
+        ...roster.filter((r) => r.position === p.position).map(seen),
         Infinity,
       );
-      return overall(p) >= worst + UPGRADE_MARGIN;
+      return seen(p) >= worst + UPGRADE_MARGIN;
     };
     for (const p of pool) {
       if (p.teamId !== null || !wants(p)) continue;
       if (state.faOffers.some((o) => o.playerId === p.id && o.teamId === teamId)) continue;
       const ask = ctx.models.contractDemand.ask(ruleset, p);
-      const salary = Math.round(ask * PREMIUMS[rng.int(0, PREMIUMS.length - 1)]!);
+      const premium =
+        PREMIUMS[rng.int(0, PREMIUMS.length - 1)]! + LEAN_PREMIUM * GM_LEAN[gmOf(team).style];
+      const salary = Math.round(ask * Math.max(1, premium));
       const years = Math.min(
         wantedYears(season - p.birthYear, rng),
         ruleset.contracts.maxYearsNewTeam,

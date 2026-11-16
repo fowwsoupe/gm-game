@@ -1,7 +1,8 @@
-import type { DraftProspect, Player, TeamId } from '@gm/shared';
+import type { DraftProspect, Player, Team, TeamId } from '@gm/shared';
 import type { Emit, LeagueState, Rng } from '../core';
 import type { SimContext } from '../context';
 import { pickId, pickOwner } from '../league';
+import { seenBy } from '../people';
 import { entryContract, rosterOf } from './roster';
 
 /** How far a scout's read of a prospect's potential is off, on average (rating points). */
@@ -11,6 +12,21 @@ const SCOUT_HALF_RANGE = 5;
 
 const clampRating = (n: number) => Math.max(1, Math.min(99, Math.round(n)));
 const scouted = (d: DraftProspect) => (d.low + d.high) / 2;
+
+/**
+ * An AI GM without a board picks the best potential as his own scouts read it (`seenBy`: a good
+ * GM sees close to the truth, a poor one worse than the public range) among the next few.
+ */
+const AI_LOOKS_AT = 12;
+function aiPick(team: Team, pool: readonly DraftProspect[]): number {
+  let best = 0;
+  let bestRead = -Infinity;
+  pool.slice(0, AI_LOOKS_AT).forEach((d, i) => {
+    const read = seenBy(team, d.player).potential;
+    if (read > bestRead) [best, bestRead] = [i, read];
+  });
+  return best;
+}
 
 /**
  * Next season's draft class with its scouted ranges, best scouted first. Every team sees the
@@ -75,9 +91,10 @@ export function runDraft(
     const slotTeam = (i < order.length ? firstRound : order)[i % order.length]!;
     const teamId = pickOwner(state, pickId(season, round, slotTeam), slotTeam);
     const board = state.draftBoards[teamId] ?? [];
-    const wanted = board
-      .map((id) => pool.findIndex((d) => d.player.id === id))
-      .find((at) => at >= 0);
+    const team = state.teams[teamId]!;
+    const wanted =
+      board.map((id) => pool.findIndex((d) => d.player.id === id)).find((at) => at >= 0) ??
+      (team.userControlled ? undefined : aiPick(team, pool));
     const [{ player: prospect }] = pool.splice(wanted ?? 0, 1) as [DraftProspect];
     const contract = entryContract(ctx.ruleset, rosterOf(state, teamId), prospect, season);
     const player: Player = contract ? { ...prospect, teamId, contract } : prospect;

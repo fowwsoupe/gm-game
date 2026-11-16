@@ -149,6 +149,20 @@ export interface Team {
   division?: string;
   /** Owned by the human player(s). The game supports running several teams. */
   userControlled: boolean;
+  /** The AI front office running the team when no human does. Absent: derived from the id. */
+  gm?: GmProfile;
+}
+
+/**
+ * How an AI GM builds a team. `winNow` spends the future on this season, `builder` the other
+ * way round, `balanced` follows the team's situation alone.
+ */
+export type GmStyle = 'winNow' | 'balanced' | 'builder';
+
+export interface GmProfile {
+  style: GmStyle;
+  /** 0-1: how well he reads players. A low-skill GM over- and underrates players, always the same ones. */
+  skill: number;
 }
 
 /** Generic standings row. `otl` stays 0 in sports without overtime-loss points. */
