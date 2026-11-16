@@ -321,6 +321,15 @@ export const en = {
   'trade.decline': 'Decline',
   'todo.tradeOffers': '{count} trade offer(s) waiting',
   'event.tradeOffered': 'The {team} made you a trade offer',
+  'trade.requestsTitle': 'Trade requests',
+  'trade.requestLine': "{player} wants out. Until it is settled he won't re-sign with you.",
+  'trade.talk': 'Talk to him',
+  'trade.talkWorked': "He'll stay: request withdrawn.",
+  'trade.talkFailed': "He hasn't changed his mind.",
+  'todo.tradeRequest': '{player} has asked to be traded',
+  'event.tradeRequested': '{player} has asked the {team} for a trade',
+  'event.requestWithdrawn': '{player} withdrew his trade request',
+  'event.requestStands': '{player} still wants out after meeting the GM',
 } as const;
 
 export type MessageKey = keyof typeof en;

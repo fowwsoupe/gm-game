@@ -7,6 +7,7 @@ import {
   useTeams,
   useTradeEvaluation,
   useTradeOffers,
+  useTradeRequests,
 } from '@/lib/queries';
 import { useT, type MessageKey } from '@/i18n';
 import { Button, Card } from '@/ui';
@@ -74,6 +75,7 @@ export function Trades() {
           ))}
         </select>
       </label>
+      <Requests teamId={mine.id} />
       <Offers teamId={mine.id} />
       <Card title={t('trade.answerTitle')}>
         {!verdict || give.length + get.length + givePicks.length + getPicks.length === 0 ? (
@@ -319,6 +321,53 @@ function Offers({ teamId }: { teamId: TeamId }) {
         })}
       </ul>
       {message && <p className="mt-2 text-sm text-bad">{message}</p>}
+    </Card>
+  );
+}
+
+/** Players who asked out: talk to them (it works on loyal, professional players) or trade them. */
+function Requests({ teamId }: { teamId: TeamId }) {
+  const t = useT();
+  const { data: ids = [] } = useTradeRequests(teamId);
+  const { data: players = [] } = usePlayers(teamId);
+  const dispatch = useDispatch();
+  const [message, setMessage] = useState<string | null>(null);
+  if (ids.length === 0) return null;
+  return (
+    <Card title={t('trade.requestsTitle')}>
+      <ul className="space-y-2 text-sm">
+        {ids.map((id) => {
+          const p = players.find((x) => x.id === id);
+          return (
+            <li key={id} className="flex flex-wrap items-center justify-between gap-2">
+              <span>
+                {t('trade.requestLine', { player: p ? `${p.firstName} ${p.lastName}` : id })}
+              </span>
+              <Button
+                disabled={dispatch.isPending}
+                onClick={() =>
+                  dispatch.mutate(
+                    { kind: 'tradeRequest.talk', playerId: id as PlayerId },
+                    {
+                      onSuccess: (res) =>
+                        setMessage(
+                          res.ok
+                            ? res.events.some((e) => e.kind === 'player.tradeRequestEnded')
+                              ? t('trade.talkWorked')
+                              : t('trade.talkFailed')
+                            : res.error.message,
+                        ),
+                    },
+                  )
+                }
+              >
+                {t('trade.talk')}
+              </Button>
+            </li>
+          );
+        })}
+      </ul>
+      {message && <p className="mt-2 text-sm text-muted">{message}</p>}
     </Card>
   );
 }

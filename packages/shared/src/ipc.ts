@@ -86,6 +86,8 @@ export interface GmApi {
     career(input: { playerId: string }): Promise<CareerLine[]>;
     /** Draft picks a team owns in the drafts that can be traded. */
     picks(input: { teamId: TeamId }): Promise<DraftPick[]>;
+    /** Players on a team who asked to be traded. */
+    tradeRequests(input: { teamId: TeamId }): Promise<string[]>;
     /** AI GMs' open offers to a team. */
     tradeOffers(input: { teamId: TeamId }): Promise<TradeOffer[]>;
     /** What the other team would say to a trade, without making it. */
@@ -147,6 +149,7 @@ export const IPC = {
   lines: 'league:lines',
   picks: 'league:picks',
   tradeOffers: 'league:tradeOffers',
+  tradeRequests: 'league:tradeRequests',
   evaluateTrade: 'league:evaluateTrade',
   status: 'league:status',
   pulse: 'league:pulse',

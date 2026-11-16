@@ -6,6 +6,7 @@ import type {
   LeagueEvent,
   PlayoffSeries,
   Player,
+  PlayerId,
   ScheduledGame,
   Sport,
   Team,
@@ -51,6 +52,8 @@ export interface LeagueState {
   pickOwners: Record<string, TeamId>;
   /** AI GMs' open offers to human teams. */
   tradeOffers: TradeOffer[];
+  /** Players on human teams who asked to be traded (cleared by a talk that works or a trade). */
+  tradeRequests: { playerId: PlayerId; teamId: TeamId }[];
   /** Count of events applied so far; the next event's id is built from it. */
   eventSeq: number;
 }
@@ -145,6 +148,12 @@ export function applyEvent(state: LeagueState, event: LeagueEvent): void {
     case 'draft.boardSet':
       state.draftBoards[event.teamId] = [...event.order];
       return;
+    case 'player.tradeRequested':
+      state.tradeRequests.push({ playerId: event.playerId, teamId: event.teamId });
+      return;
+    case 'player.tradeRequestEnded':
+      state.tradeRequests = state.tradeRequests.filter((r) => r.playerId !== event.playerId);
+      return;
     case 'trade.offered':
       state.tradeOffers.push(structuredClone(event.offer));
       return;
@@ -204,6 +213,12 @@ export function applyEvent(state: LeagueState, event: LeagueEvent): void {
       };
       move(event.give, event.toTeamId);
       move(event.get, event.fromTeamId);
+      // A traded player got his wish.
+      state.tradeRequests = state.tradeRequests.filter(
+        (r) =>
+          !(event.give as string[]).includes(r.playerId) &&
+          !(event.get as string[]).includes(r.playerId),
+      );
       for (const id of event.givePicks ?? []) state.pickOwners[id] = event.toTeamId;
       for (const id of event.getPicks ?? []) state.pickOwners[id] = event.fromTeamId;
       for (const r of event.retained ?? []) {

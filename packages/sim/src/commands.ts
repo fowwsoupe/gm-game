@@ -2,6 +2,7 @@ import type { Actor, Command, CommandResult, LeagueEvent, TeamId, TradeProposal 
 import { applyEvent, emitter, makeEvent, type LeagueState } from './core';
 import { buyoutCharges } from './cba';
 import { parsePick } from './league';
+import { talkedDown } from './people';
 import {
   isExpiring,
   openFreeAgency,
@@ -96,6 +97,9 @@ export function handleCommand(
       const yours =
         actor.controls.includes(team.id) || (actor.id === 'local' && team.userControlled);
       if (!yours) return { ok: false, error: { code: 'not_allowed', message: 'not your team' } };
+      if (state.tradeRequests.some((r) => r.playerId === player.id)) {
+        return { ok: false, error: { code: 'invalid', message: 'he has asked to be traded' } };
+      }
       if (!resignWindowOpen(state, ctx) || !isExpiring(state, player)) {
         return {
           ok: false,
@@ -178,6 +182,30 @@ export function handleCommand(
       }
       const events = completeTrade(state, ctx, mirror);
       return { ok: true, events: [...events, close(true)] };
+    }
+
+    case 'tradeRequest.talk': {
+      const request = state.tradeRequests.find((r) => r.playerId === command.playerId);
+      if (!request) return { ok: false, error: { code: 'invalid', message: 'no such request' } };
+      const team = state.teams[request.teamId]!;
+      const yours =
+        actor.controls.includes(team.id) || (actor.id === 'local' && team.userControlled);
+      if (!yours) return { ok: false, error: { code: 'not_allowed', message: 'not your team' } };
+      const p = state.players[command.playerId]!;
+      const withdrawn = talkedDown(p.id);
+      const ev = withdrawn
+        ? makeEvent(state, 'notable', [team.id], {
+            kind: 'player.tradeRequestEnded',
+            playerId: p.id,
+            withdrawn: true,
+          })
+        : makeEvent(state, 'notable', [team.id], {
+            kind: 'news.posted',
+            headline: 'event.requestStands',
+            params: { player: `${p.firstName} ${p.lastName}` },
+          });
+      applyEvent(state, ev);
+      return { ok: true, events: [ev] };
     }
 
     case 'offseason.openFreeAgency': {

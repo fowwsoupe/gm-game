@@ -319,4 +319,14 @@ export const fr: Record<MessageKey, string> = {
   'trade.decline': 'Refuser',
   'todo.tradeOffers': '{count} offre(s) d’échange en attente',
   'event.tradeOffered': 'Les {team} vous ont fait une offre d’échange',
+  'trade.requestsTitle': 'Demandes d’échange',
+  'trade.requestLine':
+    '{player} veut partir. Tant que ce n’est pas réglé, il ne signera pas de nouveau contrat avec vous.',
+  'trade.talk': 'Lui parler',
+  'trade.talkWorked': 'Il reste : demande retirée.',
+  'trade.talkFailed': 'Il n’a pas changé d’avis.',
+  'todo.tradeRequest': '{player} a demandé à être échangé',
+  'event.tradeRequested': '{player} a demandé aux {team} de l’échanger',
+  'event.requestWithdrawn': '{player} a retiré sa demande d’échange',
+  'event.requestStands': '{player} veut toujours partir après sa rencontre avec le DG',
 };

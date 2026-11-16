@@ -26,6 +26,16 @@ export function dashboard(state: LeagueState, ctx: SimContext, teamId: TeamId): 
     todo.push({ code: 'draftList', screen: 'draft' });
   }
   if (state.freeAgencyOpen) todo.push({ code: 'freeAgency', screen: 'roster' });
+  for (const r of state.tradeRequests.filter((x) => x.teamId === teamId)) {
+    const p = state.players[r.playerId];
+    if (p) {
+      todo.push({
+        code: 'tradeRequest',
+        params: { player: `${p.firstName} ${p.lastName}` },
+        screen: 'trades',
+      });
+    }
+  }
   const offers = state.tradeOffers.filter((o) => o.proposal.toTeamId === teamId).length;
   if (offers > 0) todo.push({ code: 'tradeOffers', params: { count: offers }, screen: 'trades' });
   const hurt = roster.filter((p) => (p.injuredUntil ?? 0) > state.date.day).length;
