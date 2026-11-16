@@ -2,6 +2,7 @@ import type {
   CapCharge,
   DraftProspect,
   GameDate,
+  FreeAgentOffer,
   GameResult,
   LeagueEvent,
   PlayoffSeries,
@@ -55,6 +56,8 @@ export interface LeagueState {
   pickOwners: Record<string, TeamId>;
   /** AI GMs' open offers to human teams. */
   tradeOffers: TradeOffer[];
+  /** Open offers to free agents (AI teams' and yours); a free agent picks one the next day. */
+  faOffers: FreeAgentOffer[];
   /** Players on human teams who asked to be traded (cleared by a talk that works or a trade). */
   tradeRequests: { playerId: PlayerId; teamId: TeamId }[];
   /** Count of events applied so far; the next event's id is built from it. */
@@ -179,8 +182,15 @@ export function applyEvent(state: LeagueState, event: LeagueEvent): void {
       p.teamId = event.teamId;
       p.contract = { ...event.contract };
       delete p.extension;
+      state.faOffers = state.faOffers.filter((o) => o.playerId !== event.playerId);
       return;
     }
+    case 'freeAgency.offered':
+      state.faOffers = state.faOffers.filter(
+        (o) => o.playerId !== event.offer.playerId || o.teamId !== event.offer.teamId,
+      );
+      state.faOffers.push({ ...event.offer });
+      return;
     case 'contract.extended': {
       const p = state.players[event.playerId];
       if (!p) throw new Error(`unknown player ${event.playerId}`);
@@ -200,6 +210,7 @@ export function applyEvent(state: LeagueState, event: LeagueEvent): void {
       state.draftClass = [];
       state.draftBoards = {};
       state.tradeOffers = [];
+      state.faOffers = [];
       // This season's draft is done: only later drafts' picks still matter.
       for (const id of Object.keys(state.pickOwners)) {
         if (Number(id.split('-')[0]) <= event.season) delete state.pickOwners[id];

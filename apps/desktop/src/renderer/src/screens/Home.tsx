@@ -239,7 +239,8 @@ function FeedCard() {
           e.headline === 'event.losingStreak' ||
           e.headline === 'event.hatTrick' ||
           e.headline === 'event.shutout' ||
-          e.headline === 'event.requestStands'
+          e.headline === 'event.requestStands' ||
+          e.headline === 'event.lostFreeAgent'
         )
           return t(e.headline, e.params);
         if (e.headline === 'event.awardWon')

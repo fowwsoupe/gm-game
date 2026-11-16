@@ -50,6 +50,7 @@ export function createLeague(
     pickOwners: {},
     tradeOffers: [],
     tradeRequests: [],
+    faOffers: [],
     eventSeq: 0,
   };
 }

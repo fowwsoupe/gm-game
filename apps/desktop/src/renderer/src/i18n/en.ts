@@ -199,6 +199,7 @@ export const en = {
   'trade.reason.not_on_team': '{player} is not on that team.',
   'event.trade': 'Trade: {from} send {give} to {to} for {get}',
   'actions.openFreeAgency': 'Open free agency',
+  'actions.freeAgencyDay': 'Next day of free agency',
   'home.freeAgencyOpen':
     'Free agency is open: sign players from Roster → Free agents, then start the next season.',
   'event.freeAgencyOpened': 'Free agency is open',
@@ -216,6 +217,8 @@ export const en = {
   'sign.threshold': 'He signs at {n} or more.',
   'sign.action': 'Sign him',
   'sign.done': 'Signed.',
+  'sign.pending': 'Offer made. He answers tomorrow, along with the other offers.',
+  'sign.rivals': '{n} rival offers on the table: he picks the best one tomorrow.',
   'nav.draft': 'Draft',
   'draft.empty': 'The draft class is announced when the playoffs end.',
   'draft.classTitle': 'Draft class',
@@ -351,6 +354,7 @@ export const en = {
   'palette.player': 'Player',
   'palette.team': 'Team',
   'palette.screen': 'Screen',
+  'event.lostFreeAgent': '{player} chose the {team} over your offer',
 } as const;
 
 export type MessageKey = keyof typeof en;

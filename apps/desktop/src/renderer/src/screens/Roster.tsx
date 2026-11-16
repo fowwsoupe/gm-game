@@ -197,6 +197,9 @@ function Offer({ player, teamId }: { player: PlayerProfile; teamId: TeamId }) {
   return (
     <Card title={t('sign.title')}>
       <p className="mb-2 text-sm text-muted">{t('sign.ask', { amount: money(player.ask) })}</p>
+      {player.rivalOffers > 0 && (
+        <p className="mb-2 text-sm text-bad">{t('sign.rivals', { n: player.rivalOffers })}</p>
+      )}
       <div className="mb-3 flex items-center gap-2 text-sm">
         <input
           type="number"
@@ -244,7 +247,16 @@ function Offer({ player, teamId }: { player: PlayerProfile; teamId: TeamId }) {
           onClick={() =>
             dispatch.mutate(
               { kind: 'contract.sign', playerId: player.id, teamId, salary, years },
-              { onSuccess: (res) => setMessage(res.ok ? t('sign.done') : res.error.message) },
+              {
+                onSuccess: (res) =>
+                  setMessage(
+                    !res.ok
+                      ? res.error.message
+                      : res.events[0]?.kind === 'freeAgency.offered'
+                        ? t('sign.pending')
+                        : t('sign.done'),
+                  ),
+              },
             )
           }
         >

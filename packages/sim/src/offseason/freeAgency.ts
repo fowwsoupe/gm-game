@@ -30,7 +30,7 @@ const RESIGN_CHANCE = 0.6;
 const RESIGN_SLACK = 8;
 
 /** Contract length a player of this age would like (an upper bound; the ruleset caps it). */
-const wantedYears = (age: number, rng: Rng) => rng.int(1, age < 28 ? 5 : age < 32 ? 3 : 2);
+export const wantedYears = (age: number, rng: Rng) => rng.int(1, age < 28 ? 5 : age < 32 ? 3 : 2);
 
 /**
  * Step 3: contracts that ran out make the player a free agent, unless he signed an extension

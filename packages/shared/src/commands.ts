@@ -37,7 +37,12 @@ export type Command =
   | { kind: 'units.set'; teamId: TeamId; unit: SpecialUnit; playerIds: PlayerId[] }
   /** Rank the draft class for your picks (best first). Players missing from it go by the scouts' order. */
   | { kind: 'draft.setBoard'; teamId: TeamId; order: PlayerId[] }
-  /** Offer a free agent `salary` a year for `years`; he signs if interested (see `signingInterest`). */
+  /** One day of free agency: free agents answer the offers they have, then AI teams make new ones. */
+  | { kind: 'freeAgency.advanceDay' }
+  /**
+   * Offer a free agent `salary` a year for `years`. He signs now if interested and no AI team has
+   * an offer to him; otherwise your offer joins theirs and he picks the best next day.
+   */
   | { kind: 'contract.sign'; playerId: PlayerId; teamId: TeamId; salary: number; years: number };
 // Planned (not implemented yet): formations, line tactics ...
 

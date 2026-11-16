@@ -10,6 +10,7 @@ import type {
   RetainedSalary,
   ScheduledGame,
   TeamId,
+  FreeAgentOffer,
   TradeOffer,
 } from './domain';
 
@@ -106,6 +107,8 @@ export type LeagueEvent =
   | (EventBase & { kind: 'lines.set'; teamId: TeamId; order: PlayerId[] })
   /** A team's power-play or penalty-kill unit changed (empty = auto). */
   | (EventBase & { kind: 'units.set'; teamId: TeamId; unit: SpecialUnit; playerIds: PlayerId[] })
+  /** A team made a free agent an offer (replaces its earlier one); he answers next day. */
+  | (EventBase & { kind: 'freeAgency.offered'; offer: FreeAgentOffer })
   /** The offseason's free-agency window opened (closes when the next season starts). */
   | (EventBase & { kind: 'freeAgency.opened' })
   /** A new season: fresh schedule, clock back to opening night, results cleared. */

@@ -167,6 +167,19 @@ export function App() {
               {t('actions.openFreeAgency')}
             </Button>
           )}
+          {status?.freeAgencyOpen && (
+            <Button
+              disabled={dispatch.isPending}
+              onClick={() =>
+                dispatch.mutate(
+                  { kind: 'freeAgency.advanceDay' },
+                  { onSuccess: (res) => !res.ok && setLastSim(res.error.message) },
+                )
+              }
+            >
+              {t('actions.freeAgencyDay')}
+            </Button>
+          )}
           <Button
             disabled={!playoffs?.championTeamId || dispatch.isPending}
             onClick={() =>
