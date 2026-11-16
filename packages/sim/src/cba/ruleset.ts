@@ -26,7 +26,7 @@ export interface Ruleset {
     teamsQualifying: number;
     seriesLength: number;
     /** 'conference': the best teams of each conference meet in a bracket per conference, then a final. */
-    seeding: 'points' | 'conference';
+    seeding: 'points' | 'conference' | 'wildcard';
     /** 0 = higher seed at home, 1 = lower seed at home. */
     homeIcePattern: number[];
   };

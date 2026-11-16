@@ -3,7 +3,7 @@
  * Checks below are for hockey (NHL); each sport will get its own set of healthy ranges.
  * Run before and after any change to the sim's numbers, and paste both reports in the PR.
  *
- *   pnpm lab                 # 60 seasons, default seeds
+ *   pnpm lab                 # 100 seasons, default seeds
  *   pnpm lab --seasons 100   # more seasons = more confidence
  *   pnpm lab --leagues 10 --years 30   # multi-year section: leagues x years
  *
@@ -34,7 +34,7 @@ interface Check {
 }
 
 const args = process.argv.slice(2);
-const seasons = Number(args[args.indexOf('--seasons') + 1]) || 60;
+const seasons = Number(args[args.indexOf('--seasons') + 1]) || 100;
 const firstSeed = Number(args[args.indexOf('--seed') + 1]) || 1;
 const leagues = Number(args[args.indexOf('--leagues') + 1]) || 20;
 const years = Number(args[args.indexOf('--years') + 1]) || 20;
@@ -47,25 +47,15 @@ const topScorer: number[] = [];
 const topGoals: number[] = [];
 const topSavePct: number[] = [];
 let ppGoals = 0;
+let injuries = 0;
+let teamSeasons = 0;
 let ppChances = 0;
 let betterTeamSeriesWins = 0;
 let measuredSeries = 0;
 const started = performance.now();
 
-for (let i = 0; i < seasons; i++) {
-  const state = createLeague(firstSeed + i, ctx);
-  const res = handleCommand(
-    state,
-    {
-      kind: 'sim.advance',
-      days: ctx.ruleset.season.calendar.regularSeasonDays + ctx.ruleset.season.calendar.playoffDays,
-    },
-    actor,
-    ctx,
-  );
-  if (!res.ok) throw new Error(res.error.message);
-  const results = Object.values(state.results).filter((g) => !g.playoffSeriesId);
-  all.push(...results);
+/** How often the stronger team (by full-health strength) wins a playoff series. Needs many series to be stable. */
+function measureSeries(state: LeagueState) {
   const strengths = new Map(
     Object.keys(state.teams).map((id) => [
       id,
@@ -83,6 +73,25 @@ for (let i = 0; i < seasons; i++) {
     measuredSeries++;
     if (series.winnerTeamId === better) betterTeamSeriesWins++;
   }
+}
+
+for (let i = 0; i < seasons; i++) {
+  const state = createLeague(firstSeed + i, ctx);
+  const res = handleCommand(
+    state,
+    {
+      kind: 'sim.advance',
+      days: ctx.ruleset.season.calendar.regularSeasonDays + ctx.ruleset.season.calendar.playoffDays,
+    },
+    actor,
+    ctx,
+  );
+  if (!res.ok) throw new Error(res.error.message);
+  injuries += res.events.filter((e) => e.kind === 'player.injured').length;
+  teamSeasons += Object.keys(state.teams).length;
+  const results = Object.values(state.results).filter((g) => !g.playoffSeriesId);
+  all.push(...results);
+  measureSeries(state);
   const top = (key: string) =>
     ctx.sport.leaders(results, Object.values(state.players), 1).find((b) => b.key === key)?.rows[0]
       ?.value ?? 0;
@@ -130,6 +139,7 @@ for (let l = 0; l < leagues; l++) {
       ctx,
     );
     if (!played.ok) throw new Error(played.error.message);
+    measureSeries(state);
     titles.set(state.championTeamId!, (titles.get(state.championTeamId!) ?? 0) + 1);
     const rolled = handleCommand(state, { kind: 'season.rollover' }, actor, ctx);
     if (!rolled.ok) throw new Error(rolled.error.message);
@@ -222,6 +232,12 @@ const checks: Check[] = [
     min: 75,
     max: 100,
     unit: '%',
+  },
+  {
+    name: 'Injuries per team per season (unverified)',
+    value: injuries / teamSeasons,
+    min: 5,
+    max: 12,
   },
   { name: 'Teams over the cap', value: teamsOverCap, min: 0, max: 0 },
   { name: 'Teams over the playoff cap', value: teamsOverPlayoffCap, min: 0, max: 0 },

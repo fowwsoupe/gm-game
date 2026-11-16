@@ -23,7 +23,8 @@ export function History() {
             <li key={r.key} className="flex justify-between gap-4">
               <span className="text-muted">{t(`record.${r.key}` as MessageKey)}</span>
               <span>
-                {r.value} · {teamName(r.teamId)}
+                {r.key === 'playerSavePct' ? r.value.toFixed(3) : r.value} ·{' '}
+                {r.playerName ?? teamName(r.teamId!)}
                 {r.season ? ` (${r.season})` : ''}
               </span>
             </li>

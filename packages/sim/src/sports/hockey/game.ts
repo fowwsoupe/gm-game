@@ -47,6 +47,8 @@ export interface MatchupInput {
   home: TeamStrength;
   away: TeamStrength;
   playoff?: boolean;
+  /** Score and totals only, no box score or injuries: much faster, for odds and what-if sims. */
+  resultOnly?: boolean;
   /** The team played yesterday: its backup goalie starts. */
   homeBackToBack?: boolean;
   awayBackToBack?: boolean;
@@ -104,18 +106,20 @@ export function simGame(
     awayShots: shots(awayGoals, xg.away),
     shootout: shootout ? 1 : 0,
   };
-  const box = makeBoxScore(
-    {
-      home: input.home,
-      away: input.away,
-      homeBackup: backup(input.homeBackToBack),
-      awayBackup: backup(input.awayBackToBack),
-      goals: credited,
-      shots: { home: stats.homeShots, away: stats.awayShots },
-      overtimeGoal,
-    },
-    rng,
-  );
+  const { box, injuries } = input.resultOnly
+    ? { box: undefined, injuries: [] }
+    : makeBoxScore(
+        {
+          home: input.home,
+          away: input.away,
+          homeBackup: backup(input.homeBackToBack),
+          awayBackup: backup(input.awayBackToBack),
+          goals: credited,
+          shots: { home: stats.homeShots, away: stats.awayShots },
+          overtimeGoal,
+        },
+        rng,
+      );
   return {
     id: input.id,
     homeTeamId: input.homeTeamId,
@@ -124,6 +128,7 @@ export function simGame(
     awayScore: awayGoals,
     overtime,
     stats,
-    box,
+    ...(box ? { box } : {}),
+    ...(injuries.length ? { injuries } : {}),
   };
 }

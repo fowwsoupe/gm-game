@@ -4,7 +4,7 @@ import { createLeague, defaultContext, handleCommand } from './index';
 /**
  * Speed budget. Fails the build if the sim gets slower than the targets in the spec.
  * Budgets are generous for slow CI machines; tighten them as the sim grows.
- * TODO: add a year-20 save once multi-season works, and screen-open timing in the app.
+ * TODO: screen-open timing in the app (needs the screens).
  */
 const ctx = defaultContext();
 
@@ -45,4 +45,24 @@ describe('speed budget', () => {
     handleCommand(state, { kind: 'sim.advance', days: 1 }, { id: 'local', controls: [] }, ctx);
     expect(performance.now() - t0).toBeLessThan(250);
   });
+
+  it('still sims a season and rolls over fast in year 20', () => {
+    const state = createLeague(77, ctx);
+    const local = { id: 'local', controls: [] };
+    const { regularSeasonDays, playoffDays } = ctx.ruleset.season.calendar;
+    const year = () => {
+      handleCommand(
+        state,
+        { kind: 'sim.advance', days: regularSeasonDays + playoffDays },
+        local,
+        ctx,
+      );
+      return handleCommand(state, { kind: 'season.rollover' }, local, ctx);
+    };
+    for (let y = 0; y < 19; y++) expect(year().ok).toBe(true);
+    const t0 = performance.now();
+    expect(year().ok).toBe(true);
+    expect(performance.now() - t0).toBeLessThan(6_000);
+    expect(Object.keys(state.players).length).toBeLessThan(2_000); // retired players do not pile up
+  }, 120_000); // 20 seasons take ~7 s on a slow CI machine; the budget is for the last one
 });

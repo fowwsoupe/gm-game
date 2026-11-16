@@ -51,6 +51,7 @@ interface PlayerRow {
   potential: number;
   ratings_json: string;
   contract_json: string | null;
+  injured_until: number | null;
 }
 
 /**
@@ -234,6 +235,8 @@ export class SaveFile {
     const retire = this.db.prepare(
       'UPDATE players SET retired_season = ?, team_id = NULL, contract_json = NULL WHERE id = ?',
     );
+    const setInjury = this.db.prepare('UPDATE players SET injured_until = ? WHERE id = ?');
+    const healAll = this.db.prepare('UPDATE players SET injured_until = NULL');
     const insertScheduled = this.db.prepare(
       'INSERT INTO games (id, season, day, home_team_id, away_team_id) VALUES (?, ?, ?, ?, ?)',
     );
@@ -308,6 +311,9 @@ export class SaveFile {
           case 'player.retired':
             retire.run(e.date.season, e.playerId);
             break;
+          case 'player.injured':
+            setInjury.run(e.until, e.playerId);
+            break;
           case 'contract.expired':
             setContract.run(null, null, e.playerId);
             break;
@@ -334,6 +340,7 @@ export class SaveFile {
               insertScheduled.run(g.id, g.date.season, g.date.day, g.homeTeamId, g.awayTeamId);
             }
             this.db.prepare("DELETE FROM meta WHERE key = 'championTeamId'").run();
+            healAll.run();
             break;
           case 'team.statusChanged':
             setStatus.run(e.to, e.teamId);
@@ -428,9 +435,10 @@ export class SaveFile {
     }));
   }
 
-  listPlayers(): Player[] {
+  /** Active players; `withRetired` adds the ones who retired (for history such as records). */
+  listPlayers(withRetired = false): Player[] {
     const rows = this.db
-      .prepare('SELECT * FROM players WHERE retired_season IS NULL')
+      .prepare(`SELECT * FROM players${withRetired ? '' : ' WHERE retired_season IS NULL'}`)
       .all() as PlayerRow[];
     return rows.map((r) => {
       const p: Player = {
@@ -444,6 +452,7 @@ export class SaveFile {
         ratings: JSON.parse(r.ratings_json),
       };
       if (r.contract_json) p.contract = JSON.parse(r.contract_json);
+      if (r.injured_until !== null) p.injuredUntil = r.injured_until;
       return p;
     });
   }
