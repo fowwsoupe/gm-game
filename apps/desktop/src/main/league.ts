@@ -33,7 +33,6 @@ import type {
   GameResult,
   GameSummary,
   Importance,
-  LeagueEvent,
   LeagueStatus,
   PulseRow,
   RosterPlayer,
@@ -372,8 +371,28 @@ export class LeagueService {
     return signingInterest(state, defaultContext(state.rulesetId), player, teamId, offer);
   }
 
-  feed(limit: number, minImportance?: Importance): LeagueEvent[] {
-    return this.open().save.listEvents(limit, minImportance);
+  feed(limit: number, minImportance?: Importance) {
+    const { save, state } = this.open();
+    const events = save.listEvents(limit, minImportance);
+    const ids = new Set<string>();
+    for (const e of events) {
+      if ('playerId' in e) ids.add(e.playerId);
+      if (e.kind === 'player.drafted') ids.add(e.player.id);
+    }
+    const names: Record<string, string> = {};
+    const missing: string[] = [];
+    for (const id of ids) {
+      const p = state.players[id];
+      if (p) names[id] = `${p.firstName} ${p.lastName}`;
+      else missing.push(id);
+    }
+    // Retired since: look them up in the save (rare, so only when needed).
+    if (missing.length) {
+      for (const p of save.listPlayers(true)) {
+        if (missing.includes(p.id)) names[p.id] = `${p.firstName} ${p.lastName}`;
+      }
+    }
+    return { events, names };
   }
 
   dispatch(command: Command): Promise<CommandResult> {

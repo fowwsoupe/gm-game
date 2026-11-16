@@ -78,7 +78,7 @@ export function runDraft(
     const [{ player: prospect }] = pool.splice(wanted ?? 0, 1) as [DraftProspect];
     const contract = entryContract(ctx.ruleset, rosterOf(state, teamId), prospect, season);
     const player: Player = contract ? { ...prospect, teamId, contract } : prospect;
-    emit('minor', [teamId], {
+    emit(i === 0 ? 'notable' : 'minor', [teamId], {
       kind: 'player.drafted',
       player,
       round: Math.floor(i / order.length) + 1,
