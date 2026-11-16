@@ -1,5 +1,5 @@
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
-import type { Command, TeamId } from '@gm/shared';
+import type { Command, TeamId, TradeProposal } from '@gm/shared';
 
 /** All data hooks in one place so query keys stay consistent. */
 export const keys = {
@@ -46,6 +46,13 @@ export const useResignOffers = (teamId: TeamId | undefined) =>
     queryKey: keys.resignOffers(teamId!),
     queryFn: () => window.gm.league.resignOffers({ teamId: teamId! }),
     enabled: !!teamId,
+  });
+/** The other team's answer to a trade, refetched whenever the offer changes. */
+export const useTradeEvaluation = (proposal: TradeProposal | undefined) =>
+  useQuery({
+    queryKey: ['league', 'tradeEvaluation', proposal] as const,
+    queryFn: () => window.gm.league.evaluateTrade(proposal!),
+    enabled: !!proposal && proposal.give.length + proposal.get.length > 0,
   });
 /** `null` = free agents. */
 export const usePlayers = (teamId: TeamId | null | undefined) =>

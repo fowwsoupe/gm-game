@@ -238,3 +238,36 @@ export interface ScheduledGame {
   homeTeamId: TeamId;
   awayTeamId: TeamId;
 }
+
+/** A two-team trade: `give` goes from `fromTeamId` to `toTeamId`, `get` comes back. */
+export interface TradeProposal {
+  fromTeamId: TeamId;
+  toTeamId: TeamId;
+  give: PlayerId[];
+  get: PlayerId[];
+}
+
+/** Why a trade is accepted or refused. The UI translates `code`; `params` fill the text. */
+export interface TradeReason {
+  code:
+    | 'accepted'
+    | 'value_short'
+    | 'quantity'
+    | 'bad_contract'
+    | 'rental'
+    | 'prospect'
+    | 'fills_need'
+    | 'over_cap'
+    | 'short_at'
+    | 'closed'
+    | 'empty'
+    | 'not_on_team';
+  params?: Record<string, string | number>;
+}
+
+/** What the other team says. `value`: its net gain in surplus dollars (negative = it loses). */
+export interface TradeEvaluation {
+  accepted: boolean;
+  value: number;
+  reasons: TradeReason[];
+}

@@ -1,7 +1,7 @@
 import { rulesDevelopment, type DevelopmentModel } from './players';
 import { HOCKEY_DEVELOPMENT } from './sports';
 import {
-  naiveValuator,
+  surplusValuator,
   rulesContractDemand,
   type ContractDemandModel,
   type PlayerValuator,
@@ -23,6 +23,6 @@ export interface Models {
 export const defaultModels: Models = {
   // TODO(nba/nfl): pick the development config by sport when those sports exist.
   development: rulesDevelopment(HOCKEY_DEVELOPMENT),
-  valuation: naiveValuator,
+  valuation: surplusValuator,
   contractDemand: rulesContractDemand,
 };

@@ -42,7 +42,8 @@ function FeedCard() {
         if (
           e.headline === 'event.seriesWon' ||
           e.headline === 'event.championCrowned' ||
-          e.headline === 'event.lotteryWon'
+          e.headline === 'event.lotteryWon' ||
+          e.headline === 'event.trade'
         )
           return t(e.headline, e.params);
         if (e.headline === 'event.awardWon')

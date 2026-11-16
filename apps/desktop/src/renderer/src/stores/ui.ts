@@ -5,7 +5,8 @@ import type { Locale } from '@/i18n';
  * UI-only state (which screen is open, language, selections, filters).
  * Game state lives in the save file in the main process, never here.
  */
-export type Screen = 'home' | 'standings' | 'roster' | 'cap' | 'games' | 'leaders' | 'history';
+export type Screen =
+  'home' | 'standings' | 'roster' | 'trades' | 'cap' | 'games' | 'leaders' | 'history';
 
 interface UiState {
   screen: Screen;

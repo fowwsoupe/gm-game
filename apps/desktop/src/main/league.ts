@@ -12,6 +12,7 @@ import {
   phaseOf,
   parseXgTable,
   playerProfiles,
+  evaluateTrade,
   playerRecords,
   resignOffers,
   Rng,
@@ -30,6 +31,7 @@ import type {
   LeagueEvent,
   RosterPlayer,
   TeamId,
+  TradeProposal,
 } from '@gm/shared';
 import createSimWorker from './sim.worker?nodeWorker';
 import type { WorkerRequest } from './sim.worker';
@@ -279,6 +281,11 @@ export class LeagueService {
   players(teamId: TeamId | null) {
     const { state } = this.open();
     return playerProfiles(state, defaultContext(state.rulesetId), teamId);
+  }
+
+  evaluateTrade(proposal: TradeProposal) {
+    const { state } = this.open();
+    return evaluateTrade(state, defaultContext(state.rulesetId), proposal);
   }
 
   feed(limit: number, minImportance?: Importance): LeagueEvent[] {

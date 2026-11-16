@@ -136,6 +136,18 @@ export function applyEvent(state: LeagueState, event: LeagueEvent): void {
     case 'team.statusChanged':
       state.teamStatus[event.teamId] = event.to;
       return;
+    case 'trade.completed': {
+      const move = (ids: readonly string[], to: TeamId) => {
+        for (const id of ids) {
+          const p = state.players[id];
+          if (!p) throw new Error(`unknown player ${id}`);
+          p.teamId = to;
+        }
+      };
+      move(event.give, event.toTeamId);
+      move(event.get, event.fromTeamId);
+      return;
+    }
     case 'award.given':
     case 'season.phaseChanged':
     case 'news.posted':

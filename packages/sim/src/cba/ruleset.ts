@@ -55,6 +55,11 @@ export interface Ruleset {
     elcYearsByAge: { minAge: number; maxAge: number; years: number }[];
     /** Yearly salary of an entry-level contract. */
     elcSalary: Dollars;
+    /**
+     * Players younger than this when their contract ends are restricted free agents: their team
+     * keeps their rights and re-signs them below market. Value counts those years.
+     */
+    ufaAge: number;
   };
 
   draft: {

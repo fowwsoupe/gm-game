@@ -21,6 +21,7 @@ import { buyoutCharges } from './cba';
 import { classifyTeams, computeStandings, nextRound, seedPlayoffs } from './league';
 import { giveSeasonAwards } from './awards';
 import { isExpiring, resignContract, rolloverSeason } from './offseason';
+import { evaluateTrade } from './trades';
 import type { SimContext } from './context';
 
 /**
@@ -126,6 +127,50 @@ export function handleCommand(
       });
       applyEvent(state, ev);
       return { ok: true, events: [ev] };
+    }
+
+    case 'trade.propose': {
+      const { proposal } = command;
+      const from = state.teams[proposal.fromTeamId];
+      if (!from) return { ok: false, error: { code: 'invalid', message: 'unknown team' } };
+      const yours =
+        actor.controls.includes(from.id) || (actor.id === 'local' && from.userControlled);
+      if (!yours) return { ok: false, error: { code: 'not_allowed', message: 'not your team' } };
+      const verdict = evaluateTrade(state, ctx, proposal);
+      if (!verdict.accepted) {
+        return {
+          ok: false,
+          error: {
+            code: 'invalid',
+            message: `trade refused: ${verdict.reasons.map((r) => r.code).join(', ')}`,
+          },
+        };
+      }
+      const ev = makeEvent(state, 'major', [proposal.fromTeamId, proposal.toTeamId], {
+        kind: 'trade.completed',
+        fromTeamId: proposal.fromTeamId,
+        toTeamId: proposal.toTeamId,
+        give: [...proposal.give],
+        get: [...proposal.get],
+      });
+      applyEvent(state, ev);
+      const names = (ids: readonly string[]) =>
+        ids
+          .map((id) => `${state.players[id]!.firstName} ${state.players[id]!.lastName}`)
+          .join(', ');
+      const team = (id: TeamId) => `${state.teams[id]!.city} ${state.teams[id]!.name}`;
+      const news = makeEvent(state, 'notable', [proposal.fromTeamId, proposal.toTeamId], {
+        kind: 'news.posted',
+        headline: 'event.trade',
+        params: {
+          from: team(proposal.fromTeamId),
+          to: team(proposal.toTeamId),
+          give: names(proposal.give) || '-',
+          get: names(proposal.get) || '-',
+        },
+      });
+      applyEvent(state, news);
+      return { ok: true, events: [ev, news] };
     }
 
     case 'season.rollover': {

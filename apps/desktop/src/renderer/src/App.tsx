@@ -17,11 +17,13 @@ import { Cap } from '@/screens/Cap';
 import { Games } from '@/screens/Games';
 import { Home } from '@/screens/Home';
 import { Roster } from '@/screens/Roster';
+import { Trades } from '@/screens/Trades';
 
 const NAV: { id: Screen; label: MessageKey }[] = [
   { id: 'home', label: 'nav.home' },
   { id: 'standings', label: 'nav.standings' },
   { id: 'roster', label: 'nav.roster' },
+  { id: 'trades', label: 'nav.trades' },
   { id: 'games', label: 'nav.games' },
   { id: 'cap', label: 'nav.cap' },
   { id: 'leaders', label: 'nav.leaders' },
@@ -134,6 +136,7 @@ export function App() {
         {screen === 'leaders' && <Leaders />}
         {screen === 'history' && <History />}
         {screen === 'roster' && <Roster />}
+        {screen === 'trades' && <Trades />}
       </main>
     </div>
   );
