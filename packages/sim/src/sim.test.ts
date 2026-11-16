@@ -1,16 +1,21 @@
 import { describe, expect, it } from 'vitest';
-import type { Actor, LeagueEvent, TeamId } from '@gm/shared';
+import type { Actor, GameId, HockeyBoxScore, LeagueEvent, TeamId } from '@gm/shared';
 import {
   applyEvent,
+  autoLineup,
   bracketSeeds,
   computeStandings,
   createLeague,
   defaultContext,
   elcYears,
   handleCommand,
+  ICE_TIME,
   NHL_2026,
+  overall,
   percentileRank,
   Rng,
+  simGame,
+  teamStrength,
   validateContract,
   dollars,
   type LeagueState,
@@ -233,5 +238,145 @@ describe('players', () => {
   it('percentile ranks', () => {
     expect(percentileRank(90, [10, 20, 30, 90])).toBe(88);
     expect(percentileRank(5, [10, 20])).toBe(0);
+  });
+});
+
+describe('lines and goalies', () => {
+  const roster = () => {
+    const state = createLeague(4, ctx);
+    return Object.values(state.players).filter((p) => p.teamId === 't1');
+  };
+
+  it('puts the best players of each position together on the top line', () => {
+    const lineup = autoLineup(roster());
+    const [first, second] = lineup.forwards;
+    expect(first!.map((p) => p.position)).toEqual(['C', 'LW', 'RW']);
+    expect(overall(first![0]!)).toBeGreaterThanOrEqual(overall(second![0]!));
+    expect(lineup.defense).toHaveLength(3);
+    expect(lineup.goalies.length).toBeGreaterThanOrEqual(2);
+  });
+
+  it('a small boost counts in proportion to the ice time of the line it is on', () => {
+    const players = roster();
+    const lineup = autoLineup(players);
+    const base = teamStrength(players).offense;
+    const gain = (line: (typeof players)[number][]) => {
+      const ids = new Set(line.map((p) => p.id));
+      const boosted = players.map((p) =>
+        ids.has(p.id)
+          ? {
+              ...p,
+              ratings: Object.fromEntries(Object.entries(p.ratings).map(([k, v]) => [k, v + 0.01])),
+            }
+          : p,
+      );
+      return teamStrength(boosted).offense - base;
+    };
+    const [top, second, , fourth] = ICE_TIME.forwardLines;
+    expect(gain(lineup.forwards[0]!) / gain(lineup.forwards[1]!)).toBeCloseTo(top / second, 3);
+    expect(gain(lineup.forwards[0]!) / gain(lineup.forwards[3]!)).toBeCloseTo(top / fourth, 3);
+    for (const weights of [ICE_TIME.forwardLines, ICE_TIME.defensePairs]) {
+      expect(weights.reduce((a, b) => a + b, 0)).toBeCloseTo(1);
+    }
+  });
+
+  it('the backup goalie starts the second night of a back-to-back, but never in the playoffs', () => {
+    const strength = teamStrength(roster());
+    expect(strength.goaltending).not.toBe(strength.backupGoaltending);
+    const goalieUsed = (input: { homeBackToBack?: boolean; playoff?: boolean }) => {
+      let used = 0;
+      const model = {
+        expectedGoals: (home: typeof strength) => ((used = home.goaltending), { home: 1, away: 1 }),
+      };
+      simGame(
+        {
+          id: 'g' as GameId,
+          homeTeamId: 't1' as TeamId,
+          awayTeamId: 't2' as TeamId,
+          home: strength,
+          away: strength,
+          ...input,
+        },
+        new Rng(1),
+        model,
+      );
+      return used;
+    };
+    expect(goalieUsed({})).toBe(strength.goaltending);
+    expect(goalieUsed({ homeBackToBack: true })).toBe(strength.backupGoaltending);
+    expect(goalieUsed({ homeBackToBack: true, playoff: true })).toBe(strength.goaltending);
+  });
+});
+
+describe('box scores', () => {
+  const { state } = simSeason(21);
+  const games = Object.values(state.results).filter((g) => g.box);
+
+  it('every game has one, and it adds up to the score', () => {
+    expect(games.length).toBe(Object.keys(state.results).length);
+    for (const g of games) {
+      const box = g.box as HockeyBoxScore;
+      const shootout = g.stats.shootout === 1;
+      for (const [key, goals, against] of [
+        ['home', g.homeScore, g.awayScore],
+        ['away', g.awayScore, g.homeScore],
+      ] as const) {
+        const side = box[key];
+        const credited = goals - (shootout && goals > against ? 1 : 0);
+        if (side.skaters.length === 0) continue;
+        expect(side.skaters.reduce((n, s) => n + s.goals, 0)).toBe(credited);
+        // Five skaters for 60 minutes, minus the minutes a man down on a penalty.
+        const shorthanded =
+          box.penalties.filter((p) => p[1] === (key === 'home' ? 0 : 1)).length * 2;
+        const toi = side.skaters.reduce((n, s) => n + s.toi, 0);
+        expect(Math.abs(toi - (300 - shorthanded))).toBeLessThan(1.5);
+        const goalie = box[key === 'home' ? 'away' : 'home'].goalie;
+        expect(goalie.shotsAgainst - goalie.saves).toBe(credited);
+      }
+      expect(box.shots.length).toBe((g.stats.homeShots ?? 0) + (g.stats.awayShots ?? 0));
+      expect(box.shots.filter((s) => s[5] === 1).length).toBe(
+        g.homeScore + g.awayScore - (shootout ? 1 : 0),
+      );
+      for (const side of [box.home, box.away]) {
+        for (const p of side.skaters) expect(p.assists).toBeGreaterThanOrEqual(0);
+      }
+    }
+  });
+
+  it('penalties and the power play line up', () => {
+    let ppGoals = 0;
+    let goals = 0;
+    for (const g of games) {
+      const box = g.box as HockeyBoxScore;
+      for (const shot of box.shots.filter((x) => x[8] === 1)) {
+        // A power-play shot happens inside a two-minute penalty the other team took.
+        expect(
+          box.penalties.some((p) => p[1] !== shot[1] && shot[0] >= p[0] && shot[0] < p[0] + 120),
+        ).toBe(true);
+      }
+      for (const side of [box.home, box.away]) {
+        ppGoals += side.skaters.reduce((n, s) => n + s.ppGoals, 0);
+        goals += side.skaters.reduce((n, s) => n + s.goals, 0);
+        expect(side.skaters.reduce((n, s) => n + s.pim, 0)).toBe(
+          box.penalties.filter((p) => box[p[1] === 0 ? 'home' : 'away'] === side).length * 2,
+        );
+      }
+    }
+    // Roughly a fifth of goals come on the power play.
+    expect(ppGoals / goals).toBeGreaterThan(0.15);
+    expect(ppGoals / goals).toBeLessThan(0.3);
+  });
+
+  it('plus-minus nets to zero, assists never exceed two a goal, nobody assists his own goal', () => {
+    for (const g of games) {
+      const box = g.box as HockeyBoxScore;
+      const all = [...box.home.skaters, ...box.away.skaters];
+      expect(all.reduce((n, p) => n + p.plusMinus, 0)).toBe(0);
+      for (const shot of box.shots.filter((s) => s[5] === 1)) {
+        expect(shot[6]).not.toBe(shot[4]);
+        expect(shot[7]).not.toBe(shot[4]);
+        if (shot[7] >= 0) expect(shot[6]).toBeGreaterThanOrEqual(0);
+      }
+    }
   });
 });

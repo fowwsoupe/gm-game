@@ -76,6 +76,8 @@ export interface GameResult {
   overtime: boolean;
   /** Sport-specific box-score numbers, typed by the sport module (hockey: HockeyGameStats). */
   stats: Record<string, number>;
+  /** Sport-specific box score with player lines (hockey: HockeyBoxScore). */
+  box?: unknown;
 }
 
 export interface PlayoffSeries {
@@ -98,6 +100,12 @@ export interface AwardEntry {
   /** Absent for team awards (champion). */
   playerId?: PlayerId;
   playerName?: string;
+}
+
+/** A stat table: the top players for one stat ('points', 'goals', 'savePct' in hockey). */
+export interface Leaderboard {
+  key: string;
+  rows: { playerId: PlayerId; name: string; teamId: TeamId | null; gp: number; value: number }[];
 }
 
 /** One league record: best (or most) of something, by a team in one season, or all-time for titles. */

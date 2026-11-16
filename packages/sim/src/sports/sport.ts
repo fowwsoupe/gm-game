@@ -1,10 +1,10 @@
 import type {
   GameId,
   GameResult,
+  Leaderboard,
   Player,
   PlayerId,
   Sport,
-  StandingsRow,
   Team,
   TeamId,
 } from '@gm/shared';
@@ -44,14 +44,20 @@ export interface SportModule<Strength = unknown> {
 
   /**
    * Picks the player award winners (not the champion) from the finished regular season:
-   * team standings plus player ratings. Deterministic: no randomness.
+   * the box scores of its games. Deterministic: no randomness.
    */
   pickAwards(input: {
     season: number;
     rules: Ruleset;
     players: readonly Player[];
-    standings: readonly StandingsRow[];
+    results: readonly GameResult[];
   }): { award: string; playerId: PlayerId }[];
+
+  /**
+   * Stat leaderboards from regular-season results (hockey: points, goals, assists, save %).
+   * Players are only used for names and current teams.
+   */
+  leaders(results: readonly GameResult[], players: readonly Player[], limit: number): Leaderboard[];
 
   /** Loads a community roster file (untrusted JSON) for this sport. */
   importRoster(json: unknown): RosterImport;
@@ -68,6 +74,9 @@ export interface SportModule<Strength = unknown> {
       home: Strength;
       away: Strength;
       playoff?: boolean;
+      /** The team also played yesterday (hockey: its backup goalie starts). */
+      homeBackToBack?: boolean;
+      awayBackToBack?: boolean;
     },
     rng: Rng,
   ): GameResult;

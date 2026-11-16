@@ -1,15 +1,20 @@
 import type { GameId, GameResult, HockeyGameStats, TeamId } from '@gm/shared';
 import type { Rng } from '../../core';
+import { makeBoxScore } from './box';
 import type { TeamStrength } from './strength';
 
 /** Knobs to tune league-wide scoring. Kept in one place so balance changes are easy to find. */
 export const HOCKEY_TUNING = {
-  leagueAvgGoalsPerTeam: 3.05,
-  leagueAvgShotsPerTeam: 30,
-  homeIceBoost: 1.04,
+  leagueAvgGoalsPerTeam: 2.74,
+  leagueAvgShotsPerTeam: 26.4,
+  /** The average starting goalie's rating: a team with this goalie gets no edge or penalty. */
+  leagueAvgGoaltending: 67,
+  homeIceBoost: 1.07,
   /** How strongly a rating gap moves expected goals. Higher = less parity. */
-  ratingSensitivity: 0.012,
+  ratingSensitivity: 0.0118,
   overtimeGoalChance: 0.6,
+  /** A team down one goal late pulls its goalie and ties it this often (why real games go to overtime more than independent scoring says). */
+  lateEqualizerChance: 0.25,
 } as const;
 
 /**
@@ -26,7 +31,7 @@ export const rulesGoalModel: GoalModel = {
     const edge = (atk: TeamStrength, def: TeamStrength) =>
       Math.exp(
         t.ratingSensitivity * (atk.offense - def.defense) -
-          t.ratingSensitivity * (def.goaltending - 70),
+          t.ratingSensitivity * (def.goaltending - t.leagueAvgGoaltending),
       );
     return {
       home: t.leagueAvgGoalsPerTeam * edge(home, away) * t.homeIceBoost,
@@ -42,6 +47,9 @@ export interface MatchupInput {
   home: TeamStrength;
   away: TeamStrength;
   playoff?: boolean;
+  /** The team played yesterday: its backup goalie starts. */
+  homeBackToBack?: boolean;
+  awayBackToBack?: boolean;
 }
 
 export function simGame(
@@ -49,23 +57,39 @@ export function simGame(
   rng: Rng,
   model: GoalModel = rulesGoalModel,
 ): GameResult {
-  const xg = model.expectedGoals(input.home, input.away);
+  const backup = (backToBack?: boolean) => !!backToBack && !input.playoff;
+  const tired = (s: TeamStrength, b2b?: boolean): TeamStrength =>
+    backup(b2b) ? { ...s, goaltending: s.backupGoaltending } : s;
+  const xg = model.expectedGoals(
+    tired(input.home, input.homeBackToBack),
+    tired(input.away, input.awayBackToBack),
+  );
   let homeGoals = rng.poisson(xg.home);
   let awayGoals = rng.poisson(xg.away);
+  if (Math.abs(homeGoals - awayGoals) === 1 && rng.chance(HOCKEY_TUNING.lateEqualizerChance)) {
+    if (homeGoals < awayGoals) homeGoals++;
+    else awayGoals++;
+  }
   let overtime = false;
   let shootout = false;
+  let overtimeGoal: 'home' | 'away' | null = null;
+  let shootoutGoals = { home: 0, away: 0 };
 
   if (homeGoals === awayGoals) {
     overtime = true;
     if (input.playoff || rng.chance(HOCKEY_TUNING.overtimeGoalChance)) {
-      if (rng.chance(xg.home / (xg.home + xg.away))) homeGoals++;
-      else awayGoals++;
+      overtimeGoal = rng.chance(xg.home / (xg.home + xg.away)) ? 'home' : 'away';
     } else {
       shootout = true;
-      if (rng.chance(0.5)) homeGoals++;
-      else awayGoals++;
+      shootoutGoals = rng.chance(0.5) ? { home: 1, away: 0 } : { home: 0, away: 1 };
     }
   }
+  const credited = {
+    home: homeGoals + (overtimeGoal === 'home' ? 1 : 0),
+    away: awayGoals + (overtimeGoal === 'away' ? 1 : 0),
+  };
+  homeGoals = credited.home + shootoutGoals.home;
+  awayGoals = credited.away + shootoutGoals.away;
 
   const shots = (goals: number, expected: number) =>
     Math.max(
@@ -80,6 +104,18 @@ export function simGame(
     awayShots: shots(awayGoals, xg.away),
     shootout: shootout ? 1 : 0,
   };
+  const box = makeBoxScore(
+    {
+      home: input.home,
+      away: input.away,
+      homeBackup: backup(input.homeBackToBack),
+      awayBackup: backup(input.awayBackToBack),
+      goals: credited,
+      shots: { home: stats.homeShots, away: stats.awayShots },
+      overtimeGoal,
+    },
+    rng,
+  );
   return {
     id: input.id,
     homeTeamId: input.homeTeamId,
@@ -88,5 +124,6 @@ export function simGame(
     awayScore: awayGoals,
     overtime,
     stats,
+    box,
   };
 }

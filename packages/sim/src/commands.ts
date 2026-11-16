@@ -89,6 +89,14 @@ function advance(
   for (const id of Object.keys(state.teams) as TeamId[]) {
     strength.set(id, sport.teamStrength(players.filter((p) => p.teamId === id)));
   }
+  // Who plays on which day, so the second night of a back-to-back is known.
+  const playing = new Map<number, Set<TeamId>>();
+  for (const g of state.schedule) {
+    if (g.date.season !== state.date.season) continue;
+    const day = playing.get(g.date.day) ?? new Set<TeamId>();
+    playing.set(g.date.day, day.add(g.homeTeamId).add(g.awayTeamId));
+  }
+  const backToBack = (team: TeamId, day: number) => playing.get(day - 1)?.has(team) ?? false;
   const byDay = new Map<number, ScheduledGame[]>();
   for (const g of state.schedule) {
     if (g.date.season !== state.date.season || state.results[g.id]) continue;
@@ -109,6 +117,8 @@ function advance(
           awayTeamId: g.awayTeamId,
           home: strength.get(g.homeTeamId),
           away: strength.get(g.awayTeamId),
+          homeBackToBack: backToBack(g.homeTeamId, today.day),
+          awayBackToBack: backToBack(g.awayTeamId, today.day),
         },
         rng,
       );

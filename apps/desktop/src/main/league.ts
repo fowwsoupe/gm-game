@@ -94,6 +94,12 @@ export class LeagueService {
     return this.open().save.listAwards();
   }
 
+  leaders() {
+    const { state } = this.open();
+    const results = Object.values(state.results).filter((g) => !g.playoffSeriesId);
+    return defaultContext(state.rulesetId).sport.leaders(results, Object.values(state.players), 10);
+  }
+
   records() {
     const { save, state } = this.open();
     const points = defaultContext(state.rulesetId).ruleset.season.points;
