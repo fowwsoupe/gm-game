@@ -76,6 +76,7 @@ python3 -m ml.src.pipeline --raw ml/data/raw/normalized --processed ml/data/proc
 python3 -m ml.src.analyze --processed ml/data/processed
 python3 -m ml.src.study --processed ml/data/processed
 python3 -m ml.src.faceoffs --processed ml/data/processed
+python3 -m ml.src.form --processed ml/data/processed
 ```
 
 `faceoffs` writes `faceoff_study.json`: goal diff/game per SD of team faceoff %, raw (an upper

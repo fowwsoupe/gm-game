@@ -169,6 +169,7 @@ export function meetCapFloor(
   order: readonly TeamId[],
 ) {
   const { ruleset } = ctx;
+  let extra = 0;
   for (const teamId of order) {
     for (;;) {
       const roster = rosterOf(state, teamId);
@@ -195,7 +196,25 @@ export function meetCapFloor(
           }
           return contract !== null;
         });
-      if (!signed) break;
+      if (signed) continue;
+      // Nobody left in the pool (it can run dry): sign a generated undrafted player for the
+      // shortfall on a one-year deal, as fillRosters does for roster spots, so no team stays
+      // under the floor. He is back in the pool next summer.
+      // shortcut: an overpaid teenager is unrealistic; generate veteran free agents once M6 has a market.
+      const rookie = ctx.sport.generateProspect(rng, { id: `f${season}_${extra++}`, season });
+      const contract = offerContract(ruleset, roster, rookie, season, 1, {
+        isResign: false,
+        discount: false,
+        atLeast: short,
+        ask: ctx.models.contractDemand.ask(ruleset, rookie),
+      });
+      if (!contract) break;
+      emit('minor', [teamId], {
+        kind: 'player.drafted',
+        player: { ...rookie, teamId, contract },
+        round: 0,
+        pick: 0,
+      });
     }
   }
 }

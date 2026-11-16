@@ -32,12 +32,12 @@ Changing the list means: edit the constant, bump `ROSTER_FORMAT_VERSION`, upgrad
 
 ## Goalies (G)
 
-| Key              | Meaning                              | In the sim today                   |
-| ---------------- | ------------------------------------ | ---------------------------------- |
-| `reflexes`       | Saves on high-danger shots           | 40% of the goaltending score       |
-| `positioning`    | Saves on low and medium-danger shots | 35%                                |
-| `reboundControl` | Second chances allowed               | 15%                                |
-| `consistency`    | Game-to-game steadiness              | 10% (no game-to-game variance yet) |
+| Key              | Meaning                              | In the sim today                    |
+| ---------------- | ------------------------------------ | ----------------------------------- |
+| `reflexes`       | Saves on high-danger shots           | 40% of the goaltending score        |
+| `positioning`    | Saves on low and medium-danger shots | 35%                                 |
+| `reboundControl` | Second chances allowed               | 15%                                 |
+| `consistency`    | Game-to-game steadiness              | 10%; also narrows his per-game form |
 
 ## Evidence (M1 study)
 

@@ -24,6 +24,7 @@ import {
   ICE_TIME,
   overall,
   parseXgTable,
+  rulesGoalModel,
   playoffCapBreaches,
   strengthEdge,
   teamStrength,
@@ -75,6 +76,12 @@ let betterTeamSeriesWins = 0;
 let measuredSeries = 0;
 let favouriteWins = 0;
 let decidedByStrength = 0;
+/** Per team game: goals minus expected goals at an average goalie, and the chance-only variance. */
+let vsExpectedSum = 0;
+let vsExpectedSq = 0;
+let chanceVariance = 0;
+let teamGames = 0;
+const shotModel = goalModel ?? rulesGoalModel;
 /** Per team season: [goal diff per game, draw skill, offence, defence, goaltending] without draws. */
 const faceoffRows: number[][] = [];
 const started = performance.now();
@@ -149,6 +156,26 @@ for (let i = 0; i < seasons; i++) {
     }
     const box = g.box as HockeyBoxScore;
     ppChances += box.penalties.length;
+    // Goals vs expected goals, as the NHL data measures it (ml/src/form.py). Empty-net goals are
+    // left out: the shot rows do not say which net was empty.
+    for (const a of [0, 1] as const) {
+      const side = a === 0 ? box.home : box.away;
+      let expected = 0;
+      let variance = 0;
+      let scored = -(box.emptyNet?.[a] ?? 0);
+      for (const [, by, x, y, shooter, goal, , , power] of box.shots) {
+        if (by !== a) continue;
+        const shooting = state.players[side.skaters[shooter]!.id]?.ratings.shooting ?? 50;
+        const p = Math.min(0.9, shotModel.shotXg({ x, y, shooting, power: power === 1 }));
+        expected += p;
+        variance += p * (1 - p);
+        scored += goal;
+      }
+      vsExpectedSum += scored - expected;
+      vsExpectedSq += (scored - expected) ** 2;
+      chanceVariance += variance;
+      teamGames++;
+    }
     for (const side of [box.home, box.away]) for (const p of side.skaters) ppGoals += p.ppGoals;
   }
   topScorer.push(top('points'));
@@ -337,6 +364,16 @@ const checks: Check[] = [
     min: 57,
     max: 63,
     unit: '%',
+  },
+  {
+    // ml/src/form.py (NHL 2022-25): goals vary around expected goals 1.169x as much as chance alone,
+    // which is the ceiling for goalie form (it also holds finishing streaks and xG model misses).
+    // The floor says form exists at all.
+    name: 'Goals vs expected, variance ratio',
+    value:
+      (vsExpectedSq / teamGames - (vsExpectedSum / teamGames) ** 2) / (chanceVariance / teamGames),
+    min: 1.05,
+    max: 1.17,
   },
   {
     // ml/src/faceoffs.py (NHL 2022-25): +0.067 goals/game per SD of team faceoff %, 95% CI to 0.17,
