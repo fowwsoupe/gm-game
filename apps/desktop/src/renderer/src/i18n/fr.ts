@@ -313,4 +313,10 @@ export const fr: Record<MessageKey, string> = {
   'history.hallOfFame': 'Temple de la renommée',
   'history.hofLine': '{stat} · {seasons} saisons · retraité en {retired}',
   'lines.chemistry': 'Chimie d’équipe {value}/100 ({seasons} saisons ensemble en moyenne)',
+  'trade.offersTitle': 'Offres reçues',
+  'trade.offerLine': 'Les {team} offrent {give} contre {get} (jusqu’au jour {day})',
+  'trade.accept': 'Accepter',
+  'trade.decline': 'Refuser',
+  'todo.tradeOffers': '{count} offre(s) d’échange en attente',
+  'event.tradeOffered': 'Les {team} vous ont fait une offre d’échange',
 };

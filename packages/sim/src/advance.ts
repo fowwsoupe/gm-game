@@ -11,7 +11,7 @@ import {
 import { classifyTeams, computeStandings, nextRound, seedPlayoffs } from './league';
 import { giveSeasonAwards } from './awards';
 import { announceDraftClass } from './offseason';
-import { aiTrades } from './trades';
+import { aiOffers, aiTrades } from './trades';
 import { chemistry } from './people';
 import type { SimContext } from './context';
 
@@ -262,6 +262,7 @@ export function advance(
       // Forked, so trade talks never shift the games' random numbers.
       const before = events.length;
       aiTrades(state, ctx, rng.fork(`trades${today.day}`), emitter(state, events));
+      aiOffers(state, ctx, rng.fork(`offers${today.day}`), emitter(state, events));
       if (events.length > before) loadRosters();
     }
 
@@ -325,5 +326,6 @@ const LONG_INJURY_DAYS = 14;
 function matters(state: LeagueState, e: LeagueEvent): boolean {
   const yours = e.teamIds.some((id) => state.teams[id]?.userControlled);
   if (e.importance === 'major') return e.teamIds.length === 0 || yours;
+  if (e.kind === 'trade.offered') return yours; // an offer waits on you
   return e.kind === 'player.injured' && yours && e.days >= LONG_INJURY_DAYS;
 }

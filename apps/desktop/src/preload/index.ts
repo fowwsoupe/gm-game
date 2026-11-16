@@ -26,6 +26,7 @@ const api: GmApi = {
     career: (input) => ipcRenderer.invoke(IPC.career, input),
     lines: (input) => ipcRenderer.invoke(IPC.lines, input),
     picks: (input) => ipcRenderer.invoke(IPC.picks, input),
+    tradeOffers: (input) => ipcRenderer.invoke(IPC.tradeOffers, input),
     evaluateTrade: (input) => ipcRenderer.invoke(IPC.evaluateTrade, input),
     status: () => ipcRenderer.invoke(IPC.status),
     pulse: () => ipcRenderer.invoke(IPC.pulse),

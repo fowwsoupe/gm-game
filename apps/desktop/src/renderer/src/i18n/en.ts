@@ -315,6 +315,12 @@ export const en = {
   'history.hallOfFame': 'Hall of Fame',
   'history.hofLine': '{stat} · {seasons} seasons · retired {retired}',
   'lines.chemistry': 'Team chemistry {value}/100 ({seasons} seasons together on average)',
+  'trade.offersTitle': 'Offers for you',
+  'trade.offerLine': 'The {team} offer {give} for {get} (open until day {day})',
+  'trade.accept': 'Accept',
+  'trade.decline': 'Decline',
+  'todo.tradeOffers': '{count} trade offer(s) waiting',
+  'event.tradeOffered': 'The {team} made you a trade offer',
 } as const;
 
 export type MessageKey = keyof typeof en;

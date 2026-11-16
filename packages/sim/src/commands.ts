@@ -1,4 +1,4 @@
-import type { Actor, Command, CommandResult, LeagueEvent, TeamId } from '@gm/shared';
+import type { Actor, Command, CommandResult, LeagueEvent, TeamId, TradeProposal } from '@gm/shared';
 import { applyEvent, emitter, makeEvent, type LeagueState } from './core';
 import { buyoutCharges } from './cba';
 import { parsePick } from './league';
@@ -137,42 +137,47 @@ export function handleCommand(
           },
         };
       }
-      const plan = planRetention(state, ctx, proposal);
-      const retained = 'retained' in plan ? plan.retained : [];
-      const ev = makeEvent(state, 'major', [proposal.fromTeamId, proposal.toTeamId], {
-        kind: 'trade.completed',
-        fromTeamId: proposal.fromTeamId,
-        toTeamId: proposal.toTeamId,
-        give: [...proposal.give],
-        get: [...proposal.get],
-        ...(retained.length > 0 && { retained }),
-        ...(proposal.givePicks?.length && { givePicks: [...proposal.givePicks] }),
-        ...(proposal.getPicks?.length && { getPicks: [...proposal.getPicks] }),
-      });
-      applyEvent(state, ev);
-      const picks = (ids: readonly string[] = []) =>
-        ids.map((id) => {
-          const pick = parsePick(id)!;
-          return `${pick.season} R${pick.round} (${state.teams[pick.originalTeamId]?.abbreviation})`;
+      return { ok: true, events: completeTrade(state, ctx, proposal) };
+    }
+
+    case 'trade.respond': {
+      const offer = state.tradeOffers.find((o) => o.id === command.offerId);
+      if (!offer) return { ok: false, error: { code: 'invalid', message: 'no such offer' } };
+      const human = state.teams[offer.proposal.toTeamId]!;
+      const yours =
+        actor.controls.includes(human.id) || (actor.id === 'local' && human.userControlled);
+      if (!yours) return { ok: false, error: { code: 'not_allowed', message: 'not your team' } };
+      const close = (accepted: boolean) => {
+        const ev = makeEvent(state, 'minor', [human.id, offer.proposal.fromTeamId], {
+          kind: 'trade.offerClosed',
+          offerId: offer.id,
+          accepted,
         });
-      const names = (ids: readonly string[]) =>
-        ids
-          .map((id) => `${state.players[id]!.firstName} ${state.players[id]!.lastName}`)
-          .join(', ');
-      const team = (id: TeamId) => `${state.teams[id]!.city} ${state.teams[id]!.name}`;
-      const news = makeEvent(state, 'notable', [proposal.fromTeamId, proposal.toTeamId], {
-        kind: 'news.posted',
-        headline: 'event.trade',
-        params: {
-          from: team(proposal.fromTeamId),
-          to: team(proposal.toTeamId),
-          give:
-            [names(proposal.give), ...picks(proposal.givePicks)].filter(Boolean).join(', ') || '-',
-          get: [names(proposal.get), ...picks(proposal.getPicks)].filter(Boolean).join(', ') || '-',
-        },
-      });
-      applyEvent(state, news);
-      return { ok: true, events: [ev, news] };
+        applyEvent(state, ev);
+        return ev;
+      };
+      if (!command.accept) return { ok: true, events: [close(false)] };
+      // Seen from your side: you give what they asked for. It must still pass today.
+      const mirror = {
+        fromTeamId: human.id,
+        toTeamId: offer.proposal.fromTeamId,
+        give: offer.proposal.get,
+        get: offer.proposal.give,
+        ...(offer.proposal.getPicks && { givePicks: offer.proposal.getPicks }),
+        ...(offer.proposal.givePicks && { getPicks: offer.proposal.givePicks }),
+      };
+      const verdict = evaluateTrade(state, ctx, mirror);
+      if (!verdict.accepted) {
+        return {
+          ok: false,
+          error: {
+            code: 'invalid',
+            message: `the offer is off the table: ${verdict.reasons.map((r) => r.code).join(', ')}`,
+          },
+        };
+      }
+      const events = completeTrade(state, ctx, mirror);
+      return { ok: true, events: [...events, close(true)] };
     }
 
     case 'offseason.openFreeAgency': {
@@ -271,4 +276,45 @@ export function handleCommand(
       };
     }
   }
+}
+
+/** Applies an accepted trade: the trade itself (with any retained salary) and its headline. */
+function completeTrade(
+  state: LeagueState,
+  ctx: SimContext,
+  proposal: TradeProposal,
+): LeagueEvent[] {
+  const plan = planRetention(state, ctx, proposal);
+  const retained = 'retained' in plan ? plan.retained : [];
+  const ev = makeEvent(state, 'major', [proposal.fromTeamId, proposal.toTeamId], {
+    kind: 'trade.completed',
+    fromTeamId: proposal.fromTeamId,
+    toTeamId: proposal.toTeamId,
+    give: [...proposal.give],
+    get: [...proposal.get],
+    ...(retained.length > 0 && { retained }),
+    ...(proposal.givePicks?.length && { givePicks: [...proposal.givePicks] }),
+    ...(proposal.getPicks?.length && { getPicks: [...proposal.getPicks] }),
+  });
+  applyEvent(state, ev);
+  const picks = (ids: readonly string[] = []) =>
+    ids.map((id) => {
+      const pick = parsePick(id)!;
+      return `${pick.season} R${pick.round} (${state.teams[pick.originalTeamId]?.abbreviation})`;
+    });
+  const names = (ids: readonly string[]) =>
+    ids.map((id) => `${state.players[id]!.firstName} ${state.players[id]!.lastName}`).join(', ');
+  const team = (id: TeamId) => `${state.teams[id]!.city} ${state.teams[id]!.name}`;
+  const news = makeEvent(state, 'notable', [proposal.fromTeamId, proposal.toTeamId], {
+    kind: 'news.posted',
+    headline: 'event.trade',
+    params: {
+      from: team(proposal.fromTeamId),
+      to: team(proposal.toTeamId),
+      give: [names(proposal.give), ...picks(proposal.givePicks)].filter(Boolean).join(', ') || '-',
+      get: [names(proposal.get), ...picks(proposal.getPicks)].filter(Boolean).join(', ') || '-',
+    },
+  });
+  applyEvent(state, news);
+  return [ev, news];
 }

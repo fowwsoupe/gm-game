@@ -304,3 +304,52 @@ describe('retained salary', () => {
     expect(offer(myC[0]!, 20)).toBe('accepted');
   });
 });
+
+describe('AI offers to you', () => {
+  const seasonWithOffer = () => {
+    for (const seed of [11, 12, 13, 14, 15]) {
+      const state = createLeague(seed, base);
+      for (let d = 0; d < base.ruleset.season.calendar.tradeDeadlineDay; d += 7) {
+        const res = handleCommand(state, { kind: 'sim.advance', days: 7 }, local, base);
+        if (!res.ok) throw new Error(res.error.message);
+        if (state.tradeOffers.length) return state;
+      }
+    }
+    throw new Error('no offer in five leagues');
+  };
+
+  it('arrive, can be accepted, and the trade goes through', () => {
+    const state = seasonWithOffer();
+    const offer = state.tradeOffers[0]!;
+    const mine = offer.proposal.toTeamId;
+    expect(state.teams[mine]!.userControlled).toBe(true);
+    expect(state.teams[offer.proposal.fromTeamId]!.userControlled).toBe(false);
+    const res = handleCommand(
+      state,
+      { kind: 'trade.respond', offerId: offer.id, accept: true },
+      local,
+      base,
+    );
+    if (!res.ok) throw new Error(res.error.message);
+    expect(state.players[offer.proposal.give[0]!]!.teamId).toBe(mine);
+    expect(state.players[offer.proposal.get[0]!]!.teamId).toBe(offer.proposal.fromTeamId);
+    expect(state.tradeOffers).toEqual([]);
+  });
+
+  it('can be declined, and expire after a week', () => {
+    const state = seasonWithOffer();
+    const copy = structuredClone(state);
+    const offer = state.tradeOffers[0]!;
+    const res = handleCommand(
+      state,
+      { kind: 'trade.respond', offerId: offer.id, accept: false },
+      local,
+      base,
+    );
+    expect(res.ok).toBe(true);
+    expect(state.tradeOffers).toEqual([]);
+    // Left alone, it is gone after its last day.
+    handleCommand(copy, { kind: 'sim.advance', days: 9 }, local, base);
+    expect(copy.tradeOffers.some((o) => o.id === offer.id)).toBe(false);
+  });
+});

@@ -345,6 +345,10 @@ export class LeagueService {
     };
   }
 
+  tradeOffers(teamId: TeamId) {
+    return this.open().state.tradeOffers.filter((o) => o.proposal.toTeamId === teamId);
+  }
+
   picks(teamId: TeamId) {
     const { state } = this.open();
     return draftPicks(state, defaultContext(state.rulesetId).ruleset.draft.rounds, teamId);

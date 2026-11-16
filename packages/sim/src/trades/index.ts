@@ -6,4 +6,4 @@
  * TODO(M6): draft picks, retained salary, trade block.
  */
 export { evaluateTrade, planRetention, tradeWindowOpen, teamContext } from './evaluate';
-export { aiTrades } from './ai';
+export { aiOffers, aiTrades } from './ai';

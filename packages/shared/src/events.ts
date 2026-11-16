@@ -9,6 +9,7 @@ import type {
   RetainedSalary,
   ScheduledGame,
   TeamId,
+  TradeOffer,
 } from './domain';
 
 /**
@@ -122,6 +123,10 @@ export type LeagueEvent =
       givePicks?: string[];
       getPicks?: string[];
     })
+  /** An AI GM offers a human team a trade (see `TradeOffer`). */
+  | (EventBase & { kind: 'trade.offered'; offer: TradeOffer })
+  /** An offer is gone: accepted (a `trade.completed` follows), declined or expired. */
+  | (EventBase & { kind: 'trade.offerClosed'; offerId: string; accepted: boolean })
   | (EventBase & { kind: 'team.controlChanged'; teamId: TeamId; userControlled: boolean })
   | (EventBase & { kind: 'season.phaseChanged'; from: SeasonPhase; to: SeasonPhase })
   | (EventBase & { kind: 'team.statusChanged'; teamId: TeamId; from: TeamStatus; to: TeamStatus })

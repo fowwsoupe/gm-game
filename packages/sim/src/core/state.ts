@@ -11,6 +11,7 @@ import type {
   Team,
   TeamId,
   TeamStatus,
+  TradeOffer,
 } from '@gm/shared';
 
 export type { ScheduledGame };
@@ -48,6 +49,8 @@ export interface LeagueState {
   depthCharts: Record<string, string[]>;
   /** Owners of traded draft picks, by pick id (`season-round-originalTeam`). Untraded picks are absent. */
   pickOwners: Record<string, TeamId>;
+  /** AI GMs' open offers to human teams. */
+  tradeOffers: TradeOffer[];
   /** Count of events applied so far; the next event's id is built from it. */
   eventSeq: number;
 }
@@ -142,6 +145,12 @@ export function applyEvent(state: LeagueState, event: LeagueEvent): void {
     case 'draft.boardSet':
       state.draftBoards[event.teamId] = [...event.order];
       return;
+    case 'trade.offered':
+      state.tradeOffers.push(structuredClone(event.offer));
+      return;
+    case 'trade.offerClosed':
+      state.tradeOffers = state.tradeOffers.filter((o) => o.id !== event.offerId);
+      return;
     case 'lines.set':
       state.depthCharts[event.teamId] = [...event.order];
       return;
@@ -172,6 +181,7 @@ export function applyEvent(state: LeagueState, event: LeagueEvent): void {
       state.freeAgencyOpen = false;
       state.draftClass = [];
       state.draftBoards = {};
+      state.tradeOffers = [];
       // This season's draft is done: only later drafts' picks still matter.
       for (const id of Object.keys(state.pickOwners)) {
         if (Number(id.split('-')[0]) <= event.season) delete state.pickOwners[id];

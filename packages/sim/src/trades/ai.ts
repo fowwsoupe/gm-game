@@ -15,6 +15,26 @@ const BUYING: readonly TeamStatus[] = ['contender', 'buyer'];
 const SELLING: readonly TeamStatus[] = ['seller', 'rebuilder', 'crisis'];
 
 /**
+ * Player values for one week's trade talks, memoized: contexts scan the whole league and values
+ * run the valuator, so each is computed once per player and team.
+ */
+function valuer(state: LeagueState, ctx: SimContext) {
+  const contexts = new Map<TeamId, ReturnType<typeof teamContext>>();
+  const values = new Map<string, number>();
+  return (p: Player, teamId: TeamId) => {
+    const key = `${p.id}@${teamId}`;
+    let v = values.get(key);
+    if (v === undefined) {
+      let team = contexts.get(teamId);
+      if (!team) contexts.set(teamId, (team = teamContext(state, ctx, teamId)));
+      v = ctx.models.valuation.value(p, team, ctx.ruleset).surplus;
+      values.set(key, v);
+    }
+    return v;
+  };
+}
+
+/**
  * AI GMs trade with each other: a buyer looks at a seller's roster for the player it values
  * most above what the seller does, and offers one of its own players the seller values more
  * than it does (or a draft pick when no player works). The trade happens only if both sides accept under the same rules as a human
@@ -37,20 +57,7 @@ export function aiTrades(state: LeagueState, ctx: SimContext, rng: Rng, emit: Em
     Object.values(state.players)
       .filter((p) => p.teamId === id)
       .sort((a, b) => a.id.localeCompare(b.id));
-  // Memoized for this week's search: contexts scan the whole league, values run the valuator.
-  const contexts = new Map<TeamId, ReturnType<typeof teamContext>>();
-  const values = new Map<string, number>();
-  const value = (p: Player, teamId: TeamId) => {
-    const key = `${p.id}@${teamId}`;
-    let v = values.get(key);
-    if (v === undefined) {
-      let team = contexts.get(teamId);
-      if (!team) contexts.set(teamId, (team = teamContext(state, ctx, teamId)));
-      v = ctx.models.valuation.value(p, team, ctx.ruleset).surplus;
-      values.set(key, v);
-    }
-    return v;
-  };
+  const value = valuer(state, ctx);
 
   for (let i = 0; i < PAIRS_TRIED; i++) {
     const buyer = rng.pick(buyers);
@@ -108,5 +115,64 @@ export function aiTrades(state: LeagueState, ctx: SimContext, rng: Rng, emit: Em
       });
       return;
     }
+  }
+}
+
+/** Chance an AI GM calls a human team in a given week. */
+const WEEKLY_OFFER_CHANCE = 0.35;
+/** Days an offer stays open. */
+const OFFER_DAYS = 7;
+
+/**
+ * AI GMs make offers to human teams: one AI team picks the human's player it values most above
+ * what he is worth to his own team, and offers a player of its own the human team should value
+ * at least as much (by the same valuator, from the human team's situation). The AI must accept
+ * its own offer under `evaluateTrade`. One open offer per human team; offers expire after a week.
+ */
+export function aiOffers(state: LeagueState, ctx: SimContext, rng: Rng, emit: Emit): void {
+  for (const o of state.tradeOffers.filter((x) => x.expiresDay <= state.date.day)) {
+    emit('minor', [o.proposal.toTeamId, o.proposal.fromTeamId], {
+      kind: 'trade.offerClosed',
+      offerId: o.id,
+      accepted: false,
+    });
+  }
+  if (!tradeWindowOpen(state, ctx)) return;
+  const teams = Object.values(state.teams).sort((a, b) => a.id.localeCompare(b.id));
+  const ai = teams.filter((t) => !t.userControlled).map((t) => t.id);
+  if (!ai.length) return;
+  const value = valuer(state, ctx);
+  const roster = (id: TeamId) =>
+    Object.values(state.players)
+      .filter((p) => p.teamId === id)
+      .sort((a, b) => a.id.localeCompare(b.id));
+  for (const human of teams.filter((t) => t.userControlled).map((t) => t.id)) {
+    if (state.tradeOffers.some((o) => o.proposal.toTeamId === human)) continue;
+    if (!rng.chance(WEEKLY_OFFER_CHANCE)) continue;
+    const caller = rng.pick(ai);
+    const gap = (p: Player, to: TeamId, from: TeamId) => value(p, to) - value(p, from);
+    const target = roster(human).sort((a, b) => gap(b, caller, human) - gap(a, caller, human))[0];
+    if (!target) continue;
+    const offer = roster(caller)
+      .filter((p) => value(p, human) >= value(target, human))
+      .sort((a, b) => gap(b, human, caller) - gap(a, human, caller))
+      .find(
+        (p) =>
+          evaluateTrade(state, ctx, {
+            fromTeamId: human,
+            toTeamId: caller,
+            give: [target.id],
+            get: [p.id],
+          }).accepted,
+      );
+    if (!offer) continue;
+    emit('notable', [human, caller], {
+      kind: 'trade.offered',
+      offer: {
+        id: `o${state.date.season}_${state.date.day}_${human}`,
+        proposal: { fromTeamId: caller, toTeamId: human, give: [offer.id], get: [target.id] },
+        expiresDay: state.date.day + OFFER_DAYS,
+      },
+    });
   }
 }

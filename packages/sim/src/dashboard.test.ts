@@ -36,7 +36,7 @@ describe('home dashboard', () => {
 });
 
 describe('sim until it matters', () => {
-  it('stops only on league-wide moments, your team, or a long injury to your player', () => {
+  it('stops only on league-wide moments, your team, a long injury or an offer to you', () => {
     const state = createLeague(53, ctx);
     const mine = Object.values(state.teams).find((t) => t.userControlled)!.id;
     let stops = 0;
@@ -52,7 +52,8 @@ describe('sim until it matters', () => {
       const reason = lastDay.some(
         (e) =>
           (e.importance === 'major' && (e.teamIds.length === 0 || e.teamIds.includes(mine))) ||
-          (e.kind === 'player.injured' && e.teamIds.includes(mine) && e.days >= 14),
+          (e.kind === 'player.injured' && e.teamIds.includes(mine) && e.days >= 14) ||
+          (e.kind === 'trade.offered' && e.teamIds.includes(mine)),
       );
       expect(reason || !!state.championTeamId).toBe(true);
       stops++;

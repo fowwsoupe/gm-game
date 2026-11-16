@@ -210,6 +210,7 @@ export class SaveFile {
       draftBoards: JSON.parse(this.getMeta('draftBoards') ?? '{}'),
       depthCharts: JSON.parse(this.getMeta('depthCharts') ?? '{}'),
       pickOwners: JSON.parse(this.getMeta('pickOwners') ?? '{}'),
+      tradeOffers: JSON.parse(this.getMeta('tradeOffers') ?? '[]'),
       capCharges: (
         this.db
           .prepare(
@@ -423,6 +424,8 @@ export class SaveFile {
           case 'draft.classAnnounced':
           case 'draft.boardSet':
           case 'lines.set':
+          case 'trade.offered':
+          case 'trade.offerClosed':
             break; // stored with the clock below
           case 'freeAgency.opened':
             this.setMeta('freeAgencyOpen', '1');
@@ -469,6 +472,7 @@ export class SaveFile {
     this.setMeta('draftBoards', JSON.stringify(state.draftBoards));
     this.setMeta('depthCharts', JSON.stringify(state.depthCharts));
     this.setMeta('pickOwners', JSON.stringify(state.pickOwners));
+    this.setMeta('tradeOffers', JSON.stringify(state.tradeOffers));
   }
 
   // ---------- queries ----------
