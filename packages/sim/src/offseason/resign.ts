@@ -1,7 +1,6 @@
 import type { Contract, Player, ResignOffer, TeamId } from '@gm/shared';
 import type { LeagueState } from '../core';
 import { capIssues, capSheet, validateContract, type ContractIssue } from '../cba';
-import { marketSalary } from '../value';
 import type { SimContext } from '../context';
 import { ageIn, rosterOf } from './roster';
 
@@ -31,7 +30,7 @@ export function resignOffers(state: LeagueState, ctx: SimContext, teamId: TeamId
   return rosterOf(state, teamId)
     .filter((p) => expiring(state, p))
     .map((p) => {
-      const ask = marketSalary(ruleset, p);
+      const ask = ctx.models.contractDemand.ask(ruleset, p);
       return {
         playerId: p.id,
         ask,
@@ -51,7 +50,7 @@ export function resignContract(
   years: number,
 ): { contract: Contract } | { issues: ContractIssue[] } {
   const season = state.date.season + 1;
-  const capHit = marketSalary(ctx.ruleset, player);
+  const capHit = ctx.models.contractDemand.ask(ctx.ruleset, player);
   const issues = validateContract(ctx.ruleset, {
     salaries: Array<number>(Math.max(0, years)).fill(capHit),
     signingAge: ageIn(player, season),

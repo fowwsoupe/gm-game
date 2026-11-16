@@ -1,6 +1,8 @@
 import type {
   AwardEntry,
   CapSheet,
+  GameDetail,
+  GameSummary,
   Leaderboard,
   PlayoffSeries,
   RecordEntry,
@@ -41,6 +43,19 @@ export interface GmApi {
     records(): Promise<RecordEntry[]>;
     /** A team's cap sheet: the cap year in play, then future seasons. */
     capSheet(input: { teamId: TeamId }): Promise<CapSheet>;
+    /** Finished games of this season, newest first (one team's, or everyone's). */
+    games(input: { teamId?: TeamId; limit: number }): Promise<GameSummary[]>;
+    /** One finished game with its box score, or null if it is not in this season. */
+    game(input: { id: string }): Promise<GameDetail | null>;
+    /**
+     * Plays any two teams once, as they are today, and returns the game. Changes nothing: the
+     * same seed gives the same game, a new seed a new one.
+     */
+    exhibition(input: {
+      homeTeamId: TeamId;
+      awayTeamId: TeamId;
+      seed: number;
+    }): Promise<GameDetail>;
     /** A team's players under contract or expiring, for names on the cap sheet. */
     roster(input: { teamId: TeamId }): Promise<RosterPlayer[]>;
     /** Expiring players a team may re-sign now (empty until the champion is crowned). */
@@ -71,6 +86,9 @@ export const IPC = {
   leaders: 'league:leaders',
   capSheet: 'league:capSheet',
   roster: 'league:roster',
+  games: 'league:games',
+  game: 'league:game',
+  exhibition: 'league:exhibition',
   resignOffers: 'league:resignOffers',
   feedList: 'feed:list',
   dispatch: 'commands:dispatch',

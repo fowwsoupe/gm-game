@@ -149,6 +149,24 @@ export interface GameResult {
   injuries?: { playerId: PlayerId; days: number }[];
 }
 
+/** One finished game in a list. */
+export interface GameSummary {
+  id: string;
+  homeTeamId: TeamId;
+  awayTeamId: TeamId;
+  homeScore: number;
+  awayScore: number;
+  overtime: boolean;
+  shootout: boolean;
+  playoff: boolean;
+}
+
+/** A game with everything the game center needs: the result (and box score) plus player names by id. */
+export interface GameDetail {
+  result: GameResult;
+  names: Record<string, string>;
+}
+
 export interface PlayoffSeries {
   id: string;
   round: number;

@@ -41,6 +41,7 @@ export {
   type ShotInfo,
   type MatchupInput,
 } from './game';
+export { parseXgTable, xgTableFromModel, type XgTable, type XgTableResult } from './xgTable';
 export { teamStrength, autoLineup, ICE_TIME, type TeamStrength, type Lineup } from './strength';
 export { importHockeyRoster, exportHockeyRoster } from './roster';
 export { hockeyLeaders, hockeySeasonStats } from './stats';

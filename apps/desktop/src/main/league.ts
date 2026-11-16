@@ -1,4 +1,4 @@
-import { mkdirSync, readFileSync, rmSync } from 'node:fs';
+import { existsSync, mkdirSync, readFileSync, rmSync } from 'node:fs';
 import { join } from 'node:path';
 import type { Worker } from 'node:worker_threads';
 import { app } from 'electron';
@@ -10,8 +10,10 @@ import {
   createLeague,
   defaultContext,
   phaseOf,
+  parseXgTable,
   playerRecords,
   resignOffers,
+  Rng,
   teamRecords,
   type LeagueState,
 } from '@gm/sim';
@@ -19,6 +21,10 @@ import type {
   Actor,
   Command,
   CommandResult,
+  GameDetail,
+  GameId,
+  GameResult,
+  GameSummary,
   Importance,
   LeagueEvent,
   RosterPlayer,
@@ -42,6 +48,29 @@ export class LeagueService {
   private worker: Worker = createSimWorker({});
   /** Commands run one at a time, in order. */
   private queue: Promise<unknown> = Promise.resolve();
+
+  /**
+   * The user's shot-quality model, if `<userData>/models/xg.json` exists and is valid. An invalid
+   * file is reported and ignored: the game never fails to start over a model file.
+   */
+  private xg: unknown = (() => {
+    const path = join(app.getPath('userData'), 'models', 'xg.json');
+    if (!existsSync(path)) return undefined;
+    try {
+      const json: unknown = JSON.parse(readFileSync(path, 'utf8'));
+      const parsed = parseXgTable(json);
+      if (parsed.ok) return json;
+      console.warn(`Ignoring ${path}: ${parsed.errors.join('; ')}`);
+    } catch {
+      console.warn(`Ignoring ${path}: not valid JSON`);
+    }
+    return undefined;
+  })();
+
+  private context(rulesetId: string) {
+    const xg = this.xg === undefined ? undefined : parseXgTable(this.xg);
+    return defaultContext(rulesetId, xg?.ok ? { goalModel: xg.model } : {});
+  }
 
   private savePath() {
     return join(app.getPath('userData'), 'saves', 'league-1.sqlite');
@@ -159,6 +188,74 @@ export class LeagueService {
     });
   }
 
+  games(teamId: TeamId | undefined, limit: number): GameSummary[] {
+    const { state } = this.open();
+    return Object.values(state.results)
+      .filter((g) => !teamId || g.homeTeamId === teamId || g.awayTeamId === teamId)
+      .reverse() // results are stored in the order they were played
+      .slice(0, Math.max(0, limit))
+      .map((g) => ({
+        id: g.id,
+        homeTeamId: g.homeTeamId,
+        awayTeamId: g.awayTeamId,
+        homeScore: g.homeScore,
+        awayScore: g.awayScore,
+        overtime: g.overtime,
+        shootout: g.stats.shootout === 1,
+        playoff: !!g.playoffSeriesId,
+      }));
+  }
+
+  game(id: string): GameDetail | null {
+    const { state } = this.open();
+    const result = state.results[id];
+    return result ? this.detail(state, result) : null;
+  }
+
+  exhibition(homeTeamId: TeamId, awayTeamId: TeamId, seed: number): GameDetail {
+    const { state } = this.open();
+    if (!state.teams[homeTeamId] || !state.teams[awayTeamId] || homeTeamId === awayTeamId) {
+      throw new Error('pick two different teams');
+    }
+    const ctx = this.context(state.rulesetId);
+    const strength = (id: TeamId) =>
+      ctx.sport.teamStrength(
+        Object.values(state.players).filter(
+          (p) => p.teamId === id && (p.injuredUntil ?? 0) <= state.date.day,
+        ),
+      );
+    const result = ctx.sport.simGame(
+      {
+        id: `x${seed}` as GameId,
+        homeTeamId,
+        awayTeamId,
+        home: strength(homeTeamId),
+        away: strength(awayTeamId),
+      },
+      new Rng(seed),
+    );
+    delete result.injuries; // nobody is hurt in an exhibition
+    return this.detail(state, result);
+  }
+
+  private detail(state: LeagueState, result: GameResult): GameDetail {
+    const names: Record<string, string> = {};
+    const box = result.box as
+      | {
+          home: { skaters: { id: string }[]; goalie: { id: string }; relief?: { id: string } };
+          away: unknown;
+        }
+      | undefined;
+    const sides = box ? [box.home, box.away as typeof box.home] : [];
+    for (const side of sides) {
+      for (const { id } of [...side.skaters, side.goalie, ...(side.relief ? [side.relief] : [])]) {
+        const p = state.players[id];
+        if (p) names[id] = `${p.firstName} ${p.lastName}`;
+      }
+    }
+    return { result, names };
+  }
+
   /** Players on the team now, including ones whose contract ends this season. */
   roster(teamId: TeamId): RosterPlayer[] {
     return Object.values(this.open().state.players)
@@ -190,7 +287,7 @@ export class LeagueService {
 
   private async runCommand(command: Command): Promise<CommandResult> {
     const { save, state } = this.open();
-    const result = await this.runInWorker({ state, command, actor: LOCAL });
+    const result = await this.runInWorker({ state, command, actor: LOCAL, xg: this.xg });
     if (result.ok) {
       for (const e of result.events) applyEvent(state, e);
       save.persist(result.events, state);

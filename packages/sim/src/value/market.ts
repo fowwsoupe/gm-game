@@ -15,3 +15,15 @@ export function marketSalary(rules: Ruleset, player: Player): Dollars {
   const rounded = Math.round(raw / 100_000) * 100_000;
   return Math.min(maxPlayerCapHit(rules), Math.max(rules.cap.minSalary, rounded));
 }
+
+/**
+ * Plug-in point for what a player asks per year. The default is `marketSalary`; a model
+ * calibrated on real signings (Azmi) implements the same interface. Used by re-signing and
+ * free agency; the cap rules and term limits are checked separately, so a model cannot make
+ * an illegal contract.
+ */
+export interface ContractDemandModel {
+  ask(rules: Ruleset, player: Player): Dollars;
+}
+
+export const rulesContractDemand: ContractDemandModel = { ask: marketSalary };

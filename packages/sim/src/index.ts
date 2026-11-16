@@ -26,6 +26,6 @@ export { rolloverSeason, lotteryOrder, resignOffers } from './offseason';
 export { giveSeasonAwards } from './awards';
 export * from './sports';
 export { defaultModels, type Models } from './models';
-export { defaultContext, RULESETS, SPORTS, type SimContext } from './context';
+export { defaultContext, RULESETS, SPORTS, type ModelOverrides, type SimContext } from './context';
 export { createLeague, START_SEASON } from './create';
 export { handleCommand } from './commands';

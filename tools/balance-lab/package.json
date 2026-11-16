@@ -7,7 +7,8 @@
     "lab": "tsx src/index.ts",
     "typecheck": "tsc -p tsconfig.json",
     "test": "vitest run --passWithNoTests",
-    "roster:template": "tsx src/roster-template.ts"
+    "roster:template": "tsx src/roster-template.ts",
+    "xg:template": "tsx src/xg-template.ts"
   },
   "dependencies": {
     "@gm/shared": "workspace:*",

@@ -1,7 +1,7 @@
 import type { Sport } from '@gm/shared';
 import type { Ruleset } from './cba';
 import { defaultModels, type Models } from './models';
-import { hockeySport, NHL_2026, FICTIONAL_2026, type SportModule } from './sports';
+import { hockeySport, NHL_2026, FICTIONAL_2026, type GoalModel, type SportModule } from './sports';
 
 /**
  * Everything a sim call needs besides the league state: the sport, its rules and the
@@ -14,8 +14,16 @@ export interface SimContext {
 }
 
 /** Available sports. NBA and NFL get added here when their modules exist. */
-export const SPORTS: Partial<Record<Sport, () => SportModule>> = {
-  nhl: () => hockeySport(),
+/** Plug-in models the app loads from files (see docs/MODEL_CONTRACTS.md). */
+export interface ModelOverrides {
+  /** Hockey: a shot-quality model in place of `rulesGoalModel`. */
+  goalModel?: GoalModel;
+  /** Replaces any of the shared `Models`. */
+  models?: Partial<Models>;
+}
+
+export const SPORTS: Partial<Record<Sport, (o: ModelOverrides) => SportModule>> = {
+  nhl: (o) => hockeySport(o.goalModel),
 };
 
 /** Every shipped ruleset, by id. */
@@ -24,10 +32,17 @@ export const RULESETS: Record<string, Ruleset> = {
   [FICTIONAL_2026.id]: FICTIONAL_2026,
 };
 
-export function defaultContext(rulesetId = FICTIONAL_2026.id): SimContext {
+export function defaultContext(
+  rulesetId = FICTIONAL_2026.id,
+  overrides: ModelOverrides = {},
+): SimContext {
   const ruleset = RULESETS[rulesetId];
   if (!ruleset) throw new Error(`Unknown ruleset ${rulesetId}`);
   const makeSport = SPORTS[ruleset.sport];
   if (!makeSport) throw new Error(`Sport ${ruleset.sport} is not available yet`);
-  return { sport: makeSport(), ruleset, models: defaultModels };
+  return {
+    sport: makeSport(overrides),
+    ruleset,
+    models: { ...defaultModels, ...overrides.models },
+  };
 }
