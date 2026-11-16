@@ -16,8 +16,10 @@ import { runDraft } from './draft';
 
 export { lotteryOrder, announceDraftClass } from './draft';
 export { signingInterest, signFreeAgent } from './signing';
+export { marketDay } from './market';
 export { resignOffers, resignContract, isExpiring, resignWindowOpen } from './resign';
 import { expireContracts, fillRosters, meetCapFloor, reSignPlayers } from './freeAgency';
+import { MARKET_DAYS, decideOffers, marketDay } from './market';
 import { developPlayers, retirePlayers } from './progression';
 
 /** Step 0: the season's stat lines go to the record books before anyone ages, moves or retires. */
@@ -69,6 +71,11 @@ export function finishRollover(state: LeagueState, ctx: SimContext, emit: Emit):
   const rng = new Rng(state.rngState);
   const order = worstFirst(state, ctx);
   const from = phaseOf(ctx.ruleset.season.calendar, state.date);
+  // AI teams bid for free agents over a few days; whoever is still short is filled below.
+  for (let day = 0; day < MARKET_DAYS; day++) {
+    marketDay(state, ctx, rng.fork(`market${day}`), emit);
+  }
+  decideOffers(state, ctx, emit);
   fillRosters(state, ctx, rng.fork('freeAgency'), emit, season, order);
   meetCapFloor(state, ctx, rng.fork('capFloor'), emit, season, order);
 

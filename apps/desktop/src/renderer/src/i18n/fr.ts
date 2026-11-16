@@ -197,6 +197,7 @@ export const fr: Record<MessageKey, string> = {
   'trade.reason.not_on_team': '{player} ne fait pas partie de cette équipe.',
   'event.trade': 'Échange : {from} cèdent {give} à {to} contre {get}',
   'actions.openFreeAgency': 'Ouvrir le marché des joueurs autonomes',
+  'actions.freeAgencyDay': 'Jour suivant du marché des joueurs autonomes',
   'home.freeAgencyOpen':
     'Le marché est ouvert : signez des joueurs dans Alignement → Joueurs autonomes, puis lancez la saison suivante.',
   'event.freeAgencyOpened': 'Le marché des joueurs autonomes est ouvert',
@@ -214,6 +215,8 @@ export const fr: Record<MessageKey, string> = {
   'sign.threshold': 'Il signe à {n} ou plus.',
   'sign.action': 'Le signer',
   'sign.done': 'Signé.',
+  'sign.pending': 'Offre faite. Il répond demain, avec les autres offres.',
+  'sign.rivals': '{n} offres rivales sur la table : il choisit la meilleure demain.',
   'nav.draft': 'Repêchage',
   'draft.empty': 'La cuvée du repêchage est annoncée à la fin des séries.',
   'draft.classTitle': 'Cuvée du repêchage',
@@ -350,4 +353,5 @@ export const fr: Record<MessageKey, string> = {
   'palette.player': 'Joueur',
   'palette.team': 'Équipe',
   'palette.screen': 'Écran',
+  'event.lostFreeAgent': '{player} a préféré les {team} à votre offre',
 };

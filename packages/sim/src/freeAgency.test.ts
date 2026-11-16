@@ -5,6 +5,7 @@ import {
   defaultContext,
   handleCommand,
   personalityOf,
+  signFreeAgent,
   signingInterest,
   type LeagueState,
 } from './index';
@@ -119,6 +120,46 @@ describe('free agency', () => {
       ok: false,
       error: { message: 'signings are closed in the playoffs' },
     });
+  });
+});
+
+describe('AI offers in free agency', () => {
+  it('rival teams make legal offers, and a contested player picks one', () => {
+    const { state, mine } = finishedSeason(27);
+    run(state, { kind: 'offseason.openFreeAgency' });
+    expect(state.faOffers).toEqual([]);
+    run(state, { kind: 'freeAgency.advanceDay' });
+    expect(state.faOffers.length).toBeGreaterThan(0);
+    for (const o of state.faOffers) {
+      expect(state.teams[o.teamId]!.userControlled).toBe(false);
+      expect(state.players[o.playerId]!.teamId).toBeNull();
+      expect(signFreeAgent(state, ctx, state.players[o.playerId]!, o.teamId, o)).toHaveProperty(
+        'contract',
+      );
+    }
+
+    // Your offer on a contested player waits for the others instead of signing him now.
+    const target = state.players[state.faOffers[0]!.playerId]!;
+    const { ask } = signingInterest(state, ctx, target, mine, { salary: 0, years: 1 });
+    state.teamStatus[mine] = 'contender';
+    const salary = Math.round(ask * 1.5);
+    const [ev] = run(state, sign(target, mine, salary, 2));
+    expect(ev!.kind).toBe('freeAgency.offered');
+    expect(target.teamId).toBeNull();
+
+    // Next day he signs somewhere; if it was not with you, you are told.
+    const events = run(state, { kind: 'freeAgency.advanceDay' });
+    expect(target.teamId).not.toBeNull();
+    expect(state.faOffers.some((o) => o.playerId === target.id)).toBe(false);
+    const lost = events.some(
+      (e) => e.kind === 'news.posted' && e.headline === 'event.lostFreeAgent',
+    );
+    expect(lost).toBe(target.teamId !== mine);
+  });
+
+  it('advancing a day needs free agency open', () => {
+    const { state } = finishedSeason(28);
+    expect(handleCommand(state, { kind: 'freeAgency.advanceDay' }, local, ctx).ok).toBe(false);
   });
 });
 

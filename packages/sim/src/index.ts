@@ -29,6 +29,7 @@ export {
   finishRollover,
   lotteryOrder,
   resignOffers,
+  signFreeAgent,
   signingInterest,
 } from './offseason';
 export { giveSeasonAwards } from './awards';

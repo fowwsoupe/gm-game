@@ -1,10 +1,11 @@
 import type { Actor, Command, CommandResult, LeagueEvent, TeamId, TradeProposal } from '@gm/shared';
-import { applyEvent, emitter, makeEvent, type LeagueState } from './core';
+import { Rng, applyEvent, emitter, makeEvent, type LeagueState } from './core';
 import { buyoutCharges } from './cba';
 import { parsePick } from './league';
 import { talkedDown } from './people';
 import {
   isExpiring,
+  marketDay,
   openFreeAgency,
   resignContract,
   resignWindowOpen,
@@ -220,6 +221,17 @@ export function handleCommand(
       return { ok: true, events };
     }
 
+    case 'freeAgency.advanceDay': {
+      if (!state.freeAgencyOpen) {
+        return { ok: false, error: { code: 'invalid', message: 'free agency is not open' } };
+      }
+      const events: LeagueEvent[] = [];
+      // The sim clock does not move in the summer; the event count keeps each day's draws apart.
+      const rng = new Rng(state.rngState).fork(`market${state.eventSeq}`);
+      marketDay(state, ctx, rng, emitter(state, events));
+      return { ok: true, events };
+    }
+
     case 'lines.set': {
       const team = state.teams[command.teamId];
       if (!team) return { ok: false, error: { code: 'invalid', message: 'unknown team' } };
@@ -304,12 +316,26 @@ export function handleCommand(
       if (!yours) return { ok: false, error: { code: 'not_allowed', message: 'not your team' } };
       const deal = signFreeAgent(state, ctx, player, team.id, command);
       if ('error' in deal) return { ok: false, error: { code: 'invalid', message: deal.error } };
-      const ev = makeEvent(state, 'notable', [team.id], {
-        kind: 'player.signed',
-        playerId: player.id,
-        teamId: team.id,
-        contract: deal.contract,
-      });
+      // With AI offers on the table he weighs them all tomorrow; otherwise he decides now.
+      const contested = state.faOffers.some(
+        (o) => o.playerId === player.id && o.teamId !== team.id,
+      );
+      const ev = contested
+        ? makeEvent(state, 'minor', [team.id], {
+            kind: 'freeAgency.offered',
+            offer: {
+              playerId: player.id,
+              teamId: team.id,
+              salary: deal.contract.capHit,
+              years: command.years,
+            },
+          })
+        : makeEvent(state, 'notable', [team.id], {
+            kind: 'player.signed',
+            playerId: player.id,
+            teamId: team.id,
+            contract: deal.contract,
+          });
       applyEvent(state, ev);
       return { ok: true, events: [ev] };
     }

@@ -102,6 +102,17 @@ export interface PlayerProfile extends RosterPlayer {
   stats: Record<string, number>;
   /** What he would ask per year on a new contract today, whole dollars. */
   ask: number;
+  /** Free agents: how many AI teams have an open offer to him (they compete with yours). */
+  rivalOffers: number;
+}
+
+/** An open offer to a free agent; he answers the next day, picking the one he likes best. */
+export interface FreeAgentOffer {
+  playerId: PlayerId;
+  teamId: TeamId;
+  /** Per year, whole dollars. */
+  salary: number;
+  years: number;
 }
 
 export interface Player {
