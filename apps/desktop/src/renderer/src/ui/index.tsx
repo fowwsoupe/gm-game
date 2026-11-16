@@ -66,3 +66,62 @@ export function PercentileBar({ label, value }: { label: string; value: number }
     </div>
   );
 }
+
+/**
+ * Player card: name, subtitle (position, team, age) and a stack of percentile bars.
+ * Callers pass already-translated labels; the card holds no text of its own.
+ */
+export function PlayerCard({
+  name,
+  subtitle,
+  bars,
+  className = '',
+}: {
+  name: string;
+  subtitle?: ReactNode;
+  bars: { label: string; value: number }[];
+  className?: string;
+}) {
+  return (
+    <Card className={className}>
+      <div className="mb-3 border-l-4 border-[var(--team-primary)] pl-3">
+        <div className="text-lg font-semibold leading-tight">{name}</div>
+        {subtitle && <div className="text-sm text-muted">{subtitle}</div>}
+      </div>
+      <div className="space-y-1.5">
+        {bars.map((b) => (
+          <PercentileBar key={b.label} label={b.label} value={b.value} />
+        ))}
+      </div>
+    </Card>
+  );
+}
+
+/**
+ * Broadcast caption: a lower-third for big moments (goal, series win, trophy).
+ * Team-coloured edge; `kicker` is the small label above the headline.
+ */
+export function BroadcastCaption({
+  kicker,
+  headline,
+  detail,
+}: {
+  kicker?: ReactNode;
+  headline: ReactNode;
+  detail?: ReactNode;
+}) {
+  return (
+    <div className="flex max-w-xl overflow-hidden rounded-md border border-line bg-panel shadow-lg">
+      <div className="w-1.5 shrink-0 bg-[var(--team-primary)]" />
+      <div className="px-3 py-2">
+        {kicker && (
+          <div className="text-xs font-semibold uppercase tracking-wider text-[var(--team-primary)]">
+            {kicker}
+          </div>
+        )}
+        <div className="text-base font-semibold leading-tight">{headline}</div>
+        {detail && <div className="text-sm text-muted">{detail}</div>}
+      </div>
+    </div>
+  );
+}

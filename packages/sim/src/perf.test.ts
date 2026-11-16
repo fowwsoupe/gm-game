@@ -1,10 +1,11 @@
 import { describe, expect, it } from 'vitest';
-import { createLeague, defaultContext, handleCommand } from './index';
+import { capSheet, computeStandings, createLeague, defaultContext, handleCommand } from './index';
+import type { TeamId } from '@gm/shared';
 
 /**
  * Speed budget. Fails the build if the sim gets slower than the targets in the spec.
  * Budgets are generous for slow CI machines; tighten them as the sim grows.
- * TODO: screen-open timing in the app (needs the screens).
+ * Screen data (standings, leaders, cap sheet) is timed here too: the app screens only render these.
  */
 const ctx = defaultContext();
 
@@ -64,5 +65,29 @@ describe('speed budget', () => {
     expect(year().ok).toBe(true);
     expect(performance.now() - t0).toBeLessThan(6_000);
     expect(Object.keys(state.players).length).toBeLessThan(2_000); // retired players do not pile up
+
+    // Screen data in year 20, with the most history: each must feel instant.
+    const teamIds = Object.keys(state.teams) as TeamId[];
+    const results = Object.values(state.results);
+    const time = (fn: () => unknown) => {
+      const t = performance.now();
+      fn();
+      return performance.now() - t;
+    };
+    const { ruleset, sport } = ctx;
+    expect(time(() => computeStandings(teamIds, results, ruleset.season.points))).toBeLessThan(250);
+    expect(time(() => sport.leaders(results, Object.values(state.players), 10))).toBeLessThan(250);
+    expect(
+      time(() =>
+        capSheet(ruleset, {
+          teamId: teamIds[0]!,
+          players: Object.values(state.players),
+          charges: state.capCharges,
+          fromSeason: state.date.season,
+          years: ruleset.contracts.maxYearsResign,
+          phase: 'regular',
+        }),
+      ),
+    ).toBeLessThan(250);
   }, 120_000); // 20 seasons take ~7 s on a slow CI machine; the budget is for the last one
 });
