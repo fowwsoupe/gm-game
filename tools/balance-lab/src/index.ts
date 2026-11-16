@@ -14,12 +14,14 @@
  */
 import { readFileSync } from 'node:fs';
 import { resolve } from 'node:path';
-import type { Actor, GameResult, HockeyBoxScore, TeamId } from '@gm/shared';
+import type { Actor, GameResult, HockeyBoxScore, Player, TeamId } from '@gm/shared';
 import {
   computeStandings,
   createLeague,
   defaultContext,
   handleCommand,
+  hockeySeasonStats,
+  ICE_TIME,
   overall,
   parseXgTable,
   playoffCapBreaches,
@@ -29,6 +31,7 @@ import {
   payroll,
   validateContract,
 } from '@gm/sim';
+import { fitLinear, pearson, sd } from './stats';
 
 interface Check {
   name: string;
@@ -70,7 +73,27 @@ let teamSeasons = 0;
 let ppChances = 0;
 let betterTeamSeriesWins = 0;
 let measuredSeries = 0;
+let favouriteWins = 0;
+let decidedByStrength = 0;
+/** Per team season: [goal diff per game, draw skill, offence, defence, goaltending] without draws. */
+const faceoffRows: number[][] = [];
 const started = performance.now();
+
+const rosterOf = (state: LeagueState, id: string) =>
+  Object.values(state.players).filter((p) => p.teamId === id);
+
+/** Ice-time-weighted faceoff rating of the players who take each line's draws (as the sim picks them). */
+const drawSkill = (roster: readonly Player[]) =>
+  teamStrength(roster).lineup.forwards.reduce(
+    (s, line, i) => s + ICE_TIME.forwardLines[i]! * (line[0]?.ratings.faceoffs ?? 50),
+    0,
+  );
+const withoutDraws = (roster: readonly Player[]) =>
+  teamStrength(
+    roster.map((p) =>
+      'faceoffs' in p.ratings ? { ...p, ratings: { ...p.ratings, faceoffs: 50 } } : p,
+    ),
+  );
 
 /** How often the stronger team (by full-health strength) wins a playoff series. Needs many series to be stable. */
 function measureSeries(state: LeagueState) {
@@ -110,7 +133,20 @@ for (let i = 0; i < seasons; i++) {
   const top = (key: string) =>
     ctx.sport.leaders(results, Object.values(state.players), 1).find((b) => b.key === key)?.rows[0]
       ?.value ?? 0;
+  const strength = new Map(
+    Object.keys(state.teams).map((id) => [id, teamStrength(rosterOf(state, id))]),
+  );
+  for (const id of Object.keys(state.teams)) {
+    const roster = rosterOf(state, id);
+    const base = withoutDraws(roster);
+    faceoffRows.push([0, drawSkill(roster), base.offense, base.defense, base.goaltending]);
+  }
   for (const g of results) {
+    const edge = strengthEdge(strength.get(g.homeTeamId)!, strength.get(g.awayTeamId)!);
+    if (edge !== 0) {
+      decidedByStrength++;
+      if (edge > 0 === g.homeScore > g.awayScore) favouriteWins++;
+    }
     const box = g.box as HockeyBoxScore;
     ppChances += box.penalties.length;
     for (const side of [box.home, box.away]) for (const p of side.skaters) ppGoals += p.ppGoals;
@@ -124,11 +160,15 @@ for (let i = 0; i < seasons; i++) {
     ctx.ruleset.season.points,
   );
   pointSpreads.push(rows[0]!.pts - rows[rows.length - 1]!.pts);
+  // Goal diff per game, in the same order the teams were pushed above.
+  const diff = new Map(rows.map((r) => [r.teamId as string, (r.gf - r.ga) / r.gp]));
+  const teams = Object.keys(state.teams);
+  teams.forEach(
+    (id, i) => (faceoffRows[faceoffRows.length - teams.length + i]![0] = diff.get(id)!),
+  );
 }
 
 // ---------- multi-year: one league played for `years` seasons, with the offseason in between ----------
-const rosterOf = (state: LeagueState, id: string) =>
-  Object.values(state.players).filter((p) => p.teamId === id);
 const meanOverall = (state: LeagueState) => {
   const rostered = Object.values(state.players).filter((p) => p.teamId !== null);
   return rostered.reduce((s, p) => s + overall(p), 0) / rostered.length;
@@ -144,6 +184,11 @@ let teamsBelowFloor = 0;
 let illegalContracts = 0;
 let teamsOverPlayoffCap = 0;
 let maxPool = 0;
+let playoffTeamsNew = 0;
+let playoffSpotsCompared = 0;
+const goalieSvPairs: [number, number][] = [];
+/** A starter's season: enough shots that save % means something. */
+const GOALIE_MIN_SHOTS = 800;
 for (let l = 0; l < leagues; l++) {
   const state = createLeague(firstSeed + l, ctx);
   // The lab measures the AI: with no human GM, every team re-signs its own players.
@@ -159,6 +204,8 @@ for (let l = 0; l < leagues; l++) {
   }
   const startRating = meanOverall(state);
   const titles = new Map<TeamId, number>();
+  let lastPlayoffTeams: Set<string> | null = null;
+  let lastSv = new Map<string, number>();
   for (let y = 0; y < years; y++) {
     const played = handleCommand(
       state,
@@ -169,6 +216,24 @@ for (let l = 0; l < leagues; l++) {
     if (!played.ok) throw new Error(played.error.message);
     measureSeries(state);
     titles.set(state.championTeamId!, (titles.get(state.championTeamId!) ?? 0) + 1);
+    const playoffTeams = new Set(
+      Object.values(state.playoffSeries)
+        .filter((s) => s.round === 1)
+        .flatMap((s) => [s.higherTeamId as string, s.lowerTeamId as string]),
+    );
+    if (lastPlayoffTeams) {
+      for (const id of playoffTeams) if (!lastPlayoffTeams.has(id)) playoffTeamsNew++;
+      playoffSpotsCompared += playoffTeams.size;
+    }
+    lastPlayoffTeams = playoffTeams;
+    const sv = new Map<string, number>();
+    const regular = Object.values(state.results).filter((g) => !g.playoffSeriesId);
+    for (const [id, g] of hockeySeasonStats(regular).goalies) {
+      if (g.shotsAgainst < GOALIE_MIN_SHOTS) continue;
+      sv.set(id, g.saves / g.shotsAgainst);
+      if (lastSv.has(id)) goalieSvPairs.push([lastSv.get(id)!, sv.get(id)!]);
+    }
+    lastSv = sv;
     const rolled = handleCommand(state, { kind: 'season.rollover' }, actor, ctx);
     if (!rolled.ok) throw new Error(rolled.error.message);
     teamsOverPlayoffCap += playoffCapBreaches(Object.values(state.players), ctx.ruleset).length;
@@ -205,6 +270,11 @@ const games = all.length;
 const goals = all.reduce((s, g) => s + g.homeScore + g.awayScore, 0);
 const shots = all.reduce((s, g) => s + (g.stats.homeShots ?? 0) + (g.stats.awayShots ?? 0), 0);
 const avg = (xs: number[]) => xs.reduce((a, b) => a + b, 0) / xs.length;
+const faceoffEffect =
+  fitLinear(
+    faceoffRows.map((r) => r.slice(1)),
+    faceoffRows.map((r) => r[0]!),
+  )[1]! * sd(faceoffRows.map((r) => r[1]!));
 
 // Targets from docs/research/2026-11-sports-gm-research.md (Hockey-Reference 2024-25 to 2026-27).
 // Ranges marked "unverified" are estimates not yet backed by the research; replace when sourced.
@@ -260,6 +330,23 @@ const checks: Check[] = [
     max: 65,
     unit: '%',
   },
+  {
+    // Research report: the favourite wins about 60% of single games. Favourite = stronger at full health.
+    name: 'Favourite wins a single game',
+    value: (100 * favouriteWins) / decidedByStrength,
+    min: 57,
+    max: 63,
+    unit: '%',
+  },
+  {
+    // ml/src/faceoffs.py (NHL 2022-25): +0.067 goals/game per SD of team faceoff %, 95% CI to 0.17,
+    // after prior-season goal diff. Sim: same per SD of the draw-takers' faceoff rating, holding the
+    // rest of the team fixed. The floor is above 0 because a key with no effect should be dropped.
+    name: 'Faceoff effect, goal diff/game per SD',
+    value: faceoffEffect,
+    min: 0.02,
+    max: 0.17,
+  },
   // Multi-year (offseason rollover). Ranges: league talent stable, no runaway dynasty, cap legal.
   { name: `League avg rating drift (${years}y)`, value: maxDrift, min: 0, max: 3 },
   {
@@ -286,10 +373,23 @@ const checks: Check[] = [
   { name: 'Illegal or missing contracts on rosters', value: illegalContracts, min: 0, max: 0 },
   { name: 'Teams over the playoff cap', value: teamsOverPlayoffCap, min: 0, max: 0 },
   { name: 'Teams below roster minimum', value: teamsUnderMinimum, min: 0, max: 0 },
+  {
+    // Research report: 5-7 of the NHL's 16 playoff teams are new each year (31-44%).
+    name: 'Playoff teams new each year',
+    value: (100 * playoffTeamsNew) / playoffSpotsCompared,
+    min: 31,
+    max: 44,
+    unit: '%',
+  },
+  {
+    // Research report: goalie save % repeats weakly year to year (r 0.12-0.30).
+    name: `Goalie SV% year-to-year r (${GOALIE_MIN_SHOTS}+ shots)`,
+    value: pearson(goalieSvPairs),
+    min: 0.12,
+    max: 0.3,
+  },
   { name: 'Free-agent pool, largest (unverified)', value: maxPool, min: 0, max: 150 },
 ];
-// TODO (from research): favorite wins ~60% of single games; goalie SV% year-to-year
-// r 0.12-0.30; 5-7 of 16 playoff teams turn over each year.
 
 const pad = (s: string, n: number) => s.padEnd(n);
 console.log(

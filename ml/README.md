@@ -75,7 +75,12 @@ python3 -m ml.src.moneypuck --seasons 2022 2023 2024 2025
 python3 -m ml.src.pipeline --raw ml/data/raw/normalized --processed ml/data/processed
 python3 -m ml.src.analyze --processed ml/data/processed
 python3 -m ml.src.study --processed ml/data/processed
+python3 -m ml.src.faceoffs --processed ml/data/processed
 ```
+
+`faceoffs` writes `faceoff_study.json`: goal diff/game per SD of team faceoff %, raw (an upper
+bound) and after prior-season goal diff. It calibrates the sim's `FACEOFF_WEIGHT`; the balance
+lab's "Faceoff effect" check measures the same number in the sim.
 
 The adapter filters playoffs, normalizes shot coordinates and positions, preserves
 shootout winners, and records source inconsistencies. Its drafts and contracts files

@@ -29,10 +29,14 @@ export const HOCKEY_TUNING = {
   /** Shots on goal per team per 60 minutes between two average units at even strength. */
   shotsPer60: 26.0,
   /** How strongly a rating gap between the attacking and defending unit moves the shot rate. */
-  ratingSensitivity: 0.0075,
-  /** The average starting goalie's rating, and how strongly a gap moves his goal chance per shot. */
+  ratingSensitivity: 0.0085,
+  /**
+   * The average starting goalie's rating, and how strongly a gap moves his goal chance per shot.
+   * Set so a starter's save % repeats year to year at r 0.12-0.30 as in the NHL (balance lab);
+   * at 0.011 it repeated at 0.6, so goalies were far more predictable than real ones.
+   */
   leagueAvgGoaltending: 67,
-  goalieSensitivity: 0.011,
+  goalieSensitivity: 0.005,
   homeIceBoost: 1.07,
   /** Shot rate changes by this (log) per skater of man advantage: 5v4 is about 1.7 times even strength. */
   manAdvantageStep: 0.55,
