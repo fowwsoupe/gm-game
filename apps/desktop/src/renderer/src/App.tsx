@@ -120,6 +120,23 @@ export function App() {
           <Button disabled={!hasLeague || dispatch.isPending} onClick={() => sim(400, 'major')}>
             {t('actions.simToNext')}
           </Button>
+          {status &&
+            [
+              { to: status.tradeDeadlineDay, label: t('actions.simToDeadline') },
+              { to: status.playoffsStartDay, label: t('actions.simToPlayoffs') },
+              { to: status.playoffsEndDay, label: t('actions.simToSummer') },
+            ]
+              .filter((d) => d.to > status.day && !status.championTeamId)
+              .slice(0, 1)
+              .map((d) => (
+                <Button
+                  key={d.label}
+                  disabled={dispatch.isPending}
+                  onClick={() => sim(Math.min(400, d.to - status.day))}
+                >
+                  {d.label}
+                </Button>
+              ))}
           {status?.championTeamId && !status.freeAgencyOpen && (
             <Button
               disabled={dispatch.isPending}

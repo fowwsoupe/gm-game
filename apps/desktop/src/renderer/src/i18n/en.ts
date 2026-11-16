@@ -304,6 +304,9 @@ export const en = {
   'event.losingStreak': 'The {team} have lost {n} straight',
   'event.hatTrick': 'Hat trick for {player} ({team})',
   'event.shutout': 'Shutout for {player} ({team})',
+  'actions.simToDeadline': 'Sim to trade deadline',
+  'actions.simToPlayoffs': 'Sim to playoffs',
+  'actions.simToSummer': 'Sim to end of playoffs',
 } as const;
 
 export type MessageKey = keyof typeof en;
