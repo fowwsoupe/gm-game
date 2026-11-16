@@ -54,3 +54,22 @@ Surplus value per team (can be negative). Placeholder: `naiveValuator`.
 
 Yearly rating and potential changes with age. Default: `rulesDevelopment(HOCKEY_DEVELOPMENT)`.
 Check: lab "league avg rating drift" and career-shape tests.
+
+## 5. Stats to ratings: `ratingsFromStats(table, position, totals, seasonGames)` (hockey)
+
+Estimates a player's hidden ratings from one season's totals (`hockeySeasonStats`), each with an
+uncertainty `sd` in rating points, so a community roster can be rated from stats. The default
+table (`STATS_TO_RATINGS`) is fitted on the sim itself by `pnpm ratings:fit`: it plays many
+seasons and fits each rating on the stat lines the sim produced (one league in five held out
+for R² and error). Rerun it after any change to the game sim or player generation.
+
+Features: skaters TOI/game and goals, assists, shots and +/- per 60; goalies save % and share
+of games. A sample under `FULL_SAMPLE` (half a season for skaters, a quarter for goalies) is
+pulled toward the position average and its `sd` widens toward the position spread.
+
+What a stat line shows today (held-out R², 40 leagues): `shooting` about 0.78, `passing` 0.55-0.61,
+other skater keys 0.43-0.49, goalie keys 0.25-0.36 (one season's save % is mostly noise, as in
+the NHL). Those keys mostly ride a player's overall level, since generation
+draws a player's ratings together, so their estimates are close to "how good is he" with a
+wide `sd`. A trained replacement must emit the same table format (format `gm-stats-to-ratings`)
+and beat these R² values on held-out leagues.
