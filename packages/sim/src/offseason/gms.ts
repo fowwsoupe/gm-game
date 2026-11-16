@@ -67,13 +67,14 @@ export function setPlans(state: LeagueState, emit: Emit, season: number) {
       current: team.plan,
       season,
     });
-    if (team.plan?.kind === kind) continue;
+    const before = team.plan; // emit applies the event, so read it first
+    if (before?.kind === kind) continue;
     emit('minor', [team.id], {
       kind: 'team.planChanged',
       teamId: team.id,
       plan: { kind, since: season },
     });
-    if (kind === 'retool' || !team.plan) continue;
+    if (kind === 'retool' || !before) continue;
     emit('notable', [team.id], {
       kind: 'news.posted',
       headline: kind === 'rebuild' ? 'event.planRebuild' : 'event.planContend',
