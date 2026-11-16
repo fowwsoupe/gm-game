@@ -291,3 +291,25 @@ describe('player profiles', () => {
     expect(cards.find((c) => c.position === 'G' && c.stats.gp)?.stats.savePct).toBeGreaterThan(0.8);
   });
 });
+
+describe('builds and role tags', () => {
+  it('spread across the league, with tags only for standout skills', () => {
+    const state = createLeague(91, ctx);
+    const cards = Object.keys(state.teams).flatMap((id) =>
+      playerProfiles(state, ctx, id as TeamId),
+    );
+    const builds = new Map<string, number>();
+    for (const c of cards) builds.set(c.build, (builds.get(c.build) ?? 0) + 1);
+    // Every build is used, and none takes over a group.
+    expect(builds.size).toBe(10);
+    const forwards = cards.filter((c) => ['C', 'LW', 'RW'].includes(c.position)).length;
+    for (const b of ['sniper', 'playmaker', 'powerForward', 'twoWay', 'grinder']) {
+      expect(builds.get(b)! / forwards).toBeLessThan(0.5);
+    }
+    for (const c of cards) {
+      expect(c.tags.length).toBeLessThanOrEqual(2);
+      if (c.tags.length)
+        expect(Math.max(...c.percentiles.map((x) => x.value))).toBeGreaterThanOrEqual(90);
+    }
+  });
+});

@@ -93,6 +93,9 @@ export interface PlayerProfile extends RosterPlayer {
   /** First day back from injury, if hurt. */
   injuredUntil?: number;
   percentiles: { key: string; value: number }[];
+  /** Sport-defined build and role tags (hockey: 'sniper', 'shutdownD'...; tags 'speed', 'shot'...). */
+  build: string;
+  tags: string[];
   /** This regular season's stat line, sport-defined keys (hockey: gp, goals, assists...). */
   stats: Record<string, number>;
   /** What he would ask per year on a new contract today, whole dollars. */

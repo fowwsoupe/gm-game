@@ -65,6 +65,15 @@ export interface SportModule<Strength = unknown> {
    */
   leaders(results: readonly GameResult[], players: readonly Player[], limit: number): Leaderboard[];
 
+  /**
+   * A player's build and role tags (keys the UI translates, e.g. hockey 'sniper', 'speed'), from
+   * his percentiles within his group.
+   */
+  role(
+    position: string,
+    percentiles: readonly { key: string; value: number }[],
+  ): { build: string; tags: string[] };
+
   /** Each player's stat line over these games, by player id (hockey: gp, goals, assists, points...). */
   playerLines(results: readonly GameResult[]): Map<string, Record<string, number>>;
 

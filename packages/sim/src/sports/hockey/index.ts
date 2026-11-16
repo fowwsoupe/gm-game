@@ -7,6 +7,7 @@ import { NHL_2026 } from './ruleset-nhl-2026';
 import { pickAwards } from './awards';
 import { importHockeyRoster } from './roster';
 import { hockeyLeaders, hockeyPlayerLines } from './stats';
+import { hockeyRole } from './builds';
 
 /**
  * Hockey (NHL-style). Owns everything that only makes sense in hockey: positions and
@@ -29,6 +30,7 @@ export function hockeySport(goalModel: GoalModel = rulesGoalModel): SportModule<
     lineup: lineupUnits,
     leaders: hockeyLeaders,
     playerLines: hockeyPlayerLines,
+    role: hockeyRole,
     simGame: (game, rng) => simGame(game, rng, goalModel),
   };
 }

@@ -45,6 +45,10 @@ export function playerProfiles(
     )
     .map((p) => {
       const keys = sport.ratingKeys(p.position);
+      const percentiles = keys.map((key) => ({
+        key,
+        value: percentileRank(p.ratings[key] ?? 0, population(keys, key)),
+      }));
       return {
         id: p.id,
         firstName: p.firstName,
@@ -55,10 +59,8 @@ export function playerProfiles(
         age: state.date.season - p.birthYear,
         ...(p.contract && { contract: { ...p.contract } }),
         ...((p.injuredUntil ?? 0) > state.date.day && { injuredUntil: p.injuredUntil }),
-        percentiles: keys.map((key) => ({
-          key,
-          value: percentileRank(p.ratings[key] ?? 0, population(keys, key)),
-        })),
+        percentiles,
+        ...sport.role(p.position, percentiles),
         stats: lines.get(p.id) ?? {},
         ask: ctx.models.contractDemand.ask(ctx.ruleset, p),
       };
