@@ -170,11 +170,14 @@ export function teamCapTotal(
   const committed = players
     .filter((p) => p.teamId === teamId)
     .reduce((sum, p) => sum + (contractIn(p, season)?.capHit ?? 0), 0);
-  const dead = state.capCharges
+  return committed + deadCap(state, teamId, season);
+}
+
+/** Dead cap (buyouts, retained salary) a team carries in `season`. */
+export const deadCap = (state: LeagueState, teamId: TeamId, season: number): Dollars =>
+  state.capCharges
     .filter((c) => c.teamId === teamId && c.season === season)
     .reduce((sum, c) => sum + c.amount, 0);
-  return committed + dead;
-}
 
 /** Cap issues for a total in the cap year: the offseason allowance once the season is over, else the ceiling only. */
 export const capYearIssues = (rules: Ruleset, state: LeagueState, total: Dollars) =>

@@ -30,7 +30,7 @@ import {
   strengthEdge,
   teamStrength,
   type LeagueState,
-  payroll,
+  teamCapTotal,
   validateContract,
 } from '@gm/sim';
 import { fitLinear, pearson, sd } from './stats';
@@ -304,9 +304,9 @@ for (let l = 0; l < leagues; l++) {
     if (!rolled.ok) throw new Error(rolled.error.message);
     teamsOverPlayoffCap += playoffCapBreaches(Object.values(state.players), ctx.ruleset).length;
     maxDrift = Math.max(maxDrift, Math.abs(meanOverall(state) - startRating));
-    for (const id of Object.keys(state.teams)) {
+    for (const id of Object.keys(state.teams) as TeamId[]) {
       const roster = rosterOf(state, id);
-      const total = payroll(roster);
+      const total = teamCapTotal(state, id); // dead cap counts
       payrollShare += total / ctx.ruleset.cap.upperLimit;
       payrollSamples++;
       if (total > ctx.ruleset.cap.upperLimit) teamsOverCap++;

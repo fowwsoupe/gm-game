@@ -20,6 +20,7 @@ export {
   capYearOf,
   capYearIssues,
   teamCapTotal,
+  deadCap,
   buyoutCharges,
   retentionIssues,
   type RetentionIssue,
