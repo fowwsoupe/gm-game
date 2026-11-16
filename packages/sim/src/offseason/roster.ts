@@ -1,6 +1,6 @@
 import type { Contract, Player, TeamId } from '@gm/shared';
 import type { LeagueState } from '../core';
-import { elcYears, maxPlayerCapHit, validateContract, type Ruleset } from '../cba';
+import { elcYears, maxPlayerCapHit, payroll, validateContract, type Ruleset } from '../cba';
 import { marketSalary } from '../value';
 
 /** Players in a stable order (by id), so every step is reproducible whatever the key order. */
@@ -12,9 +12,6 @@ export const rosterOf = (state: LeagueState, teamId: TeamId): Player[] =>
 
 export const freeAgents = (state: LeagueState): Player[] =>
   allPlayers(state).filter((p) => p.teamId === null);
-
-export const payroll = (roster: readonly Player[]): number =>
-  roster.reduce((sum, p) => sum + (p.contract?.capHit ?? 0), 0);
 
 export const countAt = (roster: readonly Player[], position: string): number =>
   roster.filter((p) => p.position === position).length;

@@ -1,3 +1,4 @@
+import type { Player } from '@gm/shared';
 import { pct, type Dollars } from '../core';
 import type { Ruleset } from './ruleset';
 
@@ -5,6 +6,10 @@ import type { Ruleset } from './ruleset';
  * Pure contract rules. Every feature that creates or changes a contract (free agency,
  * extensions, trades, the editor) validates through here, so rules live in one place.
  */
+
+/** Total cap hit of a group of players (a roster, or the players a playoff lineup would dress). */
+export const payroll = (players: readonly Player[]): Dollars =>
+  players.reduce((sum, p) => sum + (p.contract?.capHit ?? 0), 0);
 
 export interface ContractTerms {
   /** Salary for each season of the deal, in order. */

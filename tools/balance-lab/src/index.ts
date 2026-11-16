@@ -22,6 +22,7 @@ import {
   rulesGoalModel,
   teamStrength,
   type LeagueState,
+  payroll,
 } from '@gm/sim';
 
 interface Check {
@@ -147,10 +148,10 @@ for (let l = 0; l < leagues; l++) {
     maxDrift = Math.max(maxDrift, Math.abs(meanOverall(state) - startRating));
     for (const id of Object.keys(state.teams)) {
       const roster = rosterOf(state, id);
-      const payroll = roster.reduce((s, p) => s + (p.contract?.capHit ?? 0), 0);
-      payrollShare += payroll / ctx.ruleset.cap.upperLimit;
+      const total = payroll(roster);
+      payrollShare += total / ctx.ruleset.cap.upperLimit;
       payrollSamples++;
-      if (payroll > ctx.ruleset.cap.upperLimit) teamsOverCap++;
+      if (total > ctx.ruleset.cap.upperLimit) teamsOverCap++;
       const short = Object.entries(ctx.ruleset.roster.positionMin).some(
         ([pos, min]) => roster.filter((p) => p.position === pos).length < min,
       );

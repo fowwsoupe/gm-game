@@ -6,7 +6,7 @@ import {
   type Team,
   type TeamId,
 } from '@gm/shared';
-import type { Ruleset } from '../cba';
+import { payroll, type Ruleset } from '../cba';
 import { overall } from '../players';
 
 /** A fixed bracket: adjacent slots meet, so the top two seeds cannot meet early. */
@@ -179,11 +179,12 @@ export function playoffCapBreaches(players: readonly Player[], ruleset: Ruleset)
     if (p.teamId) byTeam.set(p.teamId, [...(byTeam.get(p.teamId) ?? []), p]);
   }
   const cost = (roster: Player[], goalie: boolean, n: number) =>
-    roster
-      .filter((p) => isGoalie(p.position) === goalie)
-      .sort((a, b) => overall(b) - overall(a))
-      .slice(0, n)
-      .reduce((sum, p) => sum + (p.contract?.capHit ?? 0), 0);
+    payroll(
+      roster
+        .filter((p) => isGoalie(p.position) === goalie)
+        .sort((a, b) => overall(b) - overall(a))
+        .slice(0, n),
+    );
   return [...byTeam]
     .filter(
       ([, roster]) =>
