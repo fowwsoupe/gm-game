@@ -355,6 +355,30 @@ export const en = {
   'palette.team': 'Team',
   'palette.screen': 'Screen',
   'event.lostFreeAgent': '{player} chose the {team} over your offer',
+  'walkthrough.home.title': 'Home',
+  'walkthrough.home.body':
+    "Your team's pulse: next game, standings and the news. Sim from the buttons at the top of the page.",
+  'walkthrough.todo.title': 'To do',
+  'walkthrough.todo.body':
+    'The To do card on Home lists what needs you: expiring contracts, injuries, a short lineup, cap trouble, trade offers. When it is clear, just sim.',
+  'walkthrough.sim.title': 'Sim bar',
+  'walkthrough.sim.body':
+    'Sim day, Sim week or Sim to next event move the calendar. The sim stops for big moments such as the deadline, the playoffs and the end of the season.',
+  'walkthrough.lines.title': 'Roster and Lines',
+  'walkthrough.lines.body':
+    'Roster shows every player card and contract. On Lines, drag players to swap them and set your forward lines, defence pairs, goalie and power-play and penalty-kill units.',
+  'walkthrough.trades.title': 'Trades',
+  'walkthrough.trades.body':
+    'Propose a trade and the other team answers. Watch the deadline: after it, trades close until the offseason. Cmd+K finds any player, team or screen.',
+  'walkthrough.offseason.title': 'The offseason',
+  'walkthrough.offseason.body':
+    'After the playoffs: re-sign your players, run the Draft, press Open free agency, then Next day of free agency to sign players. Finish with Start next season.',
+  'walkthrough.help': 'Walkthrough',
+  'walkthrough.next': 'Next',
+  'walkthrough.back': 'Back',
+  'walkthrough.skip': 'Skip',
+  'walkthrough.done': 'Done',
+  'walkthrough.step': 'Step {n} of {total}',
 } as const;
 
 export type MessageKey = keyof typeof en;

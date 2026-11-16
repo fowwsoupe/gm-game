@@ -1,5 +1,6 @@
 import { useEffect, useState } from 'react';
 import { CommandK } from '@/CommandK';
+import { Walkthrough, walkthroughSeen } from '@/Walkthrough';
 import {
   useDispatch,
   useNewLeague,
@@ -50,6 +51,12 @@ export function App() {
   const { data: status } = useStatus();
   const hasLeague = !isError && teams.length > 0;
   const [searching, setSearching] = useState(false);
+  const [tour, setTour] = useState(false);
+  const [tourChecked, setTourChecked] = useState(false);
+  if (hasLeague && !tourChecked) {
+    setTourChecked(true);
+    if (!walkthroughSeen()) setTour(true);
+  }
   useEffect(() => {
     const onKey = (e: KeyboardEvent) => {
       if ((e.metaKey || e.ctrlKey) && e.key.toLowerCase() === 'k') {
@@ -76,6 +83,7 @@ export function App() {
 
   return (
     <div className="flex h-full">
+      {tour && <Walkthrough onClose={() => setTour(false)} />}
       {searching && <CommandK screens={NAV} onClose={() => setSearching(false)} />}
       <aside className="flex w-56 flex-col gap-1 border-r border-line bg-panel p-3">
         <div className="mb-4 px-2 text-lg font-semibold">{t('app.name')}</div>
@@ -92,6 +100,9 @@ export function App() {
           <span>
             {steam?.enabled ? t('steam.on', { name: steam.playerName ?? '' }) : t('steam.off')}
           </span>
+          <button onClick={() => setTour(true)} className="hover:text-ink">
+            {t('walkthrough.help')}
+          </button>
           <button
             onClick={() => setLocale(locale === 'en' ? 'fr' : 'en')}
             className="uppercase hover:text-ink"

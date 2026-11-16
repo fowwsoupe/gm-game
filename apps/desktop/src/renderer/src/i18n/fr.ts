@@ -354,4 +354,28 @@ export const fr: Record<MessageKey, string> = {
   'palette.team': 'Équipe',
   'palette.screen': 'Écran',
   'event.lostFreeAgent': '{player} a préféré les {team} à votre offre',
+  'walkthrough.home.title': 'Accueil',
+  'walkthrough.home.body':
+    'Le pouls de votre équipe : prochain match, classement et nouvelles. Simulez avec les boutons en haut de la page.',
+  'walkthrough.todo.title': 'À faire',
+  'walkthrough.todo.body':
+    "La carte À faire sur l'accueil liste ce qui demande votre attention : contrats, blessures, alignement incomplet, masse salariale, offres d'échange. Si elle est vide, simulez.",
+  'walkthrough.sim.title': 'Barre de simulation',
+  'walkthrough.sim.body':
+    "Simuler un jour, une semaine ou jusqu'au prochain événement fait avancer le calendrier. La simulation s'arrête aux grands moments : date limite, séries, fin de saison.",
+  'walkthrough.lines.title': 'Effectif et trios',
+  'walkthrough.lines.body':
+    "Effectif montre chaque joueur et son contrat. Sur Trios, glissez les joueurs pour les échanger et régler vos trios, paires, gardien et unités d'avantage et de désavantage numérique.",
+  'walkthrough.trades.title': 'Échanges',
+  'walkthrough.trades.body':
+    "Proposez un échange et l'autre équipe répond. Attention à la date limite : ensuite, les échanges ferment jusqu'à la saison morte. Cmd+K trouve tout joueur, équipe ou écran.",
+  'walkthrough.offseason.title': 'La saison morte',
+  'walkthrough.offseason.body':
+    'Après les séries : re-signez vos joueurs, tenez le repêchage, ouvrez la période des joueurs autonomes, puis passez les jours pour signer des joueurs. Terminez avec Commencer la saison suivante.',
+  'walkthrough.help': 'Visite guidée',
+  'walkthrough.next': 'Suivant',
+  'walkthrough.back': 'Retour',
+  'walkthrough.skip': 'Passer',
+  'walkthrough.done': 'Terminer',
+  'walkthrough.step': 'Étape {n} sur {total}',
 };
