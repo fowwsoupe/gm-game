@@ -79,6 +79,12 @@ describe('offseason rollover', () => {
     expect(Object.keys(state.playoffSeries)).toHaveLength(0);
     expect(state.schedule.every((g) => g.date.season === startSeason + 1)).toBe(true);
     expect(events.at(-1)?.kind).toBe('season.phaseChanged');
+    // First summer: every AI team gets a plan, but setting one is not news, only changing it is.
+    expect(events.filter((e) => e.kind === 'team.planChanged').length).toBeGreaterThan(0);
+    const planNews = events.filter(
+      (e) => e.kind === 'news.posted' && e.headline.startsWith('event.plan'),
+    );
+    expect(planNews).toEqual([]);
     // The new season can be played straight away.
     run(state, { kind: 'sim.advance', days: 10 });
     expect(Object.keys(state.results).length).toBeGreaterThan(0);
