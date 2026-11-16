@@ -8,7 +8,7 @@ ml/
   data/processed/   # cleaned features (git-ignored)
   notebooks/        # exploration
   src/              # training scripts
-../models/          # exported .onnx files the game loads (committed, keep them small)
+models/           # exported model tables (JSON) the game loads (committed, keep them small)
 ```
 
 ## M1 data contract
@@ -93,8 +93,10 @@ include the season-held-out study. Raw and processed files remain git-ignored;
 
 Build features from fields available to the game. If a model needs something the game
 doesn't track, it can't be used in-game. Train with scikit-learn / XGBoost / PyTorch,
-export to ONNX in `../models/`, and compare against the rules-based fallback with fixed
-seeds before switching.
+then export the model as a data table in `models/` (the sim has no ONNX runtime; ONNX is
+fine as a training-side step before sampling the table). Formats are in
+[`docs/MODEL_CONTRACTS.md`](../docs/MODEL_CONTRACTS.md). Compare against the rules-based
+fallback with fixed seeds before switching.
 
 ## Good first models
 

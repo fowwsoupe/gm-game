@@ -78,8 +78,8 @@ export interface ShotInfo {
 
 /**
  * Anything that can say how likely a shot is to be a goal against an average goalie (expected
- * goals). The default is rules-based; an ML shot-quality model (ONNX, trained in /ml) can
- * implement the same interface. The engine adds the goalie's effect on top.
+ * goals). The default is rules-based; an ML shot-quality model (trained in /ml, shipped as
+ * a `gm-xg-table`, see xgTable.ts) can implement the same interface. The engine adds the goalie's effect on top.
  */
 export interface GoalModel {
   shotXg(shot: ShotInfo): number;

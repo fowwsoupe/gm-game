@@ -3,16 +3,12 @@
 from __future__ import annotations
 
 import argparse
-import csv
 import json
 import math
 from collections import defaultdict
 from pathlib import Path
 
-
-def _read(path: Path) -> list[dict[str, str]]:
-    with path.open(newline="", encoding="utf-8") as stream:
-        return list(csv.DictReader(stream))
+from ml.src.study import _rows
 
 
 def _pearson(pairs: list[tuple[float, float]]) -> float | None:
@@ -28,9 +24,9 @@ def _pearson(pairs: list[tuple[float, float]]) -> float | None:
 
 
 def analyze(processed: Path) -> dict:
-    shots = _read(processed / "shots.csv")
-    teams = _read(processed / "team_seasons.csv")
-    players = _read(processed / "player_features.csv")
+    shots = _rows(processed / "shots.csv")
+    teams = _rows(processed / "team_seasons.csv")
+    players = _rows(processed / "player_features.csv")
     by_distance = defaultdict(lambda: [0, 0])
     by_type = defaultdict(lambda: [0, 0])
     for shot in shots:
