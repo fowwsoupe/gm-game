@@ -14,7 +14,7 @@ import { computeStandings, makeSchedule } from '../league';
 import type { SimContext } from '../context';
 import { runDraft } from './draft';
 
-export { lotteryOrder } from './draft';
+export { lotteryOrder, announceDraftClass } from './draft';
 export { signingInterest, signFreeAgent } from './signing';
 export { resignOffers, resignContract, isExpiring } from './resign';
 import { expireContracts, fillRosters, meetCapFloor, reSignPlayers } from './freeAgency';

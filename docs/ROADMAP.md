@@ -48,10 +48,10 @@ Build order, owners and "done when" for each step: **[V0.1_PLAN.md](V0.1_PLAN.md
 - [~] Trades v1: surplus value per team (status, rentals, negative contracts), anti-quantity, cap and position checks, AI explains itself, trade screen done; picks, retention, trade block, AI-to-AI trades to do
 - [~] Contracts & cap: CBA checks, buyouts, cap sheet screen, cap advisor and offseason re-signing done; RFA / UFA, bonuses, trade protection, in-season extensions to do
 - [~] Free agency v1: free-agency window in the summer, offers with an interest meter (money, winning, role, term weighted by age), signings any time outside the playoffs done; personalities, loyalty and hometown discounts, AI bidding to do
-- [ ] Draft v1: visual board, follow list, floor/ceiling ranges, scout reports
+- [~] Draft v1: class announced after the playoffs with scouted potential ranges (AI sees the same ranges), your ranked list drives your picks; scout reports and draft-room trades to do
 - [x] Playoffs: bracket, NHL-style wild cards, honest momentum (per-game goalie form, calibrated), Playoff MVP, playoff cap; the cup is "Champion" until it is named
 - [x] Awards, records, history (own award names, Playoff MVP included)
-- [ ] Living league: feed, league pulse, sim until it matters, playoff odds + race nights
+- [~] Living league: feed, league pulse, playoff odds and power rating on the standings done; race nights, richer feed to do
 - [ ] Chemistry: visible, changeable, capped
 
 **Screens**

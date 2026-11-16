@@ -300,3 +300,34 @@ export interface SigningInterest {
   threshold: number;
   factors: { key: 'money' | 'winning' | 'role' | 'term'; score: number; weight: number }[];
 }
+
+/**
+ * A draft-eligible player. The sim keeps the whole player (true potential hidden); everyone,
+ * AI teams included, sees only the scouted potential range `low`–`high`.
+ */
+export interface DraftProspect {
+  player: Player;
+  low: number;
+  high: number;
+}
+
+/** A prospect as the draft board shows him: no hidden ratings. */
+export interface DraftBoardEntry {
+  id: PlayerId;
+  firstName: string;
+  lastName: string;
+  position: string;
+  age: number;
+  low: number;
+  high: number;
+}
+
+/** One team's league pulse: playoff odds, power rating and status. */
+export interface PulseRow {
+  teamId: TeamId;
+  /** Chance to make the playoffs, 0–1. */
+  playoffOdds: number;
+  /** Win share from scoring so far, 0–1 (the power ranking orders by it). */
+  rating: number;
+  status: 'contender' | 'buyer' | 'bubble' | 'seller' | 'rebuilder' | 'crisis';
+}

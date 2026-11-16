@@ -1,14 +1,45 @@
-import type { Player, TeamId } from '@gm/shared';
+import type { DraftProspect, Player, TeamId } from '@gm/shared';
 import type { Emit, LeagueState, Rng } from '../core';
 import type { SimContext } from '../context';
 import { entryContract, rosterOf } from './roster';
 
+/** How far a scout's read of a prospect's potential is off, on average (rating points). */
+const SCOUT_SD = 4;
+/** Half the width of the scouted range. */
+const SCOUT_HALF_RANGE = 5;
+
+const clampRating = (n: number) => Math.max(1, Math.min(99, Math.round(n)));
+const scouted = (d: DraftProspect) => (d.low + d.high) / 2;
+
 /**
- * Step 4: a fictional draft class, worst team picks first, best prospect (by potential) goes
- * first. Drafted players sign an entry-level contract; a pick the team cannot fit under the
- * cap is released into the free-agent pool instead.
- * Round one follows the lottery; later rounds go worst to best.
- * TODO(feature): scouting uncertainty, draft rights and prospects kept off the roster.
+ * Next season's draft class with its scouted ranges, best scouted first. Every team sees the
+ * same range; the true potential stays hidden, so some picks bust and some go late and boom.
+ */
+export function draftClass(state: LeagueState, ctx: SimContext, rng: Rng): DraftProspect[] {
+  const season = state.date.season + 1;
+  const count = Object.keys(state.teams).length * ctx.ruleset.draft.rounds;
+  return Array.from({ length: count }, (_, i) => {
+    const player = ctx.sport.generateProspect(rng, { id: `d${season}_${i}`, season });
+    const read = player.potential + rng.normal(0, SCOUT_SD);
+    return {
+      player,
+      low: clampRating(read - SCOUT_HALF_RANGE),
+      high: clampRating(read + SCOUT_HALF_RANGE),
+    };
+  }).sort((a, b) => scouted(b) - scouted(a) || a.player.id.localeCompare(b.player.id));
+}
+
+/** Announces the class once the champion is crowned, so teams can scout and rank it. */
+export function announceDraftClass(state: LeagueState, ctx: SimContext, rng: Rng, emit: Emit) {
+  emit('notable', [], { kind: 'draft.classAnnounced', prospects: draftClass(state, ctx, rng) });
+}
+
+/**
+ * Step 4: the draft. Round one follows the lottery; later rounds go worst to best. Each team
+ * takes the first player still on its board, else the best scouted one left. Drafted players
+ * sign an entry-level contract; a pick the team cannot fit under the cap goes to the free-agent
+ * pool instead. A league with no announced class (an old save) gets one now.
+ * TODO(feature): draft rights and prospects kept off the roster.
  */
 export function runDraft(
   state: LeagueState,
@@ -34,13 +65,17 @@ export function runDraft(
       params: { team: `${team.city} ${team.name}` },
     });
   }
-  const count = order.length * ctx.ruleset.draft.rounds;
-  const prospects = Array.from({ length: count }, (_, i) =>
-    ctx.sport.generateProspect(rng, { id: `d${season}_${i}`, season }),
-  ).sort((a, b) => b.potential - a.potential || a.id.localeCompare(b.id));
+  const pool = state.draftClass.length
+    ? [...state.draftClass]
+    : draftClass(state, ctx, rng.fork('class'));
 
-  prospects.forEach((prospect, i) => {
+  for (let i = 0; pool.length > 0 && i < order.length * ctx.ruleset.draft.rounds; i++) {
     const teamId = (i < order.length ? firstRound : order)[i % order.length]!;
+    const board = state.draftBoards[teamId] ?? [];
+    const wanted = board
+      .map((id) => pool.findIndex((d) => d.player.id === id))
+      .find((at) => at >= 0);
+    const [{ player: prospect }] = pool.splice(wanted ?? 0, 1) as [DraftProspect];
     const contract = entryContract(ctx.ruleset, rosterOf(state, teamId), prospect, season);
     const player: Player = contract ? { ...prospect, teamId, contract } : prospect;
     emit('minor', [teamId], {
@@ -49,7 +84,7 @@ export function runDraft(
       round: Math.floor(i / order.length) + 1,
       pick: i + 1,
     });
-  });
+  }
 }
 
 /**

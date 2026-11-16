@@ -12,6 +12,8 @@ import {
   phaseOf,
   parseXgTable,
   playerProfiles,
+  playoffOdds,
+  teamRatings,
   evaluateTrade,
   signingInterest,
   tradeWindowOpen,
@@ -32,6 +34,7 @@ import type {
   Importance,
   LeagueEvent,
   LeagueStatus,
+  PulseRow,
   RosterPlayer,
   TeamId,
   TradeProposal,
@@ -303,6 +306,52 @@ export class LeagueService {
       freeAgencyOpen: state.freeAgencyOpen,
       tradeDeadlineDay: cal.tradeDeadlineDay,
       tradesOpen: tradeWindowOpen(state, ctx),
+    };
+  }
+
+  /** Odds from 1,000 runs of the rest of the season, seeded by the league so it is stable between refreshes. */
+  pulse(): PulseRow[] {
+    const { state } = this.open();
+    const { ruleset, sport } = defaultContext(state.rulesetId);
+    const teams = Object.values(state.teams);
+    const results = Object.values(state.results);
+    const odds = playoffOdds({
+      teams,
+      schedule: state.schedule,
+      results,
+      ruleset,
+      season: state.date.season,
+      exponent: sport.pythagoreanExponent,
+      rng: new Rng(state.rngState),
+      sims: 1000,
+    });
+    const rows = computeStandings(
+      teams.map((t) => t.id),
+      results,
+      ruleset.season.points,
+    );
+    const rating = teamRatings(rows, sport.pythagoreanExponent);
+    return teams.map((t) => ({
+      teamId: t.id,
+      playoffOdds: odds.get(t.id) ?? 0,
+      rating: rating.get(t.id) ?? 0.5,
+      status: state.teamStatus[t.id] ?? 'bubble',
+    }));
+  }
+
+  draftClass(teamId: TeamId) {
+    const { state } = this.open();
+    return {
+      prospects: state.draftClass.map(({ player: p, low, high }) => ({
+        id: p.id,
+        firstName: p.firstName,
+        lastName: p.lastName,
+        position: p.position,
+        age: state.date.season + 1 - p.birthYear,
+        low,
+        high,
+      })),
+      board: state.draftBoards[teamId] ?? [],
     };
   }
 

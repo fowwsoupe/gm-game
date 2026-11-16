@@ -125,3 +125,22 @@ export function BroadcastCaption({
     </div>
   );
 }
+
+/** A range on a 0–100 track (a scouted potential range): the band from `low` to `high`. */
+export function RangeBar({ low, high }: { low: number; high: number }) {
+  const lo = Math.max(0, Math.min(100, low));
+  const hi = Math.max(lo, Math.min(100, high));
+  return (
+    <div className="flex items-center gap-2 text-sm">
+      <div className="relative h-2 flex-1 overflow-hidden rounded-full bg-panel-2">
+        <div
+          className="absolute h-full bg-accent"
+          style={{ left: `${lo}%`, width: `${hi - lo}%` }}
+        />
+      </div>
+      <span className="tabular w-14 text-right">
+        {lo}–{hi}
+      </span>
+    </div>
+  );
+}

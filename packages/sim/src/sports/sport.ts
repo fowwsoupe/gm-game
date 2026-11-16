@@ -33,6 +33,9 @@ export interface SportModule<Strength = unknown> {
   /** Rating keys per position group, so UI and ML know which ratings exist. */
   ratingKeys: (position: string) => readonly string[];
 
+  /** Pythagorean exponent for win share from scoring (hockey about 2), for odds and power rankings. */
+  pythagoreanExponent: number;
+
   /** Rules shipped with the sport (season length, cap, contracts...). */
   defaultRuleset: Ruleset;
 

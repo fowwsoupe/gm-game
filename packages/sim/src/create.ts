@@ -43,6 +43,8 @@ export function createLeague(
     championTeamId: null,
     capCharges: [],
     freeAgencyOpen: false,
+    draftClass: [],
+    draftBoards: {},
     eventSeq: 0,
   };
 }

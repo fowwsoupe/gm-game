@@ -6,5 +6,6 @@
 export { makeSchedule } from './schedule';
 export { computeStandings } from './standings';
 export { classifyTeams } from './status';
+export { playoffOdds, teamRatings } from './odds';
 export { bracketSeeds, seedPlayoffs, nextRound, playoffCapBreaches } from './playoffs';
 export { playerRecords, teamRecords } from './records';

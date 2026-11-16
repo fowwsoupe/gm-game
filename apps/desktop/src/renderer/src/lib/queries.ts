@@ -54,6 +54,14 @@ export const useTradeEvaluation = (proposal: TradeProposal | undefined) =>
     queryFn: () => window.gm.league.evaluateTrade(proposal!),
     enabled: !!proposal && proposal.give.length + proposal.get.length > 0,
   });
+export const useDraftClass = (teamId: TeamId | undefined) =>
+  useQuery({
+    queryKey: ['league', 'draftClass', teamId] as const,
+    queryFn: () => window.gm.league.draftClass({ teamId: teamId! }),
+    enabled: !!teamId,
+  });
+export const usePulse = () =>
+  useQuery({ queryKey: ['league', 'pulse'] as const, queryFn: () => window.gm.league.pulse() });
 export const useStatus = () =>
   useQuery({ queryKey: ['league', 'status'] as const, queryFn: () => window.gm.league.status() });
 export const useSigningInterest = (

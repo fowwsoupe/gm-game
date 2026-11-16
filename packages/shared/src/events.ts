@@ -1,6 +1,7 @@
 import type {
   CapCharge,
   Contract,
+  DraftProspect,
   GameResult,
   Player,
   PlayerId,
@@ -81,6 +82,10 @@ export type LeagueEvent =
       teamId: TeamId;
       playerId?: PlayerId;
     })
+  /** The playoffs are over: next draft's class, with scouted ranges. */
+  | (EventBase & { kind: 'draft.classAnnounced'; prospects: DraftProspect[] })
+  /** A team ranked the prospects it wants; its picks follow this order. */
+  | (EventBase & { kind: 'draft.boardSet'; teamId: TeamId; order: PlayerId[] })
   /** The offseason's free-agency window opened (closes when the next season starts). */
   | (EventBase & { kind: 'freeAgency.opened' })
   /** A new season: fresh schedule, clock back to opening night, results cleared. */

@@ -6,7 +6,7 @@ import type { Locale } from '@/i18n';
  * Game state lives in the save file in the main process, never here.
  */
 export type Screen =
-  'home' | 'standings' | 'roster' | 'trades' | 'cap' | 'games' | 'leaders' | 'history';
+  'home' | 'standings' | 'roster' | 'trades' | 'draft' | 'cap' | 'games' | 'leaders' | 'history';
 
 interface UiState {
   screen: Screen;
