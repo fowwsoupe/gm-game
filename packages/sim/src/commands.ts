@@ -20,7 +20,7 @@ import {
 import { buyoutCharges } from './cba';
 import { classifyTeams, computeStandings, nextRound, seedPlayoffs } from './league';
 import { giveSeasonAwards } from './awards';
-import { rolloverSeason } from './offseason';
+import { isExpiring, resignContract, rolloverSeason } from './offseason';
 import type { SimContext } from './context';
 
 /**
@@ -91,6 +91,38 @@ export function handleCommand(
         playerId: player.id,
         teamId: team.id,
         charges,
+      });
+      applyEvent(state, ev);
+      return { ok: true, events: [ev] };
+    }
+
+    case 'contract.resign': {
+      const player = state.players[command.playerId];
+      const team = player?.teamId ? state.teams[player.teamId] : undefined;
+      if (!player || !team) {
+        return { ok: false, error: { code: 'invalid', message: 'unknown player' } };
+      }
+      const yours =
+        actor.controls.includes(team.id) || (actor.id === 'local' && team.userControlled);
+      if (!yours) return { ok: false, error: { code: 'not_allowed', message: 'not your team' } };
+      if (!state.championTeamId || !isExpiring(state, player)) {
+        return {
+          ok: false,
+          error: { code: 'invalid', message: 'only expiring contracts, once the season is over' },
+        };
+      }
+      const deal = resignContract(state, ctx, player, command.years);
+      if ('issues' in deal) {
+        return {
+          ok: false,
+          error: { code: 'invalid', message: `illegal contract: ${deal.issues[0]!.code}` },
+        };
+      }
+      const ev = makeEvent(state, 'notable', [team.id], {
+        kind: 'player.signed',
+        playerId: player.id,
+        teamId: team.id,
+        contract: deal.contract,
       });
       applyEvent(state, ev);
       return { ok: true, events: [ev] };

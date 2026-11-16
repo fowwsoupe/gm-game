@@ -62,6 +62,26 @@ export interface CapSheet {
   seasons: CapSeason[];
 }
 
+/** What a player on a team asks to re-sign, and what that deal does to each cap season. */
+export interface ResignOffer {
+  playerId: PlayerId;
+  /** Asking cap hit per year, whole dollars. */
+  ask: number;
+  maxYears: number;
+  /** Per season of the team's cap sheet: the cap issues if he is signed through that season. */
+  issues: CapIssue[][];
+}
+
+/** A player as the roster and cap screens see him (no hidden ratings). */
+export interface RosterPlayer {
+  id: PlayerId;
+  firstName: string;
+  lastName: string;
+  birthYear: number;
+  position: string;
+  contract?: Contract;
+}
+
 export interface Player {
   id: PlayerId;
   firstName: string;

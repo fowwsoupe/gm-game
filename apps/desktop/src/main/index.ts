@@ -56,6 +56,10 @@ function registerIpc() {
   ipcMain.handle(IPC.records, () => league.records());
   ipcMain.handle(IPC.leaders, () => league.leaders());
   ipcMain.handle(IPC.capSheet, (_e, input: { teamId: TeamId }) => league.capSheet(input.teamId));
+  ipcMain.handle(IPC.roster, (_e, input: { teamId: TeamId }) => league.roster(input.teamId));
+  ipcMain.handle(IPC.resignOffers, (_e, input: { teamId: TeamId }) =>
+    league.resignOffers(input.teamId),
+  );
   ipcMain.handle(IPC.feedList, (_e, input: { limit: number; minImportance?: Importance }) =>
     league.feed(input.limit, input.minImportance),
   );

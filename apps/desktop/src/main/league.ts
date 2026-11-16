@@ -11,10 +11,19 @@ import {
   defaultContext,
   phaseOf,
   playerRecords,
+  resignOffers,
   teamRecords,
   type LeagueState,
 } from '@gm/sim';
-import type { Actor, Command, CommandResult, Importance, LeagueEvent, TeamId } from '@gm/shared';
+import type {
+  Actor,
+  Command,
+  CommandResult,
+  Importance,
+  LeagueEvent,
+  RosterPlayer,
+  TeamId,
+} from '@gm/shared';
 import createSimWorker from './sim.worker?nodeWorker';
 import type { WorkerRequest } from './sim.worker';
 
@@ -148,6 +157,25 @@ export class LeagueService {
       years: ruleset.contracts.maxYearsResign,
       phase: over ? 'offseason' : phaseOf(ruleset.season.calendar, state.date),
     });
+  }
+
+  /** Players on the team now, including ones whose contract ends this season. */
+  roster(teamId: TeamId): RosterPlayer[] {
+    return Object.values(this.open().state.players)
+      .filter((p) => p.teamId === teamId)
+      .map(({ id, firstName, lastName, birthYear, position, contract }) => ({
+        id,
+        firstName,
+        lastName,
+        birthYear,
+        position,
+        ...(contract && { contract }),
+      }));
+  }
+
+  resignOffers(teamId: TeamId) {
+    const { state } = this.open();
+    return resignOffers(state, defaultContext(state.rulesetId), teamId);
   }
 
   feed(limit: number, minImportance?: Importance): LeagueEvent[] {

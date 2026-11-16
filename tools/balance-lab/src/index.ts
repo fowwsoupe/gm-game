@@ -133,6 +133,17 @@ let teamsOverPlayoffCap = 0;
 let maxPool = 0;
 for (let l = 0; l < leagues; l++) {
   const state = createLeague(firstSeed + l, ctx);
+  // The lab measures the AI: with no human GM, every team re-signs its own players.
+  for (const team of Object.values(state.teams)) {
+    if (!team.userControlled) continue;
+    const off = handleCommand(
+      state,
+      { kind: 'team.setUserControlled', teamId: team.id, userControlled: false },
+      { id: 'lab', controls: [team.id] },
+      ctx,
+    );
+    if (!off.ok) throw new Error(off.error.message);
+  }
   const startRating = meanOverall(state);
   const titles = new Map<TeamId, number>();
   for (let y = 0; y < years; y++) {

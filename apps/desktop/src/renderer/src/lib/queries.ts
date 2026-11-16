@@ -1,5 +1,5 @@
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
-import type { Command } from '@gm/shared';
+import type { Command, TeamId } from '@gm/shared';
 
 /** All data hooks in one place so query keys stay consistent. */
 export const keys = {
@@ -10,6 +10,9 @@ export const keys = {
   records: ['league', 'records'] as const,
   leaders: ['league', 'leaders'] as const,
   feed: ['league', 'feed'] as const,
+  capSheet: (teamId: TeamId) => ['league', 'capSheet', teamId] as const,
+  roster: (teamId: TeamId) => ['league', 'roster', teamId] as const,
+  resignOffers: (teamId: TeamId) => ['league', 'resignOffers', teamId] as const,
   steam: ['steam'] as const,
 };
 
@@ -25,6 +28,24 @@ export const useLeaders = () =>
   useQuery({ queryKey: keys.leaders, queryFn: () => window.gm.league.leaders() });
 export const useRecords = () =>
   useQuery({ queryKey: keys.records, queryFn: () => window.gm.league.records() });
+export const useCapSheet = (teamId: TeamId | undefined) =>
+  useQuery({
+    queryKey: keys.capSheet(teamId!),
+    queryFn: () => window.gm.league.capSheet({ teamId: teamId! }),
+    enabled: !!teamId,
+  });
+export const useRoster = (teamId: TeamId | undefined) =>
+  useQuery({
+    queryKey: keys.roster(teamId!),
+    queryFn: () => window.gm.league.roster({ teamId: teamId! }),
+    enabled: !!teamId,
+  });
+export const useResignOffers = (teamId: TeamId | undefined) =>
+  useQuery({
+    queryKey: keys.resignOffers(teamId!),
+    queryFn: () => window.gm.league.resignOffers({ teamId: teamId! }),
+    enabled: !!teamId,
+  });
 export const useSteam = () =>
   useQuery({ queryKey: keys.steam, queryFn: () => window.gm.steam.status() });
 
