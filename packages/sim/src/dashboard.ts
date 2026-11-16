@@ -17,7 +17,8 @@ export function dashboard(state: LeagueState, ctx: SimContext, teamId: TeamId): 
   const roster = Object.values(state.players).filter((p) => p.teamId === teamId);
   const todo: TodoItem[] = [];
 
-  const expiring = resignOffers(state, ctx, teamId).length;
+  // Extensions are optional in season; after the final it is now or never.
+  const expiring = state.championTeamId ? resignOffers(state, ctx, teamId).length : 0;
   if (expiring > 0 && !state.freeAgencyOpen) {
     todo.push({ code: 'resign', params: { count: expiring }, screen: 'cap' });
   }

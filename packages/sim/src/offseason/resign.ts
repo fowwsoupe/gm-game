@@ -1,22 +1,27 @@
 import type { Contract, Player, ResignOffer, TeamId } from '@gm/shared';
-import type { LeagueState } from '../core';
+import { phaseOf, type LeagueState } from '../core';
 import { capIssues, capSheet, validateContract, type ContractIssue } from '../cba';
 import type { SimContext } from '../context';
 import { ageIn, rosterOf } from './roster';
 
 /**
- * The re-sign window: after the champion is crowned and before the rollover, a team may sign
- * its players whose contracts end this season. Negotiation is a flat ask for v0.1: the market
+ * The re-sign window: during the season (an extension that starts next season) and after the
+ * champion is crowned until free agency opens, a team may sign its players whose contracts end
+ * this season. Not during the playoffs. Negotiation is a flat ask for v0.1: the market
  * salary, any term the CBA allows. The cap advisor shows what a deal would do to each season;
  * only CBA contract rules (term, minimum, maximum) can refuse a deal, never the cap.
  */
 
 const expiring = (state: LeagueState, p: Player) =>
-  p.contract !== undefined && p.contract.expiresAfterSeason <= state.date.season;
+  p.contract !== undefined && p.contract.expiresAfterSeason <= state.date.season && !p.extension;
+
+/** Re-signing is open: in season (extensions) and once the champion is crowned, not in the playoffs. */
+export const resignWindowOpen = (state: LeagueState, ctx: SimContext) =>
+  state.championTeamId !== null || phaseOf(ctx.ruleset.season.calendar, state.date) !== 'playoffs';
 
 /** What each expiring player on `teamId` asks, and how his deal would affect the team's cap. */
 export function resignOffers(state: LeagueState, ctx: SimContext, teamId: TeamId): ResignOffer[] {
-  if (!state.championTeamId) return [];
+  if (!resignWindowOpen(state, ctx)) return [];
   const { ruleset } = ctx;
   const season = state.date.season + 1;
   const sheet = capSheet(ruleset, {

@@ -283,3 +283,48 @@ describe('re-sign command', () => {
     expect(signedEarly).toBe(false);
   });
 });
+
+describe('in-season extensions', () => {
+  it('signs now, keeps this season as it was, and starts at the summer', () => {
+    const state = createLeague(61, ctx);
+    const mine = Object.values(state.teams).find((t) => t.userControlled)!.id;
+    handleCommand(state, { kind: 'sim.advance', days: 40 }, local, ctx);
+    const offer = resignOffers(state, ctx, mine)[0];
+    if (!offer) throw new Error('no expiring player in this league');
+    const before = structuredClone(state.players[offer.playerId]!.contract);
+    const res = handleCommand(
+      state,
+      { kind: 'contract.resign', playerId: offer.playerId, years: 3 },
+      local,
+      ctx,
+    );
+    if (!res.ok) throw new Error(res.error.message);
+    expect(res.events[0]!.kind).toBe('contract.extended');
+    const p = state.players[offer.playerId]!;
+    expect(p.contract).toEqual(before);
+    expect(p.extension).toEqual({ capHit: offer.ask, expiresAfterSeason: state.date.season + 3 });
+    // Off the re-sign list, on next season's books.
+    expect(resignOffers(state, ctx, mine).some((o) => o.playerId === p.id)).toBe(false);
+    const sheet = capSheet(ctx.ruleset, {
+      teamId: mine,
+      players: Object.values(state.players),
+      charges: [],
+      fromSeason: state.date.season,
+      years: 3,
+      phase: 'regular',
+    });
+    expect(sheet.seasons[1]!.contracts.find((c) => c.playerId === p.id)?.capHit).toBe(offer.ask);
+
+    // No extensions in the playoffs; at the summer the extension becomes his contract.
+    handleCommand(state, { kind: 'sim.advance', days: 400, stopOn: 'never' }, local, ctx);
+    handleCommand(state, { kind: 'season.rollover' }, local, ctx);
+    expect(state.players[p.id]?.teamId ?? mine).toBe(mine);
+    if (state.players[p.id]) {
+      expect(state.players[p.id]!.contract).toEqual({
+        capHit: offer.ask,
+        expiresAfterSeason: state.date.season + 2,
+      });
+      expect(state.players[p.id]!.extension).toBeUndefined();
+    }
+  });
+});

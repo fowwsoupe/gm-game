@@ -65,6 +65,13 @@ export type LeagueEvent =
     })
   /** Hurt in a game: out until day `until` (first day back) of the current season. */
   | (EventBase & { kind: 'player.injured'; playerId: PlayerId; days: number; until: number })
+  /** In-season extension: `contract` starts when his current deal ends. */
+  | (EventBase & {
+      kind: 'contract.extended';
+      playerId: PlayerId;
+      teamId: TeamId;
+      contract: Contract;
+    })
   /** Contract ran out: the player becomes a free agent. */
   | (EventBase & { kind: 'contract.expired'; playerId: PlayerId })
   /**

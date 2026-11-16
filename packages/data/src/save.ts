@@ -53,6 +53,7 @@ interface PlayerRow {
   potential: number;
   ratings_json: string;
   contract_json: string | null;
+  extension_json: string | null;
   injured_until: number | null;
 }
 
@@ -262,9 +263,11 @@ export class SaveFile {
     const setRatings = this.db.prepare(
       'UPDATE players SET ratings_json = ?, potential = ? WHERE id = ?',
     );
+    // Any contract change ends a pending extension (signing it, expiry, buyout).
     const setContract = this.db.prepare(
-      'UPDATE players SET team_id = ?, contract_json = ? WHERE id = ?',
+      'UPDATE players SET team_id = ?, contract_json = ?, extension_json = NULL WHERE id = ?',
     );
+    const setExtension = this.db.prepare('UPDATE players SET extension_json = ? WHERE id = ?');
     const retire = this.db.prepare(
       'UPDATE players SET retired_season = ?, team_id = NULL, contract_json = NULL WHERE id = ?',
     );
@@ -398,6 +401,9 @@ export class SaveFile {
           case 'team.controlChanged':
             setControl.run(e.userControlled ? 1 : 0, e.teamId);
             break;
+          case 'contract.extended':
+            setExtension.run(JSON.stringify(e.contract), e.playerId);
+            break;
           case 'stats.archived':
             for (const l of e.lines) {
               archiveLine.run(l.playerId, e.season, l.teamId, JSON.stringify(l.stats));
@@ -520,6 +526,7 @@ export class SaveFile {
         ratings: JSON.parse(r.ratings_json),
       };
       if (r.contract_json) p.contract = JSON.parse(r.contract_json);
+      if (r.extension_json) p.extension = JSON.parse(r.extension_json);
       if (r.injured_until !== null) p.injuredUntil = r.injured_until;
       return p;
     });

@@ -33,14 +33,24 @@ const RESIGN_SLACK = 8;
 const wantedYears = (age: number, rng: Rng) => rng.int(1, age < 28 ? 5 : age < 32 ? 3 : 2);
 
 /**
- * Step 3: contracts that ran out make the player a free agent.
- * Returns who expired from which team, so that team can try to re-sign them first.
+ * Step 3: contracts that ran out make the player a free agent, unless he signed an extension
+ * in season: then the extension starts. Returns who expired from which team, so that team can
+ * try to re-sign them first.
  */
 export function expireContracts(state: LeagueState, emit: Emit): Map<TeamId, PlayerId[]> {
   const expiring = new Map<TeamId, PlayerId[]>();
   for (const p of allPlayers(state)) {
     if (p.teamId === null || !p.contract || p.contract.expiresAfterSeason > state.date.season)
       continue;
+    if (p.extension) {
+      emit('minor', [p.teamId], {
+        kind: 'player.signed',
+        playerId: p.id,
+        teamId: p.teamId,
+        contract: p.extension,
+      });
+      continue;
+    }
     expiring.set(p.teamId, [...(expiring.get(p.teamId) ?? []), p.id]);
     emit('minor', [p.teamId], { kind: 'contract.expired', playerId: p.id });
   }
