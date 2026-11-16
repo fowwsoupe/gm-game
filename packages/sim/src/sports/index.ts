@@ -6,9 +6,11 @@ export type { RosterImport, SportModule } from './sport';
 export {
   hockeySport,
   NHL_2026,
+  FICTIONAL_2026,
   simGame,
   rulesGoalModel,
   HOCKEY_TUNING,
+  HOCKEY_DEVELOPMENT,
   teamStrength,
   importHockeyRoster,
   exportHockeyRoster,

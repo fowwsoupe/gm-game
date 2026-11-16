@@ -2,8 +2,9 @@ import { GOALIE_RATINGS, HOCKEY_POSITIONS, isGoalie, SKATER_RATINGS } from '@gm/
 import type { SportModule } from '../sport';
 import { simGame, rulesGoalModel, type GoalModel } from './game';
 import { teamStrength, type TeamStrength } from './strength';
-import { generateFictionalLeague } from './generate';
+import { generateFictionalLeague, generateProspect } from './generate';
 import { NHL_2026 } from './ruleset-nhl-2026';
+import { pickAwards } from './awards';
 import { importHockeyRoster } from './roster';
 
 /**
@@ -20,13 +21,16 @@ export function hockeySport(goalModel: GoalModel = rulesGoalModel): SportModule<
     ratingKeys: (position) => (isGoalie(position) ? GOALIE_RATINGS : SKATER_RATINGS),
     defaultRuleset: NHL_2026,
     generateLeague: generateFictionalLeague,
+    generateProspect,
+    pickAwards,
     importRoster: importHockeyRoster,
     teamStrength,
     simGame: (game, rng) => simGame(game, rng, goalModel),
   };
 }
 
-export { NHL_2026 } from './ruleset-nhl-2026';
+export { NHL_2026, FICTIONAL_2026 } from './ruleset-nhl-2026';
 export { simGame, rulesGoalModel, HOCKEY_TUNING, type GoalModel, type MatchupInput } from './game';
 export { teamStrength, type TeamStrength } from './strength';
 export { importHockeyRoster, exportHockeyRoster } from './roster';
+export { HOCKEY_DEVELOPMENT } from './aging';

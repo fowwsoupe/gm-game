@@ -66,4 +66,38 @@ export const migrations: readonly string[] = [
 
   ALTER TABLE teams ADD COLUMN status TEXT NOT NULL DEFAULT 'bubble';
   `,
+  // 3: playoff game identity and series state.
+  `
+  ALTER TABLE games ADD COLUMN playoff_series_id TEXT;
+  CREATE TABLE playoff_series (
+    id TEXT PRIMARY KEY,
+    round INTEGER NOT NULL,
+    higher_seed INTEGER NOT NULL,
+    lower_seed INTEGER NOT NULL,
+    higher_team_id TEXT NOT NULL REFERENCES teams(id),
+    lower_team_id TEXT NOT NULL REFERENCES teams(id),
+    higher_wins INTEGER NOT NULL DEFAULT 0,
+    lower_wins INTEGER NOT NULL DEFAULT 0,
+    winner_team_id TEXT REFERENCES teams(id)
+  );
+  `,
+  // 4: retired players stay in the table (career history later) but leave the league.
+  `
+  ALTER TABLE players ADD COLUMN retired_season INTEGER;
+  `,
+  // 5: end-of-season awards. player_id is NULL for team awards (champion).
+  `
+  CREATE TABLE awards (
+    season INTEGER NOT NULL,
+    award TEXT NOT NULL,
+    team_id TEXT NOT NULL REFERENCES teams(id),
+    player_id TEXT REFERENCES players(id),
+    PRIMARY KEY (season, award)
+  );
+  `,
+  // 6: league structure (optional: roster files without it play a flat schedule).
+  `
+  ALTER TABLE teams ADD COLUMN conference TEXT;
+  ALTER TABLE teams ADD COLUMN division TEXT;
+  `,
 ];

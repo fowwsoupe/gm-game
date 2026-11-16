@@ -12,7 +12,9 @@ import type { TeamId } from './domain';
  */
 export type Command =
   | { kind: 'sim.advance'; days: number; stopOn?: 'never' | 'major' }
-  | { kind: 'team.setUserControlled'; teamId: TeamId; userControlled: boolean };
+  | { kind: 'team.setUserControlled'; teamId: TeamId; userControlled: boolean }
+  /** After the champion is crowned: age, retire, draft, re-sign and sign, then start next season. */
+  | { kind: 'season.rollover' };
 // Planned (not implemented yet): 'trade.propose', 'contract.offer', 'lines.set', 'draft.pick' ...
 
 export type CommandKind = Command['kind'];

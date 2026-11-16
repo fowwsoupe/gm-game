@@ -1,4 +1,13 @@
-import type { GameId, GameResult, Player, Sport, Team, TeamId } from '@gm/shared';
+import type {
+  GameId,
+  GameResult,
+  Player,
+  PlayerId,
+  Sport,
+  StandingsRow,
+  Team,
+  TeamId,
+} from '@gm/shared';
 import type { Rng } from '../core';
 import type { Ruleset } from '../cba';
 
@@ -30,6 +39,20 @@ export interface SportModule<Strength = unknown> {
   /** Builds a fictional league for this sport. */
   generateLeague(rng: Rng): { teams: Team[]; players: Player[] };
 
+  /** A new teamless 18-19 year old, for the draft and undrafted free agents. `season` = the season he joins. */
+  generateProspect(rng: Rng, opts: { id: string; season: number; position?: string }): Player;
+
+  /**
+   * Picks the player award winners (not the champion) from the finished regular season:
+   * team standings plus player ratings. Deterministic: no randomness.
+   */
+  pickAwards(input: {
+    season: number;
+    rules: Ruleset;
+    players: readonly Player[];
+    standings: readonly StandingsRow[];
+  }): { award: string; playerId: PlayerId }[];
+
   /** Loads a community roster file (untrusted JSON) for this sport. */
   importRoster(json: unknown): RosterImport;
 
@@ -38,7 +61,14 @@ export interface SportModule<Strength = unknown> {
 
   /** Simulates one game. Must use only `rng` for randomness. */
   simGame(
-    game: { id: GameId; homeTeamId: TeamId; awayTeamId: TeamId; home: Strength; away: Strength },
+    game: {
+      id: GameId;
+      homeTeamId: TeamId;
+      awayTeamId: TeamId;
+      home: Strength;
+      away: Strength;
+      playoff?: boolean;
+    },
     rng: Rng,
   ): GameResult;
 }

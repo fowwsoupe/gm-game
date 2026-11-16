@@ -5,6 +5,7 @@ import {
   useFeed,
   useNewLeague,
   useNewLeagueFromRoster,
+  usePlayoffs,
   useSteam,
   useTeams,
 } from '@/lib/queries';
@@ -12,11 +13,13 @@ import { useUi, type Screen } from '@/stores/ui';
 import { useT, type MessageKey } from '@/i18n';
 import { Button, Card } from '@/ui';
 import { Standings } from '@/screens/Standings';
+import { History } from '@/screens/History';
 
 const NAV: { id: Screen; label: MessageKey }[] = [
   { id: 'home', label: 'nav.home' },
   { id: 'standings', label: 'nav.standings' },
   { id: 'roster', label: 'nav.roster' },
+  { id: 'history', label: 'nav.history' },
 ];
 
 export function App() {
@@ -28,6 +31,7 @@ export function App() {
   const fromRoster = useNewLeagueFromRoster();
   const dispatch = useDispatch();
   const [lastSim, setLastSim] = useState<string | null>(null);
+  const { data: playoffs } = usePlayoffs();
   const hasLeague = !isError && teams.length > 0;
 
   const sim = (days: number, stopOn: 'never' | 'major' = 'never') =>
@@ -102,12 +106,24 @@ export function App() {
           <Button disabled={!hasLeague || dispatch.isPending} onClick={() => sim(400, 'major')}>
             {t('actions.simToNext')}
           </Button>
+          <Button
+            disabled={!playoffs?.championTeamId || dispatch.isPending}
+            onClick={() =>
+              dispatch.mutate(
+                { kind: 'season.rollover' },
+                { onSuccess: (res) => !res.ok && setLastSim(res.error.message) },
+              )
+            }
+          >
+            {t('actions.nextSeason')}
+          </Button>
         </div>
 
         {screen === 'home' && (
           <Home hasLeague={hasLeague} teamCount={teams.length} lastSim={lastSim} />
         )}
         {screen === 'standings' && <Standings />}
+        {screen === 'history' && <History />}
         {screen === 'roster' && <p className="text-muted">{t('roster.placeholder')}</p>}
       </main>
     </div>
@@ -132,6 +148,7 @@ function Home({
         {lastSim && <p className="mt-2 text-sm text-muted">{lastSim}</p>}
       </Card>
       <FeedCard />
+      <PlayoffCard />
     </div>
   );
 }
@@ -149,6 +166,17 @@ function FeedCard() {
       case 'season.phaseChanged':
         return t('event.phaseChanged', { phase: t(`phase.${e.to}`) });
       case 'news.posted':
+        if (
+          e.headline === 'event.seriesWon' ||
+          e.headline === 'event.championCrowned' ||
+          e.headline === 'event.lotteryWon'
+        )
+          return t(e.headline, e.params);
+        if (e.headline === 'event.awardWon')
+          return t(e.headline, {
+            ...e.params,
+            award: t(`award.${e.params?.award}` as MessageKey),
+          });
         return e.headline;
       default:
         return null;
@@ -167,6 +195,39 @@ function FeedCard() {
           ))}
         </ul>
       )}
+    </Card>
+  );
+}
+
+function PlayoffCard() {
+  const t = useT();
+  const { data } = usePlayoffs();
+  const { data: teams = [] } = useTeams();
+  if (!data?.series.length) return null;
+  const teamName = (id: string) => {
+    const team = teams.find((x) => x.id === id);
+    return team ? `${team.city} ${team.name}` : id;
+  };
+  return (
+    <Card title={t('playoffs.title')}>
+      {data.championTeamId && (
+        <p className="mb-3 font-semibold text-accent">
+          {t('playoffs.champion', { team: teamName(data.championTeamId) })}
+        </p>
+      )}
+      <div className="space-y-3 text-sm">
+        {data.series.map((series) => (
+          <div key={series.id} className="border-b border-line pb-2">
+            <p className="text-xs text-muted">{t('playoffs.round', { round: series.round })}</p>
+            <p>
+              {series.higherSeed}. {teamName(series.higherTeamId)} {series.higherWins}
+            </p>
+            <p>
+              {series.lowerSeed}. {teamName(series.lowerTeamId)} {series.lowerWins}
+            </p>
+          </div>
+        ))}
+      </div>
     </Card>
   );
 }

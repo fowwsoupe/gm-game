@@ -8,7 +8,7 @@ export const HOCKEY_TUNING = {
   leagueAvgShotsPerTeam: 30,
   homeIceBoost: 1.04,
   /** How strongly a rating gap moves expected goals. Higher = less parity. */
-  ratingSensitivity: 0.025,
+  ratingSensitivity: 0.012,
   overtimeGoalChance: 0.6,
 } as const;
 
@@ -41,6 +41,7 @@ export interface MatchupInput {
   awayTeamId: TeamId;
   home: TeamStrength;
   away: TeamStrength;
+  playoff?: boolean;
 }
 
 export function simGame(
@@ -56,7 +57,7 @@ export function simGame(
 
   if (homeGoals === awayGoals) {
     overtime = true;
-    if (rng.chance(HOCKEY_TUNING.overtimeGoalChance)) {
+    if (input.playoff || rng.chance(HOCKEY_TUNING.overtimeGoalChance)) {
       if (rng.chance(xg.home / (xg.home + xg.away))) homeGoals++;
       else awayGoals++;
     } else {

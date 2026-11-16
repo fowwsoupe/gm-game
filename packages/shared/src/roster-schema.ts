@@ -52,6 +52,8 @@ const rosterTeam = z.object({
   abbreviation: z.string().min(2).max(4),
   city: z.string().min(1),
   name: z.string().min(1),
+  conference: z.string().min(1).optional(),
+  division: z.string().min(1).optional(),
 });
 
 export const rosterFileSchema = z

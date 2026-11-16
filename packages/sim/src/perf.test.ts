@@ -23,6 +23,22 @@ describe('speed budget', () => {
     expect(ms).toBeLessThan(5_000);
   });
 
+  it('rolls a league over to the next season well under 1 s', () => {
+    const state = createLeague(5, ctx);
+    const local = { id: 'local', controls: [] };
+    const { regularSeasonDays, playoffDays } = ctx.ruleset.season.calendar;
+    handleCommand(
+      state,
+      { kind: 'sim.advance', days: regularSeasonDays + playoffDays },
+      local,
+      ctx,
+    );
+    const t0 = performance.now();
+    const res = handleCommand(state, { kind: 'season.rollover' }, local, ctx);
+    expect(res.ok).toBe(true);
+    expect(performance.now() - t0).toBeLessThan(1_000);
+  });
+
   it('sims one day well under 0.5 s', () => {
     const state = createLeague(7, ctx);
     const t0 = performance.now();

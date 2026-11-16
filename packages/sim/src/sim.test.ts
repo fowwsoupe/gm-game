@@ -2,6 +2,7 @@ import { describe, expect, it } from 'vitest';
 import type { Actor, LeagueEvent, TeamId } from '@gm/shared';
 import {
   applyEvent,
+  bracketSeeds,
   computeStandings,
   createLeague,
   defaultContext,
@@ -20,7 +21,7 @@ const ctx = defaultContext();
 
 function simSeason(seed: number) {
   const state = createLeague(seed, ctx);
-  const res = handleCommand(state, { kind: 'sim.advance', days: 200 }, local, ctx);
+  const res = handleCommand(state, { kind: 'sim.advance', days: 220 }, local, ctx);
   if (!res.ok) throw new Error(res.error.message);
   return { state, events: res.events };
 }
@@ -47,7 +48,7 @@ describe('season sim', () => {
 
   it('plays every scheduled game, with a winner each time', () => {
     const { state } = simSeason(3);
-    const results = Object.values(state.results);
+    const results = Object.values(state.results).filter((g) => !g.playoffSeriesId);
     expect(results.length).toBe(state.schedule.length);
     for (const g of results) expect(g.homeScore).not.toEqual(g.awayScore);
   });
@@ -62,7 +63,7 @@ describe('season sim', () => {
   });
 
   it('scoring lands in a realistic NHL range', () => {
-    const results = Object.values(simSeason(11).state.results);
+    const results = Object.values(simSeason(11).state.results).filter((g) => !g.playoffSeriesId);
     const perTeam =
       results.reduce((s, g) => s + g.homeScore + g.awayScore, 0) / (results.length * 2);
     expect(perTeam).toBeGreaterThan(2.5);
@@ -95,6 +96,89 @@ describe('events and reducer', () => {
       ctx,
     );
     expect(res.ok).toBe(false);
+  });
+});
+
+describe('playoffs', () => {
+  it('seeds a fixed bracket from regular-season points', () => {
+    const { state } = simSeason(12);
+    const rows = computeStandings(
+      Object.keys(state.teams) as TeamId[],
+      Object.values(state.results),
+    );
+    expect(bracketSeeds(ctx.ruleset.playoffs.teamsQualifying)).toEqual([1, 8, 4, 5, 2, 7, 3, 6]);
+    const firstRound = Object.values(state.playoffSeries).filter((s) => s.round === 1);
+    for (const series of firstRound) {
+      expect(series.higherTeamId).toBe(rows[series.higherSeed - 1]!.teamId);
+      expect(series.lowerTeamId).toBe(rows[series.lowerSeed - 1]!.teamId);
+    }
+  });
+
+  it('plays one bracket per conference, then a cross-conference final', () => {
+    const { state } = simSeason(12);
+    const conf = (id: TeamId) => state.teams[id]!.conference;
+    const all = Object.values(state.playoffSeries);
+    for (const s of all.filter((x) => x.round < 3)) {
+      expect(conf(s.higherTeamId)).toBe(conf(s.lowerTeamId));
+    }
+    const final = all.find((x) => x.round === 3)!;
+    expect(conf(final.higherTeamId)).not.toBe(conf(final.lowerTeamId));
+    // Home ice in the final goes to the better regular season.
+    expect(final.higherSeed).toBeLessThan(final.lowerSeed);
+  });
+
+  it('keeps the NHL ruleset at sixteen qualifiers', () => {
+    expect(NHL_2026.playoffs.teamsQualifying).toBe(16);
+    expect(bracketSeeds(NHL_2026.playoffs.teamsQualifying)).toHaveLength(16);
+  });
+
+  it('ends each best-of-seven at four wins with the correct home pattern and no shootouts', () => {
+    const { state } = simSeason(13);
+    const pattern = ctx.ruleset.playoffs.homeIcePattern;
+    for (const series of Object.values(state.playoffSeries)) {
+      const games = Object.values(state.results).filter((g) => g.playoffSeriesId === series.id);
+      expect(Math.max(series.higherWins, series.lowerWins)).toBe(4);
+      expect(games).toHaveLength(series.higherWins + series.lowerWins);
+      games.forEach((game, i) => {
+        expect(game.homeTeamId).toBe(pattern[i] === 1 ? series.lowerTeamId : series.higherTeamId);
+        expect(game.homeScore).not.toBe(game.awayScore);
+        expect(game.stats.shootout).toBe(0);
+      });
+    }
+    expect(state.championTeamId).not.toBeNull();
+  });
+
+  it('crowns the same champion for the same seed and replays every event', () => {
+    const live = createLeague(14, ctx);
+    const replica: LeagueState = structuredClone(live);
+    const res = handleCommand(live, { kind: 'sim.advance', days: 220 }, local, ctx);
+    if (!res.ok) throw new Error();
+    res.events.forEach((e) => applyEvent(replica, e));
+    expect(replica).toEqual(live);
+    expect(live.championTeamId).toBe(simSeason(14).state.championTeamId);
+    expect(res.events.filter((e) => e.kind === 'champion.crowned')).toHaveLength(1);
+  });
+
+  it('stops at a series win and later at the championship', () => {
+    const state = createLeague(15, ctx);
+    let sawSeries = false;
+    let sawChampion = false;
+    for (let i = 0; i < 20 && !sawChampion; i++) {
+      const res = handleCommand(
+        state,
+        { kind: 'sim.advance', days: 400, stopOn: 'major' },
+        local,
+        ctx,
+      );
+      if (!res.ok) throw new Error();
+      const series = res.events.some((e) => e.kind === 'series.won');
+      const champion = res.events.some((e) => e.kind === 'champion.crowned');
+      if (series) sawSeries = true;
+      if (champion) sawChampion = true;
+      if (series || champion) expect(res.events.at(-1)?.kind).toBe('clock.advanced');
+    }
+    expect(sawSeries).toBe(true);
+    expect(sawChampion).toBe(true);
   });
 });
 

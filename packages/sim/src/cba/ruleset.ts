@@ -22,6 +22,15 @@ export interface Ruleset {
     points: { win: number; overtimeLoss: number };
   };
 
+  playoffs: {
+    teamsQualifying: number;
+    seriesLength: number;
+    /** 'conference': the best teams of each conference meet in a bracket per conference, then a final. */
+    seeding: 'points' | 'conference';
+    /** 0 = higher seed at home, 1 = lower seed at home. */
+    homeIcePattern: number[];
+  };
+
   /** TODO(nba/nfl): soft cap + luxury tax (NBA) and hard cap specifics (NFL) when those sports arrive. */
   cap: {
     upperLimit: Dollars;
@@ -31,8 +40,8 @@ export interface Ruleset {
     minSalary: Dollars;
     /** Allowed overage in the offseason, as % of the upper limit. */
     offseasonOveragePct: number;
-    /** Whether the cap also applies to the playoff roster. */
-    playoffCap: boolean;
+    /** The playoff cap: a team's best N skaters and goalies must fit under the upper limit. Null = no playoff cap. */
+    playoffCap: { skaters: number; goalies: number } | null;
   };
 
   contracts: {
@@ -44,6 +53,22 @@ export interface Ruleset {
     minYearPctOfHighestYear: number;
     /** Entry-level contract length by signing age (inclusive ranges). */
     elcYearsByAge: { minAge: number; maxAge: number; years: number }[];
+    /** Yearly salary of an entry-level contract. */
+    elcSalary: Dollars;
+  };
+
+  draft: {
+    rounds: number;
+    /**
+     * Lottery for the first round: teams that missed the playoffs, worst first, with each one's
+     * chance (in %) of winning a draw. `draws` teams jump to the front of round one. Null = worst picks first.
+     */
+    lottery: { draws: number; odds: number[] } | null;
+  };
+
+  awards: {
+    /** Players this age or younger are rookie-award eligible. */
+    rookieMaxAge: number;
   };
 
   trades: {
@@ -64,5 +89,7 @@ export interface Ruleset {
   roster: {
     maxActive: number;
     minActive: number;
+    /** Fewest players a team must carry at each position (sport-specific codes). */
+    positionMin: Record<string, number>;
   };
 }

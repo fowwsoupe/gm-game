@@ -21,13 +21,19 @@ export const NHL_2026: Ruleset = {
     calendar: { preseasonDays: 21, regularSeasonDays: 190, tradeDeadlineDay: 140, playoffDays: 62 },
     points: { win: 2, overtimeLoss: 1 },
   },
+  playoffs: {
+    teamsQualifying: 16,
+    seriesLength: 7,
+    seeding: 'conference',
+    homeIcePattern: [0, 0, 1, 1, 0, 1, 0],
+  },
   cap: {
     upperLimit: dollars(104),
     lowerLimit: dollars(76.9),
     maxPlayerPctOfUpper: 20,
     minSalary: dollars(0.85),
     offseasonOveragePct: 10,
-    playoffCap: true,
+    playoffCap: { skaters: 18, goalies: 2 },
   },
   contracts: {
     maxYearsResign: 7,
@@ -39,7 +45,20 @@ export const NHL_2026: Ruleset = {
       { minAge: 22, maxAge: 23, years: 2 },
       { minAge: 24, maxAge: 24, years: 1 },
     ],
+    elcSalary: dollars(1),
   },
+  // The real draft has 7 rounds, but most picks stay in junior or college and never take an NHL
+  // roster spot. Until prospects exist as a separate pool, only the picks that sign are drafted.
+  draft: {
+    rounds: 2,
+    // Odds for the 16 non-playoff teams, worst first (the league's 2021 lottery). Two draws, so a team
+    // can fall at most two spots.
+    lottery: {
+      draws: 2,
+      odds: [18.5, 13.5, 11.5, 9.5, 8.5, 7.5, 6.5, 6, 5, 3.5, 3, 2.5, 2, 1.5, 0.5, 0.5],
+    },
+  },
+  awards: { rookieMaxAge: 20 },
   trades: {
     maxRetentionPct: 50,
     maxRetainedContracts: 3,
@@ -50,5 +69,17 @@ export const NHL_2026: Ruleset = {
     shareOwedOtherwise: 2 / 3,
     termMultiplier: 2,
   },
-  roster: { maxActive: 23, minActive: 20 },
+  roster: {
+    maxActive: 23,
+    minActive: 20,
+    positionMin: { C: 4, LW: 4, RW: 4, D: 6, G: 2 },
+  },
+};
+
+/** The default 16-team fictional league sends its top eight to the playoffs. */
+export const FICTIONAL_2026: Ruleset = {
+  ...NHL_2026,
+  id: 'fictional-2026',
+  name: 'Fictional league rules (2026-27)',
+  playoffs: { ...NHL_2026.playoffs, teamsQualifying: 8 },
 };

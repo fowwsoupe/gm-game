@@ -10,6 +10,7 @@ export function computeStandings(
     teamIds.map((id) => [id, { teamId: id, gp: 0, w: 0, l: 0, otl: 0, pts: 0, gf: 0, ga: 0 }]),
   );
   for (const g of results) {
+    if (g.playoffSeriesId) continue;
     const home = rows.get(g.homeTeamId);
     const away = rows.get(g.awayTeamId);
     if (!home || !away) continue;
@@ -31,6 +32,7 @@ export function computeStandings(
     }
   }
   return [...rows.values()].sort(
-    (a, b) => b.pts - a.pts || b.w - a.w || b.gf - b.ga - (a.gf - a.ga),
+    (a, b) =>
+      b.pts - a.pts || b.w - a.w || b.gf - b.ga - (a.gf - a.ga) || a.teamId.localeCompare(b.teamId),
   );
 }

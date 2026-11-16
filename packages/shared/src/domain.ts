@@ -43,6 +43,9 @@ export interface Team {
   city: string;
   name: string;
   abbreviation: string;
+  /** Optional league structure. The schedule plays division rivals most, then the conference. */
+  conference?: string;
+  division?: string;
   /** Owned by the human player(s). The game supports running several teams. */
   userControlled: boolean;
 }
@@ -63,6 +66,8 @@ export interface StandingsRow {
 /** Result of any game in any sport. Sport-specific numbers go in `stats`. */
 export interface GameResult {
   id: GameId;
+  /** Present only for a playoff game; keeps regular-season standings separate. */
+  playoffSeriesId?: string;
   homeTeamId: TeamId;
   awayTeamId: TeamId;
   homeScore: number;
@@ -71,4 +76,43 @@ export interface GameResult {
   overtime: boolean;
   /** Sport-specific box-score numbers, typed by the sport module (hockey: HockeyGameStats). */
   stats: Record<string, number>;
+}
+
+export interface PlayoffSeries {
+  id: string;
+  round: number;
+  higherSeed: number;
+  lowerSeed: number;
+  higherTeamId: TeamId;
+  lowerTeamId: TeamId;
+  higherWins: number;
+  lowerWins: number;
+  winnerTeamId?: TeamId;
+}
+
+/** One award a season (sport-defined keys like 'mvp', plus 'champion'), as the History screen lists it. */
+export interface AwardEntry {
+  season: number;
+  award: string;
+  teamId: TeamId;
+  /** Absent for team awards (champion). */
+  playerId?: PlayerId;
+  playerName?: string;
+}
+
+/** One league record: best (or most) of something, by a team in one season, or all-time for titles. */
+export interface RecordEntry {
+  key: 'points' | 'wins' | 'goalsFor' | 'goalsAgainst' | 'titles';
+  teamId: TeamId;
+  /** Absent for all-time records (titles). */
+  season?: number;
+  value: number;
+}
+
+/** One scheduled regular-season game. */
+export interface ScheduledGame {
+  id: string;
+  date: { season: number; day: number };
+  homeTeamId: TeamId;
+  awayTeamId: TeamId;
 }

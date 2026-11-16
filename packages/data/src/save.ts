@@ -1,9 +1,12 @@
 import Database from 'better-sqlite3';
 import type {
+  AwardEntry,
   GameResult,
   Importance,
   LeagueEvent,
   Player,
+  PlayerId,
+  PlayoffSeries,
   Sport,
   Team,
   TeamId,
@@ -84,7 +87,7 @@ export class SaveFile {
 
   saveNewLeague(state: LeagueState) {
     const insertTeam = this.db.prepare(
-      'INSERT INTO teams (id, city, name, abbreviation, user_controlled, status) VALUES (?, ?, ?, ?, ?, ?)',
+      'INSERT INTO teams (id, city, name, abbreviation, user_controlled, status, conference, division) VALUES (?, ?, ?, ?, ?, ?, ?, ?)',
     );
     const insertPlayer = this.db.prepare(
       `INSERT INTO players (id, team_id, first_name, last_name, birth_year, position, potential, ratings_json, contract_json)
@@ -102,6 +105,8 @@ export class SaveFile {
           t.abbreviation,
           t.userControlled ? 1 : 0,
           state.teamStatus[t.id] ?? 'bubble',
+          t.conference ?? null,
+          t.division ?? null,
         );
       }
       for (const p of Object.values(state.players)) {
@@ -135,7 +140,7 @@ export class SaveFile {
     const schedule = this.db
       .prepare(
         `SELECT id, season, day, home_team_id AS homeTeamId, away_team_id AS awayTeamId
-         FROM games WHERE season = ? ORDER BY day, rowid`,
+         FROM games WHERE season = ? AND playoff_series_id IS NULL ORDER BY day, rowid`,
       )
       .all(season) as {
       id: string;
@@ -143,6 +148,19 @@ export class SaveFile {
       day: number;
       homeTeamId: TeamId;
       awayTeamId: TeamId;
+    }[];
+    const playoffRows = this.db
+      .prepare('SELECT * FROM playoff_series WHERE id GLOB ?')
+      .all(`s${season}_*`) as {
+      id: string;
+      round: number;
+      higher_seed: number;
+      lower_seed: number;
+      higher_team_id: TeamId;
+      lower_team_id: TeamId;
+      higher_wins: number;
+      lower_wins: number;
+      winner_team_id: TeamId | null;
     }[];
     return {
       sport: (this.getMeta('sport') ?? 'nhl') as Sport,
@@ -163,6 +181,23 @@ export class SaveFile {
         awayTeamId: g.awayTeamId,
       })),
       results: Object.fromEntries(this.playedResults(season).map((r) => [r.id, r])),
+      playoffSeries: Object.fromEntries(
+        playoffRows.map((r) => [
+          r.id,
+          {
+            id: r.id,
+            round: r.round,
+            higherSeed: r.higher_seed,
+            lowerSeed: r.lower_seed,
+            higherTeamId: r.higher_team_id,
+            lowerTeamId: r.lower_team_id,
+            higherWins: r.higher_wins,
+            lowerWins: r.lower_wins,
+            ...(r.winner_team_id ? { winnerTeamId: r.winner_team_id } : {}),
+          } satisfies PlayoffSeries,
+        ]),
+      ),
+      championTeamId: (this.getMeta('championTeamId') as TeamId | undefined) ?? null,
     };
   }
 
@@ -174,6 +209,36 @@ export class SaveFile {
     );
     const recordGame = this.db.prepare(
       `UPDATE games SET played = 1, home_score = ?, away_score = ?, overtime = ?, stats_json = ? WHERE id = ?`,
+    );
+    const insertPlayoffGame = this.db.prepare(
+      `INSERT OR IGNORE INTO games (id, season, day, home_team_id, away_team_id, playoff_series_id)
+       VALUES (?, ?, ?, ?, ?, ?)`,
+    );
+    const insertSeries = this.db.prepare(
+      `INSERT INTO playoff_series (id, round, higher_seed, lower_seed, higher_team_id, lower_team_id,
+       higher_wins, lower_wins) VALUES (?, ?, ?, ?, ?, ?, 0, 0)`,
+    );
+    const updateSeries = this.db.prepare(
+      `UPDATE playoff_series SET higher_wins = ?, lower_wins = ?, winner_team_id = ? WHERE id = ?`,
+    );
+    const insertPlayer = this.db.prepare(
+      `INSERT INTO players (id, team_id, first_name, last_name, birth_year, position, potential, ratings_json, contract_json)
+       VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)`,
+    );
+    const setRatings = this.db.prepare(
+      'UPDATE players SET ratings_json = ?, potential = ? WHERE id = ?',
+    );
+    const setContract = this.db.prepare(
+      'UPDATE players SET team_id = ?, contract_json = ? WHERE id = ?',
+    );
+    const retire = this.db.prepare(
+      'UPDATE players SET retired_season = ?, team_id = NULL, contract_json = NULL WHERE id = ?',
+    );
+    const insertScheduled = this.db.prepare(
+      'INSERT INTO games (id, season, day, home_team_id, away_team_id) VALUES (?, ?, ?, ?, ?)',
+    );
+    const insertAward = this.db.prepare(
+      'INSERT OR REPLACE INTO awards (season, award, team_id, player_id) VALUES (?, ?, ?, ?)',
     );
     const setStatus = this.db.prepare('UPDATE teams SET status = ? WHERE id = ?');
     const setControl = this.db.prepare('UPDATE teams SET user_controlled = ? WHERE id = ?');
@@ -195,6 +260,16 @@ export class SaveFile {
         switch (e.kind) {
           case 'game.final': {
             const r = e.result;
+            if (r.playoffSeriesId) {
+              insertPlayoffGame.run(
+                r.id,
+                e.date.season,
+                e.date.day,
+                r.homeTeamId,
+                r.awayTeamId,
+                r.playoffSeriesId,
+              );
+            }
             recordGame.run(
               r.homeScore,
               r.awayScore,
@@ -204,6 +279,58 @@ export class SaveFile {
             );
             break;
           }
+          case 'series.started': {
+            const s = e.series;
+            insertSeries.run(
+              s.id,
+              s.round,
+              s.higherSeed,
+              s.lowerSeed,
+              s.higherTeamId,
+              s.lowerTeamId,
+            );
+            break;
+          }
+          case 'series.won':
+          case 'champion.crowned':
+            break;
+          case 'players.developed':
+            for (const c of e.changes)
+              setRatings.run(JSON.stringify(c.ratings), c.potential, c.playerId);
+            break;
+          case 'award.given':
+            insertAward.run(e.season, e.award, e.teamId, e.playerId ?? null);
+            break;
+          case 'player.retired':
+            retire.run(e.date.season, e.playerId);
+            break;
+          case 'contract.expired':
+            setContract.run(null, null, e.playerId);
+            break;
+          case 'player.drafted': {
+            const p = e.player;
+            insertPlayer.run(
+              p.id,
+              p.teamId,
+              p.firstName,
+              p.lastName,
+              p.birthYear,
+              p.position,
+              p.potential,
+              JSON.stringify(p.ratings),
+              p.contract ? JSON.stringify(p.contract) : null,
+            );
+            break;
+          }
+          case 'player.signed':
+            setContract.run(e.teamId, JSON.stringify(e.contract), e.playerId);
+            break;
+          case 'season.started':
+            for (const g of e.schedule) {
+              insertScheduled.run(g.id, g.date.season, g.date.day, g.homeTeamId, g.awayTeamId);
+            }
+            this.db.prepare("DELETE FROM meta WHERE key = 'championTeamId'").run();
+            break;
           case 'team.statusChanged':
             setStatus.run(e.to, e.teamId);
             break;
@@ -220,6 +347,10 @@ export class SaveFile {
           }
         }
       }
+      for (const s of Object.values(state.playoffSeries)) {
+        updateSeries.run(s.higherWins, s.lowerWins, s.winnerTeamId ?? null, s.id);
+      }
+      if (state.championTeamId) this.setMeta('championTeamId', state.championTeamId);
       this.writeClock(state);
     })();
   }
@@ -246,6 +377,32 @@ export class SaveFile {
     return rows.map((r) => JSON.parse(r.payload_json) as LeagueEvent);
   }
 
+  /** Every award given, newest season first. Player names come from the players table (retired ones stay). */
+  listAwards(): AwardEntry[] {
+    const rows = this.db
+      .prepare(
+        `SELECT a.season, a.award, a.team_id, a.player_id, p.first_name, p.last_name
+         FROM awards a LEFT JOIN players p ON p.id = a.player_id
+         ORDER BY a.season DESC, a.rowid`,
+      )
+      .all() as {
+      season: number;
+      award: string;
+      team_id: TeamId;
+      player_id: PlayerId | null;
+      first_name: string | null;
+      last_name: string | null;
+    }[];
+    return rows.map((r) => ({
+      season: r.season,
+      award: r.award,
+      teamId: r.team_id,
+      ...(r.player_id
+        ? { playerId: r.player_id, playerName: `${r.first_name} ${r.last_name}` }
+        : {}),
+    }));
+  }
+
   listTeams(): Team[] {
     const rows = this.db.prepare('SELECT * FROM teams ORDER BY city').all() as {
       id: string;
@@ -253,18 +410,24 @@ export class SaveFile {
       name: string;
       abbreviation: string;
       user_controlled: number;
+      conference: string | null;
+      division: string | null;
     }[];
     return rows.map((r) => ({
       id: r.id as Team['id'],
       city: r.city,
       name: r.name,
       abbreviation: r.abbreviation,
+      ...(r.conference ? { conference: r.conference } : {}),
+      ...(r.division ? { division: r.division } : {}),
       userControlled: r.user_controlled === 1,
     }));
   }
 
   listPlayers(): Player[] {
-    const rows = this.db.prepare('SELECT * FROM players').all() as PlayerRow[];
+    const rows = this.db
+      .prepare('SELECT * FROM players WHERE retired_season IS NULL')
+      .all() as PlayerRow[];
     return rows.map((r) => {
       const p: Player = {
         id: r.id as Player['id'],
@@ -281,21 +444,31 @@ export class SaveFile {
     });
   }
 
+  /** Seasons that have a champion, oldest first. */
+  finishedSeasons(): number[] {
+    const rows = this.db
+      .prepare("SELECT season FROM awards WHERE award = 'champion' ORDER BY season")
+      .all() as { season: number }[];
+    return rows.map((r) => r.season);
+  }
+
   playedResults(season: number): GameResult[] {
     const rows = this.db
       .prepare(
         `SELECT id, home_team_id AS homeTeamId, away_team_id AS awayTeamId, home_score AS homeScore,
-                away_score AS awayScore, overtime, stats_json
+                away_score AS awayScore, overtime, stats_json, playoff_series_id
          FROM games WHERE season = ? AND played = 1 ORDER BY day, rowid`,
       )
       .all(season) as (Omit<GameResult, 'overtime' | 'stats'> & {
       overtime: number;
       stats_json: string | null;
+      playoff_series_id: string | null;
     })[];
-    return rows.map(({ stats_json, ...r }) => ({
+    return rows.map(({ stats_json, playoff_series_id, ...r }) => ({
       ...r,
       overtime: r.overtime === 1,
       stats: stats_json ? JSON.parse(stats_json) : {},
+      ...(playoff_series_id ? { playoffSeriesId: playoff_series_id } : {}),
     }));
   }
 }
