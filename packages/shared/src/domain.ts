@@ -115,6 +115,8 @@ export interface Player {
    */
   ratings: Record<string, number>;
   contract?: Contract;
+  /** Signed in season to start when `contract` ends (an extension). Takes over at the summer's expiries. */
+  extension?: Contract;
   /** Injured: first day (of the current season) he can play again. Absent = healthy. Heals over the summer. */
   injuredUntil?: number;
 }

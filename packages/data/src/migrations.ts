@@ -138,4 +138,8 @@ export const migrations: readonly string[] = [
     PRIMARY KEY (player_id, season)
   );
   `,
+  // 12: an in-season extension waiting for the current contract to end.
+  `
+  ALTER TABLE players ADD COLUMN extension_json TEXT;
+  `,
 ];

@@ -25,6 +25,7 @@ import {
   isExpiring,
   openFreeAgency,
   resignContract,
+  resignWindowOpen,
   rolloverSeason,
   signFreeAgent,
 } from './offseason';
@@ -113,10 +114,10 @@ export function handleCommand(
       const yours =
         actor.controls.includes(team.id) || (actor.id === 'local' && team.userControlled);
       if (!yours) return { ok: false, error: { code: 'not_allowed', message: 'not your team' } };
-      if (!state.championTeamId || !isExpiring(state, player)) {
+      if (!resignWindowOpen(state, ctx) || !isExpiring(state, player)) {
         return {
           ok: false,
-          error: { code: 'invalid', message: 'only expiring contracts, once the season is over' },
+          error: { code: 'invalid', message: 'only expiring contracts, outside the playoffs' },
         };
       }
       const deal = resignContract(state, ctx, player, command.years);
@@ -126,8 +127,9 @@ export function handleCommand(
           error: { code: 'invalid', message: `illegal contract: ${deal.issues[0]!.code}` },
         };
       }
+      // In season it is an extension: the current deal still runs to the end of the year.
       const ev = makeEvent(state, 'notable', [team.id], {
-        kind: 'player.signed',
+        kind: state.championTeamId ? 'player.signed' : 'contract.extended',
         playerId: player.id,
         teamId: team.id,
         contract: deal.contract,

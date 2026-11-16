@@ -107,6 +107,7 @@ export function applyEvent(state: LeagueState, event: LeagueEvent): void {
       if (!p) throw new Error(`unknown player ${event.playerId}`);
       p.teamId = null;
       delete p.contract;
+      delete p.extension;
       state.capCharges.push(...event.charges.map((c) => ({ ...c })));
       return;
     }
@@ -118,6 +119,7 @@ export function applyEvent(state: LeagueState, event: LeagueEvent): void {
       if (!p) throw new Error(`unknown player ${event.playerId}`);
       p.teamId = null;
       delete p.contract;
+      delete p.extension;
       return;
     }
     case 'player.drafted':
@@ -135,6 +137,13 @@ export function applyEvent(state: LeagueState, event: LeagueEvent): void {
       if (!p) throw new Error(`unknown player ${event.playerId}`);
       p.teamId = event.teamId;
       p.contract = { ...event.contract };
+      delete p.extension;
+      return;
+    }
+    case 'contract.extended': {
+      const p = state.players[event.playerId];
+      if (!p) throw new Error(`unknown player ${event.playerId}`);
+      p.extension = { ...event.contract };
       return;
     }
     case 'season.started':

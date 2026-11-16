@@ -8,7 +8,7 @@ import type {
   TeamId,
 } from '@gm/shared';
 import { pct, type Dollars, type LeagueState } from '../core';
-import { payroll } from './contracts';
+import { contractIn } from './contracts';
 import type { Ruleset } from './ruleset';
 
 /**
@@ -59,13 +59,16 @@ export function capSheet(
     phase: SeasonPhase;
   },
 ): CapSheet {
-  const signed = input.players.filter((p) => p.teamId === input.teamId && p.contract);
+  const signed = input.players.filter((p) => p.teamId === input.teamId);
   const seasons: CapSeason[] = [];
   for (let season = input.fromSeason; season < input.fromSeason + input.years; season++) {
     const onBooks = signed
-      .filter((p) => p.contract!.expiresAfterSeason >= season)
-      .sort((a, b) => b.contract!.capHit - a.contract!.capHit || a.id.localeCompare(b.id));
-    const committed = payroll(onBooks);
+      .flatMap((p) => {
+        const c = contractIn(p, season);
+        return c ? [{ id: p.id, c }] : [];
+      })
+      .sort((a, b) => b.c.capHit - a.c.capHit || a.id.localeCompare(b.id));
+    const committed = onBooks.reduce((sum, x) => sum + x.c.capHit, 0);
     const deadCap = input.charges
       .filter((c) => c.teamId === input.teamId && c.season === season)
       .reduce((sum, c) => sum + c.amount, 0);
@@ -74,10 +77,10 @@ export function capSheet(
       season,
       upperLimit: rules.cap.upperLimit,
       lowerLimit: rules.cap.lowerLimit,
-      contracts: onBooks.map((p) => ({
-        playerId: p.id,
-        capHit: p.contract!.capHit,
-        expiresAfterSeason: p.contract!.expiresAfterSeason,
+      contracts: onBooks.map((x) => ({
+        playerId: x.id,
+        capHit: x.c.capHit,
+        expiresAfterSeason: x.c.expiresAfterSeason,
       })),
       committed,
       deadCap,
@@ -164,13 +167,13 @@ export function teamCapTotal(
   players: readonly Player[] = Object.values(state.players),
 ): Dollars {
   const season = capYearOf(state);
-  const signed = players.filter(
-    (p) => p.teamId === teamId && p.contract && p.contract.expiresAfterSeason >= season,
-  );
+  const committed = players
+    .filter((p) => p.teamId === teamId)
+    .reduce((sum, p) => sum + (contractIn(p, season)?.capHit ?? 0), 0);
   const dead = state.capCharges
     .filter((c) => c.teamId === teamId && c.season === season)
     .reduce((sum, c) => sum + c.amount, 0);
-  return payroll(signed) + dead;
+  return committed + dead;
 }
 
 /** Cap issues for a total in the cap year: the offseason allowance once the season is over, else the ceiling only. */

@@ -1,7 +1,8 @@
 import { describe, expect, it } from 'vitest';
 import type { Actor } from '@gm/shared';
 import { createLeague, defaultContext, handleCommand } from '@gm/sim';
-import { migrate, openSave } from './index';
+import { openSave } from './index';
+import { migrations } from './migrations';
 
 const ctx = defaultContext();
 const local: Actor = { id: 'local', controls: [] };
@@ -52,6 +53,30 @@ describe('SaveFile', () => {
     if (!res.ok) throw new Error(res.error.message);
     save.persist(res.events, state);
     expect(save.loadState().players[cheapest.id]!.teamId).toBe(to);
+    expect(save.loadState()).toEqual(state);
+    save.close();
+  });
+
+  it('saves an in-season extension', () => {
+    const save = openSave(':memory:');
+    const state = createLeague(61, ctx);
+    save.saveNewLeague(state);
+    const sim = handleCommand(state, { kind: 'sim.advance', days: 40 }, local, ctx);
+    if (!sim.ok) throw new Error(sim.error.message);
+    save.persist(sim.events, state);
+    const mine = Object.values(state.teams).find((t) => t.userControlled)!.id;
+    const expiring = Object.values(state.players).find(
+      (p) => p.teamId === mine && p.contract!.expiresAfterSeason === state.date.season,
+    )!;
+    const res = handleCommand(
+      state,
+      { kind: 'contract.resign', playerId: expiring.id, years: 2 },
+      local,
+      ctx,
+    );
+    if (!res.ok) throw new Error(res.error.message);
+    save.persist(res.events, state);
+    expect(save.loadState().players[expiring.id]!.extension).toBeDefined();
     expect(save.loadState()).toEqual(state);
     save.close();
   });
@@ -156,8 +181,7 @@ describe('SaveFile', () => {
     save.saveNewLeague(state);
     // Make it look like a save from before migration 9.
     save.db.exec(`UPDATE players SET ratings_json = json_remove(ratings_json, '$.faceoffs')`);
-    save.db.pragma('user_version = 8');
-    migrate(save.db);
+    save.db.exec(migrations[8]!); // migration 9 only: later ones are not meant to run twice
     for (const p of save.listPlayers()) {
       if (p.position === 'G') {
         expect(p.ratings.faceoffs).toBeUndefined();

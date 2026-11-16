@@ -1,4 +1,4 @@
-import type { Player } from '@gm/shared';
+import type { Contract, Player } from '@gm/shared';
 import { pct, type Dollars } from '../core';
 import type { Ruleset } from './ruleset';
 
@@ -10,6 +10,14 @@ import type { Ruleset } from './ruleset';
 /** Total cap hit of a group of players (a roster, or the players a playoff lineup would dress). */
 export const payroll = (players: readonly Player[]): Dollars =>
   players.reduce((sum, p) => sum + (p.contract?.capHit ?? 0), 0);
+
+/** The deal that pays `player` in `season`: his contract, else an extension that starts later. */
+export function contractIn(player: Player, season: number): Contract | undefined {
+  const { contract, extension } = player;
+  if (contract && contract.expiresAfterSeason >= season) return contract;
+  if (extension && extension.expiresAfterSeason >= season) return extension;
+  return undefined;
+}
 
 export interface ContractTerms {
   /** Salary for each season of the deal, in order. */

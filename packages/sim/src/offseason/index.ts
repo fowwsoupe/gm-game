@@ -16,7 +16,7 @@ import { runDraft } from './draft';
 
 export { lotteryOrder, announceDraftClass } from './draft';
 export { signingInterest, signFreeAgent } from './signing';
-export { resignOffers, resignContract, isExpiring } from './resign';
+export { resignOffers, resignContract, isExpiring, resignWindowOpen } from './resign';
 import { expireContracts, fillRosters, meetCapFloor, reSignPlayers } from './freeAgency';
 import { developPlayers, retirePlayers } from './progression';
 
