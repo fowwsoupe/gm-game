@@ -305,4 +305,6 @@ export const fr: Record<MessageKey, string> = {
   'actions.simToDeadline': 'Simuler jusqu’à la date limite',
   'actions.simToPlayoffs': 'Simuler jusqu’aux séries',
   'actions.simToSummer': 'Simuler jusqu’à la fin des séries',
+  'home.yourTeam': 'Votre équipe',
+  'home.noTeam': 'Spectateur (aucune équipe)',
 };

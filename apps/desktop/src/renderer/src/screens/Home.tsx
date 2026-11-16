@@ -2,6 +2,7 @@ import type { LeagueEvent, TeamId } from '@gm/shared';
 import {
   useCapSheet,
   useDashboard,
+  useDispatch,
   useFeed,
   usePlayoffs,
   usePulse,
@@ -28,6 +29,7 @@ export function Home({
   if (!hasLeague) return <p className="text-muted">{t('home.empty')}</p>;
   return (
     <div className="grid max-w-5xl gap-4 md:grid-cols-2">
+      <TeamPicker />
       {mine ? <TeamStrip teamId={mine.id} /> : null}
       <Card>
         <p>{t('home.teamsLoaded', { count: teamCount })}</p>
@@ -37,6 +39,38 @@ export function Home({
       <FeedCard />
       <PlayoffCard />
     </div>
+  );
+}
+
+/** Pick the team you run: control moves to it (the old one goes back to its AI GM). */
+function TeamPicker() {
+  const t = useT();
+  const { data: teams = [] } = useTeams();
+  const dispatch = useDispatch();
+  const mine = teams.find((x) => x.userControlled);
+  const choose = (id: TeamId) => {
+    if (mine?.id === id) return;
+    dispatch.mutate({ kind: 'team.setUserControlled', teamId: id, userControlled: true });
+    if (mine) {
+      dispatch.mutate({ kind: 'team.setUserControlled', teamId: mine.id, userControlled: false });
+    }
+  };
+  return (
+    <label className="flex items-center gap-2 text-sm text-muted md:col-span-2">
+      {t('home.yourTeam')}
+      <select
+        value={mine?.id ?? ''}
+        onChange={(e) => choose(e.target.value as TeamId)}
+        className="rounded border border-line bg-panel px-2 py-1 text-ink"
+      >
+        {!mine && <option value="">{t('home.noTeam')}</option>}
+        {teams.map((x) => (
+          <option key={x.id} value={x.id}>
+            {x.city} {x.name}
+          </option>
+        ))}
+      </select>
+    </label>
   );
 }
 

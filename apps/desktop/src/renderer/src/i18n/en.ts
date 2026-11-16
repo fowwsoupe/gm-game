@@ -307,6 +307,8 @@ export const en = {
   'actions.simToDeadline': 'Sim to trade deadline',
   'actions.simToPlayoffs': 'Sim to playoffs',
   'actions.simToSummer': 'Sim to end of playoffs',
+  'home.yourTeam': 'Your team',
+  'home.noTeam': 'Watch only (no team)',
 } as const;
 
 export type MessageKey = keyof typeof en;
