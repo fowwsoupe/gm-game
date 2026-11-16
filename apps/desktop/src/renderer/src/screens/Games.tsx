@@ -2,7 +2,7 @@ import { useEffect, useMemo, useState } from 'react';
 import type { GameDetail, HockeyBoxScore, HockeyBoxSide, Team, TeamId } from '@gm/shared';
 import { useExhibition, useGames, useOpenGame, useTeams } from '@/lib/queries';
 import { useT } from '@/i18n';
-import { Button, Card } from '@/ui';
+import { Button, Card, TeamLink } from '@/ui';
 
 const SPEEDS = [60, 180, 600] as const;
 const teamName = (teams: Team[], id: string) => {
@@ -182,7 +182,12 @@ function Replay({ detail, teams }: { detail: GameDetail; teams: Team[] }) {
     <div className="space-y-4">
       <Card>
         <div className="tabular flex items-center justify-between gap-4">
-          <Side name={teamName(teams, ids[1])} score={score[1]!} label={t('games.away')} />
+          <Side
+            id={ids[1]}
+            name={teamName(teams, ids[1])}
+            score={score[1]!}
+            label={t('games.away')}
+          />
           <div className="text-center text-sm text-muted">
             {finished ? (
               <span className="text-ink">
@@ -200,7 +205,12 @@ function Replay({ detail, teams }: { detail: GameDetail; teams: Team[] }) {
               </>
             )}
           </div>
-          <Side name={teamName(teams, ids[0])} score={score[0]!} label={t('games.home')} />
+          <Side
+            id={ids[0]}
+            name={teamName(teams, ids[0])}
+            score={score[0]!}
+            label={t('games.home')}
+          />
         </div>
         <div className="mt-4 flex flex-wrap items-center gap-2">
           <Button onClick={() => setPlaying(!playing)} disabled={finished}>
@@ -276,11 +286,23 @@ function Replay({ detail, teams }: { detail: GameDetail; teams: Team[] }) {
   );
 }
 
-function Side({ name, score, label }: { name: string; score: number; label: string }) {
+function Side({
+  id,
+  name,
+  score,
+  label,
+}: {
+  id: string;
+  name: string;
+  score: number;
+  label: string;
+}) {
   return (
     <div className="flex-1 text-center">
       <div className="text-xs text-muted">{label}</div>
-      <div className="text-sm">{name}</div>
+      <div className="text-sm">
+        <TeamLink teamId={id}>{name}</TeamLink>
+      </div>
       <div className="text-4xl font-semibold">{score}</div>
     </div>
   );

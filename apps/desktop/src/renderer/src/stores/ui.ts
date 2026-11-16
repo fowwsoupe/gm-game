@@ -15,10 +15,14 @@ export type Screen =
   | 'cap'
   | 'games'
   | 'leaders'
-  | 'history';
+  | 'history'
+  | 'team';
 
 interface UiState {
   screen: Screen;
+  /** Team shown on the team page. */
+  teamId: string | undefined;
+  openTeam: (teamId: string) => void;
   locale: Locale;
   /** Set by Cmd+K: the Roster screen shows this team ('fa' = free agents) and player. */
   focus: { teamId: string; playerId?: string | undefined } | null;
@@ -29,6 +33,8 @@ interface UiState {
 
 export const useUi = create<UiState>((set) => ({
   screen: 'home',
+  teamId: undefined,
+  openTeam: (teamId) => set({ screen: 'team', teamId }),
   locale: 'en',
   focus: null,
   openRoster: (teamId, playerId) => set({ screen: 'roster', focus: { teamId, playerId } }),
