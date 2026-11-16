@@ -61,7 +61,7 @@ would need the same thing, it belongs in a shared engine.
 | `packages/data`     | SQLite saves: migrations, load/save state, persist events, queries      | `@gm/shared`, `@gm/sim` (types + API), `better-sqlite3` |
 | `apps/desktop`      | Electron: main (LeagueService, worker, Steam), preload, React UI        | everything, but `@gm/sim` only from its root            |
 | `tools/balance-lab` | Headless league-health report (`pnpm lab`)                              | `@gm/sim`, `@gm/shared`                                 |
-| `ml/`               | Python training → `models/*.onnx`                                       | n/a                                                     |
+| `ml/`               | Python training → model tables (JSON) in `ml/models/`                   | n/a                                                     |
 
 ## Inside `packages/sim`: engines
 

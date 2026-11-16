@@ -52,7 +52,7 @@ Seven shared engines live in `packages/sim`; every feature is a thin layer on to
 - **Everything is data.** Rules, teams, colours, awards, schedule and playoff format live in data, never hard-coded.
 - **Every action is a command.** Trades, signings and line changes go through one command layer (`GmApi`). This makes multiplayer possible later.
 - **SQL only in `packages/data`.** One save = one SQLite file. Never edit a shipped migration.
-- **ML behind interfaces.** Trained in Python, shipped as ONNX, plugged into the Sim, Players and Value engines. A rules-based fallback always exists.
+- **ML behind interfaces.** Trained in Python, shipped as data tables the pure sim loads (see MODEL_CONTRACTS.md), plugged into the Sim, Players and Value engines. A rules-based fallback always exists.
 - **Seeded everything.** Same seed, same season: reproducible bugs, replayable games, fair multiplayer.
 
 ## Foundation: data and machine learning

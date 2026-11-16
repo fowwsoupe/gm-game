@@ -23,3 +23,10 @@ TanStack) fits well and matches what we already know. It needs a desktop wrapper
 - Native modules (`better-sqlite3`, `steamworks.js`) must be rebuilt for Electron:
   `electron-builder install-app-deps` runs on install.
 - Test builds on Windows early; most Steam players are on Windows.
+
+## Amendment (2026-11-15)
+
+Models do not ship as ONNX. To keep the sim pure (no native runtime, no file access), a trained
+model ships as data the sim loads: a JSON table or coefficients behind the same interfaces
+(`gm-xg-table` for `GoalModel`, `gm-stats-to-ratings`; see [MODEL_CONTRACTS.md](../MODEL_CONTRACTS.md)).
+ONNX can still be a training-side step before the table is sampled.
