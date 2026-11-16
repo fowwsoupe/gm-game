@@ -74,6 +74,9 @@ export interface SportModule<Strength = unknown> {
     percentiles: readonly { key: string; value: number }[],
   ): { build: string; tags: string[] };
 
+  /** Standout individual nights in a finished game (hockey: hat tricks, shutouts), as news keys. */
+  highlights(result: GameResult): { key: string; playerId: PlayerId; teamId: TeamId }[];
+
   /** Each player's stat line over these games, by player id (hockey: gp, goals, assists, points...). */
   playerLines(results: readonly GameResult[]): Map<string, Record<string, number>>;
 

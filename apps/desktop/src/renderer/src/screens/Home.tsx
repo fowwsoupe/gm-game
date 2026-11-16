@@ -185,7 +185,11 @@ function FeedCard() {
           e.headline === 'event.seriesWon' ||
           e.headline === 'event.championCrowned' ||
           e.headline === 'event.lotteryWon' ||
-          e.headline === 'event.trade'
+          e.headline === 'event.trade' ||
+          e.headline === 'event.winStreak' ||
+          e.headline === 'event.losingStreak' ||
+          e.headline === 'event.hatTrick' ||
+          e.headline === 'event.shutout'
         )
           return t(e.headline, e.params);
         if (e.headline === 'event.awardWon')

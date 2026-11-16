@@ -330,6 +330,19 @@ function advance(
     }
     return cached.strength;
   };
+  // Each team's current run (wins > 0, losses < 0), from this season's games so far.
+  const streaks = new Map<TeamId, number>();
+  for (const g of Object.values(state.results)) {
+    if (g.playoffSeriesId) continue;
+    const homeWon = g.homeScore > g.awayScore;
+    for (const [id, won] of [
+      [g.homeTeamId, homeWon],
+      [g.awayTeamId, !homeWon],
+    ] as const) {
+      const run = streaks.get(id) ?? 0;
+      streaks.set(id, won ? Math.max(0, run) + 1 : Math.min(0, run) - 1);
+    }
+  }
   /** Records a finished game and the injuries it caused (the injuries are not kept on the result). */
   const finishGame = (result: GameResult, day: number) => {
     const { injuries = [], ...game } = result;
@@ -339,6 +352,41 @@ function advance(
         result: game,
       }),
     );
+    const team = (id: TeamId) => `${state.teams[id]!.city} ${state.teams[id]!.name}`;
+    for (const h of sport.highlights(game)) {
+      const p = state.players[h.playerId];
+      if (!p) continue;
+      // Yours make the feed; the league's (a few a week) stay in the log.
+      const importance = state.teams[h.teamId]?.userControlled ? 'notable' : 'minor';
+      emit(
+        makeEvent(state, importance, [h.teamId], {
+          kind: 'news.posted',
+          headline: `event.${h.key}`,
+          params: { player: `${p.firstName} ${p.lastName}`, team: team(h.teamId) },
+        }),
+      );
+    }
+    // Streaks: news when a run reaches a milestone (regular season only).
+    if (!game.playoffSeriesId) {
+      const homeWon = game.homeScore > game.awayScore;
+      for (const [id, won] of [
+        [game.homeTeamId, homeWon],
+        [game.awayTeamId, !homeWon],
+      ] as const) {
+        const run = streaks.get(id) ?? 0;
+        const next = won ? Math.max(0, run) + 1 : Math.min(0, run) - 1;
+        streaks.set(id, next);
+        if (STREAK_MILESTONES.includes(Math.abs(next))) {
+          emit(
+            makeEvent(state, 'notable', [id], {
+              kind: 'news.posted',
+              headline: next > 0 ? 'event.winStreak' : 'event.losingStreak',
+              params: { team: team(id), n: Math.abs(next) },
+            }),
+          );
+        }
+      }
+    }
     for (const { playerId, days } of injuries) {
       const teamId = state.players[playerId]?.teamId;
       emit(
@@ -530,6 +578,9 @@ function advance(
   }
   return events;
 }
+
+/** Win or losing streaks of these lengths make the news. */
+const STREAK_MILESTONES = [6, 9, 12];
 
 /** Injuries at least this long to one of your players stop "sim until it matters". */
 const LONG_INJURY_DAYS = 14;
