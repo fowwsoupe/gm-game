@@ -20,10 +20,10 @@ Builds the engines everything else depends on.
 - [x] Multi-sport structure: shared engines + `SportModule` per sport (hockey only for now)
 - [x] Model plug-in points (`Models`): goal, development, valuation
 - [x] CBA ruleset as data (`sim/cba`): cap, contract rules, 84-game season
-- [~] Data pipeline (`ml/`): NHL play-by-play and player seasons prototyped; junior/European, draft and contract inputs still missing
-- [~] NHL-only held-out study done ([report](M1_PROTOTYPE_REPORT.md)); rating list v2 in code ([RATINGS.md](RATINGS.md), `faceoffs` provisional); M1 sign-off pending the data-scope decision
+- [x] Data pipeline (`ml/`): NHL play-by-play and player seasons prototyped; junior/European, draft and contract inputs deferred past v0.1 (community rosters instead)
+- [~] NHL-only held-out study done ([report](M1_PROTOTYPE_REPORT.md)); rating list v2 in code ([RATINGS.md](RATINGS.md), `faceoffs` provisional); M1 signed off on the NHL-only prototype
 - [ ] Hidden ratings model + stats-to-ratings model
-- [ ] Line-by-line game sim (`sim/game`) + fast "result only" odds sim
+- [x] Line-by-line game sim (`sports/hockey/game.ts`) + "result only" mode; ONNX shot model (Azmi) plugs into `GoalModel`
 - [~] Balance lab: league-health report works (`pnpm lab`); multi-year checks once seasons roll over
 - [~] Speed test in CI: day, season and year-20 budgets in place; screen timing to add
 - [~] Design system: tokens, team theming, Card, Button, PercentileBar; player card and broadcast captions to add
@@ -46,7 +46,7 @@ Build order, owners and "done when" for each step: **[V0.1_PLAN.md](V0.1_PLAN.md
 
 - [ ] Full season calendar: camp → 84 games → deadline → playoffs → awards → draft → re-sign → FA
 - [ ] Trades v1: team status, rentals, leverage, scarcity, trade block, conditional picks, retention, AI explains
-- [~] Contracts & cap: CBA checks, buyouts and cap sheet data done; RFA / UFA, bonuses, trade protection, cap sheet screen, cap advisor to do
+- [~] Contracts & cap: CBA checks, buyouts, cap sheet screen, cap advisor and offseason re-signing done; RFA / UFA, bonuses, trade protection, in-season extensions to do
 - [ ] Free agency v1: player priorities + interest meter
 - [ ] Draft v1: visual board, follow list, floor/ceiling ranges, scout reports
 - [ ] Playoffs: honest momentum (goalie form), own cup + Playoff MVP, playoff cap

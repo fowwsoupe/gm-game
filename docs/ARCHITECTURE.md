@@ -43,7 +43,7 @@ is split so the other sports slot in without touching shared engines:
   cap sheet, news feed, owner layer...) work for any sport.
 - **Per sport** (`packages/sim/src/sports/<sport>/`): positions and rating keys, the game sim
   and its tuning, the fictional league generator, default rulesets, sport-specific models
-  (hockey's `GoalModel`), and its balance-lab ranges. Each implements `SportModule`
+  (hockey's shot-level `GoalModel`), and its balance-lab ranges. Each implements `SportModule`
   (`sports/sport.ts`) and is registered in `context.ts`.
 - **Shared types stay neutral:** `Player.position` is a string, `Player.ratings` is a map of
   rating keys, `GameResult` has `homeScore` / `awayScore` / `overtime` plus sport-specific

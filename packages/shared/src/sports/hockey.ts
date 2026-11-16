@@ -67,12 +67,24 @@ export type HockeyPenalty = [number, 0 | 1, number, number];
  */
 export type HockeyShot = [number, 0 | 1, number, number, number, 0 | 1, number, number, 0 | 1];
 
-/** What GameResult.box holds for hockey. Goals are the shots flagged as goals; shootout goals are not listed. */
+/** One side of a box score. `relief` is the goalie who came in (pulled or hurt), if any. */
+export interface HockeyBoxSide {
+  skaters: HockeySkaterLine[];
+  goalie: HockeyGoalieLine;
+  relief?: HockeyGoalieLine;
+}
+
+/**
+ * What GameResult.box holds for hockey. Goals are the shots flagged as goals; shootout goals are
+ * not listed. `emptyNet` counts the goals each side [home, away] scored into an empty net: they
+ * are in `shots` but on no goalie's line.
+ */
 export interface HockeyBoxScore {
-  home: { skaters: HockeySkaterLine[]; goalie: HockeyGoalieLine };
-  away: { skaters: HockeySkaterLine[]; goalie: HockeyGoalieLine };
+  home: HockeyBoxSide;
+  away: HockeyBoxSide;
   shots: HockeyShot[];
   penalties: HockeyPenalty[];
+  emptyNet?: [number, number];
 }
 
 export const isGoalie = (position: string) => position === 'G';

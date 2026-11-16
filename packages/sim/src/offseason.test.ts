@@ -111,7 +111,7 @@ describe('offseason rollover', () => {
     for (let i = 0; i < 3; i++) {
       expect(playSeasonAndRollOver(a).events).toEqual(playSeasonAndRollOver(b).events);
     }
-  });
+  }, 30_000); // six seasons with the shift-by-shift game: ~2 s here, over 5 s on a slow CI runner
 });
 
 describe('awards', () => {

@@ -30,7 +30,7 @@ export const ICE_TIME = {
 } as const;
 
 /** How much forwards and defencemen count toward a team's attack and defence. */
-const UNIT_WEIGHT = {
+export const UNIT_WEIGHT = {
   offense: { forwards: 0.75, defense: 0.25 },
   defense: { forwards: 0.4, defense: 0.6 },
 };
@@ -39,7 +39,7 @@ const UNIT_WEIGHT = {
  * Faceoffs: each point of the centres' draw skill (by ice time) above 50 adds this much to both
  * attack and defence. Small on purpose: possession off a draw is worth little in real games.
  */
-const FACEOFF_WEIGHT = 0.05;
+export const FACEOFF_WEIGHT = 0.05;
 
 const byRating = (a: Player, b: Player) => overall(b) - overall(a) || a.id.localeCompare(b.id);
 
@@ -74,16 +74,17 @@ export function autoLineup(players: readonly Player[]): Lineup {
   };
 }
 
-const r = (p: Player, k: string) => p.ratings[k] ?? 50;
-const attack = (p: Player) =>
+export const rating = (p: Player, k: string) => p.ratings[k] ?? 50;
+const r = rating;
+export const attack = (p: Player) =>
   r(p, 'shooting') * 0.4 +
   r(p, 'passing') * 0.3 +
   r(p, 'puckHandling') * 0.2 +
   r(p, 'skating') * 0.1;
-const defence = (p: Player) =>
+export const defence = (p: Player) =>
   r(p, 'defense') * 0.5 + r(p, 'hockeyIq') * 0.3 + r(p, 'physical') * 0.2;
-const faceoffs = (p: Player) => r(p, 'faceoffs');
-const goalieScore = (p: Player) =>
+export const faceoffs = (p: Player) => r(p, 'faceoffs');
+export const goalieScore = (p: Player) =>
   r(p, 'reflexes') * 0.4 +
   r(p, 'positioning') * 0.35 +
   r(p, 'reboundControl') * 0.15 +

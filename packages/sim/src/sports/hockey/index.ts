@@ -11,8 +11,7 @@ import { hockeyLeaders } from './stats';
 /**
  * Hockey (NHL-style). Owns everything that only makes sense in hockey: positions and
  * ratings, the game sim and its tuning, the fictional league generator, the NHL ruleset.
- * TODO(feature): line-by-line sim (who's on the ice, special teams, goalie rules), event
- * stream with locations for the match viewer, fast "result only" mode for playoff odds.
+ * The game is played shift by shift (see game.ts); a "result only" mode skips the box score.
  */
 export function hockeySport(goalModel: GoalModel = rulesGoalModel): SportModule<TeamStrength> {
   return {
@@ -32,7 +31,16 @@ export function hockeySport(goalModel: GoalModel = rulesGoalModel): SportModule<
 }
 
 export { NHL_2026, FICTIONAL_2026 } from './ruleset-nhl-2026';
-export { simGame, rulesGoalModel, HOCKEY_TUNING, type GoalModel, type MatchupInput } from './game';
+export {
+  simGame,
+  rulesGoalModel,
+  strengthEdge,
+  shotQuality,
+  HOCKEY_TUNING,
+  type GoalModel,
+  type ShotInfo,
+  type MatchupInput,
+} from './game';
 export { teamStrength, autoLineup, ICE_TIME, type TeamStrength, type Lineup } from './strength';
 export { importHockeyRoster, exportHockeyRoster } from './roster';
 export { hockeyLeaders, hockeySeasonStats } from './stats';
