@@ -13,7 +13,7 @@ export function CommandK({
   onClose: () => void;
 }) {
   const t = useT();
-  const { setScreen, openRoster } = useUi();
+  const { setScreen, openRoster, openTeam } = useUi();
   const { data: teams = [] } = useTeams();
   // Every player in the league: one cached read per team, plus free agents.
   const { data: players = [] } = useQuery({
@@ -50,8 +50,7 @@ export function CommandK({
       onPick={(id) => {
         const [kind, a, b] = id.split(':');
         if (kind === 's') setScreen(a as Screen);
-        // TODO(#58): open the team page here once it exists; the roster is the closest screen.
-        else if (kind === 't') openRoster(a!);
+        else if (kind === 't') openTeam(a!);
         else openRoster(a!, b);
         onClose();
       }}
