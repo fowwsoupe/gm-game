@@ -1,4 +1,4 @@
-import type { Rng } from '../core';
+import { Rng } from '../core';
 
 /**
  * One personality system used everywhere: morale, contract asks, trade requests,
@@ -33,4 +33,32 @@ export function randomPersonality(rng: Rng): Personality {
   const p = {} as Personality;
   for (const t of TRAITS) p[t] = Math.round(rng.next() * 100) / 100;
   return p;
+}
+
+/** FNV-1a: a stable 32-bit number from a string. */
+function hash(text: string): number {
+  let h = 0x811c9dc5;
+  for (let i = 0; i < text.length; i++) h = Math.imul(h ^ text.charCodeAt(i), 0x01000193);
+  return h >>> 0;
+}
+
+/**
+ * A player's personality, derived from his id: the same in every copy of the league and every
+ * save, with nothing stored and no draw from the league's random stream.
+ */
+export const personalityOf = (playerId: string): Personality =>
+  randomPersonality(new Rng(hash(`personality:${playerId}`)));
+
+/** Traits strong (or, for temperament, weak) enough to mention, strongest first, at most two. */
+export function notableTraits(p: Personality): string[] {
+  const out: [string, number][] = [];
+  for (const t of TRAITS) {
+    if (t === 'temperament') {
+      if (p[t] <= 0.15) out.push(['hotHeaded', 0.15 - p[t]]);
+    } else if (p[t] >= 0.85) out.push([t, p[t] - 0.85]);
+  }
+  return out
+    .sort((a, b) => b[1] - a[1])
+    .slice(0, 2)
+    .map(([t]) => t);
 }

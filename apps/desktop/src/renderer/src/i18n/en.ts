@@ -293,6 +293,12 @@ export const en = {
   'tag.defender': 'Lockdown',
   'tag.steady': 'Steady',
   'tag.reflexes': 'Quick reflexes',
+  'trait.loyalty': 'Loyal',
+  'trait.ambition': 'Ambitious',
+  'trait.greed': 'Money-driven',
+  'trait.leadership': 'Leader',
+  'trait.professionalism': 'Professional',
+  'trait.hotHeaded': 'Hot-headed',
 } as const;
 
 export type MessageKey = keyof typeof en;

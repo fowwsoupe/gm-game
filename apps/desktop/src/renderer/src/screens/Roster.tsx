@@ -150,11 +150,19 @@ function Profile({ player: p, signFor }: { player: PlayerProfile; signFor: TeamI
             list: strengths.map((x) => t(`rating.${x.key}` as MessageKey)).join(', '),
           })}
         </p>
-        {p.tags.length > 0 && (
+        {p.tags.length + p.traits.length > 0 && (
           <p className="mt-2 flex flex-wrap gap-1">
             {p.tags.map((tag) => (
               <span key={tag} className="rounded-full border border-line px-2 py-0.5 text-xs">
                 {t(`tag.${tag}` as MessageKey)}
+              </span>
+            ))}
+            {p.traits.map((trait) => (
+              <span
+                key={trait}
+                className="rounded-full border border-line px-2 py-0.5 text-xs text-muted"
+              >
+                {t(`trait.${trait}` as MessageKey)}
               </span>
             ))}
           </p>

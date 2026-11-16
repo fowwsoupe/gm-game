@@ -1,10 +1,13 @@
 /**
  * People engine.
  * Owns: personalities, morale, player priorities, AI GM and owner styles, chemistry inputs.
- * TODO(feature): morale, chemistry (visible, capped), FA priority weights by age.
+ * Personalities come from the player's id (`personalityOf`); free agency weighs them.
+ * TODO(feature): morale, chemistry (visible, capped).
  */
 export {
   randomPersonality,
+  personalityOf,
+  notableTraits,
   TRAITS,
   PRIORITIES,
   type Personality,

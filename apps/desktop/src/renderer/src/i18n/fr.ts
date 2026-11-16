@@ -291,4 +291,10 @@ export const fr: Record<MessageKey, string> = {
   'tag.defender': 'Verrou',
   'tag.steady': 'Constant',
   'tag.reflexes': 'Réflexes vifs',
+  'trait.loyalty': 'Loyal',
+  'trait.ambition': 'Ambitieux',
+  'trait.greed': 'Motivé par l’argent',
+  'trait.leadership': 'Leader',
+  'trait.professionalism': 'Professionnel',
+  'trait.hotHeaded': 'Tête brûlée',
 };
