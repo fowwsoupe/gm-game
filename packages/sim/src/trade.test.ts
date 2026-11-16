@@ -232,6 +232,12 @@ describe('AI-to-AI trades', () => {
     };
     const seasons = [2, 4, 5, 6, 8].map(run);
     expect(seasons.reduce((n, s) => n + s.trades.length, 0)).toBeGreaterThan(3);
+    // Some buyers pay with draft picks.
+    expect(
+      seasons.some((s) =>
+        s.trades.some((e) => e.kind === 'trade.completed' && e.givePicks?.length),
+      ),
+    ).toBe(true);
     for (const { state, trades } of seasons) {
       for (const e of trades) {
         if (e.kind !== 'trade.completed') continue;

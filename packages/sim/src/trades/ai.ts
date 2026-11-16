@@ -2,6 +2,7 @@ import type { Player, TeamId, TeamStatus } from '@gm/shared';
 import type { Emit, LeagueState, Rng } from '../core';
 import type { SimContext } from '../context';
 import { evaluateTrade, teamContext, tradeWindowOpen } from './evaluate';
+import { draftPicks } from '../league';
 
 /** Chance the league makes a trade in a given week (when a deal both sides like exists). */
 const WEEKLY_TRADE_CHANCE = 0.8;
@@ -16,7 +17,7 @@ const SELLING: readonly TeamStatus[] = ['seller', 'rebuilder', 'crisis'];
 /**
  * AI GMs trade with each other: a buyer looks at a seller's roster for the player it values
  * most above what the seller does, and offers one of its own players the seller values more
- * than it does. The trade happens only if both sides accept under the same rules as a human
+ * than it does (or a draft pick when no player works). The trade happens only if both sides accept under the same rules as a human
  * offer (`evaluateTrade`), so the AI cannot make a trade a human could not.
  * One trade a week at most. Human teams are never involved.
  */
@@ -31,6 +32,7 @@ export function aiTrades(state: LeagueState, ctx: SimContext, rng: Rng, emit: Em
   const sellers = ai.filter((id) => SELLING.includes(status(id)));
   if (!buyers.length || !sellers.length) return;
 
+  const name = (p: Player) => `${p.firstName} ${p.lastName}`;
   const roster = (id: TeamId) =>
     Object.values(state.players)
       .filter((p) => p.teamId === id)
@@ -56,40 +58,53 @@ export function aiTrades(state: LeagueState, ctx: SimContext, rng: Rng, emit: Em
     const gap = (p: Player, to: TeamId, from: TeamId) => value(p, to) - value(p, from);
     const target = roster(seller).sort((a, b) => gap(b, buyer, seller) - gap(a, buyer, seller))[0];
     if (!target) continue;
-    const offers = roster(buyer)
-      .filter((p) => gap(p, seller, buyer) > 0)
-      .sort((a, b) => gap(b, seller, buyer) - gap(a, seller, buyer))
-      .slice(0, OFFERS_TRIED);
+    // What the buyer can pay with: players the seller values more than it does, then its picks.
+    const offers: { give: string[]; givePicks: string[]; label: string }[] = [
+      ...roster(buyer)
+        .filter((p) => gap(p, seller, buyer) > 0)
+        .sort((a, b) => gap(b, seller, buyer) - gap(a, seller, buyer))
+        .slice(0, OFFERS_TRIED)
+        .map((p) => ({ give: [p.id], givePicks: [], label: name(p) })),
+      ...draftPicks(state, ctx.ruleset.draft.rounds, buyer)
+        .sort((a, b) => b.season - a.season || b.round - a.round) // cheapest first
+        .slice(0, OFFERS_TRIED)
+        .map((pk) => ({
+          give: [],
+          givePicks: [pk.id],
+          label: `${pk.season} R${pk.round} (${state.teams[pk.originalTeamId]!.abbreviation})`,
+        })),
+    ];
     for (const offer of offers) {
-      const give = [offer.id];
       const get = [target.id];
       const sellerSays = evaluateTrade(state, ctx, {
         fromTeamId: buyer,
         toTeamId: seller,
-        give,
+        give: offer.give as Player['id'][],
         get,
+        givePicks: offer.givePicks,
       });
       if (!sellerSays.accepted) continue;
       const buyerSays = evaluateTrade(state, ctx, {
         fromTeamId: seller,
         toTeamId: buyer,
         give: get,
-        get: give,
+        get: offer.give as Player['id'][],
+        getPicks: offer.givePicks,
       });
       if (!buyerSays.accepted) continue;
       emit('major', [buyer, seller], {
         kind: 'trade.completed',
         fromTeamId: buyer,
         toTeamId: seller,
-        give,
+        give: offer.give as Player['id'][],
         get,
+        ...(offer.givePicks.length && { givePicks: offer.givePicks }),
       });
       const team = (id: TeamId) => `${state.teams[id]!.city} ${state.teams[id]!.name}`;
-      const name = (p: Player) => `${p.firstName} ${p.lastName}`;
       emit('notable', [buyer, seller], {
         kind: 'news.posted',
         headline: 'event.trade',
-        params: { from: team(buyer), to: team(seller), give: name(offer), get: name(target) },
+        params: { from: team(buyer), to: team(seller), give: offer.label, get: name(target) },
       });
       return;
     }
