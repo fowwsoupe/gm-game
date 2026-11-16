@@ -7,6 +7,7 @@ import {
   usePlayoffs,
   usePulse,
   useStandings,
+  useStatus,
   useTeams,
 } from '@/lib/queries';
 import { useUi } from '@/stores/ui';
@@ -83,7 +84,10 @@ function TeamStrip({ teamId }: { teamId: TeamId }) {
   const { data: sheet } = useCapSheet(teamId);
   const { data: home } = useDashboard(teamId);
   const row = rows.find((r) => r.teamId === teamId);
-  const odds = pulse.find((p) => p.teamId === teamId)?.playoffOdds;
+  const { data: status } = useStatus();
+  // Odds only mean something before the playoffs are set.
+  const inSeason = status?.phase === 'preseason' || status?.phase === 'regular';
+  const odds = inSeason ? pulse.find((p) => p.teamId === teamId)?.playoffOdds : undefined;
   const space = sheet?.seasons[0]?.space;
   const opponent = teams.find((x) => x.id === home?.nextGame?.opponentId);
   const pct = (n: number) => `${Math.round(n * 100)}%`;
