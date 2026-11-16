@@ -3,6 +3,7 @@ import type { Emit, LeagueState, Rng } from '../core';
 import type { SimContext } from '../context';
 import { evaluateTrade, teamContext, tradeWindowOpen } from './evaluate';
 import { draftPicks } from '../league';
+import { GM_LEAN, gmOf, seenBy } from '../people';
 
 /** Chance the league makes a trade in a given week (when a deal both sides like exists). */
 const WEEKLY_TRADE_CHANCE = 0.8;
@@ -27,7 +28,7 @@ function valuer(state: LeagueState, ctx: SimContext) {
     if (v === undefined) {
       let team = contexts.get(teamId);
       if (!team) contexts.set(teamId, (team = teamContext(state, ctx, teamId)));
-      v = ctx.models.valuation.value(p, team, ctx.ruleset).surplus;
+      v = ctx.models.valuation.value(seenBy(state.teams[teamId]!, p), team, ctx.ruleset).surplus;
       values.set(key, v);
     }
     return v;
@@ -48,8 +49,14 @@ export function aiTrades(state: LeagueState, ctx: SimContext, rng: Rng, emit: Em
     .map((t) => t.id)
     .sort();
   const status = (id: TeamId) => state.teamStatus[id] ?? 'bubble';
-  const buyers = ai.filter((id) => BUYING.includes(status(id)));
-  const sellers = ai.filter((id) => SELLING.includes(status(id)));
+  // A team on the bubble goes the way its GM leans: a win-now GM buys, a builder sells.
+  const lean = (id: TeamId) => GM_LEAN[gmOf(state.teams[id]!).style];
+  const buys = (id: TeamId) =>
+    BUYING.includes(status(id)) || (status(id) === 'bubble' && lean(id) > 0);
+  const sells = (id: TeamId) =>
+    SELLING.includes(status(id)) || (status(id) === 'bubble' && lean(id) < 0);
+  const buyers = ai.filter(buys);
+  const sellers = ai.filter(sells);
   if (!buyers.length || !sellers.length) return;
 
   const name = (p: Player) => `${p.firstName} ${p.lastName}`;

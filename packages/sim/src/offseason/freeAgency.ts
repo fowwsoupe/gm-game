@@ -1,10 +1,12 @@
-import type { Player, PlayerId, TeamId } from '@gm/shared';
+import type { Player, PlayerId, TeamId, TeamStatus } from '@gm/shared';
 import type { Emit, LeagueState, Rng } from '../core';
 import type { SimContext } from '../context';
 import { payroll } from '../cba';
 import { overall } from '../players';
+import { seenBy } from '../people';
 import {
   ageIn,
+  resignAsk,
   allPlayers,
   countAt,
   entryContract,
@@ -23,8 +25,15 @@ function typicalRating(state: LeagueState): number {
   return rostered[Math.floor(rostered.length / 2)] ?? 0;
 }
 
-/** Chance a player agrees to re-sign with his team. */
-const RESIGN_CHANCE = 0.6;
+/** Chance a player agrees to re-sign with his team: players like to stay with a winner. */
+const RESIGN_CHANCE: Record<TeamStatus, number> = {
+  contender: 0.78,
+  buyer: 0.7,
+  bubble: 0.6,
+  seller: 0.52,
+  rebuilder: 0.45,
+  crisis: 0.45,
+};
 
 /** How far below the league's typical rostered player a player may be and still get re-signed. */
 const RESIGN_SLACK = 8;
@@ -75,26 +84,28 @@ export function reSignPlayers(
 
   for (const teamId of [...expiring.keys()].sort()) {
     // A human GM re-signs his own players in the re-sign window; the rest walk.
-    if (state.teams[teamId]?.userControlled) continue;
+    const team = state.teams[teamId];
+    if (!team || team.userControlled) continue;
+    const seen = (p: Player) => overall(seenBy(team, p));
     const candidates = expiring
       .get(teamId)!
       .map((id) => state.players[id])
       .filter((p): p is Player => !!p)
-      .sort((a, b) => overall(b) - overall(a) || a.id.localeCompare(b.id));
+      .sort((a, b) => seen(b) - seen(a) || a.id.localeCompare(b.id));
     for (const p of candidates) {
       const roster = rosterOf(state, teamId);
       if (roster.length >= ruleset.roster.maxActive) break;
       const needed = countAt(roster, p.position) < (ruleset.roster.positionMin[p.position] ?? 0);
-      if (!needed && overall(p) < typical - RESIGN_SLACK) continue;
+      if (!needed && seen(p) < typical - RESIGN_SLACK) continue;
       // Not every player wants to stay: some test the market (and the worst teams pick first).
-      if (!rng.chance(RESIGN_CHANCE)) continue;
+      if (!rng.chance(RESIGN_CHANCE[state.teamStatus[teamId] ?? 'bubble'])) continue;
       const contract = offerContract(
         ruleset,
         roster,
         p,
         season,
         wantedYears(ageIn(p, season), rng),
-        { isResign: true, discount: false, ask: ctx.models.contractDemand.ask(ruleset, p) },
+        { isResign: true, discount: false, ask: resignAsk(ctx, p, season) },
       );
       if (contract) {
         emit('minor', [teamId], { kind: 'player.signed', playerId: p.id, teamId, contract });
@@ -125,9 +136,11 @@ export function fillRosters(
     const roster = rosterOf(state, teamId);
     const position = neededPosition(ruleset, roster);
     if (position === null && roster.length >= ruleset.roster.minActive) return false;
+    const team = state.teams[teamId]!;
+    const seen = (p: Player) => (team.userControlled ? overall(p) : overall(seenBy(team, p)));
     const pool = freeAgents(state)
       .filter((p) => position === null || p.position === position)
-      .sort((a, b) => overall(b) - overall(a) || a.id.localeCompare(b.id));
+      .sort((a, b) => seen(b) - seen(a) || a.id.localeCompare(b.id));
     for (const p of pool) {
       const contract = offerContract(
         ruleset,

@@ -1,6 +1,7 @@
 import type { Player, Team, TeamId, TeamStatus } from '@gm/shared';
 import { Rng, type LeagueState } from './core';
 import { makeSchedule } from './league';
+import { randomGm } from './people';
 import type { SimContext } from './context';
 
 /** First season of a new league. 2027 = the 2026-27 season. */
@@ -31,7 +32,9 @@ export function createLeague(
     rulesetId: ctx.ruleset.id,
     date: { season, day: 0 },
     rngState: rng.fork('games').state,
-    teams: Object.fromEntries(teams.map((t) => [t.id, t])),
+    teams: Object.fromEntries(
+      teams.map((t, i) => [t.id, { ...t, gm: t.gm ?? randomGm(rng.fork(`gm${i}`)) }]),
+    ),
     players: Object.fromEntries(players.map((p) => [p.id, p])),
     teamStatus: Object.fromEntries(teams.map((t) => [t.id, 'bubble' as TeamStatus])) as Record<
       TeamId,

@@ -4,6 +4,7 @@ import type {
   Contract,
   DraftProspect,
   GameResult,
+  GmProfile,
   Player,
   PlayerId,
   PlayoffSeries,
@@ -138,6 +139,8 @@ export type LeagueEvent =
   /** An offer is gone: accepted (a `trade.completed` follows), declined or expired. */
   | (EventBase & { kind: 'trade.offerClosed'; offerId: string; accepted: boolean })
   | (EventBase & { kind: 'team.controlChanged'; teamId: TeamId; userControlled: boolean })
+  /** An AI team has a new GM (the old one was fired or moved on). */
+  | (EventBase & { kind: 'team.gmChanged'; teamId: TeamId; gm: GmProfile; fired: boolean })
   | (EventBase & { kind: 'season.phaseChanged'; from: SeasonPhase; to: SeasonPhase })
   | (EventBase & { kind: 'team.statusChanged'; teamId: TeamId; from: TeamStatus; to: TeamStatus })
   | (EventBase & {
