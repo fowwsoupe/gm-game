@@ -130,7 +130,7 @@ function Profile({ player: p, signFor }: { player: PlayerProfile; signFor: TeamI
       <PlayerCard
         name={`${p.firstName} ${p.lastName}`}
         face={<Face seed={p.id} age={p.age} />}
-        subtitle={t('roster.subtitle', { position: p.position, age: p.age })}
+        subtitle={`${t('roster.subtitle', { position: p.position, age: p.age })} · ${t(`build.${p.build}` as MessageKey)}`}
         bars={p.percentiles.map((x) => ({
           label: t(`rating.${x.key}` as MessageKey),
           value: x.value,
@@ -150,6 +150,15 @@ function Profile({ player: p, signFor }: { player: PlayerProfile; signFor: TeamI
             list: strengths.map((x) => t(`rating.${x.key}` as MessageKey)).join(', '),
           })}
         </p>
+        {p.tags.length > 0 && (
+          <p className="mt-2 flex flex-wrap gap-1">
+            {p.tags.map((tag) => (
+              <span key={tag} className="rounded-full border border-line px-2 py-0.5 text-xs">
+                {t(`tag.${tag}` as MessageKey)}
+              </span>
+            ))}
+          </p>
+        )}
         {p.injuredUntil !== undefined && (
           <p className="mt-1 text-sm text-bad">{t('roster.injured', { day: p.injuredUntil })}</p>
         )}

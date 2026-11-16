@@ -36,7 +36,7 @@ Build order, owners and "done when" for each step: **[V0.1_PLAN.md](V0.1_PLAN.md
 
 **Engines**
 
-- [ ] Players (`sim/players`): percentiles, builds, role tags, traits, non-linear development, injuries
+- [~] Players (`sim/players`): percentiles, builds and role tags (rules), injuries done; traits, clustered builds, injury history to do
 - [x] Value (`sim/value`): per-team surplus value (can be negative), market value, pick value curve (rules-based; calibrated curve is Azmi's)
 - [ ] People (`sim/people`): personalities, morale, player priorities, AI GM styles
 - [ ] League & events (`sim/league`): calendar, team status (league pulse), event engine, news
