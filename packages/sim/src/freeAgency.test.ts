@@ -10,6 +10,7 @@ import {
   seenBy,
   signFreeAgent,
   signingInterest,
+  stayChance,
   type LeagueState,
 } from './index';
 
@@ -221,5 +222,23 @@ describe('personality in free agency', () => {
         (f) => f.key === 'money',
       )!.weight;
     expect(moneyWeight(greedy)).toBeGreaterThan(moneyWeight(modest));
+  });
+});
+
+describe('re-signing with his own team', () => {
+  const ids = Array.from({ length: 500 }, (_, i) => `p${i}`);
+  const most = (trait: 'loyalty' | 'ambition', sign: 1 | -1) =>
+    ids.reduce((a, b) => (sign * personalityOf(b)[trait] > sign * personalityOf(a)[trait] ? b : a));
+
+  it('depends on the player: loyalty, and winning if he is ambitious', () => {
+    expect(stayChance('bubble', most('loyalty', 1))).toBeGreaterThan(
+      stayChance('bubble', most('loyalty', -1)) + 0.3,
+    );
+    // Winning pulls an ambitious player harder, both ways.
+    const pull = (id: string) => stayChance('contender', id) - stayChance('rebuilder', id);
+    expect(pull(most('ambition', 1))).toBeGreaterThan(pull(most('ambition', -1)));
+    // Centred on the average player: a team status keeps its overall rate (0.6 on the bubble).
+    const mean = ids.reduce((sum, id) => sum + stayChance('bubble', id), 0) / ids.length;
+    expect(mean).toBeCloseTo(0.6, 1);
   });
 });

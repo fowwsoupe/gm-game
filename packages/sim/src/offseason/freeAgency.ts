@@ -3,7 +3,7 @@ import type { Emit, LeagueState, Rng } from '../core';
 import type { SimContext } from '../context';
 import { deadCap, payroll } from '../cba';
 import { overall } from '../players';
-import { planStatus, seenBy } from '../people';
+import { personalityOf, planStatus, seenBy } from '../people';
 import {
   ageIn,
   resignAsk,
@@ -28,7 +28,7 @@ function typicalRating(state: LeagueState): number {
 /** A rebuilding team does not re-sign players this old. */
 const REBUILD_LETS_GO = 30;
 
-/** Chance a player agrees to re-sign with his team: players like to stay with a winner. */
+/** Chance an average player agrees to re-sign with his team: players like to stay with a winner. */
 const RESIGN_CHANCE: Record<TeamStatus, number> = {
   contender: 0.78,
   buyer: 0.7,
@@ -37,6 +37,24 @@ const RESIGN_CHANCE: Record<TeamStatus, number> = {
   rebuilder: 0.45,
   crisis: 0.45,
 };
+
+/** A fully loyal player stays this much more often than an average one, a disloyal one this much less. */
+const LOYALTY_SWING = 0.2;
+
+/**
+ * Chance a player agrees to re-sign with his team. It depends on him: how loyal he is, and how
+ * much winning matters to him (ambition: half to one and a half times the team's pull, so an
+ * ambitious player stays with a winner and leaves a loser). Both are centred on the average
+ * player, so each kind of team keeps as many players as `RESIGN_CHANCE` says, only not at random.
+ * His role is deliberately left out: core players staying more cut playoff turnover below its
+ * healthy floor (balance lab, 28.6% against 31%).
+ */
+export function stayChance(status: TeamStatus, playerId: string): number {
+  const { loyalty, ambition } = personalityOf(playerId);
+  const winning = (RESIGN_CHANCE[status] - RESIGN_CHANCE.bubble) * (0.5 + ambition);
+  const chance = RESIGN_CHANCE.bubble + winning + (loyalty - 0.5) * 2 * LOYALTY_SWING;
+  return Math.max(0.05, Math.min(0.95, chance));
+}
 
 /** How far below the league's typical rostered player a player may be and still get re-signed. */
 const RESIGN_SLACK = 8;
@@ -103,8 +121,8 @@ export function reSignPlayers(
       // A rebuilding team lets its veterans go (unless it needs the position).
       if (!needed && team.plan?.kind === 'rebuild' && ageIn(p, season) >= REBUILD_LETS_GO) continue;
       // Not every player wants to stay: some test the market (and the worst teams pick first).
-      if (!rng.chance(RESIGN_CHANCE[planStatus(team, state.teamStatus[teamId] ?? 'bubble')]))
-        continue;
+      const status = planStatus(team, state.teamStatus[teamId] ?? 'bubble');
+      if (!rng.chance(stayChance(status, p.id))) continue;
       const contract = offerContract(
         ruleset,
         roster,
