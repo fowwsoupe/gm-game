@@ -12,6 +12,7 @@ import {
   phaseOf,
   parseXgTable,
   playerProfiles,
+  chemistry,
   dashboard,
   raceNight,
   draftPicks,
@@ -354,7 +355,10 @@ export class LeagueService {
     const healthy = Object.values(state.players).filter(
       (p) => p.teamId === teamId && (p.injuredUntil ?? 0) <= state.date.day,
     );
-    return defaultContext(state.rulesetId).sport.lineup(healthy, state.depthCharts[teamId]);
+    return {
+      units: defaultContext(state.rulesetId).sport.lineup(healthy, state.depthCharts[teamId]),
+      chemistry: chemistry(healthy, state.date.season),
+    };
   }
 
   career(playerId: string) {

@@ -9,6 +9,8 @@ export interface TeamStrength {
   /** The starting goalie's rating, and the backup's (who plays the second night of a back-to-back). */
   goaltending: number;
   backupGoaltending: number;
+  /** Chemistry's bonus to every unit's attack and defence, in rating points (±CHEMISTRY_POINTS). */
+  chemistry: number;
   /** The depth chart these numbers come from (also who is credited in the box score). */
   lineup: Lineup;
 }
@@ -42,6 +44,13 @@ export const UNIT_WEIGHT = {
  * gives about +0.05 per SD of draw skill (balance lab "Faceoff effect" check).
  */
 export const FACEOFF_WEIGHT = 0.2;
+
+/**
+ * Chemistry (0–1, from the people engine) moves attack and defence by up to this many rating
+ * points either way around a settled-average team (0.5). Capped by design: worth a few percent
+ * of goal difference at most.
+ */
+export const CHEMISTRY_POINTS = 1;
 
 const byRating = (a: Player, b: Player) => overall(b) - overall(a) || a.id.localeCompare(b.id);
 
@@ -119,7 +128,9 @@ function weighted(
 export function teamStrength(
   players: readonly Player[],
   depth: readonly string[] = [],
+  chemistry = 0.5,
 ): TeamStrength {
+  const chem = CHEMISTRY_POINTS * 2 * (Math.max(0, Math.min(1, chemistry)) - 0.5);
   const lineup = autoLineup(players, depth);
   const { forwards, defense, goalies } = lineup;
   const f = ICE_TIME.forwardLines;
@@ -136,10 +147,11 @@ export function teamStrength(
     ) -
       50);
   return {
-    offense: mix(UNIT_WEIGHT.offense, attack) + draws,
-    defense: mix(UNIT_WEIGHT.defense, defence) + draws,
+    offense: mix(UNIT_WEIGHT.offense, attack) + draws + chem,
+    defense: mix(UNIT_WEIGHT.defense, defence) + draws + chem,
     goaltending: goalies[0] ? goalieScore(goalies[0]) : 40,
     backupGoaltending: goalies[1] ? goalieScore(goalies[1]) : 40,
+    chemistry: chem,
     lineup,
   };
 }

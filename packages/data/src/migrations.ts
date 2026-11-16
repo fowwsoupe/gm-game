@@ -142,4 +142,8 @@ export const migrations: readonly string[] = [
   `
   ALTER TABLE players ADD COLUMN extension_json TEXT;
   `,
+  // 13: the season a player joined his current team (chemistry). NULL = since the league began.
+  `
+  ALTER TABLE players ADD COLUMN joined_season INTEGER;
+  `,
 ];

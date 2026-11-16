@@ -175,6 +175,8 @@ interface Side {
   /** Team skills of the units on ice. */
   uAtk: number;
   uDef: number;
+  /** Chemistry bonus added to every unit (rating points). */
+  chem: number;
 }
 
 function makeSide(strength: TeamStrength, backup: boolean): Side {
@@ -212,6 +214,7 @@ function makeSide(strength: TeamStrength, backup: boolean): Side {
     pulled: false,
     uAtk: 50,
     uDef: 50,
+    chem: strength.chemistry ?? 0,
     skaters: players.map((p) => ({
       id: p.id,
       toi: 0,
@@ -377,13 +380,17 @@ function playGame(
           f.map((k) => S[n].atk[k]!),
           d.map((k) => S[n].atk[k]!),
           UNIT_WEIGHT.offense,
-        ) + draws;
+        ) +
+        draws +
+        S[n].chem;
       S[n].uDef =
         w(
           f.map((k) => S[n].def[k]!),
           d.map((k) => S[n].def[k]!),
           UNIT_WEIGHT.defense,
-        ) + draws;
+        ) +
+        draws +
+        S[n].chem;
     }
     for (const n of [0, 1] as const) {
       const o = (1 - n) as 0 | 1;

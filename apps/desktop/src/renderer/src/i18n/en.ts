@@ -314,6 +314,7 @@ export const en = {
   'standings.view.division': 'Division',
   'history.hallOfFame': 'Hall of Fame',
   'history.hofLine': '{stat} · {seasons} seasons · retired {retired}',
+  'lines.chemistry': 'Team chemistry {value}/100 ({seasons} seasons together on average)',
 } as const;
 
 export type MessageKey = keyof typeof en;

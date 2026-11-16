@@ -2,7 +2,8 @@
  * People engine.
  * Owns: personalities, morale, player priorities, AI GM and owner styles, chemistry inputs.
  * Personalities come from the player's id (`personalityOf`); free agency weighs them.
- * TODO(feature): morale, chemistry (visible, capped).
+ * Chemistry v1 is time together (`chemistry`), worth at most a rating point in the game.
+ * TODO(feature): morale; chemistry from linemates, builds and leaders.
  */
 export {
   randomPersonality,
@@ -15,3 +16,4 @@ export {
   type Priorities,
   type Priority,
 } from './personality';
+export { chemistry, CHEMISTRY_FULL_SEASONS } from './chemistry';
