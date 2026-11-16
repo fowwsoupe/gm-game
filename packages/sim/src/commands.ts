@@ -28,7 +28,7 @@ import {
   rolloverSeason,
   signFreeAgent,
 } from './offseason';
-import { evaluateTrade } from './trades';
+import { aiTrades, evaluateTrade } from './trades';
 import type { SimContext } from './context';
 
 /**
@@ -271,10 +271,16 @@ function advance(
   // Rosters once per call; a team's strength is rebuilt only when its set of injured players changes.
   const sport = ctx.sport;
   const rosters = new Map<TeamId, Player[]>();
-  for (const p of Object.values(state.players)) {
-    if (p.teamId) rosters.set(p.teamId, [...(rosters.get(p.teamId) ?? []), p]);
-  }
   const strengths = new Map<TeamId, { out: string; strength: unknown }>();
+  /** Rebuilt at the start and after a trade moves players. */
+  const loadRosters = () => {
+    rosters.clear();
+    strengths.clear();
+    for (const p of Object.values(state.players)) {
+      if (p.teamId) rosters.set(p.teamId, [...(rosters.get(p.teamId) ?? []), p]);
+    }
+  };
+  loadRosters();
   const strengthOf = (team: TeamId, day: number) => {
     const roster = rosters.get(team) ?? [];
     const hurt = roster.filter((p) => (p.injuredUntil ?? 0) > day);
@@ -436,6 +442,10 @@ function advance(
           );
         }
       }
+      // Forked, so trade talks never shift the games' random numbers.
+      const before = events.length;
+      aiTrades(state, ctx, rng.fork(`trades${today.day}`), emitter(state, events));
+      if (events.length > before) loadRosters();
     }
 
     const tomorrow = { season: today.season, day: today.day + 1 };

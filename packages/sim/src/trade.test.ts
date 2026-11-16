@@ -221,3 +221,25 @@ describe('surplus value', () => {
     );
   });
 });
+
+describe('AI-to-AI trades', () => {
+  it('happen during the season, never with a human team, the same way every time', () => {
+    const run = (seed: number) => {
+      const state = createLeague(seed, base);
+      const res = handleCommand(state, { kind: 'sim.advance', days: 300 }, local, base);
+      if (!res.ok) throw new Error(res.error.message);
+      return { state, trades: res.events.filter((e) => e.kind === 'trade.completed') };
+    };
+    const seasons = [2, 4, 5, 6, 8].map(run);
+    expect(seasons.reduce((n, s) => n + s.trades.length, 0)).toBeGreaterThan(3);
+    for (const { state, trades } of seasons) {
+      for (const e of trades) {
+        if (e.kind !== 'trade.completed') continue;
+        expect(state.teams[e.fromTeamId]!.userControlled).toBe(false);
+        expect(state.teams[e.toTeamId]!.userControlled).toBe(false);
+        expect(e.date.day).toBeLessThanOrEqual(base.ruleset.season.calendar.tradeDeadlineDay);
+      }
+    }
+    expect(run(2).trades).toEqual(seasons[0]!.trades);
+  }, 60_000);
+});

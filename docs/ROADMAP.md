@@ -45,7 +45,7 @@ Build order, owners and "done when" for each step: **[V0.1_PLAN.md](V0.1_PLAN.md
 **Features**
 
 - [~] Full season calendar: 84 games (divisions, conferences, back-to-backs) → playoffs → awards → draft → re-sign → FA done; camp and a trade deadline that matters wait for trades (M6)
-- [~] Trades v1: surplus value per team (status, rentals, negative contracts), anti-quantity, cap and position checks, AI explains itself, trade screen done; picks, retention, trade block, AI-to-AI trades to do
+- [~] Trades v1: surplus value per team (status, rentals, negative contracts), anti-quantity, cap and position checks, AI explains itself, trade screen, AI-to-AI trades (both GMs must accept) done; picks, retention, trade block to do
 - [~] Contracts & cap: CBA checks, buyouts, cap sheet screen, cap advisor and offseason re-signing done; RFA / UFA, bonuses, trade protection, in-season extensions to do
 - [~] Free agency v1: free-agency window in the summer, offers with an interest meter (money, winning, role, term weighted by age), signings any time outside the playoffs done; personalities, loyalty and hometown discounts, AI bidding to do
 - [~] Draft v1: class announced after the playoffs with scouted potential ranges (AI sees the same ranges), your ranked list drives your picks; scout reports and draft-room trades to do
