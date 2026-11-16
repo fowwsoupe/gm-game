@@ -308,6 +308,8 @@ export class LeagueService {
       championTeamId: state.championTeamId,
       freeAgencyOpen: state.freeAgencyOpen,
       tradeDeadlineDay: cal.tradeDeadlineDay,
+      playoffsStartDay: cal.regularSeasonDays,
+      playoffsEndDay: cal.regularSeasonDays + cal.playoffDays,
       tradesOpen: tradeWindowOpen(state, ctx),
     };
   }

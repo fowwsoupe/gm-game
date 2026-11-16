@@ -307,6 +307,9 @@ export interface LeagueStatus {
   /** Between opening free agency and starting the next season. */
   freeAgencyOpen: boolean;
   tradeDeadlineDay: number;
+  /** First day of the playoffs, and the last day they can run (the calendar's, as day indexes). */
+  playoffsStartDay: number;
+  playoffsEndDay: number;
   /** Trades allowed right now. */
   tradesOpen: boolean;
 }

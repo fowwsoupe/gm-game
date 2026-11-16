@@ -302,4 +302,7 @@ export const fr: Record<MessageKey, string> = {
   'event.losingStreak': 'Les {team} ont perdu {n} matchs de suite',
   'event.hatTrick': 'Tour du chapeau pour {player} ({team})',
   'event.shutout': 'Blanchissage pour {player} ({team})',
+  'actions.simToDeadline': 'Simuler jusqu’à la date limite',
+  'actions.simToPlayoffs': 'Simuler jusqu’aux séries',
+  'actions.simToSummer': 'Simuler jusqu’à la fin des séries',
 };
