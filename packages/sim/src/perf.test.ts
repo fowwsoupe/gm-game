@@ -64,5 +64,5 @@ describe('speed budget', () => {
     expect(year().ok).toBe(true);
     expect(performance.now() - t0).toBeLessThan(6_000);
     expect(Object.keys(state.players).length).toBeLessThan(2_000); // retired players do not pile up
-  });
+  }, 120_000); // 20 seasons take ~7 s on a slow CI machine; the budget is for the last one
 });
