@@ -12,6 +12,7 @@ import { classifyTeams, computeStandings, nextRound, seedPlayoffs } from './leag
 import { giveSeasonAwards } from './awards';
 import { announceDraftClass } from './offseason';
 import { aiTrades } from './trades';
+import { chemistry } from './people';
 import type { SimContext } from './context';
 
 /**
@@ -55,7 +56,8 @@ export function advance(
     let cached = strengths.get(team);
     if (!cached || cached.out !== out) {
       const healthy = hurt.length ? roster.filter((p) => !hurt.includes(p)) : roster;
-      cached = { out, strength: sport.teamStrength(healthy, state.depthCharts[team]) };
+      const chem = chemistry(healthy, state.date.season).value;
+      cached = { out, strength: sport.teamStrength(healthy, state.depthCharts[team], chem) };
       strengths.set(team, cached);
     }
     return cached.strength;

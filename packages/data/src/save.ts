@@ -54,6 +54,7 @@ interface PlayerRow {
   ratings_json: string;
   contract_json: string | null;
   extension_json: string | null;
+  joined_season: number | null;
   injured_until: number | null;
 }
 
@@ -286,6 +287,9 @@ export class SaveFile {
     const setStatus = this.db.prepare('UPDATE teams SET status = ? WHERE id = ?');
     const setControl = this.db.prepare('UPDATE teams SET user_controlled = ? WHERE id = ?');
     const setTeam = this.db.prepare('UPDATE players SET team_id = ? WHERE id = ?');
+    // Who joined a new team (or left one) in these events; written from the final state below.
+    const moved = new Set<string>();
+    const setJoined = this.db.prepare('UPDATE players SET joined_season = ? WHERE id = ?');
     const setContractOnly = this.db.prepare('UPDATE players SET contract_json = ? WHERE id = ?');
     const archiveLine = this.db.prepare(
       'INSERT OR REPLACE INTO player_seasons (player_id, season, team_id, stats_json) VALUES (?, ?, ?, ?)',
@@ -361,6 +365,7 @@ export class SaveFile {
             retire.run(e.date.season, e.playerId);
             break;
           case 'contract.boughtOut':
+            moved.add(e.playerId);
             setContract.run(null, null, e.playerId);
             for (const c of e.charges) insertCharge(c);
             break;
@@ -368,10 +373,12 @@ export class SaveFile {
             setInjury.run(e.until, e.playerId);
             break;
           case 'contract.expired':
+            moved.add(e.playerId);
             setContract.run(null, null, e.playerId);
             break;
           case 'player.drafted': {
             const p = e.player;
+            moved.add(p.id);
             insertPlayer.run(
               p.id,
               p.teamId,
@@ -386,6 +393,7 @@ export class SaveFile {
             break;
           }
           case 'player.signed':
+            moved.add(e.playerId);
             setContract.run(e.teamId, JSON.stringify(e.contract), e.playerId);
             break;
           case 'season.started':
@@ -420,6 +428,7 @@ export class SaveFile {
             this.setMeta('freeAgencyOpen', '1');
             break;
           case 'trade.completed':
+            for (const id of [...e.give, ...e.get]) moved.add(id);
             for (const id of e.give) setTeam.run(e.toTeamId, id);
             for (const id of e.get) setTeam.run(e.fromTeamId, id);
             for (const r of e.retained ?? []) {
@@ -437,6 +446,10 @@ export class SaveFile {
             throw new Error(`persist: unhandled event ${(unhandled as LeagueEvent).kind}`);
           }
         }
+      }
+      for (const id of moved) {
+        const p = state.players[id];
+        if (p) setJoined.run(p.joined ?? null, id);
       }
       for (const s of Object.values(state.playoffSeries)) {
         updateSeries.run(s.higherWins, s.lowerWins, s.winnerTeamId ?? null, s.id);
@@ -538,6 +551,7 @@ export class SaveFile {
       };
       if (r.contract_json) p.contract = JSON.parse(r.contract_json);
       if (r.extension_json) p.extension = JSON.parse(r.extension_json);
+      if (r.joined_season !== null) p.joined = r.joined_season;
       if (r.injured_until !== null) p.injuredUntil = r.injured_until;
       return p;
     });

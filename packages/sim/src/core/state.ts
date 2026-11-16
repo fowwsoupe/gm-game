@@ -56,6 +56,9 @@ export interface LeagueState {
  * The single reducer: how each event changes state. Pure and synchronous.
  * Replaying the same events on the same starting state gives the same league.
  */
+/** The season a move counts for: next season once the champion is crowned. */
+const moveSeason = (state: LeagueState) => state.date.season + (state.championTeamId ? 1 : 0);
+
 export function applyEvent(state: LeagueState, event: LeagueEvent): void {
   // Every applied event advances the sequence, in every copy of the state, so ids stay in sync.
   state.eventSeq++;
@@ -112,6 +115,7 @@ export function applyEvent(state: LeagueState, event: LeagueEvent): void {
       p.teamId = null;
       delete p.contract;
       delete p.extension;
+      delete p.joined;
       state.capCharges.push(...event.charges.map((c) => ({ ...c })));
       return;
     }
@@ -124,10 +128,12 @@ export function applyEvent(state: LeagueState, event: LeagueEvent): void {
       p.teamId = null;
       delete p.contract;
       delete p.extension;
+      delete p.joined;
       return;
     }
     case 'player.drafted':
       state.players[event.player.id] = structuredClone(event.player);
+      if (event.player.teamId) state.players[event.player.id]!.joined = moveSeason(state);
       state.draftClass = state.draftClass.filter((d) => d.player.id !== event.player.id);
       return;
     case 'draft.classAnnounced':
@@ -142,6 +148,7 @@ export function applyEvent(state: LeagueState, event: LeagueEvent): void {
     case 'player.signed': {
       const p = state.players[event.playerId];
       if (!p) throw new Error(`unknown player ${event.playerId}`);
+      if (p.teamId !== event.teamId) p.joined = moveSeason(state);
       p.teamId = event.teamId;
       p.contract = { ...event.contract };
       delete p.extension;
@@ -182,6 +189,7 @@ export function applyEvent(state: LeagueState, event: LeagueEvent): void {
           const p = state.players[id];
           if (!p) throw new Error(`unknown player ${id}`);
           p.teamId = to;
+          p.joined = moveSeason(state);
         }
       };
       move(event.give, event.toTeamId);

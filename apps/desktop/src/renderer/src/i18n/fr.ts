@@ -312,4 +312,5 @@ export const fr: Record<MessageKey, string> = {
   'standings.view.division': 'Section',
   'history.hallOfFame': 'Temple de la renommée',
   'history.hofLine': '{stat} · {seasons} saisons · retraité en {retired}',
+  'lines.chemistry': 'Chimie d’équipe {value}/100 ({seasons} saisons ensemble en moyenne)',
 };

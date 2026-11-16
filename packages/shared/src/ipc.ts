@@ -76,7 +76,11 @@ export interface GmApi {
     /** Player cards for a team's players, or the free agents (`teamId: null`). */
     players(input: { teamId: TeamId | null }): Promise<PlayerProfile[]>;
     /** The lineup a team would dress tonight (healthy players, its depth order), as named units. */
-    lines(input: { teamId: TeamId }): Promise<{ unit: string; playerIds: string[] }[]>;
+    lines(input: { teamId: TeamId }): Promise<{
+      units: { unit: string; playerIds: string[] }[];
+      /** Team chemistry 0–1 and the average seasons together it comes from. */
+      chemistry: { value: number; seasons: number };
+    }>;
     /** A player's finished regular seasons, oldest first. */
     career(input: { playerId: string }): Promise<CareerLine[]>;
     /** Draft picks a team owns in the drafts that can be traded. */

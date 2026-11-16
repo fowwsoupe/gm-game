@@ -12,7 +12,8 @@ export function Lines() {
   const t = useT();
   const { data: teams = [] } = useTeams();
   const mine = teams.find((x) => x.userControlled)?.id;
-  const { data: units = [] } = useLines(mine);
+  const { data } = useLines(mine);
+  const units = data?.units ?? [];
   const { data: players = [] } = usePlayers(mine);
   const dispatch = useDispatch();
   const [error, setError] = useState<string | null>(null);
@@ -73,6 +74,14 @@ export function Lines() {
           {t('lines.auto')}
         </Button>
         <span className="text-sm text-muted">{t('lines.note')}</span>
+        {data && (
+          <span className="ml-auto text-sm">
+            {t('lines.chemistry', {
+              value: Math.round(data.chemistry.value * 100),
+              seasons: data.chemistry.seasons.toFixed(1),
+            })}
+          </span>
+        )}
         {error && <span className="text-sm text-bad">{error}</span>}
       </div>
       <div className="grid gap-4 md:grid-cols-2 xl:grid-cols-4">

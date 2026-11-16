@@ -122,6 +122,8 @@ export interface Player {
   contract?: Contract;
   /** Signed in season to start when `contract` ends (an extension). Takes over at the summer's expiries. */
   extension?: Contract;
+  /** Season he joined his current team (chemistry). Absent: since before the league began. */
+  joined?: number;
   /** Injured: first day (of the current season) he can play again. Absent = healthy. Heals over the summer. */
   injuredUntil?: number;
 }
