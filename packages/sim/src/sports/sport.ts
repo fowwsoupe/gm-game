@@ -43,14 +43,17 @@ export interface SportModule<Strength = unknown> {
   generateProspect(rng: Rng, opts: { id: string; season: number; position?: string }): Player;
 
   /**
-   * Picks the player award winners (not the champion) from the finished regular season:
-   * the box scores of its games. Deterministic: no randomness.
+   * Picks the player award winners (not the champion) from the finished season: the box scores
+   * of its regular-season games (`results`) and of its playoffs (`playoffResults`, with the
+   * champion). Deterministic: no randomness.
    */
   pickAwards(input: {
     season: number;
     rules: Ruleset;
     players: readonly Player[];
     results: readonly GameResult[];
+    playoffResults: readonly GameResult[];
+    championTeamId: TeamId | null;
   }): { award: string; playerId: PlayerId }[];
 
   /**

@@ -1,4 +1,4 @@
-import type { Player, PlayerId } from '@gm/shared';
+import type { GameResult, Player, PlayerId, TeamId } from '@gm/shared';
 import type { SportModule } from '../sport';
 import { hockeySeasonStats } from './stats';
 
@@ -8,9 +8,20 @@ import { hockeySeasonStats } from './stats';
  *   topGoalie   best save percentage among goalies with a quarter of the busiest goalie's games
  *   topDefender defenceman with the most points plus half his plus-minus
  *   topRookie   rookie-aged player with the most points
+ *   playoffMvp  the champion's best playoff performer, skater or goalie, scored in goals: a
+ *               skater's goals plus half his assists; a goalie's goals saved above the league's
+ *               playoff save % (with at least a quarter of his team's playoff games), weighted
+ *               by PLAYOFF_GOALIE_WEIGHT
  * TODO(feature): vote-style scoring (team success, narrative), Selke-type defensive forward award.
  */
-export const pickAwards: SportModule['pickAwards'] = ({ season, rules, players, results }) => {
+export const pickAwards: SportModule['pickAwards'] = ({
+  season,
+  rules,
+  players,
+  results,
+  playoffResults,
+  championTeamId,
+}) => {
   const { skaters, goalies } = hockeySeasonStats(results);
   const pointsOf = (p: Player) => {
     const t = skaters.get(p.id);
@@ -62,5 +73,40 @@ export const pickAwards: SportModule['pickAwards'] = ({ season, rules, players, 
       ),
     ],
   ];
+  if (championTeamId)
+    winners.push(['playoffMvp', playoffMvp(players, playoffResults, championTeamId, best)]);
   return winners.flatMap(([award, playerId]) => (playerId ? [{ award, playerId }] : []));
 };
+
+/**
+ * A playoff goal saved counts this much more than a goal created, so a goalie wins the Playoff MVP
+ * about as often as in the NHL's playoff MVP history (16 of ~59 since 1965, ~27%). At 1.0 goalies
+ * won 6% of simulated seasons; 1.5 gave 23% and 2.0 gave 35% (200 seasons).
+ */
+const PLAYOFF_GOALIE_WEIGHT = 1.6;
+
+function playoffMvp(
+  players: readonly Player[],
+  results: readonly GameResult[],
+  championTeamId: TeamId,
+  best: (pool: readonly Player[], score: (p: Player) => number) => PlayerId | null,
+): PlayerId | null {
+  const { skaters, goalies } = hockeySeasonStats(results);
+  let shots = 0;
+  let saves = 0;
+  for (const g of goalies.values()) [shots, saves] = [shots + g.shotsAgainst, saves + g.saves];
+  const leagueSv = shots > 0 ? saves / shots : 0;
+  const teamGames = results.filter(
+    (g) => g.homeTeamId === championTeamId || g.awayTeamId === championTeamId,
+  ).length;
+  const champs = players.filter((p) => p.teamId === championTeamId);
+  return best(champs, (p) => {
+    const s = skaters.get(p.id);
+    if (s) return s.goals + s.assists / 2;
+    const g = goalies.get(p.id);
+    if (g && g.gp >= teamGames / 4) {
+      return PLAYOFF_GOALIE_WEIGHT * g.shotsAgainst * (g.saves / g.shotsAgainst - leagueSv);
+    }
+    return -Infinity;
+  });
+}

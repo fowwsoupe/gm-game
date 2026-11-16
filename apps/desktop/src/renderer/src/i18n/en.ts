@@ -98,6 +98,7 @@ export const en = {
   'award.topGoalie': 'Top Goalie',
   'award.topDefender': 'Top Defender',
   'award.topRookie': 'Top Rookie',
+  'award.playoffMvp': 'Playoff MVP',
   'history.empty': 'No seasons finished yet. Play through the playoffs.',
   'history.season': 'Season {season}',
   'leaders.empty': 'No games played yet.',
