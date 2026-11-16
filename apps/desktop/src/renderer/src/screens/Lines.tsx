@@ -5,8 +5,8 @@ import { useT, type MessageKey } from '@/i18n';
 import { Button, Card } from '@/ui';
 
 /**
- * Your lines: the lineup the game dresses tonight. Move a player up or down among his position
- * to change who plays where; the order is saved as your depth chart and used every game.
+ * Your lines: the lineup the game dresses tonight. Drag a player onto another of his position to swap them (the arrow buttons do the same from the
+ * keyboard) and change who plays where; the order is saved as your depth chart and used every game.
  */
 export function Lines() {
   const t = useT();
@@ -47,8 +47,28 @@ export function Lines() {
     save(positions.flatMap((pos) => (pos === position ? list : orderOf(pos))));
   };
 
+  // Drag one player onto another of the same position to swap them.
+  const swap = (a: string, b: string) => {
+    const position = byId.get(a)?.position;
+    if (!position || a === b || byId.get(b)?.position !== position) return;
+    const list = orderOf(position);
+    const i = list.indexOf(a);
+    const j = list.indexOf(b);
+    [list[i], list[j]] = [list[j]!, list[i]!];
+    save(positions.flatMap((pos) => (pos === position ? list : orderOf(pos))));
+  };
+
   const Row = ({ p }: { p: PlayerProfile }) => (
-    <li className="flex items-center justify-between gap-2">
+    <li
+      draggable={!dispatch.isPending}
+      onDragStart={(e) => e.dataTransfer.setData('text/plain', p.id)}
+      onDragOver={(e) => e.preventDefault()}
+      onDrop={(e) => {
+        e.preventDefault();
+        swap(e.dataTransfer.getData('text/plain'), p.id);
+      }}
+      className="flex cursor-grab items-center justify-between gap-2"
+    >
       <span>
         <span className="mr-2 text-xs text-muted">{p.position}</span>
         {p.firstName} {p.lastName}
@@ -57,10 +77,18 @@ export function Lines() {
         )}
       </span>
       <span className="flex gap-1">
-        <Button disabled={dispatch.isPending} onClick={() => move(p.id, -1)}>
+        <Button
+          aria-label={t('lines.moveUp')}
+          disabled={dispatch.isPending}
+          onClick={() => move(p.id, -1)}
+        >
           ↑
         </Button>
-        <Button disabled={dispatch.isPending} onClick={() => move(p.id, 1)}>
+        <Button
+          aria-label={t('lines.moveDown')}
+          disabled={dispatch.isPending}
+          onClick={() => move(p.id, 1)}
+        >
           ↓
         </Button>
       </span>

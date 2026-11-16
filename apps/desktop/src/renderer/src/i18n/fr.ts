@@ -259,7 +259,10 @@ export const fr: Record<MessageKey, string> = {
   'event.firstPick': 'Les {team} choisissent {player} au premier rang',
   'nav.lines': 'Trios',
   'lines.auto': 'Trios automatiques',
-  'lines.note': 'Montez ou descendez les joueurs dans leur position. Les matchs suivent cet ordre.',
+  'lines.note':
+    'Glissez un joueur sur un autre de la même position pour les échanger, ou utilisez les flèches. Les matchs suivent cet ordre.',
+  'lines.moveUp': 'Monter',
+  'lines.moveDown': 'Descendre',
   'lines.unit.F': 'Trio {n}',
   'lines.unit.D': 'Paire défensive {n}',
   'lines.unit.G': 'Gardiens (partant en premier)',
