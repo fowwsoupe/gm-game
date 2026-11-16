@@ -94,7 +94,11 @@ export interface GmApi {
     }): Promise<SigningInterest | null>;
   };
   feed: {
-    list(input: { limit: number; minImportance?: Importance }): Promise<LeagueEvent[]>;
+    /** Newest first, with the names of the players they mention (retired ones included). */
+    list(input: {
+      limit: number;
+      minImportance?: Importance;
+    }): Promise<{ events: LeagueEvent[]; names: Record<string, string> }>;
   };
   commands: {
     /** The only way to change game state. */

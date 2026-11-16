@@ -255,6 +255,11 @@ export const en = {
   'career.title': 'Career',
   'career.season': 'Season',
   'career.now': 'Now',
+  'event.injured': '{player} ({team}) is hurt: out {days} days',
+  'event.signed': '{player} signed with the {team}: {amount} a year through {season}',
+  'event.extended':
+    '{player} signed an extension with the {team}: {amount} a year through {season}',
+  'event.firstPick': 'The {team} take {player} first overall',
 } as const;
 
 export type MessageKey = keyof typeof en;

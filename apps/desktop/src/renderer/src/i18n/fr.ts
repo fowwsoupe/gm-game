@@ -254,4 +254,8 @@ export const fr: Record<MessageKey, string> = {
   'career.title': 'Carrière',
   'career.season': 'Saison',
   'career.now': 'En cours',
+  'event.injured': '{player} ({team}) est blessé : absent {days} jours',
+  'event.signed': '{player} signe avec les {team} : {amount} par année jusqu’en {season}',
+  'event.extended': '{player} prolonge avec les {team} : {amount} par année jusqu’en {season}',
+  'event.firstPick': 'Les {team} choisissent {player} au premier rang',
 };

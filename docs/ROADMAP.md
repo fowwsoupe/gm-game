@@ -51,7 +51,7 @@ Build order, owners and "done when" for each step: **[V0.1_PLAN.md](V0.1_PLAN.md
 - [~] Draft v1: class announced after the playoffs with scouted potential ranges (AI sees the same ranges), your ranked list drives your picks; scout reports and draft-room trades to do
 - [x] Playoffs: bracket, NHL-style wild cards, honest momentum (per-game goalie form, calibrated), Playoff MVP, playoff cap; the cup is "Champion" until it is named
 - [x] Awards, records, history (own award names, Playoff MVP included)
-- [~] Living league: feed, league pulse, playoff odds and power rating on the standings done; race nights, richer feed to do
+- [~] Living league: feed with names (trades, signings, extensions, long injuries, first pick), league pulse, playoff odds and power rating, sim until it matters (your team and league-wide moments only) done; race nights, event engine (requests, slumps, hot seat) to do
 - [ ] Chemistry: visible, changeable, capped
 
 **Screens**

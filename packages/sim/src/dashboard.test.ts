@@ -34,3 +34,29 @@ describe('home dashboard', () => {
     expect(after).not.toContain('resign');
   });
 });
+
+describe('sim until it matters', () => {
+  it('stops only on league-wide moments, your team, or a long injury to your player', () => {
+    const state = createLeague(53, ctx);
+    const mine = Object.values(state.teams).find((t) => t.userControlled)!.id;
+    let stops = 0;
+    while (!state.championTeamId && stops < 40) {
+      const res = handleCommand(
+        state,
+        { kind: 'sim.advance', days: 400, stopOn: 'major' },
+        local,
+        ctx,
+      );
+      if (!res.ok) throw new Error(res.error.message);
+      const lastDay = res.events.filter((e) => e.date.day === res.events.at(-1)!.date.day);
+      const reason = lastDay.some(
+        (e) =>
+          (e.importance === 'major' && (e.teamIds.length === 0 || e.teamIds.includes(mine))) ||
+          (e.kind === 'player.injured' && e.teamIds.includes(mine) && e.days >= 14),
+      );
+      expect(reason || !!state.championTeamId).toBe(true);
+      stops++;
+    }
+    expect(state.championTeamId).not.toBeNull();
+  });
+});

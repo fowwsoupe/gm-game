@@ -491,7 +491,21 @@ function advance(
       }),
     );
 
-    if (stopOn === 'major' && events.slice(dayStart).some((e) => e.importance === 'major')) break;
+    if (stopOn === 'major' && events.slice(dayStart).some((e) => matters(state, e))) break;
   }
   return events;
+}
+
+/** Injuries at least this long to one of your players stop "sim until it matters". */
+const LONG_INJURY_DAYS = 14;
+
+/**
+ * Whether an event should stop "sim until it matters": a major league-wide moment (phase change,
+ * champion), a major event for a human team (its series, its trade), or a long injury to one of
+ * its players. Other teams' trades and series don't.
+ */
+function matters(state: LeagueState, e: LeagueEvent): boolean {
+  const yours = e.teamIds.some((id) => state.teams[id]?.userControlled);
+  if (e.importance === 'major') return e.teamIds.length === 0 || yours;
+  return e.kind === 'player.injured' && yours && e.days >= LONG_INJURY_DAYS;
 }

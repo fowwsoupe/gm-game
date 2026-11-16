@@ -117,11 +117,18 @@ function TodoCard({ teamId }: { teamId: TeamId }) {
   );
 }
 
+/** Matches the sim's "long injury" for stopping the sim. */
+const LONG_INJURY = 14;
+
 function FeedCard() {
   const t = useT();
   const { data: teams = [] } = useTeams();
-  const { data: events = [] } = useFeed(8);
+  const { data } = useFeed(40);
+  const events = data?.events ?? [];
+  const names = data?.names ?? {};
   const teamName = (id: string) => teams.find((x) => x.id === id)?.name ?? id;
+  const yours = (ids: readonly string[]) =>
+    ids.some((id) => teams.find((x) => x.id === id)?.userControlled);
 
   const describe = (e: LeagueEvent): string | null => {
     switch (e.kind) {
@@ -129,6 +136,35 @@ function FeedCard() {
         return t('event.statusChanged', { team: teamName(e.teamId), status: t(`status.${e.to}`) });
       case 'draft.classAnnounced':
         return t('event.draftClass');
+      case 'player.injured':
+        // Short knocks elsewhere in the league are noise; yours and long ones are news.
+        if (e.days < LONG_INJURY && !yours(e.teamIds)) return null;
+        return t('event.injured', {
+          player: names[e.playerId] ?? '',
+          team: teamName(e.teamIds[0] ?? ''),
+          days: e.days,
+        });
+      case 'player.signed':
+        return t('event.signed', {
+          player: names[e.playerId] ?? '',
+          team: teamName(e.teamId),
+          amount: money(e.contract.capHit),
+          season: e.contract.expiresAfterSeason,
+        });
+      case 'contract.extended':
+        return t('event.extended', {
+          player: names[e.playerId] ?? '',
+          team: teamName(e.teamId),
+          amount: money(e.contract.capHit),
+          season: e.contract.expiresAfterSeason,
+        });
+      case 'player.drafted':
+        return e.pick === 1
+          ? t('event.firstPick', {
+              player: names[e.player.id] ?? '',
+              team: teamName(e.player.teamId ?? ''),
+            })
+          : null;
       case 'freeAgency.opened':
         return t('event.freeAgencyOpened');
       case 'season.phaseChanged':
@@ -152,7 +188,10 @@ function FeedCard() {
     }
   };
 
-  const lines = events.map((e) => ({ id: e.id, text: describe(e) })).filter((l) => l.text);
+  const lines = events
+    .map((e) => ({ id: e.id, text: describe(e) }))
+    .filter((l) => l.text)
+    .slice(0, 10);
   return (
     <Card title={t('home.feedTitle')}>
       {lines.length === 0 ? (
