@@ -21,7 +21,7 @@ Builds the engines everything else depends on.
 - [x] Model plug-in points (`Models`): goal, development, valuation
 - [x] CBA ruleset as data (`sim/cba`): cap, contract rules, 84-game season
 - [ ] Data pipeline (`ml/`): play-by-play, stats, drafts, contracts, junior + European seasons
-- [ ] Study: which advanced stats drive goals and wins → final rating list
+- [x] Study: which advanced stats drive goals and wins → final rating list ([RATINGS.md](RATINGS.md))
 - [ ] Hidden ratings model + stats-to-ratings model
 - [ ] Line-by-line game sim (`sim/game`) + fast "result only" odds sim
 - [~] Balance lab: league-health report works (`pnpm lab`); multi-year checks once seasons roll over

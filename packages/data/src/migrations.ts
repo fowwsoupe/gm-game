@@ -108,4 +108,14 @@ export const migrations: readonly string[] = [
   `
   ALTER TABLE players ADD COLUMN injured_until INTEGER;
   `,
+  // 9: skaters gained a \`faceoffs\` rating (docs/RATINGS.md). Start it at the average of the other
+  // seven so nobody's overall moves.
+  `
+  UPDATE players SET ratings_json = json_set(ratings_json, '$.faceoffs', CAST(ROUND((
+      json_extract(ratings_json, '$.skating') + json_extract(ratings_json, '$.shooting') +
+      json_extract(ratings_json, '$.passing') + json_extract(ratings_json, '$.puckHandling') +
+      json_extract(ratings_json, '$.defense') + json_extract(ratings_json, '$.physical') +
+      json_extract(ratings_json, '$.hockeyIq')) / 7.0) AS INTEGER))
+  WHERE position <> 'G' AND json_extract(ratings_json, '$.faceoffs') IS NULL;
+  `,
 ];

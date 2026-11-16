@@ -1,7 +1,7 @@
 import { describe, expect, it } from 'vitest';
 import type { Actor } from '@gm/shared';
 import { createLeague, defaultContext, handleCommand } from '@gm/sim';
-import { openSave } from './index';
+import { migrate, openSave } from './index';
 
 const ctx = defaultContext();
 const local: Actor = { id: 'local', controls: [] };
@@ -88,6 +88,26 @@ describe('SaveFile', () => {
     save.persist(res.events, state);
     expect(save.listEvents(1000).length).toBeGreaterThan(0);
     for (const e of save.listEvents(1000, 'notable')) expect(e.importance).not.toBe('minor');
+    save.close();
+  });
+
+  it('migration 9 gives existing skaters a faceoffs rating without moving their overall', () => {
+    const save = openSave(':memory:');
+    const state = createLeague(9, ctx);
+    save.saveNewLeague(state);
+    // Make it look like a save from before migration 9.
+    save.db.exec(`UPDATE players SET ratings_json = json_remove(ratings_json, '$.faceoffs')`);
+    save.db.pragma('user_version = 8');
+    migrate(save.db);
+    for (const p of save.listPlayers()) {
+      if (p.position === 'G') {
+        expect(p.ratings.faceoffs).toBeUndefined();
+        continue;
+      }
+      const { faceoffs, ...others } = p.ratings;
+      const values = Object.values(others);
+      expect(faceoffs).toBe(Math.round(values.reduce((a, b) => a + b, 0) / values.length));
+    }
     save.close();
   });
 });

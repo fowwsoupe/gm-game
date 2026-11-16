@@ -5,6 +5,12 @@
 export const HOCKEY_POSITIONS = ['C', 'LW', 'RW', 'D', 'G'] as const;
 export type HockeyPosition = (typeof HOCKEY_POSITIONS)[number];
 
+/**
+ * The hidden rating keys: the single source of truth. The roster schema, generation and
+ * export are all built from these lists. What each key means and the evidence behind the
+ * list: docs/RATINGS.md. Adding or removing a key means bumping ROSTER_FORMAT_VERSION,
+ * upgrading older roster files in roster-schema.ts and adding a save migration.
+ */
 export const SKATER_RATINGS = [
   'skating',
   'shooting',
@@ -13,6 +19,7 @@ export const SKATER_RATINGS = [
   'defense',
   'physical',
   'hockeyIq',
+  'faceoffs',
 ] as const;
 export const GOALIE_RATINGS = ['reflexes', 'positioning', 'reboundControl', 'consistency'] as const;
 export type SkaterRating = (typeof SKATER_RATINGS)[number];

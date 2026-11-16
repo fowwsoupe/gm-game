@@ -35,6 +35,12 @@ const UNIT_WEIGHT = {
   defense: { forwards: 0.4, defense: 0.6 },
 };
 
+/**
+ * Faceoffs: each point of the centres' draw skill (by ice time) above 50 adds this much to both
+ * attack and defence. Small on purpose: possession off a draw is worth little in real games.
+ */
+const FACEOFF_WEIGHT = 0.05;
+
 const byRating = (a: Player, b: Player) => overall(b) - overall(a) || a.id.localeCompare(b.id);
 
 /**
@@ -76,6 +82,7 @@ const attack = (p: Player) =>
   r(p, 'skating') * 0.1;
 const defence = (p: Player) =>
   r(p, 'defense') * 0.5 + r(p, 'hockeyIq') * 0.3 + r(p, 'physical') * 0.2;
+const faceoffs = (p: Player) => r(p, 'faceoffs');
 const goalieScore = (p: Player) =>
   r(p, 'reflexes') * 0.4 +
   r(p, 'positioning') * 0.35 +
@@ -105,9 +112,18 @@ export function teamStrength(players: readonly Player[]): TeamStrength {
   const d = ICE_TIME.defensePairs;
   const mix = (w: { forwards: number; defense: number }, skill: (p: Player) => number) =>
     w.forwards * weighted(forwards, f, skill) + w.defense * weighted(defense, d, skill);
+  // The first player on each line takes its draws (its centre, or whoever fills that slot).
+  const draws =
+    FACEOFF_WEIGHT *
+    (weighted(
+      forwards.map((l) => l.slice(0, 1)),
+      f,
+      faceoffs,
+    ) -
+      50);
   return {
-    offense: mix(UNIT_WEIGHT.offense, attack),
-    defense: mix(UNIT_WEIGHT.defense, defence),
+    offense: mix(UNIT_WEIGHT.offense, attack) + draws,
+    defense: mix(UNIT_WEIGHT.defense, defence) + draws,
     goaltending: goalies[0] ? goalieScore(goalies[0]) : 40,
     backupGoaltending: goalies[1] ? goalieScore(goalies[1]) : 40,
     lineup,
