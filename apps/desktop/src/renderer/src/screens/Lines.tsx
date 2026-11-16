@@ -1,5 +1,11 @@
 import { useState } from 'react';
-import type { PlayerId, PlayerProfile } from '@gm/shared';
+import {
+  SPECIAL_UNITS,
+  SPECIAL_UNIT_SIZE,
+  type PlayerId,
+  type PlayerProfile,
+  type SpecialUnit,
+} from '@gm/shared';
 import { useDispatch, useLines, usePlayers, useTeams } from '@/lib/queries';
 import { useT, type MessageKey } from '@/i18n';
 import { Button, Card } from '@/ui';
@@ -57,6 +63,21 @@ export function Lines() {
     [list[i], list[j]] = [list[j]!, list[i]!];
     save(positions.flatMap((pos) => (pos === position ? list : orderOf(pos))));
   };
+
+  // Power-play and penalty-kill units: pick who fills each slot from the skaters in tonight's lineup.
+  const special = data?.special ?? {};
+  const forwards = dressed.filter((id) => !['D', 'G'].includes(byId.get(id)?.position ?? ''));
+  const defence = dressed.filter((id) => byId.get(id)?.position === 'D');
+  const saveUnit = (unit: SpecialUnit, playerIds: string[]) =>
+    dispatch.mutate(
+      { kind: 'units.set', teamId: mine, unit, playerIds: playerIds as PlayerId[] },
+      { onSuccess: (res) => setError(res.ok ? null : res.error.message) },
+    );
+  const swapIn = (unit: SpecialUnit, ids: string[], slot: number, id: string) =>
+    saveUnit(
+      unit,
+      ids.map((x, i) => (i === slot ? id : x)),
+    );
 
   const Row = ({ p }: { p: PlayerProfile }) => (
     <li
@@ -126,6 +147,44 @@ export function Lines() {
             </ul>
           </Card>
         ))}
+        {SPECIAL_UNITS.map((unit) => {
+          const u = special[unit];
+          if (!u) return null;
+          const f = SPECIAL_UNIT_SIZE[unit.startsWith('pp') ? 'pp' : 'pk'].f;
+          return (
+            <Card key={unit} title={t(`lines.special.${unit}` as MessageKey)}>
+              <ul className="space-y-1 text-sm">
+                {u.playerIds.map((id, slot) => (
+                  <li key={slot}>
+                    <select
+                      aria-label={t(`lines.special.${unit}` as MessageKey)}
+                      value={id}
+                      disabled={dispatch.isPending}
+                      onChange={(e) => swapIn(unit, u.playerIds, slot, e.target.value)}
+                      className="w-full rounded border border-line bg-panel px-1 py-0.5"
+                    >
+                      {(slot < f ? forwards : defence)
+                        .filter((x) => x === id || !u.playerIds.includes(x))
+                        .map((x) => {
+                          const p = byId.get(x);
+                          return (
+                            <option key={x} value={x}>
+                              {p?.position} {p?.firstName} {p?.lastName}
+                            </option>
+                          );
+                        })}
+                    </select>
+                  </li>
+                ))}
+              </ul>
+              {u.custom && (
+                <Button disabled={dispatch.isPending} onClick={() => saveUnit(unit, [])}>
+                  {t('lines.special.auto')}
+                </Button>
+              )}
+            </Card>
+          );
+        })}
         {scratches.length > 0 && (
           <Card title={t('lines.scratches')}>
             <ul className="space-y-1 text-sm">

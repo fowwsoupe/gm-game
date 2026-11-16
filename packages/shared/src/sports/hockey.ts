@@ -5,6 +5,12 @@
 export const HOCKEY_POSITIONS = ['C', 'LW', 'RW', 'D', 'G'] as const;
 export type HockeyPosition = (typeof HOCKEY_POSITIONS)[number];
 
+/** Special-teams units a GM can set: power-play 1 and 2, penalty-kill 1 and 2. */
+export const SPECIAL_UNITS = ['pp1', 'pp2', 'pk1', 'pk2'] as const;
+export type SpecialUnit = (typeof SPECIAL_UNITS)[number];
+/** Skaters in a saved unit: a power play is 3 forwards and 2 defencemen, a kill 2 and 2. */
+export const SPECIAL_UNIT_SIZE = { pp: { f: 3, d: 2 }, pk: { f: 2, d: 2 } } as const;
+
 /**
  * The hidden rating keys: the single source of truth. The roster schema, generation and
  * export are all built from these lists. What each key means and the evidence behind the

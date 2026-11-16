@@ -266,6 +266,8 @@ export class LeagueService {
           (p) => p.teamId === id && (p.injuredUntil ?? 0) <= state.date.day,
         ),
         state.depthCharts[id],
+        undefined,
+        state.specialUnits[id],
       );
     const result = ctx.sport.simGame(
       {
@@ -367,6 +369,11 @@ export class LeagueService {
     );
     return {
       units: defaultContext(state.rulesetId).sport.lineup(healthy, state.depthCharts[teamId]),
+      special: defaultContext(state.rulesetId).sport.specialUnits(
+        healthy,
+        state.depthCharts[teamId],
+        state.specialUnits[teamId],
+      ),
       chemistry: chemistry(healthy, state.date.season),
     };
   }

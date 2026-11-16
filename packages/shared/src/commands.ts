@@ -1,5 +1,6 @@
 import type { LeagueEvent } from './events';
 import type { PlayerId, TeamId, TradeProposal } from './domain';
+import type { SpecialUnit } from './sports/hockey';
 
 /**
  * Every action a human (or, later, a remote player) takes is a Command. Nothing in the UI
@@ -32,6 +33,8 @@ export type Command =
   | { kind: 'offseason.openFreeAgency' }
   /** Set your depth order (best first); the lineup follows it ahead of ratings. */
   | { kind: 'lines.set'; teamId: TeamId; order: PlayerId[] }
+  /** Set a power-play or penalty-kill unit (3F+2D / 2F+2D); an empty list goes back to auto. */
+  | { kind: 'units.set'; teamId: TeamId; unit: SpecialUnit; playerIds: PlayerId[] }
   /** Rank the draft class for your picks (best first). Players missing from it go by the scouts' order. */
   | { kind: 'draft.setBoard'; teamId: TeamId; order: PlayerId[] }
   /** Offer a free agent `salary` a year for `years`; he signs if interested (see `signingInterest`). */

@@ -46,6 +46,7 @@ export function createLeague(
     draftClass: [],
     draftBoards: {},
     depthCharts: {},
+    specialUnits: {},
     pickOwners: {},
     tradeOffers: [],
     tradeRequests: [],

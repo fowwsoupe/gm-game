@@ -1,4 +1,4 @@
-import { isGoalie, type Player } from '@gm/shared';
+import { isGoalie, SPECIAL_UNIT_SIZE, type Player, type SpecialUnit } from '@gm/shared';
 import { overall } from '../../players';
 
 const avg = (xs: number[]) => (xs.length ? xs.reduce((a, b) => a + b, 0) / xs.length : 50);
@@ -20,6 +20,39 @@ export interface Lineup {
   forwards: Player[][];
   defense: Player[][];
   goalies: Player[];
+  /** Saved power-play and penalty-kill units that can be dressed tonight; others are auto. */
+  special?: Partial<Record<SpecialUnit, Player[]>>;
+}
+
+/** Saved units by player id (see `SpecialUnit`). */
+export type SavedUnits = Partial<Record<SpecialUnit, readonly string[]>>;
+
+const isD = (p: Player) => p.position === 'D';
+const size = (unit: SpecialUnit) => SPECIAL_UNIT_SIZE[unit.startsWith('pp') ? 'pp' : 'pk'];
+
+/** A unit has the right mix: 3F+2D for a power play, 2F+2D for a kill; no goalies. */
+export function unitOk(unit: SpecialUnit, players: readonly Player[]): boolean {
+  const { f, d } = size(unit);
+  const nd = players.filter(isD).length;
+  return (
+    players.length === f + d &&
+    nd === d &&
+    players.every((p) => p.position !== 'G') &&
+    new Set(players.map((p) => p.id)).size === players.length
+  );
+}
+
+/** Saved units whose players are all dressed (healthy, on a line or pair) with the right mix. */
+function dressedUnits(lineup: Lineup, saved: SavedUnits): NonNullable<Lineup['special']> {
+  const byId = new Map<string, Player>(
+    [...lineup.forwards.flat(), ...lineup.defense.flat()].map((p) => [p.id, p]),
+  );
+  const out: NonNullable<Lineup['special']> = {};
+  for (const [unit, ids] of Object.entries(saved) as [SpecialUnit, readonly string[]][]) {
+    const ps = ids.map((id) => byId.get(id));
+    if (ps.length && ps.every((p) => p) && unitOk(unit, ps as Player[])) out[unit] = ps as Player[];
+  }
+  return out;
 }
 
 /**
@@ -129,9 +162,11 @@ export function teamStrength(
   players: readonly Player[],
   depth: readonly string[] = [],
   chemistry = 0.5,
+  saved: SavedUnits = {},
 ): TeamStrength {
   const chem = CHEMISTRY_POINTS * 2 * (Math.max(0, Math.min(1, chemistry)) - 0.5);
   const lineup = autoLineup(players, depth);
+  lineup.special = dressedUnits(lineup, saved);
   const { forwards, defense, goalies } = lineup;
   const f = ICE_TIME.forwardLines;
   const d = ICE_TIME.defensePairs;
@@ -167,4 +202,30 @@ export function lineupUnits(
     ...defense.map((l, i) => ({ unit: `D${i + 1}`, playerIds: l.map((p) => p.id) })),
     { unit: 'G', playerIds: goalies.map((p) => p.id) },
   ];
+}
+
+/** Power-play and penalty-kill units as the game would use them, and whether the GM set them. */
+export function specialUnitsView(
+  players: readonly Player[],
+  depth: readonly string[] = [],
+  saved: SavedUnits = {},
+): Record<SpecialUnit, { playerIds: string[]; custom: boolean }> {
+  const lineup = autoLineup(players, depth);
+  const mine = dressedUnits(lineup, saved);
+  // The auto kill: the four best defensive forwards (ties by lineup order), two a unit.
+  const killers = lineup.forwards
+    .flat()
+    .map((p, i) => [p, i] as const)
+    .sort((a, b) => rating(b[0], 'defense') - rating(a[0], 'defense') || a[1] - b[1])
+    .slice(0, 4)
+    .map(([p]) => p);
+  const auto = (unit: SpecialUnit, k: number) =>
+    unit.startsWith('pp')
+      ? [...(lineup.forwards[k] ?? []).slice(0, 3), ...(lineup.defense[k] ?? []).slice(0, 2)]
+      : [...killers.slice(2 * k, 2 * k + 2), ...(lineup.defense[k] ?? []).slice(0, 2)];
+  const view = (unit: SpecialUnit, k: number) => ({
+    playerIds: (mine[unit] ?? auto(unit, k)).map((p) => p.id),
+    custom: !!mine[unit],
+  });
+  return { pp1: view('pp1', 0), pp2: view('pp2', 1), pk1: view('pk1', 0), pk2: view('pk2', 1) };
 }

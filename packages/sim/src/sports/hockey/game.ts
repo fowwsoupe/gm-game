@@ -152,6 +152,11 @@ interface Side {
   pairs: number[][];
   /** Penalty killers, two forwards per unit. */
   killers: number[][];
+  /** The GM's saved power-play / penalty-kill units by unit number: skater indexes, forwards then defence. */
+  saved: {
+    pp: ({ f: number[]; d: number[] } | undefined)[];
+    pk: ({ f: number[]; d: number[] } | undefined)[];
+  };
   isD: boolean[];
   /** Per-skater skills, by index. */
   atk: number[];
@@ -189,6 +194,16 @@ function makeSide(strength: TeamStrength, backup: boolean): Side {
     .flat()
     .sort((a, b) => rating(players[b]!, 'defense') - rating(players[a]!, 'defense') || a - b)
     .slice(0, 4);
+  const at = new Map(players.map((p, k) => [p.id, k]));
+  const unit = (name: 'pp1' | 'pp2' | 'pk1' | 'pk2') => {
+    const ks = strength.lineup.special?.[name]?.map((p) => at.get(p.id)!);
+    return (
+      ks && {
+        f: ks.filter((k) => !pairs.flat().includes(k)),
+        d: ks.filter((k) => pairs.flat().includes(k)),
+      }
+    );
+  };
   const start = backup && goalies.length > 1 ? 1 : 0;
   const order = goalies[start] ? [goalies[start]!, ...goalies.filter((_, i) => i !== start)] : [];
   const starter = order[0];
@@ -197,6 +212,7 @@ function makeSide(strength: TeamStrength, backup: boolean): Side {
     lines,
     pairs,
     killers: [killers.slice(0, 2), killers.slice(2)],
+    saved: { pp: [unit('pp1'), unit('pp2')], pk: [unit('pk1'), unit('pk2')] },
     isD: players.map((_, k) => pairs.some((pr) => pr.includes(k))),
     atk: players.map(attack),
     def: players.map(defence),
@@ -347,8 +363,9 @@ function playGame(
         UNIT_SPLIT.map((w, i) => (s.pairs[i]?.length || s.lines[i]?.length ? w : 0)),
         rng,
       );
-      d = (s.pairs[k] ?? []).slice(0, nd);
-      f = (kind === 'pp' ? (s.lines[k] ?? []) : (s.killers[k] ?? [])).slice(0, nf);
+      const mine = s.saved[kind][k];
+      d = (mine?.d ?? s.pairs[k] ?? []).slice(0, nd);
+      f = (mine?.f ?? (kind === 'pp' ? (s.lines[k] ?? []) : (s.killers[k] ?? []))).slice(0, nf);
     }
     const unit = [...f, ...d];
     return unit
