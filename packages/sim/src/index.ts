@@ -30,6 +30,7 @@ export {
   lotteryOrder,
   resignOffers,
   RFA_DISCOUNT,
+  roomFor,
   signFreeAgent,
   signingInterest,
 } from './offseason';

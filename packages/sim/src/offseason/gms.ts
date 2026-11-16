@@ -35,7 +35,7 @@ export function changeGms(state: LeagueState, rng: Rng, emit: Emit, worstFirst: 
 }
 
 /** The best players a GM counts as his core. */
-const CORE = 8;
+export const CORE = 8;
 
 /**
  * Step 2b: every AI GM looks at his core (his best players as he sees them, after this summer's

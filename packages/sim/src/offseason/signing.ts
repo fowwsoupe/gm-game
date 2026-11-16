@@ -104,6 +104,8 @@ export function signFreeAgent(
   player: Player,
   teamId: TeamId,
   offer: { salary: number; years: number },
+  /** Cap the team will free before he signs (a contender making room, `roomFor`). */
+  capFreed = 0,
 ): { contract: Contract } | { error: string } {
   const { ruleset } = ctx;
   if (player.teamId !== null) return { error: 'not a free agent' };
@@ -118,7 +120,7 @@ export function signFreeAgent(
     isResign: false,
   });
   if (issues.length) return { error: `illegal contract: ${issues[0]!.code}` };
-  const total = teamCapTotal(state, teamId) + salary;
+  const total = teamCapTotal(state, teamId) + salary - capFreed;
   if (capYearIssues(ruleset, state, total).length) return { error: 'no cap room' };
   const view = signingInterest(state, ctx, player, teamId, { salary, years: offer.years });
   if (view.interest < view.threshold) return { error: 'he is not interested' };

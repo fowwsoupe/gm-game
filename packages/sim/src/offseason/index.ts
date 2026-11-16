@@ -17,7 +17,7 @@ import { changeGms, setPlans } from './gms';
 
 export { lotteryOrder, announceDraftClass } from './draft';
 export { signingInterest, signFreeAgent } from './signing';
-export { marketDay } from './market';
+export { marketDay, roomFor } from './market';
 export { resignOffers, resignContract, isExpiring, resignWindowOpen } from './resign';
 export { RFA_DISCOUNT, resignAsk } from './roster';
 import { expireContracts, fillRosters, meetCapFloor, reSignPlayers } from './freeAgency';
