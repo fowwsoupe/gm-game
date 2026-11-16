@@ -104,4 +104,8 @@ export const migrations: readonly string[] = [
   `
   ALTER TABLE games ADD COLUMN box_json TEXT;
   `,
+  // 8: injured players are out until this day of the season (NULL = healthy).
+  `
+  ALTER TABLE players ADD COLUMN injured_until INTEGER;
+  `,
 ];

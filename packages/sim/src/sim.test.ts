@@ -364,7 +364,12 @@ describe('box scores', () => {
         const shorthanded =
           box.penalties.filter((p) => p[1] === (key === 'home' ? 0 : 1)).length * 2;
         const toi = side.skaters.reduce((n, s) => n + s.toi, 0);
-        expect(Math.abs(toi - (300 - shorthanded))).toBeLessThan(1.5);
+        // A side short of players (injuries, no call-ups yet) plays fewer total minutes.
+        if (side.skaters.length === 18) {
+          expect(Math.abs(toi - (300 - shorthanded))).toBeLessThan(1.5);
+        } else {
+          expect(toi).toBeLessThan(300 - shorthanded + 1.5);
+        }
         const goalie = box[key === 'home' ? 'away' : 'home'].goalie;
         expect(goalie.shotsAgainst - goalie.saves).toBe(credited);
       }
@@ -406,12 +411,120 @@ describe('box scores', () => {
     for (const g of games) {
       const box = g.box as HockeyBoxScore;
       const all = [...box.home.skaters, ...box.away.skaters];
-      expect(all.reduce((n, p) => n + p.plusMinus, 0)).toBe(0);
+      // Short a skater (injuries), the two sides' units differ in size and plus-minus need not cancel.
+      if (all.length === 36) expect(all.reduce((n, p) => n + p.plusMinus, 0)).toBe(0);
       for (const shot of box.shots.filter((s) => s[5] === 1)) {
         expect(shot[6]).not.toBe(shot[4]);
         expect(shot[7]).not.toBe(shot[4]);
         if (shot[7] >= 0) expect(shot[6]).toBeGreaterThanOrEqual(0);
       }
     }
+  });
+});
+
+describe('injuries', () => {
+  it('hurt players miss later games, and nobody is hurt in a game he did not play', () => {
+    const state = createLeague(21, ctx);
+    const out = new Map<string, number>();
+    let violations = 0;
+    for (let d = 0; d < 150; d++) {
+      const day = state.date.day;
+      const res = handleCommand(state, { kind: 'sim.advance', days: 1 }, local, ctx);
+      if (!res.ok) throw new Error(res.error.message);
+      for (const e of res.events) {
+        if (e.kind !== 'game.final') continue;
+        const box = e.result.box as HockeyBoxScore;
+        for (const p of [...box.home.skaters, ...box.away.skaters]) {
+          if ((out.get(p.id) ?? 0) > day) violations++;
+        }
+        expect(e.result.injuries).toBeUndefined(); // turned into events, not stored
+      }
+      for (const e of res.events) {
+        if (e.kind === 'player.injured') {
+          expect(e.until).toBeGreaterThan(day);
+          out.set(e.playerId, e.until);
+        }
+      }
+    }
+    expect(out.size).toBeGreaterThan(20);
+    expect(violations).toBe(0);
+  });
+
+  it('heals over the summer', () => {
+    const state = createLeague(22, ctx);
+    const id = Object.keys(state.players)[0]!;
+    const base = {
+      id: 'e',
+      date: state.date,
+      importance: 'minor' as const,
+      teamIds: [] as TeamId[],
+    };
+    applyEvent(state, {
+      ...base,
+      kind: 'player.injured',
+      playerId: id as never,
+      days: 5,
+      until: 9,
+    });
+    expect(state.players[id]!.injuredUntil).toBe(9);
+    applyEvent(state, { ...base, kind: 'season.started', season: 2028, schedule: [], rngState: 1 });
+    expect(state.players[id]!.injuredUntil).toBeUndefined();
+  });
+
+  it('fills a short line with a spare forward of another position', () => {
+    const state = createLeague(23, ctx);
+    const team = Object.keys(state.teams)[0]!;
+    const roster = Object.values(state.players).filter((p) => p.teamId === team);
+    const centres = roster.filter((p) => p.position === 'C').slice(0, 2); // leaves fewer than four
+    const lineup = autoLineup(roster.filter((p) => !centres.includes(p)));
+    expect(lineup.forwards.every((line) => line.length === 3)).toBe(true);
+  });
+});
+
+describe('result-only mode', () => {
+  it('skips the box score, keeps the score model, and is much faster', () => {
+    const state = createLeague(31, ctx);
+    const [a, b] = Object.keys(state.teams) as TeamId[];
+    const strength = (id: TeamId) =>
+      teamStrength(Object.values(state.players).filter((p) => p.teamId === id));
+    const game = (resultOnly: boolean) => ({
+      id: 'g' as GameId,
+      homeTeamId: a!,
+      awayTeamId: b!,
+      home: strength(a!),
+      away: strength(b!),
+      resultOnly,
+    });
+    const run = (resultOnly: boolean) => {
+      const rng = new Rng(5);
+      const t0 = performance.now();
+      let goals = 0;
+      for (let i = 0; i < 1500; i++) {
+        const r = simGame(game(resultOnly), rng);
+        goals += r.homeScore + r.awayScore;
+        if (resultOnly) {
+          expect(r.box).toBeUndefined();
+          expect(r.injuries).toBeUndefined();
+        }
+      }
+      return { goals: goals / 1500, ms: performance.now() - t0 };
+    };
+    const full = run(false);
+    const fast = run(true);
+    expect(Math.abs(fast.goals - full.goals)).toBeLessThan(0.35);
+    expect(fast.ms).toBeLessThan(full.ms);
+  });
+});
+
+describe('short lineups', () => {
+  it('puts a spare forward on defence when a pair is short', () => {
+    const state = createLeague(24, ctx);
+    const team = Object.keys(state.teams)[0]!;
+    const roster = Object.values(state.players).filter((p) => p.teamId === team);
+    const keep = roster
+      .filter((p) => p.position !== 'D')
+      .concat(roster.filter((p) => p.position === 'D').slice(0, 5));
+    const lineup = autoLineup(keep);
+    expect(lineup.defense.flat()).toHaveLength(6);
   });
 });

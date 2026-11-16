@@ -5,6 +5,7 @@ import type {
   HockeyShot,
   HockeySkaterLine,
   Player,
+  PlayerId,
 } from '@gm/shared';
 import type { Rng } from '../../core';
 import { ICE_TIME, type TeamStrength } from './strength';
@@ -23,6 +24,19 @@ const PENALTY_MINUTES = 2;
 /** A team on the power play shoots this many times as often, from chances this much better. */
 const PP_SHOT_RATE = 1.8;
 const PP_SHOT_QUALITY = 1.5;
+/**
+ * Injuries: the chance a skater with an average night's ice time (16.7 minutes) is hurt in a game
+ * (about eight a season per team), and how many days he misses: mostly days, sometimes months.
+ */
+const INJURY_PER_GAME = 0.005;
+const AVG_TOI = 16.7;
+/** A starting goalie's chance of being hurt in a game. */
+const GOALIE_INJURY_PER_GAME = 0.002;
+const INJURY_DAYS = [
+  { weight: 60, days: [3, 14] },
+  { weight: 30, days: [15, 60] },
+  { weight: 10, days: [61, 180] },
+] as const;
 /** Share of power-play and penalty-kill time played by the first and second unit. */
 const UNIT_SPLIT = [0.55, 0.45] as const;
 
@@ -119,7 +133,10 @@ function onIce(s: Side, rng: Rng): number[] {
  * from, who scored and assisted, ice time with special teams, plus-minus and the goalies' saves. The
  * totals are decided first (goals and shots per team); this only says how they happened, so team
  * balance is not touched. Power plays shift who scores, not how much.
- * TODO(M2): power-play quality changing a team's goals, majors and fights, injuries, empty-net goals,
+ * A skater may get hurt at a random minute: he leaves the game (his ice time shrinks and he takes
+ * no later shots, goals or assists) and the hurt players are returned for the engine to act on.
+ * A goalie hurt in a game is hurt at the final horn (he plays all 60 minutes).
+ * TODO(M2): power-play quality changing a team's goals, majors and fights, empty-net goals,
  * a real xG model (ONNX).
  */
 export function makeBoxScore(
@@ -135,7 +152,7 @@ export function makeBoxScore(
     overtimeGoal: 'home' | 'away' | null;
   },
   rng: Rng,
-): HockeyBoxScore {
+): { box: HockeyBoxScore; injuries: { playerId: PlayerId; days: number }[] } {
   const sides = [side(game.home, game.homeBackup), side(game.away, game.awayBackup)] as const;
   const shots: HockeyShot[] = [];
 
@@ -155,6 +172,70 @@ export function makeBoxScore(
   const ppMinutes = [0, 1].map((n) => taken[1 - n]! * PENALTY_MINUTES);
   sides.forEach((s, n) => setIceTime(s, ppMinutes[n]!, taken[n]! * PENALTY_MINUTES));
 
+  // Injuries: skater index -> second he left the game, per side.
+  const left = sides.map(() => new Map<number, number>());
+  const injuries: { playerId: PlayerId; days: number }[] = [];
+  sides.forEach((s, n) =>
+    s.skaters.forEach((line, k) => {
+      if (!rng.chance((INJURY_PER_GAME * line.toi) / AVG_TOI)) return;
+      left[n]!.set(k, rng.int(0, 3599));
+      const [lo, hi] =
+        INJURY_DAYS[
+          pick(
+            INJURY_DAYS.map((t) => t.weight),
+            rng,
+          )
+        ]!.days;
+      injuries.push({ playerId: s.players[k]!.id, days: rng.int(lo, hi) });
+    }),
+  );
+  sides.forEach((s) => {
+    if (s.goalie && rng.chance(GOALIE_INJURY_PER_GAME)) {
+      const [lo, hi] =
+        INJURY_DAYS[
+          pick(
+            INJURY_DAYS.map((t) => t.weight),
+            rng,
+          )
+        ]!.days;
+      injuries.push({ playerId: s.goalie.id, days: rng.int(lo, hi) });
+    }
+  });
+  /** A forward or defenceman from the deepest line who is not already in `unit` and has not left. */
+  const spare = (n: number, k: number, unit: number[], time: number) => {
+    const s = sides[n]!;
+    const group = (s.pairs.some((p) => p.includes(k)) ? s.pairs : s.lines).flat();
+    return group.filter((j) => !unit.includes(j) && (left[n]!.get(j) ?? Infinity) > time).at(-1);
+  };
+  /** The skaters really on the ice at `time`: anyone who has left is replaced by a deep-bench spare. */
+  const fill = (n: number, unit: number[], time: number) => {
+    const out = [...unit];
+    out.forEach((k, i) => {
+      if ((left[n]!.get(k) ?? Infinity) > time) return;
+      out[i] = spare(n, k, out, time) ?? k; // nobody left to step in: he stays (very rare)
+    });
+    return out;
+  };
+  // An injured skater plays only until he left; the spare who steps in gets those minutes.
+  left.forEach((gone, n) =>
+    gone.forEach((second, k) => {
+      const line = sides[n]!.skaters[k]!;
+      const lost = {
+        toi: (line.toi * (3600 - second)) / 3600,
+        ppToi: (line.ppToi * (3600 - second)) / 3600,
+        pkToi: (line.pkToi * (3600 - second)) / 3600,
+      };
+      const sub = spare(n, k, [], 3600);
+      for (const key of ['toi', 'ppToi', 'pkToi'] as const) {
+        line[key] = Math.round((line[key] - lost[key]) * 100) / 100;
+        if (sub !== undefined) {
+          sides[n]!.skaters[sub]![key] =
+            Math.round((sides[n]!.skaters[sub]![key] + lost[key]) * 100) / 100;
+        }
+      }
+    }),
+  );
+
   for (const [n, attack] of sides.entries()) {
     if (attack.players.length === 0) continue; // nobody to credit
     const defend = sides[1 - n]!;
@@ -167,7 +248,7 @@ export function makeBoxScore(
     const againstUs = penalties.filter((pen) => pen[1] !== n);
 
     const makeShot = (time: number, power: boolean) => {
-      const unit = power
+      const chosen = power
         ? attack.ppUnits[
             pick(
               UNIT_SPLIT.map((w, i) => (attack.ppUnits[i]!.length ? w : 0)),
@@ -175,6 +256,7 @@ export function makeBoxScore(
             )
           ]!
         : onIce(attack, rng);
+      const unit = fill(n, chosen, time);
       const weights = unit.map((k) => {
         const p = attack.players[k]!;
         const isDefense = attack.pairs.some((pair) => pair.includes(k));
@@ -226,7 +308,7 @@ export function makeBoxScore(
       attack.skaters[shot[4]]!.goals++;
       const others = shot.unit.filter((k) => k !== shot[4]);
       for (const slot of [6, 7] as const) {
-        if (!rng.chance(ASSIST[slot - 6]!)) break;
+        if (!others.length || !rng.chance(ASSIST[slot - 6]!)) break;
         const k = others.splice(
           pick(
             others.map((o) => (rating(attack.players[o]!, 'passing') / 50) ** SKILL_POWER),
@@ -243,7 +325,7 @@ export function makeBoxScore(
         return;
       }
       for (const k of shot.unit) attack.skaters[k]!.plusMinus++;
-      for (const k of onIce(defend, rng)) defend.skaters[k]!.plusMinus--;
+      for (const k of fill(1 - n, onIce(defend, rng), shot[0])) defend.skaters[k]!.plusMinus--;
     });
     shots.push(...made.map((s) => [...s.slice(0, 9)] as HockeyShot));
   }
@@ -258,9 +340,12 @@ export function makeBoxScore(
     };
   };
   return {
-    home: { skaters: sides[0].skaters, goalie: goalie(sides[0], 'away') },
-    away: { skaters: sides[1].skaters, goalie: goalie(sides[1], 'home') },
-    shots: shots.sort((a, b) => a[0] - b[0]),
-    penalties: penalties.sort((a, b) => a[0] - b[0]),
+    box: {
+      home: { skaters: sides[0].skaters, goalie: goalie(sides[0], 'away') },
+      away: { skaters: sides[1].skaters, goalie: goalie(sides[1], 'home') },
+      shots: shots.sort((a, b) => a[0] - b[0]),
+      penalties: penalties.sort((a, b) => a[0] - b[0]),
+    },
+    injuries,
   };
 }
