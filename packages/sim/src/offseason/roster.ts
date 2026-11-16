@@ -1,7 +1,6 @@
 import type { Contract, Player, TeamId } from '@gm/shared';
 import type { LeagueState } from '../core';
 import { elcYears, maxPlayerCapHit, payroll, validateContract, type Ruleset } from '../cba';
-import { marketSalary } from '../value';
 
 /** Players in a stable order (by id), so every step is reproducible whatever the key order. */
 export const allPlayers = (state: LeagueState): Player[] =>
@@ -56,9 +55,9 @@ export function offerContract(
   player: Player,
   season: number,
   years: number,
-  opts: { isResign: boolean; discount: boolean; atLeast?: number },
+  opts: { isResign: boolean; discount: boolean; atLeast?: number; ask: number },
 ): Contract | null {
-  const ask = Math.max(marketSalary(rules, player), opts.atLeast ?? 0);
+  const ask = Math.max(opts.ask, opts.atLeast ?? 0);
   const room = capRoom(rules, roster, player);
   const price = Math.min(ask, maxPlayerCapHit(rules), opts.discount ? room : ask);
   if (price < rules.cap.minSalary || price > room) return null;

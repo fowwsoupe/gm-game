@@ -6,11 +6,14 @@
  *   pnpm lab                 # 100 seasons, default seeds
  *   pnpm lab --seasons 100   # more seasons = more confidence
  *   pnpm lab --leagues 10 --years 30   # multi-year section: leagues x years
+ *   pnpm lab --xg ml/models/xg.json    # same checks with a shot-quality model file (docs/MODEL_CONTRACTS.md)
  *
  * Single-season checks: each "season" is a fresh league from a different seed.
  * Multi-year checks: each league plays `years` seasons in a row with the offseason rollover
  * (aging, retirements, draft, free agency) between them.
  */
+import { readFileSync } from 'node:fs';
+import { resolve } from 'node:path';
 import type { Actor, GameResult, HockeyBoxScore, TeamId } from '@gm/shared';
 import {
   computeStandings,
@@ -18,6 +21,7 @@ import {
   defaultContext,
   handleCommand,
   overall,
+  parseXgTable,
   playoffCapBreaches,
   strengthEdge,
   teamStrength,
@@ -41,7 +45,19 @@ const firstSeed = Number(args[args.indexOf('--seed') + 1]) || 1;
 const leagues = Number(args[args.indexOf('--leagues') + 1]) || 20;
 const years = Number(args[args.indexOf('--years') + 1]) || 20;
 
-const ctx = defaultContext();
+const xgPath = args.includes('--xg') ? args[args.indexOf('--xg') + 1] : undefined;
+let xgSource = 'rules-based shot model';
+let goalModel;
+if (xgPath) {
+  const parsed = parseXgTable(
+    // pnpm runs the lab from its own folder; INIT_CWD is where the command was typed.
+    JSON.parse(readFileSync(resolve(process.env.INIT_CWD ?? process.cwd(), xgPath), 'utf8')),
+  );
+  if (!parsed.ok) throw new Error(`${xgPath}:\n  ${parsed.errors.join('\n  ')}`);
+  goalModel = parsed.model;
+  xgSource = `${xgPath} (${parsed.table.source})`;
+}
+const ctx = defaultContext(undefined, goalModel ? { goalModel } : {});
 const actor: Actor = { id: 'lab', controls: [] };
 const all: GameResult[] = [];
 const pointSpreads: number[] = [];
@@ -277,7 +293,7 @@ const checks: Check[] = [
 
 const pad = (s: string, n: number) => s.padEnd(n);
 console.log(
-  `\nBalance lab: ${seasons} seasons, ${games} games; ${leagues} leagues x ${years} years with rollover; ${(ms / 1000).toFixed(1)}s\n`,
+  `\nShot model: ${xgSource}\nBalance lab: ${seasons} seasons, ${games} games; ${leagues} leagues x ${years} years with rollover; ${(ms / 1000).toFixed(1)}s\n`,
 );
 console.log(`${pad('Check', 36)}${pad('Value', 10)}${pad('Healthy', 16)}Result`);
 let failures = 0;

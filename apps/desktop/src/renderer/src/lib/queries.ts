@@ -10,6 +10,7 @@ export const keys = {
   records: ['league', 'records'] as const,
   leaders: ['league', 'leaders'] as const,
   feed: ['league', 'feed'] as const,
+  games: (teamId: TeamId | undefined) => ['league', 'games', teamId ?? 'all'] as const,
   capSheet: (teamId: TeamId) => ['league', 'capSheet', teamId] as const,
   roster: (teamId: TeamId) => ['league', 'roster', teamId] as const,
   resignOffers: (teamId: TeamId) => ['league', 'resignOffers', teamId] as const,
@@ -45,6 +46,20 @@ export const useResignOffers = (teamId: TeamId | undefined) =>
     queryKey: keys.resignOffers(teamId!),
     queryFn: () => window.gm.league.resignOffers({ teamId: teamId! }),
     enabled: !!teamId,
+  });
+export const useGames = (teamId: TeamId | undefined, limit = 30) =>
+  useQuery({
+    queryKey: [...keys.games(teamId), limit],
+    queryFn: () => window.gm.league.games({ ...(teamId ? { teamId } : {}), limit }),
+  });
+
+/** One-shot reads that are not cached: open a played game, or play an exhibition. */
+export const useOpenGame = () =>
+  useMutation({ mutationFn: (id: string) => window.gm.league.game({ id }) });
+export const useExhibition = () =>
+  useMutation({
+    mutationFn: (input: { homeTeamId: TeamId; awayTeamId: TeamId; seed: number }) =>
+      window.gm.league.exhibition(input),
   });
 export const useSteam = () =>
   useQuery({ queryKey: keys.steam, queryFn: () => window.gm.steam.status() });

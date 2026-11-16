@@ -1,6 +1,11 @@
 import { rulesDevelopment, type DevelopmentModel } from './players';
 import { HOCKEY_DEVELOPMENT } from './sports';
-import { naiveValuator, type PlayerValuator } from './value';
+import {
+  naiveValuator,
+  rulesContractDemand,
+  type ContractDemandModel,
+  type PlayerValuator,
+} from './value';
 
 /**
  * Swappable "brains" shared by every sport. Rules-based defaults today; ML models trained
@@ -11,10 +16,12 @@ import { naiveValuator, type PlayerValuator } from './value';
 export interface Models {
   development: DevelopmentModel;
   valuation: PlayerValuator;
+  contractDemand: ContractDemandModel;
 }
 
 export const defaultModels: Models = {
   // TODO(nba/nfl): pick the development config by sport when those sports exist.
   development: rulesDevelopment(HOCKEY_DEVELOPMENT),
   valuation: naiveValuator,
+  contractDemand: rulesContractDemand,
 };

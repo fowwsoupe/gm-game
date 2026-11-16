@@ -16,11 +16,13 @@ import { Standings } from '@/screens/Standings';
 import { History } from '@/screens/History';
 import { Leaders } from '@/screens/Leaders';
 import { Cap } from '@/screens/Cap';
+import { Games } from '@/screens/Games';
 
 const NAV: { id: Screen; label: MessageKey }[] = [
   { id: 'home', label: 'nav.home' },
   { id: 'standings', label: 'nav.standings' },
   { id: 'roster', label: 'nav.roster' },
+  { id: 'games', label: 'nav.games' },
   { id: 'cap', label: 'nav.cap' },
   { id: 'leaders', label: 'nav.leaders' },
   { id: 'history', label: 'nav.history' },
@@ -127,6 +129,7 @@ export function App() {
           <Home hasLeague={hasLeague} teamCount={teams.length} lastSim={lastSim} />
         )}
         {screen === 'standings' && <Standings />}
+        {screen === 'games' && <Games />}
         {screen === 'cap' && <Cap />}
         {screen === 'leaders' && <Leaders />}
         {screen === 'history' && <History />}

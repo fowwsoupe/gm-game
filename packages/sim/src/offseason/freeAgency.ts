@@ -84,7 +84,7 @@ export function reSignPlayers(
         p,
         season,
         wantedYears(ageIn(p, season), rng),
-        { isResign: true, discount: false },
+        { isResign: true, discount: false, ask: ctx.models.contractDemand.ask(ruleset, p) },
       );
       if (contract) {
         emit('minor', [teamId], { kind: 'player.signed', playerId: p.id, teamId, contract });
@@ -125,7 +125,7 @@ export function fillRosters(
         p,
         season,
         wantedYears(ageIn(p, season), rng),
-        { isResign: false, discount: true },
+        { isResign: false, discount: true, ask: ctx.models.contractDemand.ask(ruleset, p) },
       );
       if (contract) {
         emit('minor', [teamId], { kind: 'player.signed', playerId: p.id, teamId, contract });
@@ -183,7 +183,12 @@ export function meetCapFloor(
             p,
             season,
             wantedYears(ageIn(p, season), rng),
-            { isResign: false, discount: false, atLeast: short },
+            {
+              isResign: false,
+              discount: false,
+              atLeast: short,
+              ask: ctx.models.contractDemand.ask(ruleset, p),
+            },
           );
           if (contract) {
             emit('minor', [teamId], { kind: 'player.signed', playerId: p.id, teamId, contract });
