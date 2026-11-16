@@ -13,6 +13,7 @@ import {
   parseXgTable,
   playerProfiles,
   dashboard,
+  raceNight,
   draftPicks,
   playoffOdds,
   teamRatings,
@@ -330,7 +331,21 @@ export class LeagueService {
 
   dashboard(teamId: TeamId) {
     const { state } = this.open();
-    return dashboard(state, defaultContext(state.rulesetId), teamId);
+    const ctx = defaultContext(state.rulesetId);
+    const home = dashboard(state, ctx, teamId);
+    if (phaseOf(ctx.ruleset.season.calendar, state.date) !== 'regular') return home;
+    const night = raceNight({
+      teams: Object.values(state.teams),
+      schedule: state.schedule,
+      results: Object.values(state.results),
+      ruleset: ctx.ruleset,
+      season: state.date.season,
+      exponent: ctx.sport.pythagoreanExponent,
+      sims: 500,
+      teamId,
+      seed: state.rngState,
+    });
+    return night ? { ...home, raceNight: night } : home;
   }
 
   /** Odds from 1,000 runs of the rest of the season, seeded by the league so it is stable between refreshes. */

@@ -1,5 +1,5 @@
 import type { GameResult, ScheduledGame, StandingsRow, Team, TeamId } from '@gm/shared';
-import type { Rng } from '../core';
+import { Rng } from '../core';
 import type { Ruleset } from '../cba';
 import { computeStandings } from './standings';
 import { seedPlayoffs } from './playoffs';
@@ -45,6 +45,8 @@ export function playoffOdds(input: {
   exponent: number;
   rng: Rng;
   sims: number;
+  /** Play this remaining game with a set result (race night: "if we win / if we lose"). */
+  fixed?: { gameId: string; homeWins: boolean };
 }): Map<TeamId, number> {
   const { teams, ruleset, rng, sims } = input;
   const regular = input.results.filter((g) => !g.playoffSeriesId);
@@ -69,7 +71,8 @@ export function playoffOdds(input: {
   for (let s = 0; s < (left.length ? sims : 1); s++) {
     const table = new Map(rows.map((r) => [r.teamId, { ...r }]));
     left.forEach((g, i) => {
-      const homeWon = rng.next() < pHome[i]!;
+      const roll = rng.next();
+      const homeWon = g.id === input.fixed?.gameId ? input.fixed.homeWins : roll < pHome[i]!;
       const winner = table.get(homeWon ? g.homeTeamId : g.awayTeamId)!;
       const loser = table.get(homeWon ? g.awayTeamId : g.homeTeamId)!;
       winner.gp++;
@@ -87,4 +90,34 @@ export function playoffOdds(input: {
   }
   const runs = left.length ? sims : 1;
   return new Map([...made].map(([id, n]) => [id, n / runs]));
+}
+
+/**
+ * Race night: a team's playoff odds if it wins and if it loses its next regular-season game
+ * (the same seed for both, so the difference is the game). Null with no game left.
+ */
+export function raceNight(
+  input: Omit<Parameters<typeof playoffOdds>[0], 'fixed' | 'rng'> & {
+    teamId: TeamId;
+    seed: number;
+  },
+): { ifWin: number; ifLose: number } | null {
+  const played = new Set<string>(input.results.map((g) => g.id));
+  const next = input.schedule
+    .filter(
+      (g) =>
+        g.date.season === input.season &&
+        !played.has(g.id) &&
+        (g.homeTeamId === input.teamId || g.awayTeamId === input.teamId),
+    )
+    .sort((a, b) => a.date.day - b.date.day)[0];
+  if (!next) return null;
+  const home = next.homeTeamId === input.teamId;
+  const odds = (win: boolean) =>
+    playoffOdds({
+      ...input,
+      rng: new Rng(input.seed),
+      fixed: { gameId: next.id, homeWins: home === win },
+    }).get(input.teamId) ?? 0;
+  return { ifWin: odds(true), ifLose: odds(false) };
 }
