@@ -333,6 +333,11 @@ export const en = {
   'event.tradeRequested': '{player} has asked the {team} for a trade',
   'event.requestWithdrawn': '{player} withdrew his trade request',
   'event.requestStands': '{player} still wants out after meeting the GM',
+  'palette.placeholder': 'Search players, teams, screens…',
+  'palette.empty': 'No matches',
+  'palette.player': 'Player',
+  'palette.team': 'Team',
+  'palette.screen': 'Screen',
 } as const;
 
 export type MessageKey = keyof typeof en;
