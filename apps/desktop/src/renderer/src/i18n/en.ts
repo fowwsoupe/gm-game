@@ -261,7 +261,10 @@ export const en = {
   'event.firstPick': 'The {team} take {player} first overall',
   'nav.lines': 'Lines',
   'lines.auto': 'Auto lines',
-  'lines.note': 'Move players up or down within their position. Games use this order.',
+  'lines.note':
+    'Drag a player onto another in the same position to swap them, or use the arrows. Games use this order.',
+  'lines.moveUp': 'Move up',
+  'lines.moveDown': 'Move down',
   'lines.unit.F': 'Forward line {n}',
   'lines.unit.D': 'Defence pair {n}',
   'lines.unit.G': 'Goalies (starter first)',
