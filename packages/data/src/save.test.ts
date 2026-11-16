@@ -51,6 +51,7 @@ describe('SaveFile', () => {
           give: [cheapest.id],
           get: [],
           retain: [{ playerId: cheapest.id, pct: 25 }],
+          givePicks: [`${state.date.season + 1}-1-${from}`],
         },
       },
       local,

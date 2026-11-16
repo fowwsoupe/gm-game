@@ -18,7 +18,7 @@ import {
   type ScheduledGame,
 } from './core';
 import { buyoutCharges } from './cba';
-import { classifyTeams, computeStandings, nextRound, seedPlayoffs } from './league';
+import { classifyTeams, computeStandings, nextRound, parsePick, seedPlayoffs } from './league';
 import { giveSeasonAwards } from './awards';
 import {
   announceDraftClass,
@@ -164,8 +164,15 @@ export function handleCommand(
         give: [...proposal.give],
         get: [...proposal.get],
         ...(retained.length > 0 && { retained }),
+        ...(proposal.givePicks?.length && { givePicks: [...proposal.givePicks] }),
+        ...(proposal.getPicks?.length && { getPicks: [...proposal.getPicks] }),
       });
       applyEvent(state, ev);
+      const picks = (ids: readonly string[] = []) =>
+        ids.map((id) => {
+          const pick = parsePick(id)!;
+          return `${pick.season} R${pick.round} (${state.teams[pick.originalTeamId]?.abbreviation})`;
+        });
       const names = (ids: readonly string[]) =>
         ids
           .map((id) => `${state.players[id]!.firstName} ${state.players[id]!.lastName}`)
@@ -177,8 +184,9 @@ export function handleCommand(
         params: {
           from: team(proposal.fromTeamId),
           to: team(proposal.toTeamId),
-          give: names(proposal.give) || '-',
-          get: names(proposal.get) || '-',
+          give:
+            [names(proposal.give), ...picks(proposal.givePicks)].filter(Boolean).join(', ') || '-',
+          get: [names(proposal.get), ...picks(proposal.getPicks)].filter(Boolean).join(', ') || '-',
         },
       });
       applyEvent(state, news);

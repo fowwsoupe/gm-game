@@ -13,6 +13,7 @@ import {
   parseXgTable,
   playerProfiles,
   dashboard,
+  draftPicks,
   playoffOdds,
   teamRatings,
   evaluateTrade,
@@ -308,6 +309,11 @@ export class LeagueService {
       tradeDeadlineDay: cal.tradeDeadlineDay,
       tradesOpen: tradeWindowOpen(state, ctx),
     };
+  }
+
+  picks(teamId: TeamId) {
+    const { state } = this.open();
+    return draftPicks(state, defaultContext(state.rulesetId).ruleset.draft.rounds, teamId);
   }
 
   lines(teamId: TeamId) {

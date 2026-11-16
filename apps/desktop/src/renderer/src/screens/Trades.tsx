@@ -1,6 +1,6 @@
 import { useState } from 'react';
-import type { PlayerId, PlayerProfile, TeamId, TradeReason } from '@gm/shared';
-import { useDispatch, usePlayers, useTeams, useTradeEvaluation } from '@/lib/queries';
+import type { DraftPick, PlayerId, PlayerProfile, TeamId, TradeReason } from '@gm/shared';
+import { useDispatch, usePicks, usePlayers, useTeams, useTradeEvaluation } from '@/lib/queries';
 import { useT, type MessageKey } from '@/i18n';
 import { Button, Card } from '@/ui';
 import { money, statValue } from '@/lib/format';
@@ -17,6 +17,10 @@ export function Trades() {
   const [get, setGet] = useState<PlayerId[]>([]);
   /** Share of each given player's cap hit you keep paying (0 = none). */
   const [retain, setRetain] = useState<Record<string, number>>({});
+  const [givePicks, setGivePicks] = useState<string[]>([]);
+  const [getPicks, setGetPicks] = useState<string[]>([]);
+  const { data: myPicks = [] } = usePicks(mine?.id);
+  const { data: theirPicks = [] } = usePicks(partner);
   const [message, setMessage] = useState<string | null>(null);
   const { data: myPlayers = [] } = usePlayers(mine?.id);
   const { data: theirPlayers = [] } = usePlayers(partner);
@@ -25,7 +29,15 @@ export function Trades() {
     .map((id) => ({ playerId: id, pct: retain[id]! }));
   const proposal =
     mine && partner
-      ? { fromTeamId: mine.id, toTeamId: partner, give, get, ...(kept.length && { retain: kept }) }
+      ? {
+          fromTeamId: mine.id,
+          toTeamId: partner,
+          give,
+          get,
+          ...(kept.length && { retain: kept }),
+          ...(givePicks.length && { givePicks }),
+          ...(getPicks.length && { getPicks }),
+        }
       : undefined;
   const { data: verdict } = useTradeEvaluation(proposal);
   const dispatch = useDispatch();
@@ -44,6 +56,7 @@ export function Trades() {
           onChange={(e) => {
             setPartner(e.target.value as TeamId);
             setGet([]);
+            setGetPicks([]);
           }}
           className="rounded border border-line bg-panel px-2 py-1 text-ink"
         >
@@ -55,7 +68,7 @@ export function Trades() {
         </select>
       </label>
       <Card title={t('trade.answerTitle')}>
-        {!verdict || give.length + get.length === 0 ? (
+        {!verdict || give.length + get.length + givePicks.length + getPicks.length === 0 ? (
           <p className="text-sm text-muted">{t('trade.pickPlayers')}</p>
         ) : (
           <>
@@ -84,6 +97,8 @@ export function Trades() {
                       setGive([]);
                       setGet([]);
                       setRetain({});
+                      setGivePicks([]);
+                      setGetPicks([]);
                     }
                   },
                 },
@@ -103,12 +118,18 @@ export function Trades() {
           onToggle={(id) => toggle(give, setGive, id)}
           retain={retain}
           onRetain={(id, pct) => setRetain({ ...retain, [id]: pct })}
+          picks={myPicks}
+          pickedPicks={givePicks}
+          onTogglePick={(id) => setGivePicks(togglePick(givePicks, id))}
         />
         <Side
           title={t('trade.youGet')}
           players={theirPlayers}
           picked={get}
           onToggle={(id) => toggle(get, setGet, id)}
+          picks={theirPicks}
+          pickedPicks={getPicks}
+          onTogglePick={(id) => setGetPicks(togglePick(getPicks, id))}
         />
       </div>
     </div>
@@ -124,6 +145,9 @@ function useReasonText() {
   };
 }
 
+const togglePick = (list: string[], id: string) =>
+  list.includes(id) ? list.filter((x) => x !== id) : [...list, id];
+
 /** Retention choices; the ruleset's limit is checked by the sim. */
 const RETAIN_STEPS = [0, 10, 20, 30, 40, 50];
 
@@ -134,6 +158,9 @@ function Side({
   onToggle,
   retain,
   onRetain,
+  picks,
+  pickedPicks,
+  onTogglePick,
 }: {
   title: string;
   players: PlayerProfile[];
@@ -142,8 +169,13 @@ function Side({
   /** Only on your side: how much of a given player's cap hit you keep. */
   retain?: Record<string, number>;
   onRetain?: (id: PlayerId, pct: number) => void;
+  picks: DraftPick[];
+  pickedPicks: string[];
+  onTogglePick: (id: string) => void;
 }) {
   const t = useT();
+  const { data: teams = [] } = useTeams();
+  const abbr = (id: string) => teams.find((x) => x.id === id)?.abbreviation ?? id;
   return (
     <Card title={title}>
       <table className="tabular w-full text-sm">
@@ -205,6 +237,25 @@ function Side({
           })}
         </tbody>
       </table>
+      {picks.length > 0 && (
+        <div className="mt-3 flex flex-wrap gap-2 text-sm">
+          <span className="text-muted">{t('trade.picks')}</span>
+          {picks.map((pk) => (
+            <label key={pk.id} className="flex items-center gap-1">
+              <input
+                type="checkbox"
+                checked={pickedPicks.includes(pk.id)}
+                onChange={() => onTogglePick(pk.id)}
+              />
+              {t('trade.pick', {
+                season: pk.season,
+                round: pk.round,
+                team: abbr(pk.originalTeamId),
+              })}
+            </label>
+          ))}
+        </div>
+      )}
     </Card>
   );
 }

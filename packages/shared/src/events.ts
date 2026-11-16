@@ -119,6 +119,8 @@ export type LeagueEvent =
       give: PlayerId[];
       get: PlayerId[];
       retained?: RetainedSalary[];
+      givePicks?: string[];
+      getPicks?: string[];
     })
   | (EventBase & { kind: 'team.controlChanged'; teamId: TeamId; userControlled: boolean })
   | (EventBase & { kind: 'season.phaseChanged'; from: SeasonPhase; to: SeasonPhase })

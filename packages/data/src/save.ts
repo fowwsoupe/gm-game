@@ -208,6 +208,7 @@ export class SaveFile {
       draftClass: JSON.parse(this.getMeta('draftClass') ?? '[]'),
       draftBoards: JSON.parse(this.getMeta('draftBoards') ?? '{}'),
       depthCharts: JSON.parse(this.getMeta('depthCharts') ?? '{}'),
+      pickOwners: JSON.parse(this.getMeta('pickOwners') ?? '{}'),
       capCharges: (
         this.db
           .prepare(
@@ -454,6 +455,7 @@ export class SaveFile {
     this.setMeta('draftClass', JSON.stringify(state.draftClass));
     this.setMeta('draftBoards', JSON.stringify(state.draftBoards));
     this.setMeta('depthCharts', JSON.stringify(state.depthCharts));
+    this.setMeta('pickOwners', JSON.stringify(state.pickOwners));
   }
 
   // ---------- queries ----------

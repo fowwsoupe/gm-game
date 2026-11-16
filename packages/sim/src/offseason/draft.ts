@@ -1,6 +1,7 @@
 import type { DraftProspect, Player, TeamId } from '@gm/shared';
 import type { Emit, LeagueState, Rng } from '../core';
 import type { SimContext } from '../context';
+import { pickId, pickOwner } from '../league';
 import { entryContract, rosterOf } from './roster';
 
 /** How far a scout's read of a prospect's potential is off, on average (rating points). */
@@ -70,7 +71,9 @@ export function runDraft(
     : draftClass(state, ctx, rng.fork('class'));
 
   for (let i = 0; pool.length > 0 && i < order.length * ctx.ruleset.draft.rounds; i++) {
-    const teamId = (i < order.length ? firstRound : order)[i % order.length]!;
+    const round = Math.floor(i / order.length) + 1;
+    const slotTeam = (i < order.length ? firstRound : order)[i % order.length]!;
+    const teamId = pickOwner(state, pickId(season, round, slotTeam), slotTeam);
     const board = state.draftBoards[teamId] ?? [];
     const wanted = board
       .map((id) => pool.findIndex((d) => d.player.id === id))
@@ -81,7 +84,7 @@ export function runDraft(
     emit(i === 0 ? 'notable' : 'minor', [teamId], {
       kind: 'player.drafted',
       player,
-      round: Math.floor(i / order.length) + 1,
+      round,
       pick: i + 1,
     });
   }
