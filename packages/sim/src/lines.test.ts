@@ -28,11 +28,13 @@ describe('lines', () => {
     if (!played.ok) throw new Error(played.error.message);
     const game = played.events.find(
       (e) =>
-        e.kind === 'game.final' &&
-        (e.result.homeTeamId === mine || e.result.awayTeamId === mine),
+        e.kind === 'game.final' && (e.result.homeTeamId === mine || e.result.awayTeamId === mine),
     );
     if (game?.kind !== 'game.final') throw new Error('no game');
-    const box = game.result.box as { home: { goalie: { id: string } }; away: { goalie: { id: string } } };
+    const box = game.result.box as {
+      home: { goalie: { id: string } };
+      away: { goalie: { id: string } };
+    };
     const side = game.result.homeTeamId === mine ? box.home : box.away;
     expect(side.goalie.id).toBe(backup.id);
   });
