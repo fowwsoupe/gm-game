@@ -25,6 +25,11 @@ export const usePlayoffs = () =>
   useQuery({ queryKey: keys.playoffs, queryFn: () => window.gm.league.playoffs() });
 export const useAwards = () =>
   useQuery({ queryKey: keys.awards, queryFn: () => window.gm.league.awards() });
+export const useHallOfFame = () =>
+  useQuery({
+    queryKey: ['league', 'hallOfFame'] as const,
+    queryFn: () => window.gm.league.hallOfFame(),
+  });
 export const useLeaders = () =>
   useQuery({ queryKey: keys.leaders, queryFn: () => window.gm.league.leaders() });
 export const useRecords = () =>

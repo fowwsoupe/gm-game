@@ -310,4 +310,6 @@ export const fr: Record<MessageKey, string> = {
   'standings.view.league': 'Ligue',
   'standings.view.conference': 'Association',
   'standings.view.division': 'Section',
+  'history.hallOfFame': 'Temple de la renommée',
+  'history.hofLine': '{stat} · {seasons} saisons · retraité en {retired}',
 };

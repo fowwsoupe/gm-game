@@ -74,6 +74,16 @@ export interface SportModule<Strength = unknown> {
     percentiles: readonly { key: string; value: number }[],
   ): { build: string; tags: string[] };
 
+  /**
+   * Hall of Fame: whether a retired player's career (one stat line per season, his awards)
+   * earns induction, and his career totals.
+   */
+  hallOfFame(input: {
+    position: string;
+    seasons: readonly Record<string, number>[];
+    awards: readonly string[];
+  }): { inducted: boolean; totals: Record<string, number> };
+
   /** Standout individual nights in a finished game (hockey: hat tricks, shutouts), as news keys. */
   highlights(result: GameResult): { key: string; playerId: PlayerId; teamId: TeamId }[];
 

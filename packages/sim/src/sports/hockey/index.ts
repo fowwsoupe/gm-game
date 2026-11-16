@@ -6,7 +6,7 @@ import { generateFictionalLeague, generateProspect } from './generate';
 import { NHL_2026 } from './ruleset-nhl-2026';
 import { pickAwards } from './awards';
 import { importHockeyRoster } from './roster';
-import { hockeyHighlights, hockeyLeaders, hockeyPlayerLines } from './stats';
+import { hockeyHallOfFame, hockeyHighlights, hockeyLeaders, hockeyPlayerLines } from './stats';
 import { hockeyRole } from './builds';
 
 /**
@@ -31,6 +31,7 @@ export function hockeySport(goalModel: GoalModel = rulesGoalModel): SportModule<
     leaders: hockeyLeaders,
     playerLines: hockeyPlayerLines,
     highlights: hockeyHighlights,
+    hallOfFame: hockeyHallOfFame,
     role: hockeyRole,
     simGame: (game, rng) => simGame(game, rng, goalModel),
   };
