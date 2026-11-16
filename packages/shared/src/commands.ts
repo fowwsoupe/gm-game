@@ -16,7 +16,9 @@ export type Command =
   /** After the champion is crowned: age, retire, draft, re-sign and sign, then start next season. */
   | { kind: 'season.rollover' }
   /** Buy out a player's contract (offseason only, once the champion is crowned). */
-  | { kind: 'contract.buyout'; playerId: PlayerId };
+  | { kind: 'contract.buyout'; playerId: PlayerId }
+  /** Re-sign a player whose contract ends this season, for `years` seasons from next season (same window as buyouts). */
+  | { kind: 'contract.resign'; playerId: PlayerId; years: number };
 // Planned (not implemented yet): 'trade.propose', 'contract.offer', 'lines.set', 'draft.pick' ...
 
 export type CommandKind = Command['kind'];

@@ -14,6 +14,7 @@ import type { SimContext } from '../context';
 import { runDraft } from './draft';
 
 export { lotteryOrder } from './draft';
+export { resignOffers, resignContract, isExpiring } from './resign';
 import { expireContracts, fillRosters, meetCapFloor, reSignPlayers } from './freeAgency';
 import { developPlayers, retirePlayers } from './progression';
 

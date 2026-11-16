@@ -4,6 +4,8 @@ import type {
   Leaderboard,
   PlayoffSeries,
   RecordEntry,
+  ResignOffer,
+  RosterPlayer,
   StandingsRow,
   Team,
   TeamId,
@@ -39,6 +41,10 @@ export interface GmApi {
     records(): Promise<RecordEntry[]>;
     /** A team's cap sheet: the cap year in play, then future seasons. */
     capSheet(input: { teamId: TeamId }): Promise<CapSheet>;
+    /** A team's players under contract or expiring, for names on the cap sheet. */
+    roster(input: { teamId: TeamId }): Promise<RosterPlayer[]>;
+    /** Expiring players a team may re-sign now (empty until the champion is crowned). */
+    resignOffers(input: { teamId: TeamId }): Promise<ResignOffer[]>;
   };
   feed: {
     list(input: { limit: number; minImportance?: Importance }): Promise<LeagueEvent[]>;
@@ -64,6 +70,8 @@ export const IPC = {
   records: 'league:records',
   leaders: 'league:leaders',
   capSheet: 'league:capSheet',
+  roster: 'league:roster',
+  resignOffers: 'league:resignOffers',
   feedList: 'feed:list',
   dispatch: 'commands:dispatch',
   steamStatus: 'steam:status',

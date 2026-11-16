@@ -9,6 +9,7 @@ import {
   defaultContext,
   handleCommand,
   NHL_2026,
+  resignOffers,
   retentionIssues,
   validateContract,
   type LeagueState,
@@ -222,5 +223,54 @@ describe('buyout command', () => {
         handleCommand(state, { kind: 'contract.buyout', playerId: expiring.id }, local, ctx),
       ).toMatchObject({ ok: false, error: { code: 'invalid' } });
     }
+  });
+});
+
+describe('re-sign command', () => {
+  const finished = (seed: number): LeagueState => {
+    const state = createLeague(seed, ctx);
+    handleCommand(state, { kind: 'sim.advance', days: 260 }, local, ctx);
+    if (!state.championTeamId) throw new Error('season did not finish');
+    return state;
+  };
+  const mine = (state: LeagueState) => Object.values(state.teams).find((t) => t.userControlled)!.id;
+
+  it('signs an expiring player at his ask, and the rollover keeps him', () => {
+    const state = finished(7);
+    const teamId = mine(state);
+    const offer = resignOffers(state, ctx, teamId)[0];
+    if (!offer) throw new Error('no expiring player on the user team');
+    const res = handleCommand(
+      state,
+      { kind: 'contract.resign', playerId: offer.playerId, years: 3 },
+      local,
+      ctx,
+    );
+    if (!res.ok) throw new Error(res.error.message);
+    const p = state.players[offer.playerId]!;
+    expect(p.contract).toEqual({ capHit: offer.ask, expiresAfterSeason: state.date.season + 3 });
+    handleCommand(state, { kind: 'season.rollover' }, local, ctx);
+    expect(state.players[offer.playerId]!.teamId).toBe(teamId);
+  });
+
+  it('refuses too long a term, other teams, and unsigned expiring players walk on rollover', () => {
+    const state = finished(8);
+    const offer = resignOffers(state, ctx, mine(state))[0]!;
+    expect(
+      handleCommand(
+        state,
+        { kind: 'contract.resign', playerId: offer.playerId, years: 9 },
+        local,
+        ctx,
+      ),
+    ).toMatchObject({ ok: false, error: { code: 'invalid' } });
+    const other = Object.values(state.players).find(
+      (p) => p.teamId && !state.teams[p.teamId]!.userControlled,
+    )!;
+    expect(
+      handleCommand(state, { kind: 'contract.resign', playerId: other.id, years: 1 }, local, ctx),
+    ).toMatchObject({ ok: false, error: { code: 'not_allowed' } });
+    handleCommand(state, { kind: 'season.rollover' }, local, ctx);
+    expect(state.players[offer.playerId]?.teamId).not.toBe(mine(state));
   });
 });

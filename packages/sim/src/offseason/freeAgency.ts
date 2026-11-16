@@ -64,6 +64,8 @@ export function reSignPlayers(
   const typical = typicalRating(state);
 
   for (const teamId of [...expiring.keys()].sort()) {
+    // A human GM re-signs his own players in the re-sign window; the rest walk.
+    if (state.teams[teamId]?.userControlled) continue;
     const candidates = expiring
       .get(teamId)!
       .map((id) => state.players[id])
