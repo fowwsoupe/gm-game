@@ -12,6 +12,7 @@ import {
   phaseOf,
   parseXgTable,
   playerProfiles,
+  dashboard,
   playoffOdds,
   teamRatings,
   evaluateTrade,
@@ -307,6 +308,11 @@ export class LeagueService {
       tradeDeadlineDay: cal.tradeDeadlineDay,
       tradesOpen: tradeWindowOpen(state, ctx),
     };
+  }
+
+  dashboard(teamId: TeamId) {
+    const { state } = this.open();
+    return dashboard(state, defaultContext(state.rulesetId), teamId);
   }
 
   /** Odds from 1,000 runs of the rest of the season, seeded by the league so it is stable between refreshes. */

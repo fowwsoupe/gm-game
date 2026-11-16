@@ -60,6 +60,12 @@ export const useDraftClass = (teamId: TeamId | undefined) =>
     queryFn: () => window.gm.league.draftClass({ teamId: teamId! }),
     enabled: !!teamId,
   });
+export const useDashboard = (teamId: TeamId | undefined) =>
+  useQuery({
+    queryKey: ['league', 'dashboard', teamId] as const,
+    queryFn: () => window.gm.league.dashboard({ teamId: teamId! }),
+    enabled: !!teamId,
+  });
 export const usePulse = () =>
   useQuery({ queryKey: ['league', 'pulse'] as const, queryFn: () => window.gm.league.pulse() });
 export const useStatus = () =>

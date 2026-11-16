@@ -331,3 +331,16 @@ export interface PulseRow {
   rating: number;
   status: 'contender' | 'buyer' | 'bubble' | 'seller' | 'rebuilder' | 'crisis';
 }
+
+/** One thing on the Home "To do" list. The UI translates `code`, fills `params`, and links to `screen`. */
+export interface TodoItem {
+  code: 'resign' | 'draftList' | 'freeAgency' | 'injured' | 'rosterShort' | 'overCap' | 'deadline';
+  params?: Record<string, string | number>;
+  screen: 'roster' | 'cap' | 'draft' | 'trades';
+}
+
+/** What the Home screen needs for a team beyond standings: the to-do list and the next game. */
+export interface Dashboard {
+  todo: TodoItem[];
+  nextGame: { opponentId: TeamId; home: boolean; day: number } | null;
+}

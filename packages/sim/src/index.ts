@@ -39,3 +39,4 @@ export { defaultContext, RULESETS, SPORTS, type ModelOverrides, type SimContext 
 export { createLeague, START_SEASON } from './create';
 export { handleCommand } from './commands';
 export { playerProfiles } from './profiles';
+export { dashboard } from './dashboard';

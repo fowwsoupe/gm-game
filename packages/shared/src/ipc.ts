@@ -1,6 +1,7 @@
 import type {
   AwardEntry,
   CapSheet,
+  Dashboard,
   DraftBoardEntry,
   GameDetail,
   GameSummary,
@@ -75,6 +76,8 @@ export interface GmApi {
     draftClass(input: {
       teamId: TeamId;
     }): Promise<{ prospects: DraftBoardEntry[]; board: string[] }>;
+    /** Home for a team: the to-do list and the next game. */
+    dashboard(input: { teamId: TeamId }): Promise<Dashboard>;
     /** Playoff odds, power rating and status for every team. */
     pulse(): Promise<PulseRow[]>;
     /** Date, phase and which windows (trades, free agency) are open. */
@@ -120,6 +123,7 @@ export const IPC = {
   evaluateTrade: 'league:evaluateTrade',
   status: 'league:status',
   pulse: 'league:pulse',
+  dashboard: 'league:dashboard',
   draftClass: 'league:draftClass',
   signingInterest: 'league:signingInterest',
   feedList: 'feed:list',

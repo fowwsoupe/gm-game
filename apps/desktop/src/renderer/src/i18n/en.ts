@@ -235,6 +235,23 @@ export const en = {
   'standings.odds': 'Playoff %',
   'standings.power': 'Power',
   'standings.status': 'Status',
+  'home.record': 'Record',
+  'home.place': 'Place',
+  'home.placeValue': '{n} of {of}',
+  'home.odds': 'Playoff odds',
+  'home.capSpace': 'Cap space',
+  'home.nextGame': 'Next game',
+  'home.vs': 'vs {team}',
+  'home.at': 'at {team}',
+  'home.todoTitle': 'To do',
+  'home.todoClear': 'Nothing needs you right now.',
+  'todo.resign': '{count} player(s) can be re-signed before free agency',
+  'todo.draftList': 'Rank the draft class for your picks',
+  'todo.freeAgency': 'Free agency is open: sign players, then start the next season',
+  'todo.injured': '{count} player(s) injured',
+  'todo.rosterShort': 'Short {count} at {position}',
+  'todo.overCap': 'Over the cap by {amount}',
+  'todo.deadline': 'Trade deadline in {days} day(s)',
 } as const;
 
 export type MessageKey = keyof typeof en;
