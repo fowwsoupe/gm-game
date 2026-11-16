@@ -169,6 +169,7 @@ export function applyEvent(state: LeagueState, event: LeagueEvent): void {
       return;
     }
     case 'award.given':
+    case 'stats.archived':
     case 'season.phaseChanged':
     case 'news.posted':
       return; // informational; no state change

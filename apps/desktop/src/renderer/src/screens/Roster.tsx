@@ -1,6 +1,6 @@
 import { useState } from 'react';
 import type { PlayerProfile, TeamId } from '@gm/shared';
-import { useDispatch, usePlayers, useSigningInterest, useTeams } from '@/lib/queries';
+import { useCareer, useDispatch, usePlayers, useSigningInterest, useTeams } from '@/lib/queries';
 import { useT, type MessageKey } from '@/i18n';
 import { Button, Card, PercentileBar, PlayerCard } from '@/ui';
 import { money, statValue } from '@/lib/format';
@@ -153,6 +153,7 @@ function Profile({ player: p, signFor }: { player: PlayerProfile; signFor: TeamI
           <p className="mt-1 text-sm text-bad">{t('roster.injured', { day: p.injuredUntil })}</p>
         )}
       </Card>
+      <Career player={p} />
       {p.teamId === null && signFor && <Offer key={p.id} player={p} teamId={signFor} />}
     </div>
   );
@@ -226,6 +227,52 @@ function Offer({ player, teamId }: { player: PlayerProfile; teamId: TeamId }) {
         </Button>
         {message && <span className="text-sm text-muted">{message}</span>}
       </div>
+    </Card>
+  );
+}
+
+/** Finished regular seasons, then this one so far. */
+function Career({ player }: { player: PlayerProfile }) {
+  const t = useT();
+  const { data: past = [] } = useCareer(player.id);
+  const { data: teams = [] } = useTeams();
+  const rows = [
+    ...past.map((l) => ({ label: String(l.season), teamId: l.teamId, stats: l.stats })),
+    ...(Object.keys(player.stats).length
+      ? [{ label: t('career.now'), teamId: player.teamId, stats: player.stats }]
+      : []),
+  ];
+  if (rows.length === 0) return null;
+  const keys = [...new Set(rows.flatMap((r) => Object.keys(r.stats)))];
+  const abbr = (id: string | null) => teams.find((x) => x.id === id)?.abbreviation ?? '–';
+  return (
+    <Card title={t('career.title')}>
+      <table className="tabular w-full text-xs">
+        <thead>
+          <tr className="border-b border-line text-right text-muted">
+            <th className="py-1 text-left font-medium">{t('career.season')}</th>
+            <th className="py-1 text-left font-medium">{t('roster.team')}</th>
+            {keys.map((k) => (
+              <th key={k} className="py-1 font-medium">
+                {t(`stat.${k}` as MessageKey)}
+              </th>
+            ))}
+          </tr>
+        </thead>
+        <tbody>
+          {rows.map((r) => (
+            <tr key={r.label} className="border-b border-line/50 text-right">
+              <td className="py-1 text-left">{r.label}</td>
+              <td className="py-1 text-left">{abbr(r.teamId)}</td>
+              {keys.map((k) => (
+                <td key={k} className="py-1">
+                  {r.stats[k] === undefined ? '' : statValue(k, r.stats[k])}
+                </td>
+              ))}
+            </tr>
+          ))}
+        </tbody>
+      </table>
     </Card>
   );
 }

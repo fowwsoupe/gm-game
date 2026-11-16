@@ -1,6 +1,7 @@
 import type {
   AwardEntry,
   CapSheet,
+  CareerLine,
   Dashboard,
   DraftBoardEntry,
   GameDetail,
@@ -70,6 +71,8 @@ export interface GmApi {
     resignOffers(input: { teamId: TeamId }): Promise<ResignOffer[]>;
     /** Player cards for a team's players, or the free agents (`teamId: null`). */
     players(input: { teamId: TeamId | null }): Promise<PlayerProfile[]>;
+    /** A player's finished regular seasons, oldest first. */
+    career(input: { playerId: string }): Promise<CareerLine[]>;
     /** What the other team would say to a trade, without making it. */
     evaluateTrade(input: TradeProposal): Promise<TradeEvaluation>;
     /** Next draft's class (empty until the champion is crowned) and `teamId`'s board. */
@@ -120,6 +123,7 @@ export const IPC = {
   exhibition: 'league:exhibition',
   resignOffers: 'league:resignOffers',
   players: 'league:players',
+  career: 'league:career',
   evaluateTrade: 'league:evaluateTrade',
   status: 'league:status',
   pulse: 'league:pulse',

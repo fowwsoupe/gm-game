@@ -68,6 +68,12 @@ export const useDashboard = (teamId: TeamId | undefined) =>
   });
 export const usePulse = () =>
   useQuery({ queryKey: ['league', 'pulse'] as const, queryFn: () => window.gm.league.pulse() });
+export const useCareer = (playerId: string | undefined) =>
+  useQuery({
+    queryKey: ['league', 'career', playerId] as const,
+    queryFn: () => window.gm.league.career({ playerId: playerId! }),
+    enabled: !!playerId,
+  });
 export const useStatus = () =>
   useQuery({ queryKey: ['league', 'status'] as const, queryFn: () => window.gm.league.status() });
 export const useSigningInterest = (

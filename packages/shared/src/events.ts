@@ -86,6 +86,12 @@ export type LeagueEvent =
   | (EventBase & { kind: 'draft.classAnnounced'; prospects: DraftProspect[] })
   /** A team ranked the prospects it wants; its picks follow this order. */
   | (EventBase & { kind: 'draft.boardSet'; teamId: TeamId; order: PlayerId[] })
+  /** End of a regular season: every player's stat line, kept for career stats (sport-defined keys). */
+  | (EventBase & {
+      kind: 'stats.archived';
+      season: number;
+      lines: { playerId: PlayerId; teamId: TeamId | null; stats: Record<string, number> }[];
+    })
   /** The offseason's free-agency window opened (closes when the next season starts). */
   | (EventBase & { kind: 'freeAgency.opened' })
   /** A new season: fresh schedule, clock back to opening night, results cleared. */

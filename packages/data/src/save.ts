@@ -1,6 +1,7 @@
 import Database from 'better-sqlite3';
 import type {
   AwardEntry,
+  CareerLine,
   CapCharge,
   GameResult,
   Importance,
@@ -280,6 +281,9 @@ export class SaveFile {
     const setStatus = this.db.prepare('UPDATE teams SET status = ? WHERE id = ?');
     const setControl = this.db.prepare('UPDATE teams SET user_controlled = ? WHERE id = ?');
     const setTeam = this.db.prepare('UPDATE players SET team_id = ? WHERE id = ?');
+    const archiveLine = this.db.prepare(
+      'INSERT OR REPLACE INTO player_seasons (player_id, season, team_id, stats_json) VALUES (?, ?, ?, ?)',
+    );
 
     this.db.transaction(() => {
       for (const e of events) {
@@ -294,7 +298,11 @@ export class SaveFile {
             JSON.stringify(e.teamIds),
             // The box score lives in the games table; keeping it here too would double the save.
             JSON.stringify(
-              e.kind === 'game.final' ? { ...e, result: { ...e.result, box: undefined } } : e,
+              e.kind === 'game.final'
+                ? { ...e, result: { ...e.result, box: undefined } }
+                : e.kind === 'stats.archived'
+                  ? { ...e, lines: undefined } // kept in player_seasons
+                  : e,
             ),
           );
         }
@@ -389,6 +397,11 @@ export class SaveFile {
             break;
           case 'team.controlChanged':
             setControl.run(e.userControlled ? 1 : 0, e.teamId);
+            break;
+          case 'stats.archived':
+            for (const l of e.lines) {
+              archiveLine.run(l.playerId, e.season, l.teamId, JSON.stringify(l.stats));
+            }
             break;
           case 'draft.classAnnounced':
           case 'draft.boardSet':
@@ -510,6 +523,20 @@ export class SaveFile {
       if (r.injured_until !== null) p.injuredUntil = r.injured_until;
       return p;
     });
+  }
+
+  /** A player's archived regular seasons, oldest first. */
+  careerLines(playerId: string): CareerLine[] {
+    const rows = this.db
+      .prepare(
+        'SELECT season, team_id, stats_json FROM player_seasons WHERE player_id = ? ORDER BY season',
+      )
+      .all(playerId) as { season: number; team_id: TeamId | null; stats_json: string }[];
+    return rows.map((r) => ({
+      season: r.season,
+      teamId: r.team_id,
+      stats: JSON.parse(r.stats_json) as Record<string, number>,
+    }));
   }
 
   /** Seasons that have a champion, oldest first. */
