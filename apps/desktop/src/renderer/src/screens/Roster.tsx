@@ -1,7 +1,14 @@
 import { useEffect, useState } from 'react';
 import { useUi } from '@/stores/ui';
 import type { PlayerProfile, TeamId } from '@gm/shared';
-import { useCareer, useDispatch, usePlayers, useSigningInterest, useTeams } from '@/lib/queries';
+import {
+  useCareer,
+  useDispatch,
+  usePlayers,
+  useSigningInterest,
+  useStatus,
+  useTeams,
+} from '@/lib/queries';
 import { useT, type MessageKey } from '@/i18n';
 import { Button, Card, Face, PercentileBar, PlayerCard } from '@/ui';
 import { money, statValue } from '@/lib/format';
@@ -273,9 +280,12 @@ function Career({ player }: { player: PlayerProfile }) {
   const t = useT();
   const { data: past = [] } = useCareer(player.id);
   const { data: teams = [] } = useTeams();
+  const { data: status } = useStatus();
+  // Once a season is archived (playoffs over) its line is in `past`; "Now" would repeat it.
+  const archived = past.some((l) => l.season === status?.season);
   const rows = [
     ...past.map((l) => ({ label: String(l.season), teamId: l.teamId, stats: l.stats })),
-    ...(Object.keys(player.stats).length
+    ...(Object.keys(player.stats).length && !archived
       ? [{ label: t('career.now'), teamId: player.teamId, stats: player.stats }]
       : []),
   ];
