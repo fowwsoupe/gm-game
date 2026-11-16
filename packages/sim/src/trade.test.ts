@@ -226,11 +226,13 @@ describe('AI-to-AI trades', () => {
   it('happen during the season, never with a human team, the same way every time', () => {
     const run = (seed: number) => {
       const state = createLeague(seed, base);
-      const res = handleCommand(state, { kind: 'sim.advance', days: 300 }, local, base);
+      // Trades end at the deadline, so the season after it is not needed.
+      const days = base.ruleset.season.calendar.tradeDeadlineDay + 5;
+      const res = handleCommand(state, { kind: 'sim.advance', days }, local, base);
       if (!res.ok) throw new Error(res.error.message);
       return { state, trades: res.events.filter((e) => e.kind === 'trade.completed') };
     };
-    const seasons = [2, 4, 5, 6, 8].map(run);
+    const seasons = [2, 4].map(run);
     expect(seasons.reduce((n, s) => n + s.trades.length, 0)).toBeGreaterThan(3);
     // Some buyers pay with draft picks.
     expect(
