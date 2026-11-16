@@ -20,8 +20,15 @@ export type Command =
   /** Re-sign a player whose contract ends this season, for `years` seasons from next season (same window as buyouts). */
   | { kind: 'contract.resign'; playerId: PlayerId; years: number }
   /** Offer a trade; it goes through only if the other team accepts (see `evaluateTrade`). */
-  | { kind: 'trade.propose'; proposal: TradeProposal };
-// Planned (not implemented yet): 'contract.offer', 'lines.set', 'draft.pick' ...
+  | { kind: 'trade.propose'; proposal: TradeProposal }
+  /**
+   * After the season: age and develop players, retire, expire contracts, hold the draft and let AI
+   * teams re-sign, then open free agency for the human GM. `season.rollover` finishes the summer.
+   */
+  | { kind: 'offseason.openFreeAgency' }
+  /** Offer a free agent `salary` a year for `years`; he signs if interested (see `signingInterest`). */
+  | { kind: 'contract.sign'; playerId: PlayerId; teamId: TeamId; salary: number; years: number };
+// Planned (not implemented yet): 'lines.set', 'draft.pick' ...
 
 export type CommandKind = Command['kind'];
 

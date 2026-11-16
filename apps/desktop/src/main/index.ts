@@ -73,6 +73,12 @@ function registerIpc() {
     league.players(input.teamId),
   );
   ipcMain.handle(IPC.evaluateTrade, (_e, input: TradeProposal) => league.evaluateTrade(input));
+  ipcMain.handle(IPC.status, () => league.status());
+  ipcMain.handle(
+    IPC.signingInterest,
+    (_e, input: { playerId: string; teamId: TeamId; salary: number; years: number }) =>
+      league.signingInterest(input.playerId, input.teamId, input),
+  );
   ipcMain.handle(IPC.feedList, (_e, input: { limit: number; minImportance?: Importance }) =>
     league.feed(input.limit, input.minImportance),
   );

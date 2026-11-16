@@ -60,6 +60,7 @@ export function playerProfiles(
           value: percentileRank(p.ratings[key] ?? 0, population(keys, key)),
         })),
         stats: lines.get(p.id) ?? {},
+        ask: ctx.models.contractDemand.ask(ctx.ruleset, p),
       };
     });
 }

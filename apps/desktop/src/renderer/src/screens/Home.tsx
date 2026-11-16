@@ -36,6 +36,8 @@ function FeedCard() {
     switch (e.kind) {
       case 'team.statusChanged':
         return t('event.statusChanged', { team: teamName(e.teamId), status: t(`status.${e.to}`) });
+      case 'freeAgency.opened':
+        return t('event.freeAgencyOpened');
       case 'season.phaseChanged':
         return t('event.phaseChanged', { phase: t(`phase.${e.to}`) });
       case 'news.posted':

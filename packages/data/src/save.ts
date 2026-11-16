@@ -202,6 +202,7 @@ export class SaveFile {
         ]),
       ),
       championTeamId: (this.getMeta('championTeamId') as TeamId | undefined) ?? null,
+      freeAgencyOpen: this.getMeta('freeAgencyOpen') === '1',
       capCharges: (
         this.db
           .prepare(
@@ -375,7 +376,9 @@ export class SaveFile {
             for (const g of e.schedule) {
               insertScheduled.run(g.id, g.date.season, g.date.day, g.homeTeamId, g.awayTeamId);
             }
-            this.db.prepare("DELETE FROM meta WHERE key = 'championTeamId'").run();
+            this.db
+              .prepare("DELETE FROM meta WHERE key IN ('championTeamId', 'freeAgencyOpen')")
+              .run();
             healAll.run();
             dropOldCharges.run(e.season);
             break;
@@ -384,6 +387,9 @@ export class SaveFile {
             break;
           case 'team.controlChanged':
             setControl.run(e.userControlled ? 1 : 0, e.teamId);
+            break;
+          case 'freeAgency.opened':
+            this.setMeta('freeAgencyOpen', '1');
             break;
           case 'trade.completed':
             for (const id of e.give) setTeam.run(e.toTeamId, id);

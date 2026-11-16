@@ -7,7 +7,7 @@ import type {
   SeasonPhase,
   TeamId,
 } from '@gm/shared';
-import { pct, type Dollars } from '../core';
+import { pct, type Dollars, type LeagueState } from '../core';
 import { payroll } from './contracts';
 import type { Ruleset } from './ruleset';
 
@@ -150,3 +150,29 @@ export function retentionIssues(
   }
   return issues;
 }
+
+/**
+ * The cap year signings and trades are judged for: next season once the champion is crowned
+ * (expiring deals are then off the books), else the current one.
+ */
+export const capYearOf = (state: LeagueState) => state.date.season + (state.championTeamId ? 1 : 0);
+
+/** What a team's cap counts in the cap year: contracts that run through it, plus dead cap. */
+export function teamCapTotal(
+  state: LeagueState,
+  teamId: TeamId,
+  players: readonly Player[] = Object.values(state.players),
+): Dollars {
+  const season = capYearOf(state);
+  const signed = players.filter(
+    (p) => p.teamId === teamId && p.contract && p.contract.expiresAfterSeason >= season,
+  );
+  const dead = state.capCharges
+    .filter((c) => c.teamId === teamId && c.season === season)
+    .reduce((sum, c) => sum + c.amount, 0);
+  return payroll(signed) + dead;
+}
+
+/** Cap issues for a total in the cap year: the offseason allowance once the season is over, else the ceiling only. */
+export const capYearIssues = (rules: Ruleset, state: LeagueState, total: Dollars) =>
+  capIssues(rules, total, state.championTeamId ? 'offseason' : 'future');

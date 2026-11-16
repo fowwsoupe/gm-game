@@ -54,6 +54,16 @@ export const useTradeEvaluation = (proposal: TradeProposal | undefined) =>
     queryFn: () => window.gm.league.evaluateTrade(proposal!),
     enabled: !!proposal && proposal.give.length + proposal.get.length > 0,
   });
+export const useStatus = () =>
+  useQuery({ queryKey: ['league', 'status'] as const, queryFn: () => window.gm.league.status() });
+export const useSigningInterest = (
+  input: { playerId: string; teamId: TeamId; salary: number; years: number } | undefined,
+) =>
+  useQuery({
+    queryKey: ['league', 'signingInterest', input] as const,
+    queryFn: () => window.gm.league.signingInterest(input!),
+    enabled: !!input,
+  });
 /** `null` = free agents. */
 export const usePlayers = (teamId: TeamId | null | undefined) =>
   useQuery({

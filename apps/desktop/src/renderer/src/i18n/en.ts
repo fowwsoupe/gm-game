@@ -191,6 +191,24 @@ export const en = {
   'trade.reason.empty': 'Pick players to trade.',
   'trade.reason.not_on_team': '{player} is not on that team.',
   'event.trade': 'Trade: {from} send {give} to {to} for {get}',
+  'actions.openFreeAgency': 'Open free agency',
+  'home.freeAgencyOpen':
+    'Free agency is open: sign players from Roster → Free agents, then start the next season.',
+  'event.freeAgencyOpened': 'Free agency is open',
+  'sign.title': 'Make an offer',
+  'sign.ask': 'Asking {amount} a year',
+  'sign.salary': 'Salary ($M)',
+  'sign.perYear': '$M a year for',
+  'sign.years': '{n} yr',
+  'sign.interest': 'Interest',
+  'sign.factor': '{factor} ({weight}%)',
+  'sign.factor.money': 'Money',
+  'sign.factor.winning': 'Winning',
+  'sign.factor.role': 'Role',
+  'sign.factor.term': 'Term',
+  'sign.threshold': 'He signs at {n} or more.',
+  'sign.action': 'Sign him',
+  'sign.done': 'Signed.',
 } as const;
 
 export type MessageKey = keyof typeof en;

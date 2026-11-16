@@ -56,6 +56,28 @@ describe('SaveFile', () => {
     save.close();
   });
 
+  it('saves the free-agency window and closes it with the new season', () => {
+    const save = openSave(':memory:');
+    const state = createLeague(12, ctx);
+    save.saveNewLeague(state);
+    for (const command of [
+      { kind: 'sim.advance', days: 300 },
+      { kind: 'offseason.openFreeAgency' },
+    ] as const) {
+      const res = handleCommand(state, command, local, ctx);
+      if (!res.ok) throw new Error(res.error.message);
+      save.persist(res.events, state);
+    }
+    expect(save.loadState().freeAgencyOpen).toBe(true);
+    expect(save.loadState()).toEqual(state);
+    const res = handleCommand(state, { kind: 'season.rollover' }, local, ctx);
+    if (!res.ok) throw new Error(res.error.message);
+    save.persist(res.events, state);
+    expect(save.loadState().freeAgencyOpen).toBe(false);
+    expect(save.loadState()).toEqual(state);
+    save.close();
+  });
+
   it('resumes a playoff series and saves the champion', () => {
     const save = openSave(':memory:');
     const state = createLeague(17, ctx);

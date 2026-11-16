@@ -23,7 +23,14 @@ export * from './people';
 export * from './finance';
 export * from './value';
 export * from './league';
-export { rolloverSeason, lotteryOrder, resignOffers } from './offseason';
+export {
+  rolloverSeason,
+  openFreeAgency,
+  finishRollover,
+  lotteryOrder,
+  resignOffers,
+  signingInterest,
+} from './offseason';
 export { giveSeasonAwards } from './awards';
 export * from './trades';
 export * from './sports';
