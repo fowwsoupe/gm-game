@@ -6,6 +6,7 @@
 export type { Ruleset } from './ruleset';
 export {
   validateContract,
+  payroll,
   averageAnnualValue,
   maxPlayerCapHit,
   elcYears,

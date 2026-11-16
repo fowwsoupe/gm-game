@@ -6,11 +6,12 @@ import {
   exportHockeyRoster,
   handleCommand,
   importHockeyRoster,
+  payroll,
   Rng,
 } from './index';
 
 const ctx = defaultContext();
-const fictional = () => ctx.sport.generateLeague(new Rng(7).fork('league'));
+const fictional = () => ctx.sport.generateLeague(new Rng(7).fork('league'), ctx.ruleset);
 
 describe('roster files', () => {
   it('round-trips: export a league, import it back, same players', () => {
@@ -80,5 +81,14 @@ describe('roster files', () => {
       Math.round(others.reduce((a, b) => a + b, 0) / others.length),
     );
     expect(file.formatVersion).toBe(1); // the caller's object is not changed
+  });
+
+  it('generates payrolls legal under the ruleset it is given, not a fixed cap', () => {
+    const tight = { ...ctx.ruleset, cap: { ...ctx.ruleset.cap, upperLimit: 60_000_000 } };
+    const league = ctx.sport.generateLeague(new Rng(7).fork('league'), tight);
+    for (const team of league.teams) {
+      const roster = league.players.filter((p) => p.teamId === team.id);
+      expect(payroll(roster)).toBeLessThanOrEqual(tight.cap.upperLimit);
+    }
   });
 });

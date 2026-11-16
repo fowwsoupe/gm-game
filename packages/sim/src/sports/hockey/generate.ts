@@ -7,8 +7,8 @@ import {
   type Team,
   type TeamId,
 } from '@gm/shared';
+import { payroll, type Ruleset } from '../../cba';
 import { pct, type Rng } from '../../core';
-import { NHL_2026 } from './ruleset-nhl-2026';
 
 const FIRST = [
   'Alex',
@@ -128,6 +128,7 @@ const rate = (keys: readonly string[], r: () => number) =>
  */
 export function generateFictionalLeague(
   rng: Rng,
+  ruleset: Ruleset,
   teamCount = 16,
 ): { teams: Team[]; players: Player[] } {
   const teams: Team[] = [];
@@ -166,7 +167,7 @@ export function generateFictionalLeague(
       p.ratings = rate(position === 'G' ? GOALIE_RATINGS : SKATER_RATINGS, r);
       players.push(p);
     }
-    fitPayroll(players.slice(teamStart), rng.fork(`payroll${t}`));
+    fitPayroll(players.slice(teamStart), ruleset, rng.fork(`payroll${t}`));
   }
   return { teams, players };
 }
@@ -175,10 +176,10 @@ export function generateFictionalLeague(
  * Scales a team's random cap hits so the payroll is a legal 80-92% of the cap
  * (with every salary at or above the league minimum), instead of whatever the dice gave.
  */
-function fitPayroll(roster: Player[], rng: Rng) {
-  const { upperLimit, minSalary } = NHL_2026.cap;
+function fitPayroll(roster: Player[], ruleset: Ruleset, rng: Rng) {
+  const { upperLimit, minSalary } = ruleset.cap;
   const target = pct(upperLimit, rng.int(80, 92));
-  const total = roster.reduce((s, p) => s + p.contract!.capHit, 0);
+  const total = payroll(roster);
   for (const p of roster) {
     const scaled = Math.round((p.contract!.capHit * target) / total / 100_000) * 100_000;
     p.contract!.capHit = Math.max(minSalary, scaled);

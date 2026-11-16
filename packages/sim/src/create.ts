@@ -17,7 +17,7 @@ export function createLeague(
   initial?: { season: number; teams: Team[]; players: Player[] },
 ): LeagueState {
   const rng = new Rng(seed);
-  const { teams, players } = initial ?? ctx.sport.generateLeague(rng.fork('league'));
+  const { teams, players } = initial ?? ctx.sport.generateLeague(rng.fork('league'), ctx.ruleset);
   const season = initial?.season ?? START_SEASON;
   const schedule = makeSchedule(
     season,

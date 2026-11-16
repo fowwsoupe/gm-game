@@ -36,8 +36,8 @@ export interface SportModule<Strength = unknown> {
   /** Rules shipped with the sport (season length, cap, contracts...). */
   defaultRuleset: Ruleset;
 
-  /** Builds a fictional league for this sport. */
-  generateLeague(rng: Rng): { teams: Team[]; players: Player[] };
+  /** Builds a fictional league for this sport, with payrolls legal under `ruleset`. */
+  generateLeague(rng: Rng, ruleset: Ruleset): { teams: Team[]; players: Player[] };
 
   /** A new teamless 18-19 year old, for the draft and undrafted free agents. `season` = the season he joins. */
   generateProspect(rng: Rng, opts: { id: string; season: number; position?: string }): Player;

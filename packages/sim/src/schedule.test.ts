@@ -6,7 +6,7 @@ import { makeSchedule } from './league';
 const ctx = defaultContext();
 const { gamesPerTeam } = ctx.ruleset.season;
 const days = ctx.ruleset.season.calendar.regularSeasonDays;
-const league = () => ctx.sport.generateLeague(new Rng(7).fork('league')).teams;
+const league = () => ctx.sport.generateLeague(new Rng(7).fork('league'), ctx.ruleset).teams;
 
 /** Per team: games, home games, back-to-backs, games vs each opponent. */
 function summarize(teams: Team[], seed: number) {

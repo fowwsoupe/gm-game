@@ -6,7 +6,8 @@ import { defaultContext, exportHockeyRoster, Rng, START_SEASON } from '@gm/sim';
  * Community roster makers copy it and replace names and ratings.
  * Run: pnpm roster:template
  */
-const league = defaultContext().sport.generateLeague(new Rng(2027).fork('league'));
+const ctx = defaultContext();
+const league = ctx.sport.generateLeague(new Rng(2027).fork('league'), ctx.ruleset);
 const file = exportHockeyRoster(league, {
   season: START_SEASON,
   name: 'Fictional league (template)',
