@@ -20,8 +20,8 @@ Builds the engines everything else depends on.
 - [x] Multi-sport structure: shared engines + `SportModule` per sport (hockey only for now)
 - [x] Model plug-in points (`Models`): goal, development, valuation
 - [x] CBA ruleset as data (`sim/cba`): cap, contract rules, 84-game season
-- [ ] Data pipeline (`ml/`): play-by-play, stats, drafts, contracts, junior + European seasons
-- [x] Study: which advanced stats drive goals and wins → final rating list ([RATINGS.md](RATINGS.md))
+- [~] Data pipeline (`ml/`): NHL play-by-play and player seasons prototyped; junior/European, draft and contract inputs still missing
+- [~] NHL-only held-out study done ([report](M1_PROTOTYPE_REPORT.md)); rating list v2 in code ([RATINGS.md](RATINGS.md), `faceoffs` provisional); M1 sign-off pending the data-scope decision
 - [ ] Hidden ratings model + stats-to-ratings model
 - [ ] Line-by-line game sim (`sim/game`) + fast "result only" odds sim
 - [~] Balance lab: league-health report works (`pnpm lab`); multi-year checks once seasons roll over
@@ -63,8 +63,8 @@ Build order, owners and "done when" for each step: **[V0.1_PLAN.md](V0.1_PLAN.md
 
 **Rosters**
 
-- [ ] Fictional default league
-- [ ] Community roster import (versioned JSON, validated) + Steam Workshop
+- [x] Fictional default league
+- [~] Community roster import (versioned JSON, validated) works; Steam Workshop remains for release prep
 
 **Before launch**
 

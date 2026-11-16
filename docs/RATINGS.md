@@ -1,9 +1,10 @@
 # Player ratings (hockey)
 
-Status: **final for v0.1** (roster format v2). The list is code in
+Status: **v0.1 list in code (roster format v2); `faceoffs` is provisional.** The list is code in
 `packages/shared/src/sports/hockey.ts` (`SKATER_RATINGS`, `GOALIE_RATINGS`). The roster
 schema, player generation and roster export are all built from those two lists, so this file
-explains them and the code defines them.
+explains them and the code defines them. Final M1 sign-off still waits on the data-scope
+decision in [V0.1_PLAN.md](V0.1_PLAN.md) (junior/European, draft and contract data are missing).
 
 Rules (from the feature spec):
 
@@ -40,32 +41,41 @@ Changing the list means: edit the constant, bump `ROSTER_FORMAT_VERSION`, upgrad
 
 ## Evidence (M1 study)
 
-From `ml/data/processed/rating_evidence.json` and `predictive_study.json` (MoneyPuck data,
+From the NHL-only [M1 prototype study](M1_PROTOTYPE_REPORT.md) (four MoneyPuck seasons,
 453,000 shots; player pairs are the same player in consecutive seasons, minimum 600 skater or
-1,000 goalie minutes). Correlations, not causes. "Repeats" is year-to-year r; "predicts goals"
-is r with next season's goals per 60.
+1,000 goalie minutes). Regenerate the numbers locally with the commands in
+[`ml/README.md`](../ml/README.md); they land in `ml/data/processed/rating_evidence.json` and
+`predictive_study.json`, which are not committed (source data is non-commercial).
+Correlations, not causes. "Repeats" is year-to-year r; "predicts goals" is r with next
+season's goals per 60.
 
 | Stat                      | Repeats | Predicts goals | Decision                                                    |
 | ------------------------- | ------- | -------------- | ----------------------------------------------------------- |
 | xG per 60 (chance volume) | 0.93    | 0.82           | The biggest skater signal: `shooting`, `skating`, `passing` |
 | Primary assists per 60    | 0.72    | 0.60           | Keep `passing` as its own key                               |
-| On/off-ice xG% gap        | 0.80    | 0.61           | Two-way impact: `defense` and `hockeyIq`                    |
-| Takeaways per 60          | 0.58    | 0.33           | Supports `defense` and `hockeyIq`                           |
+| On/off-ice xG% gap        | 0.80    | 0.61           | Carries team and usage effects; does not isolate a key      |
+| Takeaways per 60          | 0.58    | 0.33           | Weak support for `defense` / `hockeyIq`, not a measurement  |
 | Finishing over xG per 60  | 0.32    | 0.13           | Finishing is real but small: one `shooting` key, not two    |
-| Faceoff %                 | 0.75    | —              | A distinct, repeatable skill: its own `faceoffs` key        |
+| Faceoff %                 | 0.75    | —              | Repeatable: `faceoffs` key, provisional (no win effect yet) |
 | Hits per 60               | 0.91    | −0.14          | A real style, not a scoring skill: `physical` stays small   |
-| Goalie GSAx per 60        | 0.11    | —              | Goalie skill barely repeats: keep goalie effects small      |
+| Goalie GSAx per 60        | 0.11    | —              | Barely repeats, includes team effects: keep goalies small   |
 
-Team level: next season's win % follows shot differential (r 0.49), xG differential (0.52) and
-goal differential (0.58) more than save % (0.28) or shooting % (0.31).
+Team level: next season's win % correlates with goal differential (r 0.58), xG differential
+(0.52) and shot differential (0.49) more than with save % (0.28) or shooting % (0.31), but the
+ranking of these predictors reversed between the two held-out seasons, so none is a robust winner.
+
+What the study does not measure: `skating`, `puckHandling`, `defense`, `physical` and
+`hockeyIq` stay gameplay concepts; this NHL-only source cannot separate their effects. The
+goalie keys cannot be told apart either, and one season's save % is not a `consistency`
+estimate. Treat these as design choices, not measured talents.
 
 ## Decided questions
 
 - **Split `shooting` into accuracy and power?** No. The shot data cannot separate them (shot
   type is the only hint), and finishing above expected repeats weakly (r 0.32).
-- **Faceoffs: own key or part of `hockeyIq`?** Own key. Faceoff % repeats at r 0.75 and has
-  little to do with the other skills. Its effect on winning is small, and so is its weight in the
-  sim. Saves and v1 roster files start each skater's `faceoffs` at the average of his other
+- **Faceoffs: own key or part of `hockeyIq`?** Own key, **provisional**. Faceoff % repeats at
+  r 0.75, and the study calls it repeatable enough to test as a separate centre skill, but it did
+  not measure an effect on winning. The sim weight is kept small until that is tested. Saves and v1 roster files start each skater's `faceoffs` at the average of his other
   ratings, so nobody's overall moves.
 - **`discipline` and `durability`?** Not for v0.1. The study has no penalty or injury data to
   base them on; `physical` drives penalties and injuries use a flat rate. Revisit with data.
