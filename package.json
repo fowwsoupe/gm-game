@@ -12,10 +12,11 @@
     "typecheck": "pnpm -r typecheck",
     "test": "pnpm native:node && pnpm -r test",
     "native:node": "pnpm --filter @gm/data rebuild better-sqlite3",
+    "ml:test": "python3 -m unittest discover -s ml/tests -v",
     "lint": "eslint .",
     "format": "prettier --write .",
     "format:check": "prettier --check .",
-    "check": "pnpm format:check && pnpm lint && pnpm typecheck && pnpm test",
+    "check": "pnpm format:check && pnpm lint && pnpm typecheck && pnpm test && pnpm ml:test",
     "lab": "pnpm --filter @gm/balance-lab lab --",
     "roster:template": "pnpm --filter @gm/balance-lab roster:template"
   },
