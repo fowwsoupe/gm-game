@@ -244,6 +244,33 @@ export function handleCommand(
       return { ok: true, events: [ev] };
     }
 
+    case 'units.set': {
+      const team = state.teams[command.teamId];
+      if (!team) return { ok: false, error: { code: 'invalid', message: 'unknown team' } };
+      const yours =
+        actor.controls.includes(team.id) || (actor.id === 'local' && team.userControlled);
+      if (!yours) return { ok: false, error: { code: 'not_allowed', message: 'not your team' } };
+      const ps = command.playerIds.map((id) => state.players[id]);
+      if (
+        command.playerIds.length &&
+        (!ps.every((p) => p?.teamId === team.id) ||
+          !ctx.sport.unitOk(command.unit, ps as NonNullable<(typeof ps)[number]>[]))
+      ) {
+        return {
+          ok: false,
+          error: { code: 'invalid', message: 'your own skaters, the right mix, once each' },
+        };
+      }
+      const ev = makeEvent(state, 'minor', [team.id], {
+        kind: 'units.set',
+        teamId: team.id,
+        unit: command.unit,
+        playerIds: [...command.playerIds],
+      });
+      applyEvent(state, ev);
+      return { ok: true, events: [ev] };
+    }
+
     case 'draft.setBoard': {
       const team = state.teams[command.teamId];
       if (!team) return { ok: false, error: { code: 'invalid', message: 'unknown team' } };

@@ -1,7 +1,13 @@
-import { GOALIE_RATINGS, HOCKEY_POSITIONS, isGoalie, SKATER_RATINGS } from '@gm/shared';
+import {
+  GOALIE_RATINGS,
+  HOCKEY_POSITIONS,
+  isGoalie,
+  SKATER_RATINGS,
+  type SpecialUnit,
+} from '@gm/shared';
 import type { SportModule } from '../sport';
 import { simGame, rulesGoalModel, type GoalModel } from './game';
-import { lineupUnits, teamStrength, type TeamStrength } from './strength';
+import { lineupUnits, specialUnitsView, teamStrength, unitOk, type TeamStrength } from './strength';
 import { generateFictionalLeague, generateProspect } from './generate';
 import { NHL_2026 } from './ruleset-nhl-2026';
 import { pickAwards } from './awards';
@@ -28,6 +34,8 @@ export function hockeySport(goalModel: GoalModel = rulesGoalModel): SportModule<
     importRoster: importHockeyRoster,
     teamStrength,
     lineup: lineupUnits,
+    specialUnits: specialUnitsView,
+    unitOk: (unit, players) => unitOk(unit as SpecialUnit, players),
     leaders: hockeyLeaders,
     playerLines: hockeyPlayerLines,
     highlights: hockeyHighlights,

@@ -209,6 +209,7 @@ export class SaveFile {
       draftClass: JSON.parse(this.getMeta('draftClass') ?? '[]'),
       draftBoards: JSON.parse(this.getMeta('draftBoards') ?? '{}'),
       depthCharts: JSON.parse(this.getMeta('depthCharts') ?? '{}'),
+      specialUnits: JSON.parse(this.getMeta('specialUnits') ?? '{}'),
       pickOwners: JSON.parse(this.getMeta('pickOwners') ?? '{}'),
       tradeOffers: JSON.parse(this.getMeta('tradeOffers') ?? '[]'),
       tradeRequests: JSON.parse(this.getMeta('tradeRequests') ?? '[]'),
@@ -425,6 +426,7 @@ export class SaveFile {
           case 'draft.classAnnounced':
           case 'draft.boardSet':
           case 'lines.set':
+          case 'units.set':
           case 'trade.offered':
           case 'player.tradeRequested':
           case 'player.tradeRequestEnded':
@@ -474,6 +476,7 @@ export class SaveFile {
     this.setMeta('draftClass', JSON.stringify(state.draftClass));
     this.setMeta('draftBoards', JSON.stringify(state.draftBoards));
     this.setMeta('depthCharts', JSON.stringify(state.depthCharts));
+    this.setMeta('specialUnits', JSON.stringify(state.specialUnits));
     this.setMeta('pickOwners', JSON.stringify(state.pickOwners));
     this.setMeta('tradeOffers', JSON.stringify(state.tradeOffers));
     this.setMeta('tradeRequests', JSON.stringify(state.tradeRequests));

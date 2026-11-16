@@ -57,7 +57,15 @@ export function advance(
     if (!cached || cached.out !== out) {
       const healthy = hurt.length ? roster.filter((p) => !hurt.includes(p)) : roster;
       const chem = chemistry(healthy, state.date.season).value;
-      cached = { out, strength: sport.teamStrength(healthy, state.depthCharts[team], chem) };
+      cached = {
+        out,
+        strength: sport.teamStrength(
+          healthy,
+          state.depthCharts[team],
+          chem,
+          state.specialUnits[team],
+        ),
+      };
       strengths.set(team, cached);
     }
     return cached.strength;

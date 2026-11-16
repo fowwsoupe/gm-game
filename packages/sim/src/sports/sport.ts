@@ -98,7 +98,22 @@ export interface SportModule<Strength = unknown> {
    * players, best first; the lineup follows it ahead of ratings. `chemistry` (0–1, default 0.5)
    * is the people engine's team chemistry; the sport decides its (capped) effect.
    */
-  teamStrength(players: readonly Player[], depth?: readonly string[], chemistry?: number): Strength;
+  teamStrength(
+    players: readonly Player[],
+    depth?: readonly string[],
+    chemistry?: number,
+    units?: Partial<Record<string, readonly string[]>>,
+  ): Strength;
+
+  /** Power-play / penalty-kill units as the game uses them (`custom` = set by the GM, else auto). */
+  specialUnits(
+    players: readonly Player[],
+    depth?: readonly string[],
+    units?: Partial<Record<string, readonly string[]>>,
+  ): Record<string, { playerIds: string[]; custom: boolean }>;
+
+  /** Whether these players make a valid saved unit of that name (hockey: 3F+2D / 2F+2D). */
+  unitOk(unit: string, players: readonly Player[]): boolean;
 
   /** The lineup the game would dress, as named units in order (hockey: F1–F4, D1–D3, G). */
   lineup(

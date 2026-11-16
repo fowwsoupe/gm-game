@@ -7,6 +7,7 @@ import type {
   PlayoffSeries,
   Player,
   PlayerId,
+  SpecialUnit,
   ScheduledGame,
   Sport,
   Team,
@@ -48,6 +49,8 @@ export interface LeagueState {
   draftBoards: Record<string, string[]>;
   /** Each human team's depth order for its lines, best first (absent = by rating). */
   depthCharts: Record<string, string[]>;
+  /** Each human team's saved power-play / penalty-kill units (absent = auto). */
+  specialUnits: Record<string, Partial<Record<SpecialUnit, PlayerId[]>>>;
   /** Owners of traded draft picks, by pick id (`season-round-originalTeam`). Untraded picks are absent. */
   pickOwners: Record<string, TeamId>;
   /** AI GMs' open offers to human teams. */
@@ -163,6 +166,12 @@ export function applyEvent(state: LeagueState, event: LeagueEvent): void {
     case 'lines.set':
       state.depthCharts[event.teamId] = [...event.order];
       return;
+    case 'units.set': {
+      const mine = (state.specialUnits[event.teamId] ??= {});
+      if (event.playerIds.length) mine[event.unit] = [...event.playerIds];
+      else delete mine[event.unit];
+      return;
+    }
     case 'player.signed': {
       const p = state.players[event.playerId];
       if (!p) throw new Error(`unknown player ${event.playerId}`);
