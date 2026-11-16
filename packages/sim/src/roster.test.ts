@@ -1,4 +1,5 @@
 import { describe, expect, it } from 'vitest';
+import { GOALIE_RATINGS, isGoalie, SKATER_RATINGS } from '@gm/shared';
 import {
   createLeague,
   defaultContext,
@@ -55,5 +56,29 @@ describe('roster files', () => {
     file.players = file.players.filter((p) => !(p.team === abbr && p.position === 'G'));
     const res = importHockeyRoster(file);
     expect(res.ok).toBe(false);
+  });
+
+  it('gives every generated player exactly the rating keys of his position', () => {
+    for (const p of fictional().players) {
+      const keys = isGoalie(p.position) ? GOALIE_RATINGS : SKATER_RATINGS;
+      expect(Object.keys(p.ratings).sort()).toEqual([...keys].sort());
+    }
+  });
+
+  it('upgrades a v1 file: faceoffs start at the average of the other skater ratings', () => {
+    const file = JSON.parse(
+      JSON.stringify(exportHockeyRoster(fictional(), { season: 2027, name: 'Old' })),
+    );
+    file.formatVersion = 1;
+    for (const p of file.players) if (p.skater) delete p.skater.faceoffs;
+    const skater = file.players.find((p: { skater?: object }) => p.skater);
+    const others = Object.values(skater.skater as Record<string, number>);
+    const res = importHockeyRoster(file);
+    if (!res.ok) throw new Error(res.errors.join('\n'));
+    const loaded = res.players.find((p) => p.id === `p_${skater.id}`)!;
+    expect(loaded.ratings.faceoffs).toBe(
+      Math.round(others.reduce((a, b) => a + b, 0) / others.length),
+    );
+    expect(file.formatVersion).toBe(1); // the caller's object is not changed
   });
 });

@@ -1,30 +1,20 @@
 import { z } from 'zod';
+import { GOALIE_RATINGS, SKATER_RATINGS } from './sports/hockey';
 
 /**
  * Format for community roster files (JSON). Real rosters come from the community,
  * so treat every file as untrusted: validate here before anything touches a save.
- * Bump ROSTER_FORMAT_VERSION on breaking changes and write a migration.
+ * Bump ROSTER_FORMAT_VERSION on breaking changes and upgrade older files in upgradeRosterFile.
+ * v2: skaters gained `faceoffs`.
  */
-export const ROSTER_FORMAT_VERSION = 1;
+export const ROSTER_FORMAT_VERSION = 2;
 
 const rating = z.number().int().min(1).max(99);
+const ratingsOf = <K extends string>(keys: readonly K[]) =>
+  z.object(Object.fromEntries(keys.map((k) => [k, rating])) as Record<K, typeof rating>);
 
-const skaterRatings = z.object({
-  skating: rating,
-  shooting: rating,
-  passing: rating,
-  puckHandling: rating,
-  defense: rating,
-  physical: rating,
-  hockeyIq: rating,
-});
-
-const goalieRatings = z.object({
-  reflexes: rating,
-  positioning: rating,
-  reboundControl: rating,
-  consistency: rating,
-});
+const skaterRatings = ratingsOf(SKATER_RATINGS);
+const goalieRatings = ratingsOf(GOALIE_RATINGS);
 
 const rosterPlayer = z
   .object({
@@ -90,6 +80,30 @@ export const rosterFileSchema = z
 
 export type RosterFile = z.infer<typeof rosterFileSchema>;
 
+const isRecord = (v: unknown): v is Record<string, unknown> =>
+  typeof v === 'object' && v !== null && !Array.isArray(v);
+
+/**
+ * Brings an older roster file up to the current format before validation. The file is untrusted,
+ * so anything unexpected is passed through unchanged for the schema to reject.
+ * v1 -> v2: each skater's `faceoffs` starts at the average of his other ratings, so his overall
+ * does not move.
+ */
+export function upgradeRosterFile(json: unknown): unknown {
+  if (!isRecord(json) || json.formatVersion !== 1 || !Array.isArray(json.players)) return json;
+  return {
+    ...json,
+    formatVersion: 2,
+    players: json.players.map((p: unknown) => {
+      if (!isRecord(p) || !isRecord(p.skater) || 'faceoffs' in p.skater) return p;
+      const values = Object.values(p.skater).filter((v): v is number => typeof v === 'number');
+      if (values.length === 0) return p;
+      const faceoffs = Math.round(values.reduce((a, b) => a + b, 0) / values.length);
+      return { ...p, skater: { ...p.skater, faceoffs } };
+    }),
+  };
+}
+
 export function parseRosterFile(json: unknown) {
-  return rosterFileSchema.safeParse(json);
+  return rosterFileSchema.safeParse(upgradeRosterFile(json));
 }

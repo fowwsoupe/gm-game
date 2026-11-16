@@ -1,4 +1,12 @@
-import type { HockeyPosition, Player, PlayerId, Team, TeamId } from '@gm/shared';
+import {
+  GOALIE_RATINGS,
+  SKATER_RATINGS,
+  type HockeyPosition,
+  type Player,
+  type PlayerId,
+  type Team,
+  type TeamId,
+} from '@gm/shared';
 import { pct, type Rng } from '../../core';
 import { NHL_2026 } from './ruleset-nhl-2026';
 
@@ -110,6 +118,9 @@ const DRAFT_POSITIONS: HockeyPosition[] = [
 const PROSPECT = { potentialBase: 53, gap: [12, 26] as const };
 
 const clamp = (n: number) => Math.max(1, Math.min(99, Math.round(n)));
+/** One value per rating key, drawn in the order the keys are listed. */
+const rate = (keys: readonly string[], r: () => number) =>
+  Object.fromEntries(keys.map((k) => [k, r()]));
 
 /**
  * Fictional league for development and for players who don't load a community roster.
@@ -152,19 +163,7 @@ export function generateFictionalLeague(
         potential: clamp(base + rng.int(0, 15)),
         contract: { capHit: rng.int(8, 100) * 100_000, expiresAfterSeason: 2027 + rng.int(0, 5) },
       };
-      if (position === 'G') {
-        p.ratings = { reflexes: r(), positioning: r(), reboundControl: r(), consistency: r() };
-      } else {
-        p.ratings = {
-          skating: r(),
-          shooting: r(),
-          passing: r(),
-          puckHandling: r(),
-          defense: r(),
-          physical: r(),
-          hockeyIq: r(),
-        };
-      }
+      p.ratings = rate(position === 'G' ? GOALIE_RATINGS : SKATER_RATINGS, r);
       players.push(p);
     }
     fitPayroll(players.slice(teamStart), rng.fork(`payroll${t}`));
@@ -207,17 +206,6 @@ export function generateProspect(
     teamId: null,
     position,
     potential,
-    ratings:
-      position === 'G'
-        ? { reflexes: r(), positioning: r(), reboundControl: r(), consistency: r() }
-        : {
-            skating: r(),
-            shooting: r(),
-            passing: r(),
-            puckHandling: r(),
-            defense: r(),
-            physical: r(),
-            hockeyIq: r(),
-          },
+    ratings: rate(position === 'G' ? GOALIE_RATINGS : SKATER_RATINGS, r),
   };
 }
