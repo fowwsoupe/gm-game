@@ -55,8 +55,9 @@ export function autoLineup(players: readonly Player[]): Lineup {
       (p) => p !== undefined,
     ),
   );
+  // Short of defencemen, a leftover forward plays a defence slot (an emergency, not a good one).
   const pairs = ICE_TIME.defensePairs.map((_, i) =>
-    [d[2 * i], d[2 * i + 1]].filter((p) => p !== undefined),
+    [d[2 * i] ?? spares.shift(), d[2 * i + 1] ?? spares.shift()].filter((p) => p !== undefined),
   );
   return {
     forwards: lines,

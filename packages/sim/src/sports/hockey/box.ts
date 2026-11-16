@@ -30,6 +30,8 @@ const PP_SHOT_QUALITY = 1.5;
  */
 const INJURY_PER_GAME = 0.005;
 const AVG_TOI = 16.7;
+/** A starting goalie's chance of being hurt in a game. */
+const GOALIE_INJURY_PER_GAME = 0.002;
 const INJURY_DAYS = [
   { weight: 60, days: [3, 14] },
   { weight: 30, days: [15, 60] },
@@ -133,7 +135,7 @@ function onIce(s: Side, rng: Rng): number[] {
  * balance is not touched. Power plays shift who scores, not how much.
  * A skater may get hurt at a random minute: he leaves the game (his ice time shrinks and he takes
  * no later shots, goals or assists) and the hurt players are returned for the engine to act on.
- * Goalies are never hurt, and the injured player's minutes are not given to someone else.
+ * A goalie hurt in a game is hurt at the final horn (he plays all 60 minutes).
  * TODO(M2): power-play quality changing a team's goals, majors and fights, empty-net goals,
  * a real xG model (ONNX).
  */
@@ -187,6 +189,18 @@ export function makeBoxScore(
       injuries.push({ playerId: s.players[k]!.id, days: rng.int(lo, hi) });
     }),
   );
+  sides.forEach((s) => {
+    if (s.goalie && rng.chance(GOALIE_INJURY_PER_GAME)) {
+      const [lo, hi] =
+        INJURY_DAYS[
+          pick(
+            INJURY_DAYS.map((t) => t.weight),
+            rng,
+          )
+        ]!.days;
+      injuries.push({ playerId: s.goalie.id, days: rng.int(lo, hi) });
+    }
+  });
   /** A forward or defenceman from the deepest line who is not already in `unit` and has not left. */
   const spare = (n: number, k: number, unit: number[], time: number) => {
     const s = sides[n]!;

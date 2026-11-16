@@ -515,3 +515,16 @@ describe('result-only mode', () => {
     expect(fast.ms).toBeLessThan(full.ms);
   });
 });
+
+describe('short lineups', () => {
+  it('puts a spare forward on defence when a pair is short', () => {
+    const state = createLeague(24, ctx);
+    const team = Object.keys(state.teams)[0]!;
+    const roster = Object.values(state.players).filter((p) => p.teamId === team);
+    const keep = roster
+      .filter((p) => p.position !== 'D')
+      .concat(roster.filter((p) => p.position === 'D').slice(0, 5));
+    const lineup = autoLineup(keep);
+    expect(lineup.defense.flat()).toHaveLength(6);
+  });
+});
