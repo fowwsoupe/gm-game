@@ -300,6 +300,10 @@ export const en = {
   'trait.professionalism': 'Professional',
   'trait.hotHeaded': 'Hot-headed',
   'home.raceNight': 'next game: win {win} · lose {lose}',
+  'event.winStreak': 'The {team} have won {n} in a row',
+  'event.losingStreak': 'The {team} have lost {n} straight',
+  'event.hatTrick': 'Hat trick for {player} ({team})',
+  'event.shutout': 'Shutout for {player} ({team})',
 } as const;
 
 export type MessageKey = keyof typeof en;

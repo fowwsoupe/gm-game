@@ -1,4 +1,4 @@
-import type { GameResult, HockeyBoxScore, Leaderboard, Player } from '@gm/shared';
+import type { GameResult, HockeyBoxScore, Leaderboard, Player, PlayerId, TeamId } from '@gm/shared';
 
 export interface SkaterTotals {
   gp: number;
@@ -127,4 +127,24 @@ export function hockeyLeaders(
         .map(([id, g]) => [id, g.gp, g.saves / g.shotsAgainst] as [string, number, number]),
     ),
   ];
+}
+
+/** Hat tricks (3+ goals) and shutouts (a goalie who played the whole game and allowed none). */
+export function hockeyHighlights(result: GameResult) {
+  const box = result.box as HockeyBoxScore | undefined;
+  if (!box) return [];
+  const out: { key: string; playerId: PlayerId; teamId: TeamId }[] = [];
+  const sides = [
+    [box.home, result.homeTeamId, result.awayScore],
+    [box.away, result.awayTeamId, result.homeScore],
+  ] as const;
+  for (const [side, teamId, against] of sides) {
+    for (const line of side.skaters) {
+      if (line.goals >= 3) out.push({ key: 'hatTrick', playerId: line.id as PlayerId, teamId });
+    }
+    if (against === 0 && !side.relief && side.goalie.id) {
+      out.push({ key: 'shutout', playerId: side.goalie.id as PlayerId, teamId });
+    }
+  }
+  return out;
 }

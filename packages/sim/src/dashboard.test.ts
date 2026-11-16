@@ -60,3 +60,26 @@ describe('sim until it matters', () => {
     expect(state.championTeamId).not.toBeNull();
   });
 });
+
+describe('streak and highlight news', () => {
+  it('appears during a season, the same however you sim it', () => {
+    const news = (chunk: number) => {
+      const state = createLeague(54, ctx);
+      const out: string[] = [];
+      for (let d = 0; d < 200; d += chunk) {
+        const res = handleCommand(state, { kind: 'sim.advance', days: chunk }, local, ctx);
+        if (!res.ok) throw new Error(res.error.message);
+        for (const e of res.events) {
+          if (e.kind === 'news.posted')
+            out.push(`${e.date.day} ${e.headline} ${JSON.stringify(e.params)}`);
+        }
+      }
+      return out;
+    };
+    const whole = news(200);
+    expect(whole).toEqual(news(10));
+    for (const key of ['winStreak', 'losingStreak', 'hatTrick', 'shutout']) {
+      expect(whole.some((l) => l.includes(`event.${key}`))).toBe(true);
+    }
+  });
+});
