@@ -83,6 +83,11 @@ python3 -m ml.src.form --processed ml/data/processed
 bound) and after prior-season goal diff. It calibrates the sim's `FACEOFF_WEIGHT`; the balance
 lab's "Faceoff effect" check measures the same number in the sim.
 
+`form` writes `form_study.json`: how much a team game's goals vary around expected goals beyond
+chance (variance ratio; 1.169 in 2022-25). That excess is the ceiling for per-game goalie form,
+the sim's honest playoff momentum (`HOCKEY_TUNING.goalieFormSd`); the balance lab's "Goals vs
+expected" check measures the same ratio in the sim.
+
 The adapter filters playoffs, normalizes shot coordinates and positions, preserves
 shootout winners, and records source inconsistencies. Its drafts and contracts files
 are header-only because MoneyPuck does not supply them. It also cannot supply junior

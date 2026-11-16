@@ -3,8 +3,8 @@
 Status: **v0.1 list in code (roster format v2).** The list is code in
 `packages/shared/src/sports/hockey.ts` (`SKATER_RATINGS`, `GOALIE_RATINGS`). The roster
 schema, player generation and roster export are all built from those two lists, so this file
-explains them and the code defines them. Final M1 sign-off still waits on the data-scope
-decision in [V0.1_PLAN.md](V0.1_PLAN.md) (junior/European, draft and contract data are missing).
+explains them and the code defines them. M1 is signed off on the NHL-only prototype (scope
+decision in [V0.1_PLAN.md](V0.1_PLAN.md); junior/European, draft and contract data come later).
 
 Rules (from the feature spec):
 
