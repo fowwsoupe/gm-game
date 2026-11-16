@@ -10,7 +10,7 @@ import {
   useTradeRequests,
 } from '@/lib/queries';
 import { useT, type MessageKey } from '@/i18n';
-import { Button, Card } from '@/ui';
+import { Button, Card, TeamLink } from '@/ui';
 import { money, statValue } from '@/lib/format';
 
 /** Build a trade with another team; its GM answers live, with reasons, before you send it. */
@@ -74,6 +74,7 @@ export function Trades() {
             </option>
           ))}
         </select>
+        <TeamLink teamId={partner}>{t('team.view')}</TeamLink>
       </label>
       <Requests teamId={mine.id} />
       <Offers teamId={mine.id} />
@@ -297,6 +298,7 @@ function Offers({ teamId }: { teamId: TeamId }) {
           return (
             <li key={o.id} className="flex flex-wrap items-center justify-between gap-2">
               <span>
+                <TeamLink teamId={o.proposal.fromTeamId}>{team?.abbreviation}</TeamLink>{' '}
                 {t('trade.offerLine', {
                   team: team ? `${team.city} ${team.name}` : o.proposal.fromTeamId,
                   give: o.proposal.give.map((id) => name(theirs, id)).join(', '),

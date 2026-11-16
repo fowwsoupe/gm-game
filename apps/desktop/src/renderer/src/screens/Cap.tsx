@@ -69,7 +69,7 @@ function Advisor({ sheet }: { sheet: CapSheet }) {
   );
 }
 
-function Summary({ sheet }: { sheet: CapSheet }) {
+export function Summary({ sheet }: { sheet: CapSheet }) {
   const t = useT();
   return (
     <Card title={t('cap.summaryTitle')}>

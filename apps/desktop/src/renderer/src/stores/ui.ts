@@ -15,10 +15,14 @@ export type Screen =
   | 'cap'
   | 'games'
   | 'leaders'
-  | 'history';
+  | 'history'
+  | 'team';
 
 interface UiState {
   screen: Screen;
+  /** Team shown on the team page. */
+  teamId: string | undefined;
+  openTeam: (teamId: string) => void;
   locale: Locale;
   setScreen: (screen: Screen) => void;
   setLocale: (locale: Locale) => void;
@@ -26,6 +30,8 @@ interface UiState {
 
 export const useUi = create<UiState>((set) => ({
   screen: 'home',
+  teamId: undefined,
+  openTeam: (teamId) => set({ screen: 'team', teamId }),
   locale: 'en',
   setScreen: (screen) => set({ screen }),
   setLocale: (locale) => set({ locale }),

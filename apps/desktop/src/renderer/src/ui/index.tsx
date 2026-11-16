@@ -1,4 +1,5 @@
 import type { ReactNode } from 'react';
+import { useUi } from '@/stores/ui';
 
 export { Face } from './Face';
 
@@ -150,5 +151,15 @@ export function RangeBar({ low, high }: { low: number; high: number }) {
         {lo}–{hi}
       </span>
     </div>
+  );
+}
+
+/** A team name that opens that team's page. */
+export function TeamLink({ teamId, children }: { teamId: string; children: ReactNode }) {
+  const openTeam = useUi((s) => s.openTeam);
+  return (
+    <button onClick={() => openTeam(teamId)} className="hover:underline">
+      {children}
+    </button>
   );
 }

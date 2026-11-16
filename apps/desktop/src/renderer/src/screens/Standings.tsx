@@ -10,7 +10,7 @@ import {
 import type { PulseRow, StandingsRow, Team } from '@gm/shared';
 import { usePulse, useStandings, useTeams } from '@/lib/queries';
 import { useT, type MessageKey } from '@/i18n';
-import { Button, Card } from '@/ui';
+import { Button, Card, TeamLink } from '@/ui';
 
 type Row = StandingsRow & { team: Team | undefined; pulse: PulseRow | undefined; power: number };
 const col = createColumnHelper<Row>();
@@ -21,6 +21,7 @@ function useColumns() {
     col.accessor((r) => (r.team ? `${r.team.city} ${r.team.name}` : r.teamId), {
       id: 'team',
       header: t('standings.team'),
+      cell: (c) => <TeamLink teamId={c.row.original.teamId}>{c.getValue()}</TeamLink>,
     }),
     col.accessor('gp', { header: t('standings.gp') }),
     col.accessor('w', { header: t('standings.w') }),
