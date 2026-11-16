@@ -150,7 +150,7 @@ export function Lines() {
         {SPECIAL_UNITS.map((unit) => {
           const u = special[unit];
           if (!u) return null;
-          const f = SPECIAL_UNIT_SIZE[unit.startsWith('pp') ? 'pp' : 'pk'].f;
+          const isPp = unit.startsWith('pp');
           return (
             <Card key={unit} title={t(`lines.special.${unit}` as MessageKey)}>
               <ul className="space-y-1 text-sm">
@@ -163,7 +163,12 @@ export function Lines() {
                       onChange={(e) => swapIn(unit, u.playerIds, slot, e.target.value)}
                       className="w-full rounded border border-line bg-panel px-1 py-0.5"
                     >
-                      {(slot < f ? forwards : defence)
+                      {(isPp
+                        ? [...forwards, ...defence]
+                        : slot < SPECIAL_UNIT_SIZE.pk.f
+                          ? forwards
+                          : defence
+                      )
                         .filter((x) => x === id || !u.playerIds.includes(x))
                         .map((x) => {
                           const p = byId.get(x);
