@@ -161,7 +161,9 @@ function Profile({ player: p, signFor }: { player: PlayerProfile; signFor: TeamI
 /** Offer a free agent a contract; his interest meter answers before you send it. */
 function Offer({ player, teamId }: { player: PlayerProfile; teamId: TeamId }) {
   const t = useT();
-  const [salary, setSalary] = useState(player.ask);
+  // The box keeps what you type; the offer is that many millions, rounded to whole dollars.
+  const [text, setText] = useState((player.ask / 1e6).toFixed(2));
+  const salary = Math.round((Number(text) || 0) * 1e6);
   const [years, setYears] = useState(2);
   const [message, setMessage] = useState<string | null>(null);
   const { data: view } = useSigningInterest({ playerId: player.id, teamId, salary, years });
@@ -175,8 +177,8 @@ function Offer({ player, teamId }: { player: PlayerProfile; teamId: TeamId }) {
           min={0}
           step={0.1}
           aria-label={t('sign.salary')}
-          value={(salary / 1e6).toFixed(2)}
-          onChange={(e) => setSalary(Math.round(Number(e.target.value) * 1e6))}
+          value={text}
+          onChange={(e) => setText(e.target.value)}
           className="w-24 rounded border border-line bg-panel px-2 py-1"
         />
         <span className="text-muted">{t('sign.perYear')}</span>
