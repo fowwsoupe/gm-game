@@ -256,7 +256,9 @@ for (let l = 0; l < leagues; l++) {
   for (let y = 0; y < years; y++) {
     const longRun = y >= LONG_RUN_FROM;
     if (y === 0 || longRun) {
-      const nets = Object.keys(state.teams).map((id) => netStrength(teamStrength(rosterOf(state, id))));
+      const nets = Object.keys(state.teams).map((id) =>
+        netStrength(teamStrength(rosterOf(state, id))),
+      );
       (longRun ? spreadLongRun : spreadYear0).push(sd(nets));
     }
     const played = handleCommand(
