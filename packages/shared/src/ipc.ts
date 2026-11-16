@@ -21,6 +21,7 @@ import type {
   SigningInterest,
   TeamId,
   TradeEvaluation,
+  TradeOffer,
   TradeProposal,
 } from './domain';
 import type { Command, CommandResult } from './commands';
@@ -85,6 +86,8 @@ export interface GmApi {
     career(input: { playerId: string }): Promise<CareerLine[]>;
     /** Draft picks a team owns in the drafts that can be traded. */
     picks(input: { teamId: TeamId }): Promise<DraftPick[]>;
+    /** AI GMs' open offers to a team. */
+    tradeOffers(input: { teamId: TeamId }): Promise<TradeOffer[]>;
     /** What the other team would say to a trade, without making it. */
     evaluateTrade(input: TradeProposal): Promise<TradeEvaluation>;
     /** Next draft's class (empty until the champion is crowned) and `teamId`'s board. */
@@ -143,6 +146,7 @@ export const IPC = {
   career: 'league:career',
   lines: 'league:lines',
   picks: 'league:picks',
+  tradeOffers: 'league:tradeOffers',
   evaluateTrade: 'league:evaluateTrade',
   status: 'league:status',
   pulse: 'league:pulse',

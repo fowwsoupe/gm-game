@@ -26,6 +26,8 @@ export function dashboard(state: LeagueState, ctx: SimContext, teamId: TeamId): 
     todo.push({ code: 'draftList', screen: 'draft' });
   }
   if (state.freeAgencyOpen) todo.push({ code: 'freeAgency', screen: 'roster' });
+  const offers = state.tradeOffers.filter((o) => o.proposal.toTeamId === teamId).length;
+  if (offers > 0) todo.push({ code: 'tradeOffers', params: { count: offers }, screen: 'trades' });
   const hurt = roster.filter((p) => (p.injuredUntil ?? 0) > state.date.day).length;
   if (hurt > 0) todo.push({ code: 'injured', params: { count: hurt }, screen: 'roster' });
   for (const [position, min] of Object.entries(ruleset.roster.positionMin)) {

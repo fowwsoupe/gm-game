@@ -95,7 +95,7 @@ export function planRetention(
 /** What `teamId` knows about itself when it values players (see the value engine). */
 export function teamContext(state: LeagueState, ctx: SimContext, teamId: TeamId): TeamContext {
   const { ruleset } = ctx;
-  const players = Object.values(state.players);
+  const players = Object.values(state.players).filter((p) => p.teamId === teamId);
   const days = ruleset.season.calendar.regularSeasonDays;
   const inSeason = !state.championTeamId && state.date.day >= 0;
   return {
@@ -135,7 +135,12 @@ export function evaluateTrade(
   const getPicks = proposal.getPicks ?? [];
   const assets = [...give, ...get, ...givePicks, ...getPicks];
   if (assets.length === 0 || new Set(assets).size !== assets.length) return refuse('empty');
-  const picks = new Map(draftPicks(state, ruleset.draft.rounds).map((p) => [p.id, p]));
+  // Built only when picks are in the deal (AI trade talks call this hundreds of times a week).
+  const picks = new Map(
+    givePicks.length + getPicks.length > 0
+      ? draftPicks(state, ruleset.draft.rounds).map((p) => [p.id, p])
+      : [],
+  );
   const label = (id: string) => {
     const p = picks.get(id);
     return p ? `${p.season} R${p.round} ${state.teams[p.originalTeamId]?.abbreviation ?? ''}` : id;
@@ -164,7 +169,8 @@ export function evaluateTrade(
   if ('error' in plan) return { accepted: false, value: 0, reasons: [plan.error] };
   const kept = new Map(plan.retained.map((r) => [r.playerId as string, r]));
   const season = capYearOf(state);
-  const before = Object.values(state.players);
+  // Only the two teams' players matter for their cap, positions and the players' values.
+  const before = Object.values(state.players).filter((p) => p.teamId === from || p.teamId === to);
   const after = before.map((p) => {
     const r = kept.get(p.id);
     const moved = give.includes(p.id)
@@ -206,18 +212,22 @@ export function evaluateTrade(
   // A pick in the next draft lands where its original team finishes (worst first, from today's
   // standings); later drafts are guessed at the middle of the round.
   const teamCount = Object.keys(state.teams).length;
-  const worstFirst = computeStandings(
-    Object.keys(state.teams) as TeamId[],
-    Object.values(state.results),
-    ruleset.season.points,
-  )
-    .map((r) => r.teamId)
-    .reverse();
+  // Only needed to value picks, and costly (every result this season): computed on first use.
+  let worstFirst: TeamId[] | undefined;
+  const slotOf = (teamId: TeamId) => {
+    worstFirst ??= computeStandings(
+      Object.keys(state.teams) as TeamId[],
+      Object.values(state.results),
+      ruleset.season.points,
+    )
+      .map((r) => r.teamId)
+      .reverse();
+    return worstFirst.indexOf(teamId) + 1;
+  };
   const next = nextDraftSeason(state);
   const pickOf = (id: string) => {
     const pick = picks.get(id)!;
-    const slot =
-      pick.season === next ? worstFirst.indexOf(pick.originalTeamId) + 1 : Math.ceil(teamCount / 2);
+    const slot = pick.season === next ? slotOf(pick.originalTeamId) : Math.ceil(teamCount / 2);
     return {
       p: undefined,
       label: label(id),

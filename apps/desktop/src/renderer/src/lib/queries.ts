@@ -73,6 +73,12 @@ export const useDashboard = (teamId: TeamId | undefined) =>
   });
 export const usePulse = () =>
   useQuery({ queryKey: ['league', 'pulse'] as const, queryFn: () => window.gm.league.pulse() });
+export const useTradeOffers = (teamId: TeamId | undefined) =>
+  useQuery({
+    queryKey: ['league', 'tradeOffers', teamId] as const,
+    queryFn: () => window.gm.league.tradeOffers({ teamId: teamId! }),
+    enabled: !!teamId,
+  });
 export const usePicks = (teamId: TeamId | undefined) =>
   useQuery({
     queryKey: ['league', 'picks', teamId] as const,

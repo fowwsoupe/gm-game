@@ -21,6 +21,8 @@ export type Command =
   | { kind: 'contract.resign'; playerId: PlayerId; years: number }
   /** Offer a trade; it goes through only if the other team accepts (see `evaluateTrade`). */
   | { kind: 'trade.propose'; proposal: TradeProposal }
+  /** Accept or decline an AI GM's offer. Accepting still has to pass the trade rules today. */
+  | { kind: 'trade.respond'; offerId: string; accept: boolean }
   /**
    * After the season: age and develop players, retire, expire contracts, hold the draft and let AI
    * teams re-sign, then open free agency for the human GM. `season.rollover` finishes the summer.

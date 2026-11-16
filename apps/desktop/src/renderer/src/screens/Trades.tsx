@@ -1,6 +1,13 @@
 import { useState } from 'react';
 import type { DraftPick, PlayerId, PlayerProfile, TeamId, TradeReason } from '@gm/shared';
-import { useDispatch, usePicks, usePlayers, useTeams, useTradeEvaluation } from '@/lib/queries';
+import {
+  useDispatch,
+  usePicks,
+  usePlayers,
+  useTeams,
+  useTradeEvaluation,
+  useTradeOffers,
+} from '@/lib/queries';
 import { useT, type MessageKey } from '@/i18n';
 import { Button, Card } from '@/ui';
 import { money, statValue } from '@/lib/format';
@@ -67,6 +74,7 @@ export function Trades() {
           ))}
         </select>
       </label>
+      <Offers teamId={mine.id} />
       <Card title={t('trade.answerTitle')}>
         {!verdict || give.length + get.length + givePicks.length + getPicks.length === 0 ? (
           <p className="text-sm text-muted">{t('trade.pickPlayers')}</p>
@@ -256,6 +264,61 @@ function Side({
           ))}
         </div>
       )}
+    </Card>
+  );
+}
+
+/** AI GMs' offers waiting for you: what they send, what they want, accept or decline. */
+function Offers({ teamId }: { teamId: TeamId }) {
+  const t = useT();
+  const { data: offers = [] } = useTradeOffers(teamId);
+  const { data: teams = [] } = useTeams();
+  const dispatch = useDispatch();
+  const [message, setMessage] = useState<string | null>(null);
+  const { data: theirs = [] } = usePlayers(offers[0]?.proposal.fromTeamId);
+  const { data: ours = [] } = usePlayers(teamId);
+  if (offers.length === 0) return null;
+  const name = (list: PlayerProfile[], id: string) => {
+    const p = list.find((x) => x.id === id);
+    return p ? `${p.firstName} ${p.lastName} (${p.position}, ${p.age})` : id;
+  };
+  const respond = (offerId: string, accept: boolean) =>
+    dispatch.mutate(
+      { kind: 'trade.respond', offerId, accept },
+      { onSuccess: (res) => setMessage(res.ok ? null : res.error.message) },
+    );
+  return (
+    <Card title={t('trade.offersTitle')}>
+      <ul className="space-y-2 text-sm">
+        {offers.map((o) => {
+          const team = teams.find((x) => x.id === o.proposal.fromTeamId);
+          return (
+            <li key={o.id} className="flex flex-wrap items-center justify-between gap-2">
+              <span>
+                {t('trade.offerLine', {
+                  team: team ? `${team.city} ${team.name}` : o.proposal.fromTeamId,
+                  give: o.proposal.give.map((id) => name(theirs, id)).join(', '),
+                  get: o.proposal.get.map((id) => name(ours, id)).join(', '),
+                  day: o.expiresDay,
+                })}
+              </span>
+              <span className="flex gap-2">
+                <Button
+                  variant="primary"
+                  disabled={dispatch.isPending}
+                  onClick={() => respond(o.id, true)}
+                >
+                  {t('trade.accept')}
+                </Button>
+                <Button disabled={dispatch.isPending} onClick={() => respond(o.id, false)}>
+                  {t('trade.decline')}
+                </Button>
+              </span>
+            </li>
+          );
+        })}
+      </ul>
+      {message && <p className="mt-2 text-sm text-bad">{message}</p>}
     </Card>
   );
 }

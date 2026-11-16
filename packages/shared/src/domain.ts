@@ -363,7 +363,15 @@ export interface PulseRow {
 
 /** One thing on the Home "To do" list. The UI translates `code`, fills `params`, and links to `screen`. */
 export interface TodoItem {
-  code: 'resign' | 'draftList' | 'freeAgency' | 'injured' | 'rosterShort' | 'overCap' | 'deadline';
+  code:
+    | 'resign'
+    | 'draftList'
+    | 'freeAgency'
+    | 'injured'
+    | 'rosterShort'
+    | 'overCap'
+    | 'deadline'
+    | 'tradeOffers';
   params?: Record<string, string | number>;
   screen: 'roster' | 'cap' | 'draft' | 'trades';
 }
@@ -403,4 +411,14 @@ export interface HallOfFamer {
   totals: Record<string, number>;
   /** Award keys he won, one entry per win. */
   awards: string[];
+}
+
+/**
+ * An AI GM's offer to a human team. `proposal` is written from the AI's side (`fromTeamId` is
+ * the AI team, `give` what it sends, `get` what it wants back). Open until `expiresDay`.
+ */
+export interface TradeOffer {
+  id: string;
+  proposal: TradeProposal;
+  expiresDay: number;
 }

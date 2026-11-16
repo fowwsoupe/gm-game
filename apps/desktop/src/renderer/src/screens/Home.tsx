@@ -210,6 +210,8 @@ function FeedCard() {
               team: teamName(e.player.teamId ?? ''),
             })
           : null;
+      case 'trade.offered':
+        return t('event.tradeOffered', { team: teamName(e.offer.proposal.fromTeamId) });
       case 'freeAgency.opened':
         return t('event.freeAgencyOpened');
       case 'season.phaseChanged':
