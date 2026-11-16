@@ -35,11 +35,17 @@ export function neededPosition(rules: Ruleset, roster: readonly Player[]): strin
 
 /**
  * The most a team can pay `player` per year and still be cap-legal, with a league-minimum
- * salary kept free for every slot it must still fill. Negative = cannot afford him at all.
+ * salary kept free for every slot it must still fill. `dead`: the team's dead cap that season
+ * (`deadCap`). Negative = cannot afford him at all.
  */
-export function capRoom(rules: Ruleset, roster: readonly Player[], player: Player): number {
+export function capRoom(
+  rules: Ruleset,
+  roster: readonly Player[],
+  player: Player,
+  dead: number,
+): number {
   const slots = openSlots(rules, [...roster, player]);
-  return rules.cap.upperLimit - payroll(roster) - slots * rules.cap.minSalary;
+  return rules.cap.upperLimit - payroll(roster) - dead - slots * rules.cap.minSalary;
 }
 
 /** Age in the season being prepared (`season` = the new season). */
@@ -70,10 +76,10 @@ export function offerContract(
   player: Player,
   season: number,
   years: number,
-  opts: { isResign: boolean; discount: boolean; atLeast?: number; ask: number },
+  opts: { isResign: boolean; discount: boolean; atLeast?: number; ask: number; dead: number },
 ): Contract | null {
   const ask = Math.max(opts.ask, opts.atLeast ?? 0);
-  const room = capRoom(rules, roster, player);
+  const room = capRoom(rules, roster, player, opts.dead);
   const price = Math.min(ask, maxPlayerCapHit(rules), opts.discount ? room : ask);
   if (price < rules.cap.minSalary || price > room) return null;
   return legal(rules, player, season, years, price, opts.isResign);
@@ -88,9 +94,10 @@ export function entryContract(
   roster: readonly Player[],
   player: Player,
   season: number,
+  dead: number,
 ): Contract | null {
   const years = elcYears(rules, ageIn(player, season));
-  const price = Math.min(rules.contracts.elcSalary, capRoom(rules, roster, player));
+  const price = Math.min(rules.contracts.elcSalary, capRoom(rules, roster, player, dead));
   if (years === null || price < rules.cap.minSalary) return null;
   return legal(rules, player, season, years, price, false, true);
 }

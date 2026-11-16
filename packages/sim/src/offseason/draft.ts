@@ -1,6 +1,7 @@
 import type { DraftProspect, Player, Team, TeamId } from '@gm/shared';
 import type { Emit, LeagueState, Rng } from '../core';
 import type { SimContext } from '../context';
+import { deadCap } from '../cba';
 import { pickId, pickOwner } from '../league';
 import { seenBy } from '../people';
 import { entryContract, rosterOf } from './roster';
@@ -96,7 +97,13 @@ export function runDraft(
       board.map((id) => pool.findIndex((d) => d.player.id === id)).find((at) => at >= 0) ??
       (team.userControlled ? undefined : aiPick(team, pool));
     const [{ player: prospect }] = pool.splice(wanted ?? 0, 1) as [DraftProspect];
-    const contract = entryContract(ctx.ruleset, rosterOf(state, teamId), prospect, season);
+    const contract = entryContract(
+      ctx.ruleset,
+      rosterOf(state, teamId),
+      prospect,
+      season,
+      deadCap(state, teamId, season),
+    );
     const player: Player = contract ? { ...prospect, teamId, contract } : prospect;
     emit(i === 0 ? 'notable' : 'minor', [teamId], {
       kind: 'player.drafted',

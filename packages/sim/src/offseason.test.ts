@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest';
-import type { Actor, LeagueEvent, TeamId } from '@gm/shared';
+import type { Actor, LeagueEvent, PlayerId, TeamId } from '@gm/shared';
 import {
   applyEvent,
   computeStandings,
@@ -12,6 +12,7 @@ import {
   playoffCapBreaches,
   Rng,
   playerRecords,
+  teamCapTotal,
   teamRecords,
   validateContract,
   type LeagueState,
@@ -43,9 +44,9 @@ function checkLeagueIsLegal(state: LeagueState) {
   expect(playoffCapBreaches(Object.values(state.players), ruleset)).toEqual([]);
   for (const id of Object.keys(state.teams) as TeamId[]) {
     const roster = Object.values(state.players).filter((p) => p.teamId === id);
-    const payroll = roster.reduce((s, p) => s + (p.contract?.capHit ?? 0), 0);
-    expect(payroll).toBeLessThanOrEqual(ruleset.cap.upperLimit);
-    expect(payroll).toBeGreaterThanOrEqual(ruleset.cap.lowerLimit);
+    const total = teamCapTotal(state, id); // dead cap counts
+    expect(total).toBeLessThanOrEqual(ruleset.cap.upperLimit);
+    expect(total).toBeGreaterThanOrEqual(ruleset.cap.lowerLimit);
     expect(roster.length).toBeGreaterThanOrEqual(ruleset.roster.minActive);
     for (const [position, min] of Object.entries(ruleset.roster.positionMin)) {
       expect(roster.filter((p) => p.position === position).length).toBeGreaterThanOrEqual(min);
@@ -191,6 +192,27 @@ describe('offseason steps', () => {
       .sort((a, b) => (b.contract?.capHit ?? 0) - (a.contract?.capHit ?? 0))
       .slice(0, 3)
       .forEach((p) => delete state.players[p.id]);
+    run(state, { kind: 'season.rollover' });
+    checkLeagueIsLegal(state);
+  });
+
+  it('dead cap counts when the summer fills a roster: nobody is signed over the cap', () => {
+    const state = createLeague(8, ctx);
+    run(state, { kind: 'sim.advance', days: calendar.regularSeasonDays + calendar.playoffDays });
+    // One team lets everyone go but carries almost a full cap of dead money next season.
+    const victim = Object.keys(state.teams)[2] as TeamId;
+    for (const p of Object.values(state.players)) {
+      if (p.teamId !== victim) continue;
+      p.teamId = null;
+      delete p.contract;
+    }
+    state.capCharges.push({
+      teamId: victim,
+      playerId: 'gone' as PlayerId,
+      kind: 'buyout',
+      season: state.date.season + 1,
+      amount: ruleset.cap.upperLimit - ruleset.roster.minActive * ruleset.cap.minSalary,
+    });
     run(state, { kind: 'season.rollover' });
     checkLeagueIsLegal(state);
   });

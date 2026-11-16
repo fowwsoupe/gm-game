@@ -1,7 +1,7 @@
 import type { Player, PlayerId, TeamId, TeamStatus } from '@gm/shared';
 import type { Emit, LeagueState, Rng } from '../core';
 import type { SimContext } from '../context';
-import { payroll } from '../cba';
+import { deadCap, payroll } from '../cba';
 import { overall } from '../players';
 import { planStatus, seenBy } from '../people';
 import {
@@ -111,7 +111,12 @@ export function reSignPlayers(
         p,
         season,
         wantedYears(ageIn(p, season), rng),
-        { isResign: true, discount: false, ask: resignAsk(ctx, p, season) },
+        {
+          isResign: true,
+          discount: false,
+          ask: resignAsk(ctx, p, season),
+          dead: deadCap(state, teamId, season),
+        },
       );
       if (contract) {
         emit('minor', [teamId], { kind: 'player.signed', playerId: p.id, teamId, contract });
@@ -154,7 +159,12 @@ export function fillRosters(
         p,
         season,
         wantedYears(ageIn(p, season), rng),
-        { isResign: false, discount: true, ask: ctx.models.contractDemand.ask(ruleset, p) },
+        {
+          isResign: false,
+          discount: true,
+          ask: ctx.models.contractDemand.ask(ruleset, p),
+          dead: deadCap(state, teamId, season),
+        },
       );
       if (contract) {
         emit('minor', [teamId], { kind: 'player.signed', playerId: p.id, teamId, contract });
@@ -167,7 +177,7 @@ export function fillRosters(
       season,
       ...(position ? { position } : {}),
     });
-    const contract = entryContract(ruleset, roster, rookie, season);
+    const contract = entryContract(ruleset, roster, rookie, season, deadCap(state, teamId, season));
     if (!contract) return false;
     emit('minor', [teamId], {
       kind: 'player.drafted',
@@ -202,7 +212,8 @@ export function meetCapFloor(
   for (const teamId of order) {
     for (;;) {
       const roster = rosterOf(state, teamId);
-      const short = ruleset.cap.lowerLimit - payroll(roster);
+      const dead = deadCap(state, teamId, season);
+      const short = ruleset.cap.lowerLimit - payroll(roster) - dead;
       if (short <= 0) break;
       const signed = freeAgents(state)
         .sort((a, b) => overall(b) - overall(a) || a.id.localeCompare(b.id))
@@ -218,6 +229,7 @@ export function meetCapFloor(
               discount: false,
               atLeast: short,
               ask: ctx.models.contractDemand.ask(ruleset, p),
+              dead,
             },
           );
           if (contract) {
@@ -236,6 +248,7 @@ export function meetCapFloor(
         discount: false,
         atLeast: short,
         ask: ctx.models.contractDemand.ask(ruleset, rookie),
+        dead,
       });
       if (!contract) break;
       emit('minor', [teamId], {

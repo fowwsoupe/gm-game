@@ -2,7 +2,7 @@ import type { Player, TeamId } from '@gm/shared';
 import type { Emit, LeagueState, Rng } from '../core';
 import type { SimContext } from '../context';
 import { overall } from '../players';
-import { capYearOf } from '../cba';
+import { capYearOf, deadCap } from '../cba';
 import { GM_LEAN, gmOf, seenBy } from '../people';
 import { signFreeAgent, signingInterest } from './signing';
 import { capRoom, freeAgents, rosterOf, neededPosition } from './roster';
@@ -35,7 +35,8 @@ const LEAN_PREMIUM = 0.08;
 function aiCanPay(state: LeagueState, ctx: SimContext, p: Player, teamId: TeamId, salary: number) {
   return (
     state.teams[teamId]!.userControlled ||
-    salary <= capRoom(ctx.ruleset, rosterOf(state, teamId), p)
+    salary <=
+      capRoom(ctx.ruleset, rosterOf(state, teamId), p, deadCap(state, teamId, capYearOf(state)))
   );
 }
 
