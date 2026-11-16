@@ -21,12 +21,12 @@ Builds the engines everything else depends on.
 - [x] Model plug-in points (`Models`): goal, development, valuation
 - [x] CBA ruleset as data (`sim/cba`): cap, contract rules, 84-game season
 - [x] Data pipeline (`ml/`): NHL play-by-play and player seasons prototyped; junior/European, draft and contract inputs deferred past v0.1 (community rosters instead)
-- [~] NHL-only held-out study done ([report](M1_PROTOTYPE_REPORT.md)); rating list v2 in code ([RATINGS.md](RATINGS.md), `faceoffs` provisional); M1 signed off on the NHL-only prototype
-- [ ] Hidden ratings model + stats-to-ratings model
+- [x] NHL-only held-out study done ([report](M1_PROTOTYPE_REPORT.md)); rating list v2 in code ([RATINGS.md](RATINGS.md)); `faceoffs` effect measured and calibrated (`ml/src/faceoffs.py`); M1 signed off on the NHL-only prototype
+- [x] Hidden ratings (list v2) + stats-to-ratings model v1 (`ratingsFromStats`, fitted on the sim by `pnpm ratings:fit`, with uncertainty); roster import does not use it yet (M4)
 - [x] Line-by-line game sim (`sports/hockey/game.ts`) + "result only" mode; ONNX shot model (Azmi) plugs into `GoalModel`
-- [~] Balance lab: league-health report works (`pnpm lab`); multi-year checks once seasons roll over
-- [~] Speed test in CI: day, season and year-20 budgets in place; screen timing to add
-- [~] Design system: tokens, team theming, Card, Button, PercentileBar; player card and broadcast captions to add
+- [x] Balance lab: league-health report (`pnpm lab`) with multi-year checks (talent drift, dynasties, cap, playoff turnover, goalie save % repeatability), all green
+- [x] Speed test in CI: day, season and year-20 budgets, plus year-20 screen data (standings, leaders, cap sheet)
+- [x] Design system: tokens, team theming, Card, Button, PercentileBar, PlayerCard, BroadcastCaption
 - [x] Command layer + event log + single reducer (multiplayer-ready)
 - [x] Translation-ready text (English + French)
 
