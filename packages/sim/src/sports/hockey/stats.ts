@@ -40,8 +40,8 @@ export function hockeySeasonStats(results: readonly GameResult[]) {
         t.toi += line.toi;
         skaters.set(line.id, t);
       }
-      const g = side.goalie;
-      if (g.id) {
+      for (const g of [side.goalie, side.relief]) {
+        if (!g?.id) continue;
         const t = goalies.get(g.id) ?? { gp: 0, shotsAgainst: 0, saves: 0 };
         t.gp++;
         t.shotsAgainst += g.shotsAgainst;

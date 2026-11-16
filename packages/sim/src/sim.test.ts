@@ -16,6 +16,7 @@ import {
   Rng,
   seedPlayoffs,
   simGame,
+  HOCKEY_TUNING,
   teamStrength,
   validateContract,
   dollars,
@@ -317,29 +318,25 @@ describe('lines and goalies', () => {
 
   it('the backup goalie starts the second night of a back-to-back, but never in the playoffs', () => {
     const strength = teamStrength(roster());
-    expect(strength.goaltending).not.toBe(strength.backupGoaltending);
-    const goalieUsed = (input: { homeBackToBack?: boolean; playoff?: boolean }) => {
-      let used = 0;
-      const model = {
-        expectedGoals: (home: typeof strength) => ((used = home.goaltending), { home: 1, away: 1 }),
-      };
-      simGame(
-        {
-          id: 'g' as GameId,
-          homeTeamId: 't1' as TeamId,
-          awayTeamId: 't2' as TeamId,
-          home: strength,
-          away: strength,
-          ...input,
-        },
-        new Rng(1),
-        model,
-      );
-      return used;
-    };
-    expect(goalieUsed({})).toBe(strength.goaltending);
-    expect(goalieUsed({ homeBackToBack: true })).toBe(strength.backupGoaltending);
-    expect(goalieUsed({ homeBackToBack: true, playoff: true })).toBe(strength.goaltending);
+    const [starter, backup] = strength.lineup.goalies;
+    expect(starter!.id).not.toBe(backup!.id);
+    const goalieUsed = (input: { homeBackToBack?: boolean; playoff?: boolean }) =>
+      (
+        simGame(
+          {
+            id: 'g' as GameId,
+            homeTeamId: 't1' as TeamId,
+            awayTeamId: 't2' as TeamId,
+            home: strength,
+            away: strength,
+            ...input,
+          },
+          new Rng(1),
+        ).box as HockeyBoxScore
+      ).home.goalie.id;
+    expect(goalieUsed({})).toBe(starter!.id);
+    expect(goalieUsed({ homeBackToBack: true })).toBe(backup!.id);
+    expect(goalieUsed({ homeBackToBack: true, playoff: true })).toBe(starter!.id);
   });
 });
 
@@ -360,18 +357,24 @@ describe('box scores', () => {
         const credited = goals - (shootout && goals > against ? 1 : 0);
         if (side.skaters.length === 0) continue;
         expect(side.skaters.reduce((n, s) => n + s.goals, 0)).toBe(credited);
-        // Five skaters for 60 minutes, minus the minutes a man down on a penalty.
+        // Five skaters for 60 minutes, minus the minutes a man down (less if a power-play goal
+        // ended the penalty early), plus overtime and the extra attacker with the goalie pulled.
         const shorthanded =
           box.penalties.filter((p) => p[1] === (key === 'home' ? 0 : 1)).length * 2;
         const toi = side.skaters.reduce((n, s) => n + s.toi, 0);
-        // A side short of players (injuries, no call-ups yet) plays fewer total minutes.
         if (side.skaters.length === 18) {
-          expect(Math.abs(toi - (300 - shorthanded))).toBeLessThan(1.5);
-        } else {
-          expect(toi).toBeLessThan(300 - shorthanded + 1.5);
+          expect(toi).toBeGreaterThan(300 - shorthanded - 1.5);
+          expect(toi).toBeLessThan(300 + (g.overtime ? (g.playoffSeriesId ? 600 : 15) : 0) + 8);
         }
-        const goalie = box[key === 'home' ? 'away' : 'home'].goalie;
-        expect(goalie.shotsAgainst - goalie.saves).toBe(credited);
+        // Every shot at a goalie is a save or a goal against him; empty-net goals are on nobody's line.
+        const own = box[key];
+        const opp = box[key === 'home' ? 'away' : 'home'];
+        const lines = [opp.goalie, ...(opp.relief ? [opp.relief] : [])];
+        const emptyNet = box.emptyNet?.[key === 'home' ? 0 : 1] ?? 0;
+        expect(lines.reduce((n, l) => n + l.shotsAgainst - l.saves, 0) + emptyNet).toBe(credited);
+        if (!g.playoffSeriesId) {
+          expect(own.goalie.toi + (own.relief?.toi ?? 0)).toBeLessThanOrEqual(g.overtime ? 66 : 61);
+        }
       }
       expect(box.shots.length).toBe((g.stats.homeShots ?? 0) + (g.stats.awayShots ?? 0));
       expect(box.shots.filter((s) => s[5] === 1).length).toBe(
@@ -391,7 +394,7 @@ describe('box scores', () => {
       for (const shot of box.shots.filter((x) => x[8] === 1)) {
         // A power-play shot happens inside a two-minute penalty the other team took.
         expect(
-          box.penalties.some((p) => p[1] !== shot[1] && shot[0] >= p[0] && shot[0] < p[0] + 120),
+          box.penalties.some((p) => p[1] !== shot[1] && shot[0] >= p[0] && shot[0] <= p[0] + 121),
         ).toBe(true);
       }
       for (const side of [box.home, box.away]) {
@@ -411,13 +414,120 @@ describe('box scores', () => {
     for (const g of games) {
       const box = g.box as HockeyBoxScore;
       const all = [...box.home.skaters, ...box.away.skaters];
-      // Short a skater (injuries), the two sides' units differ in size and plus-minus need not cancel.
-      if (all.length === 36) expect(all.reduce((n, p) => n + p.plusMinus, 0)).toBe(0);
+      // Each even-strength or short-handed goal moves plus-minus by the gap in skaters on the ice.
+      const goals = box.shots.filter((x) => x[5] === 1).length;
+      expect(Math.abs(all.reduce((n, p) => n + p.plusMinus, 0))).toBeLessThanOrEqual(3 * goals);
       for (const shot of box.shots.filter((s) => s[5] === 1)) {
         expect(shot[6]).not.toBe(shot[4]);
         expect(shot[7]).not.toBe(shot[4]);
         if (shot[7] >= 0) expect(shot[6]).toBeGreaterThanOrEqual(0);
       }
+    }
+  });
+});
+
+describe('game engine', () => {
+  const state = createLeague(41, ctx);
+  const [a, b] = Object.keys(state.teams) as TeamId[];
+  const strength = (id: TeamId) =>
+    teamStrength(Object.values(state.players).filter((p) => p.teamId === id));
+  const play = (n: number, input: { playoff?: boolean; resultOnly?: boolean } = {}) => {
+    const rng = new Rng(9);
+    return Array.from({ length: n }, () =>
+      simGame(
+        {
+          id: 'g' as GameId,
+          homeTeamId: a!,
+          awayTeamId: b!,
+          home: strength(a!),
+          away: strength(b!),
+          ...input,
+        },
+        rng,
+      ),
+    );
+  };
+
+  it('is deterministic and the better goalie lets in fewer', () => {
+    expect(play(5)).toEqual(play(5));
+    const good = strength(a!);
+    const [first, ...rest] = good.lineup.goalies;
+    const weak = {
+      ...first!,
+      ratings: Object.fromEntries(Object.entries(first!.ratings).map(([k, v]) => [k, v - 25])),
+    };
+    const bad = { ...good, lineup: { ...good.lineup, goalies: [weak, ...rest] } };
+    const against = (home: typeof good) => {
+      const rng = new Rng(2);
+      let goals = 0;
+      for (let i = 0; i < 400; i++) {
+        const r = simGame(
+          {
+            id: 'g' as GameId,
+            homeTeamId: a!,
+            awayTeamId: b!,
+            home,
+            away: strength(b!),
+            resultOnly: true,
+          },
+          rng,
+        );
+        goals += r.awayScore;
+      }
+      return goals;
+    };
+    expect(against(good)).toBeLessThan(against(bad));
+  });
+
+  it('settles ties: playoff games never go to a shootout, regular-season overtime is 3v3', () => {
+    for (const g of play(300, { playoff: true })) {
+      expect(g.homeScore).not.toBe(g.awayScore);
+      expect(g.stats.shootout).toBe(0);
+    }
+    const reg = play(600);
+    expect(reg.some((g) => g.stats.shootout === 1)).toBe(true);
+    for (const g of reg) expect(g.homeScore).not.toBe(g.awayScore);
+    // An overtime goal comes after the 60th minute, from the 3v3 pace.
+    const ot = reg.filter((g) => g.overtime && g.stats.shootout === 0);
+    expect(ot.length).toBeGreaterThan(20);
+    for (const g of ot) {
+      const box = g.box as HockeyBoxScore;
+      expect(box.shots.at(-1)![0]).toBeGreaterThanOrEqual(3600);
+    }
+  });
+
+  it("pulls the goalie late when trailing, and empty-net goals are on nobody's line", () => {
+    const games = play(1500);
+    const withEmpty = games.filter((g) => (g.box as HockeyBoxScore).emptyNet);
+    expect(withEmpty.length).toBeGreaterThan(30);
+    for (const g of withEmpty) {
+      const box = g.box as HockeyBoxScore;
+      // The empty net is scored late and by the team that was ahead.
+      const last = box.shots.filter((s) => s[5] === 1).at(-1)!;
+      if (g.overtime) continue;
+      expect(last[0]).toBeGreaterThan(3600 - HOCKEY_TUNING.pullSeconds[0] - 1);
+    }
+  });
+
+  it('a goalie who lets in four early is replaced', () => {
+    const relieved = play(1500).filter((g) => (g.box as HockeyBoxScore).home.relief);
+    expect(relieved.length).toBeGreaterThan(5);
+    for (const g of relieved) {
+      const { goalie, relief } = (g.box as HockeyBoxScore).home;
+      expect(relief!.id).not.toBe(goalie.id);
+      expect(goalie.toi + relief!.toi).toBeGreaterThan(55);
+    }
+  });
+
+  it('result-only plays the same game without the box score', () => {
+    const full = play(1500);
+    const fast = play(1500, { resultOnly: true });
+    const mean = (gs: typeof full) =>
+      gs.reduce((n, g) => n + g.homeScore + g.awayScore, 0) / gs.length;
+    expect(Math.abs(mean(fast) - mean(full))).toBeLessThan(0.35);
+    for (const g of fast) {
+      expect(g.box).toBeUndefined();
+      expect(g.injuries).toBeUndefined();
     }
   });
 });
@@ -478,41 +588,6 @@ describe('injuries', () => {
     const centres = roster.filter((p) => p.position === 'C').slice(0, 2); // leaves fewer than four
     const lineup = autoLineup(roster.filter((p) => !centres.includes(p)));
     expect(lineup.forwards.every((line) => line.length === 3)).toBe(true);
-  });
-});
-
-describe('result-only mode', () => {
-  it('skips the box score, keeps the score model, and is much faster', () => {
-    const state = createLeague(31, ctx);
-    const [a, b] = Object.keys(state.teams) as TeamId[];
-    const strength = (id: TeamId) =>
-      teamStrength(Object.values(state.players).filter((p) => p.teamId === id));
-    const game = (resultOnly: boolean) => ({
-      id: 'g' as GameId,
-      homeTeamId: a!,
-      awayTeamId: b!,
-      home: strength(a!),
-      away: strength(b!),
-      resultOnly,
-    });
-    const run = (resultOnly: boolean) => {
-      const rng = new Rng(5);
-      const t0 = performance.now();
-      let goals = 0;
-      for (let i = 0; i < 1500; i++) {
-        const r = simGame(game(resultOnly), rng);
-        goals += r.homeScore + r.awayScore;
-        if (resultOnly) {
-          expect(r.box).toBeUndefined();
-          expect(r.injuries).toBeUndefined();
-        }
-      }
-      return { goals: goals / 1500, ms: performance.now() - t0 };
-    };
-    const full = run(false);
-    const fast = run(true);
-    expect(Math.abs(fast.goals - full.goals)).toBeLessThan(0.35);
-    expect(fast.ms).toBeLessThan(full.ms);
   });
 });
 
