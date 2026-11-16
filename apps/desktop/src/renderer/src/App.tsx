@@ -16,6 +16,7 @@ import { Leaders } from '@/screens/Leaders';
 import { Cap } from '@/screens/Cap';
 import { Games } from '@/screens/Games';
 import { Home } from '@/screens/Home';
+import { Roster } from '@/screens/Roster';
 
 const NAV: { id: Screen; label: MessageKey }[] = [
   { id: 'home', label: 'nav.home' },
@@ -132,7 +133,7 @@ export function App() {
         {screen === 'cap' && <Cap />}
         {screen === 'leaders' && <Leaders />}
         {screen === 'history' && <History />}
-        {screen === 'roster' && <p className="text-muted">{t('roster.placeholder')}</p>}
+        {screen === 'roster' && <Roster />}
       </main>
     </div>
   );

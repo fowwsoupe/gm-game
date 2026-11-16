@@ -47,6 +47,13 @@ export const useResignOffers = (teamId: TeamId | undefined) =>
     queryFn: () => window.gm.league.resignOffers({ teamId: teamId! }),
     enabled: !!teamId,
   });
+/** `null` = free agents. */
+export const usePlayers = (teamId: TeamId | null | undefined) =>
+  useQuery({
+    queryKey: ['league', 'players', teamId ?? 'fa'] as const,
+    queryFn: () => window.gm.league.players({ teamId: teamId ?? null }),
+    enabled: teamId !== undefined,
+  });
 export const useGames = (teamId: TeamId | undefined, limit = 30) =>
   useQuery({
     queryKey: [...keys.games(teamId), limit],

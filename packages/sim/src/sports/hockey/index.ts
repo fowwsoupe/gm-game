@@ -6,7 +6,7 @@ import { generateFictionalLeague, generateProspect } from './generate';
 import { NHL_2026 } from './ruleset-nhl-2026';
 import { pickAwards } from './awards';
 import { importHockeyRoster } from './roster';
-import { hockeyLeaders } from './stats';
+import { hockeyLeaders, hockeyPlayerLines } from './stats';
 
 /**
  * Hockey (NHL-style). Owns everything that only makes sense in hockey: positions and
@@ -26,6 +26,7 @@ export function hockeySport(goalModel: GoalModel = rulesGoalModel): SportModule<
     importRoster: importHockeyRoster,
     teamStrength,
     leaders: hockeyLeaders,
+    playerLines: hockeyPlayerLines,
     simGame: (game, rng) => simGame(game, rng, goalModel),
   };
 }
