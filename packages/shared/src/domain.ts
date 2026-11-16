@@ -20,6 +20,48 @@ export interface Contract {
   expiresAfterSeason: number;
 }
 
+/**
+ * Cap money a team owes that is not a current player's contract. Today: buyouts (dead cap).
+ * Retained salary from trades will be a second kind (M6).
+ */
+export interface CapCharge {
+  teamId: TeamId;
+  playerId: PlayerId;
+  kind: 'buyout';
+  season: number;
+  /** Whole dollars counted against that season's cap. */
+  amount: number;
+}
+
+/** Why a team's cap is not legal in a season. The cap advisor shows these; it never blocks. */
+export type CapIssue =
+  | { code: 'over_cap'; over: number }
+  | { code: 'over_offseason_limit'; over: number }
+  | { code: 'below_floor'; short: number };
+
+/** One season of a team's cap sheet. Money is whole dollars. */
+export interface CapSeason {
+  season: number;
+  upperLimit: number;
+  lowerLimit: number;
+  /** Players under contract that season, biggest cap hit first. */
+  contracts: { playerId: PlayerId; capHit: number; expiresAfterSeason: number }[];
+  /** Sum of `contracts`. */
+  committed: number;
+  /** Buyout charges for that season. */
+  deadCap: number;
+  total: number;
+  /** Upper limit minus total (negative = over). */
+  space: number;
+  issues: CapIssue[];
+}
+
+/** A team's cap now and in future seasons. Future seasons assume today's cap limits. */
+export interface CapSheet {
+  teamId: TeamId;
+  seasons: CapSeason[];
+}
+
 export interface Player {
   id: PlayerId;
   firstName: string;

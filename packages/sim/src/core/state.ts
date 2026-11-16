@@ -1,4 +1,5 @@
 import type {
+  CapCharge,
   GameDate,
   GameResult,
   LeagueEvent,
@@ -34,6 +35,8 @@ export interface LeagueState {
   results: Record<string, GameResult>;
   playoffSeries: Record<string, PlayoffSeries>;
   championTeamId: TeamId | null;
+  /** Dead cap (buyouts) for this season and later ones. Older seasons are dropped. */
+  capCharges: CapCharge[];
   /** Count of events applied so far; the next event's id is built from it. */
   eventSeq: number;
 }
@@ -92,6 +95,14 @@ export function applyEvent(state: LeagueState, event: LeagueEvent): void {
       p.injuredUntil = event.until;
       return;
     }
+    case 'contract.boughtOut': {
+      const p = state.players[event.playerId];
+      if (!p) throw new Error(`unknown player ${event.playerId}`);
+      p.teamId = null;
+      delete p.contract;
+      state.capCharges.push(...event.charges.map((c) => ({ ...c })));
+      return;
+    }
     case 'player.retired':
       delete state.players[event.playerId];
       return;
@@ -120,6 +131,7 @@ export function applyEvent(state: LeagueState, event: LeagueEvent): void {
       for (const p of Object.values(state.players)) delete p.injuredUntil;
       state.playoffSeries = {};
       state.championTeamId = null;
+      state.capCharges = state.capCharges.filter((c) => c.season >= event.season);
       return;
     case 'team.statusChanged':
       state.teamStatus[event.teamId] = event.to;

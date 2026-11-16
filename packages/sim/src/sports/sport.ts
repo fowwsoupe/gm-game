@@ -60,7 +60,7 @@ export interface SportModule<Strength = unknown> {
   leaders(results: readonly GameResult[], players: readonly Player[], limit: number): Leaderboard[];
 
   /** Loads a community roster file (untrusted JSON) for this sport. */
-  importRoster(json: unknown): RosterImport;
+  importRoster(json: unknown, rules: Ruleset): RosterImport;
 
   /** Summarizes a roster into whatever the sport's game sim needs. */
   teamStrength(players: readonly Player[]): Strength;

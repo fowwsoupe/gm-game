@@ -10,16 +10,34 @@ import {
   type Team,
   type TeamId,
 } from '@gm/shared';
+import { validateContract, type ContractIssue, type Ruleset } from '../../cba';
+import { formatDollars } from '../../core';
 import type { RosterImport } from '../sport';
 
 const teamId = (abbreviation: string) => `t_${abbreviation}` as TeamId;
 
+/** A readable line for a contract rule a roster file breaks. */
+function describe(issue: ContractIssue): string {
+  switch (issue.code) {
+    case 'too_long':
+      return `runs longer than the ${issue.max}-season maximum`;
+    case 'below_minimum':
+      return `cap hit is below the league minimum of ${formatDollars(issue.min)}`;
+    case 'above_maximum':
+      return `cap hit is above the maximum of ${formatDollars(issue.max)}`;
+    default:
+      return `breaks the contract rules (${issue.code})`;
+  }
+}
+
 /**
  * Turns a community roster file into league teams and players. Files are untrusted:
- * everything goes through the zod schema first, and errors come back as readable lines.
+ * everything goes through the zod schema first, then every contract is checked against the
+ * league's rules, and errors come back as readable lines. Team payrolls are not checked: a
+ * team over the cap is legal to load and the cap advisor flags it.
  * The first team in the file starts as the user's team.
  */
-export function importHockeyRoster(json: unknown): RosterImport {
+export function importHockeyRoster(json: unknown, rules: Ruleset): RosterImport {
   const parsed = parseRosterFile(json);
   if (!parsed.success) {
     return {
@@ -50,6 +68,19 @@ export function importHockeyRoster(json: unknown): RosterImport {
     ratings: { ...(p.position === 'G' ? p.goalie : p.skater) },
     ...(p.contract ? { contract: { ...p.contract } } : {}),
   }));
+  const contractErrors = file.players.flatMap((p, i) => {
+    if (!p.contract) return [];
+    const where = `players.${i}.contract`;
+    const seasons = p.contract.expiresAfterSeason - file.season + 1;
+    if (seasons < 1) return [`${where}: ended before the ${file.season} season`];
+    // Only the seasons left are known, so check those as if just signed (with a re-sign's term).
+    return validateContract(rules, {
+      salaries: Array<number>(seasons).fill(p.contract.capHit),
+      signingAge: file.season - p.birthYear,
+      isResign: true,
+    }).map((issue) => `${where}: ${describe(issue)}`);
+  });
+  if (contractErrors.length > 0) return { ok: false, errors: contractErrors.slice(0, 20) };
   const goalieless = teams.filter(
     (t) => !players.some((p) => p.teamId === t.id && isGoalie(p.position)),
   );

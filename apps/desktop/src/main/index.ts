@@ -1,7 +1,7 @@
 import { join } from 'node:path';
 import { app, BrowserWindow, dialog, ipcMain } from 'electron';
 import { IPC } from '@gm/shared/ipc';
-import type { Command, Importance } from '@gm/shared';
+import type { Command, Importance, TeamId } from '@gm/shared';
 import { LeagueService } from './league';
 import { initSteam, steamStatus } from './steam';
 
@@ -55,6 +55,7 @@ function registerIpc() {
   ipcMain.handle(IPC.awards, () => league.awards());
   ipcMain.handle(IPC.records, () => league.records());
   ipcMain.handle(IPC.leaders, () => league.leaders());
+  ipcMain.handle(IPC.capSheet, (_e, input: { teamId: TeamId }) => league.capSheet(input.teamId));
   ipcMain.handle(IPC.feedList, (_e, input: { limit: number; minImportance?: Importance }) =>
     league.feed(input.limit, input.minImportance),
   );

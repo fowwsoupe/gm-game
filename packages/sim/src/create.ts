@@ -41,6 +41,7 @@ export function createLeague(
     results: {},
     playoffSeries: {},
     championTeamId: null,
+    capCharges: [],
     eventSeq: 0,
   };
 }

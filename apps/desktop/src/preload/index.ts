@@ -15,6 +15,7 @@ const api: GmApi = {
     awards: () => ipcRenderer.invoke(IPC.awards),
     records: () => ipcRenderer.invoke(IPC.records),
     leaders: () => ipcRenderer.invoke(IPC.leaders),
+    capSheet: (input) => ipcRenderer.invoke(IPC.capSheet, input),
   },
   feed: {
     list: (input) => ipcRenderer.invoke(IPC.feedList, input),

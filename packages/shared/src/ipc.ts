@@ -1,5 +1,6 @@
 import type {
   AwardEntry,
+  CapSheet,
   Leaderboard,
   PlayoffSeries,
   RecordEntry,
@@ -36,6 +37,8 @@ export interface GmApi {
     leaders(): Promise<Leaderboard[]>;
     /** Team records over all finished seasons. */
     records(): Promise<RecordEntry[]>;
+    /** A team's cap sheet: the cap year in play, then future seasons. */
+    capSheet(input: { teamId: TeamId }): Promise<CapSheet>;
   };
   feed: {
     list(input: { limit: number; minImportance?: Importance }): Promise<LeagueEvent[]>;
@@ -60,6 +63,7 @@ export const IPC = {
   awards: 'league:awards',
   records: 'league:records',
   leaders: 'league:leaders',
+  capSheet: 'league:capSheet',
   feedList: 'feed:list',
   dispatch: 'commands:dispatch',
   steamStatus: 'steam:status',

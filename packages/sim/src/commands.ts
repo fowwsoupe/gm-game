@@ -17,6 +17,7 @@ import {
   type LeagueState,
   type ScheduledGame,
 } from './core';
+import { buyoutCharges } from './cba';
 import { classifyTeams, computeStandings, nextRound, seedPlayoffs } from './league';
 import { giveSeasonAwards } from './awards';
 import { rolloverSeason } from './offseason';
@@ -53,6 +54,43 @@ export function handleCommand(
         kind: 'team.controlChanged',
         teamId: command.teamId,
         userControlled: command.userControlled,
+      });
+      applyEvent(state, ev);
+      return { ok: true, events: [ev] };
+    }
+
+    case 'contract.buyout': {
+      const player = state.players[command.playerId];
+      const team = player?.teamId ? state.teams[player.teamId] : undefined;
+      if (!player || !team || !player.contract) {
+        return { ok: false, error: { code: 'invalid', message: 'no contract to buy out' } };
+      }
+      const yours =
+        actor.controls.includes(team.id) || (actor.id === 'local' && team.userControlled);
+      if (!yours) return { ok: false, error: { code: 'not_allowed', message: 'not your team' } };
+      // The buyout window is the offseason: after the champion is crowned, before the rollover.
+      if (!state.championTeamId) {
+        return {
+          ok: false,
+          error: { code: 'invalid', message: 'buyouts open once the season is over' },
+        };
+      }
+      const charges = buyoutCharges(ctx.ruleset, {
+        teamId: team.id,
+        player,
+        season: state.date.season,
+      });
+      if (charges.length === 0) {
+        return {
+          ok: false,
+          error: { code: 'invalid', message: 'the contract ends this season' },
+        };
+      }
+      const ev = makeEvent(state, 'notable', [team.id], {
+        kind: 'contract.boughtOut',
+        playerId: player.id,
+        teamId: team.id,
+        charges,
       });
       applyEvent(state, ev);
       return { ok: true, events: [ev] };
