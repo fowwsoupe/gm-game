@@ -151,6 +151,17 @@ export interface Team {
   userControlled: boolean;
   /** The AI front office running the team when no human does. Absent: derived from the id. */
   gm?: GmProfile;
+  /** The AI GM's plan for the next seasons. Absent: none yet (follows the standings). */
+  plan?: TeamPlan;
+}
+
+/** Go for it while the core is good, tune around the edges, or tear down and build up. */
+export type TeamPlanKind = 'contend' | 'retool' | 'rebuild';
+
+export interface TeamPlan {
+  kind: TeamPlanKind;
+  /** First season of this plan (a rebuild is given time). */
+  since: number;
 }
 
 /**

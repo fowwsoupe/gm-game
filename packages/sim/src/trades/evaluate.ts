@@ -10,7 +10,7 @@ import { pct, phaseOf, type LeagueState } from '../core';
 import { capYearIssues, capYearOf, retentionIssues, teamCapTotal } from '../cba';
 import { pickValue, type TeamContext } from '../value';
 import { computeStandings, draftPicks, nextDraftSeason } from '../league';
-import { GM_LEAN, gmOf, seenBy } from '../people';
+import { GM_LEAN, gmOf, planStatus, seenBy } from '../people';
 import type { SimContext } from '../context';
 
 /** The other team wants to win a trade by at least this share of the cap. */
@@ -100,7 +100,7 @@ export function teamContext(state: LeagueState, ctx: SimContext, teamId: TeamId)
   const days = ruleset.season.calendar.regularSeasonDays;
   const inSeason = !state.championTeamId && state.date.day >= 0;
   return {
-    status: state.teamStatus[teamId] ?? 'bubble',
+    status: planStatus(state.teams[teamId]!, state.teamStatus[teamId] ?? 'bubble'),
     season: capYearOf(state),
     seasonLeft: inSeason ? Math.max(0, 1 - state.date.day / days) : 1,
     capSpace: ruleset.cap.upperLimit - teamCapTotal(state, teamId, players),
@@ -117,10 +117,36 @@ export function teamContext(state: LeagueState, ctx: SimContext, teamId: TeamId)
  * discounted for depth, minus the ones it sends, must beat a small margin. A user-controlled
  * partner accepts any legal trade (the same person runs both teams).
  */
+/**
+ * Work that stays the same while the league does not change, shared by many evaluations (one
+ * week of AI trade talks). Start a new one after any trade.
+ */
+export interface TradeCache {
+  contexts: Map<TeamId, TeamContext>;
+  worstFirst?: TeamId[];
+}
+export const newTradeCache = (): TradeCache => ({ contexts: new Map() });
+
+/** A team's context, from the cache when there is one. */
+export function cachedContext(
+  state: LeagueState,
+  ctx: SimContext,
+  teamId: TeamId,
+  cache?: TradeCache,
+): TeamContext {
+  let team = cache?.contexts.get(teamId);
+  if (!team) {
+    team = teamContext(state, ctx, teamId);
+    cache?.contexts.set(teamId, team);
+  }
+  return team;
+}
+
 export function evaluateTrade(
   state: LeagueState,
   ctx: SimContext,
   proposal: TradeProposal,
+  cache?: TradeCache,
 ): TradeEvaluation {
   const { ruleset } = ctx;
   const { fromTeamId: from, toTeamId: to, give, get } = proposal;
@@ -204,7 +230,7 @@ export function evaluateTrade(
     return { accepted: true, value: 0, reasons: [{ code: 'accepted' }] };
   }
 
-  const team = teamContext(state, ctx, to);
+  const team = cachedContext(state, ctx, to, cache);
   const afterById = new Map(after.map((p) => [p.id as string, p]));
   // Incoming players are valued at their cap hit after any retention.
   const valueOf = (id: string) => {
@@ -215,16 +241,16 @@ export function evaluateTrade(
   // standings); later drafts are guessed at the middle of the round.
   const teamCount = Object.keys(state.teams).length;
   // Only needed to value picks, and costly (every result this season): computed on first use.
-  let worstFirst: TeamId[] | undefined;
   const slotOf = (teamId: TeamId) => {
-    worstFirst ??= computeStandings(
+    const order = (cache ?? {}) as { worstFirst?: TeamId[] };
+    order.worstFirst ??= computeStandings(
       Object.keys(state.teams) as TeamId[],
       Object.values(state.results),
       ruleset.season.points,
     )
       .map((r) => r.teamId)
       .reverse();
-    return worstFirst.indexOf(teamId) + 1;
+    return order.worstFirst.indexOf(teamId) + 1;
   };
   const next = nextDraftSeason(state);
   const pickOf = (id: string) => {

@@ -13,7 +13,7 @@ import { Rng, phaseOf, type Emit, type LeagueState } from '../core';
 import { computeStandings, makeSchedule } from '../league';
 import type { SimContext } from '../context';
 import { runDraft } from './draft';
-import { changeGms } from './gms';
+import { changeGms, setPlans } from './gms';
 
 export { lotteryOrder, announceDraftClass } from './draft';
 export { signingInterest, signFreeAgent } from './signing';
@@ -61,6 +61,7 @@ export function openFreeAgency(state: LeagueState, ctx: SimContext, emit: Emit):
   archiveStats(state, ctx, emit);
   developPlayers(state, ctx.models.development, rng.fork('development'), emit, season);
   retirePlayers(state, ctx.models.development, rng.fork('retirement'), emit, season);
+  setPlans(state, emit, season);
   const expiring = expireContracts(state, emit);
   runDraft(state, ctx, rng.fork('draft'), emit, season, order);
   reSignPlayers(state, ctx, rng.fork('resign'), emit, season, expiring);

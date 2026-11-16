@@ -6,6 +6,7 @@ import type {
   GameResult,
   GmProfile,
   Player,
+  TeamPlan,
   PlayerId,
   PlayoffSeries,
   RetainedSalary,
@@ -141,6 +142,8 @@ export type LeagueEvent =
   | (EventBase & { kind: 'team.controlChanged'; teamId: TeamId; userControlled: boolean })
   /** An AI team has a new GM (the old one was fired or moved on). */
   | (EventBase & { kind: 'team.gmChanged'; teamId: TeamId; gm: GmProfile; fired: boolean })
+  /** An AI GM sets a new plan for his team (contend, retool, rebuild). */
+  | (EventBase & { kind: 'team.planChanged'; teamId: TeamId; plan: TeamPlan })
   | (EventBase & { kind: 'season.phaseChanged'; from: SeasonPhase; to: SeasonPhase })
   | (EventBase & { kind: 'team.statusChanged'; teamId: TeamId; from: TeamStatus; to: TeamStatus })
   | (EventBase & {
