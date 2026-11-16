@@ -37,6 +37,12 @@ export const HOCKEY_TUNING = {
    */
   leagueAvgGoaltending: 67,
   goalieSensitivity: 0.005,
+  /**
+   * Goalie form: each game, a goalie's goal chance against is multiplied by exp(N(0, sd)), with
+   * sd = goalieFormSd x (1.5 - consistency / 100). Calibrated so a team game's goals vary around
+   * expected goals as much as in the NHL (balance lab "Goals vs expected" check; ml/src/form.py).
+   */
+  goalieFormSd: 0.14,
   homeIceBoost: 1.07,
   /** Shot rate changes by this (log) per skater of man advantage: 5v4 is about 1.7 times even strength. */
   manAdvantageStep: 0.55,
@@ -284,8 +290,19 @@ function playGame(
     const g = S[n].goalies[S[n].current];
     return g ? goalieScore(g) : 40;
   };
+  // Goalie form: one draw per goalie per game, from its own stream so the rest of the game's
+  // randomness stays where it was. A steadier goalie (higher `consistency`) swings less.
+  const formRng = rng.fork('goalieForm');
+  const form = S.map((s) =>
+    s.goalies.map((g) =>
+      formRng.normal(0, T.goalieFormSd * (1.5 - rating(g, 'consistency') / 100)),
+    ),
+  );
   const goalFactor = (n: 0 | 1) =>
-    Math.exp(-T.goalieSensitivity * (goalieSkill(n) - T.leagueAvgGoaltending));
+    Math.exp(
+      -T.goalieSensitivity * (goalieSkill(n) - T.leagueAvgGoaltending) +
+        (form[n]![S[n].current] ?? 0),
+    );
 
   let t = 0;
   /** Skaters per side from the base strength (5, or 3 in overtime) less penalties running. */

@@ -45,6 +45,7 @@ function checkLeagueIsLegal(state: LeagueState) {
     const roster = Object.values(state.players).filter((p) => p.teamId === id);
     const payroll = roster.reduce((s, p) => s + (p.contract?.capHit ?? 0), 0);
     expect(payroll).toBeLessThanOrEqual(ruleset.cap.upperLimit);
+    expect(payroll).toBeGreaterThanOrEqual(ruleset.cap.lowerLimit);
     expect(roster.length).toBeGreaterThanOrEqual(ruleset.roster.minActive);
     for (const [position, min] of Object.entries(ruleset.roster.positionMin)) {
       expect(roster.filter((p) => p.position === position).length).toBeGreaterThanOrEqual(min);
@@ -163,6 +164,25 @@ describe('offseason steps', () => {
       }
     }
     playSeasonAndRollOver(state);
+    checkLeagueIsLegal(state);
+  });
+
+  it('a team under the cap floor reaches it even when the free-agent pool is empty', () => {
+    const state = createLeague(8, ctx);
+    run(state, { kind: 'sim.advance', days: calendar.regularSeasonDays + calendar.playoffDays });
+    // Nobody reaches free agency this summer, and the pool starts empty.
+    for (const p of Object.values(state.players)) {
+      if (p.teamId === null) delete state.players[p.id];
+      else if (p.contract) p.contract.expiresAfterSeason = state.date.season + 3;
+    }
+    // One team loses its three biggest contracts, which drops it under the floor.
+    const victim = Object.keys(state.teams)[5] as TeamId;
+    Object.values(state.players)
+      .filter((p) => p.teamId === victim)
+      .sort((a, b) => (b.contract?.capHit ?? 0) - (a.contract?.capHit ?? 0))
+      .slice(0, 3)
+      .forEach((p) => delete state.players[p.id]);
+    run(state, { kind: 'season.rollover' });
     checkLeagueIsLegal(state);
   });
 
