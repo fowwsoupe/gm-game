@@ -270,7 +270,16 @@ describe('re-sign command', () => {
     expect(
       handleCommand(state, { kind: 'contract.resign', playerId: other.id, years: 1 }, local, ctx),
     ).toMatchObject({ ok: false, error: { code: 'not_allowed' } });
-    handleCommand(state, { kind: 'season.rollover' }, local, ctx);
-    expect(state.players[offer.playerId]?.teamId).not.toBe(mine(state));
+    const res = handleCommand(state, { kind: 'season.rollover' }, local, ctx);
+    if (!res.ok) throw new Error(res.error.message);
+    // He walks: nobody re-signs him before free agency (he may still sign anywhere after).
+    const open = res.events.findIndex((e) => e.kind === 'freeAgency.opened');
+    const signedEarly = res.events
+      .slice(0, open)
+      .some((e) => e.kind === 'player.signed' && e.playerId === offer.playerId);
+    expect(
+      res.events.some((e) => e.kind === 'contract.expired' && e.playerId === offer.playerId),
+    ).toBe(true);
+    expect(signedEarly).toBe(false);
   });
 });

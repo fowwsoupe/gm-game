@@ -19,6 +19,7 @@ export function hockeySport(goalModel: GoalModel = rulesGoalModel): SportModule<
     name: 'Hockey',
     positions: HOCKEY_POSITIONS,
     ratingKeys: (position) => (isGoalie(position) ? GOALIE_RATINGS : SKATER_RATINGS),
+    pythagoreanExponent: 2,
     defaultRuleset: NHL_2026,
     generateLeague: generateFictionalLeague,
     generateProspect,

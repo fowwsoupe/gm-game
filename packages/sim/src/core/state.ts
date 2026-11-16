@@ -1,5 +1,6 @@
 import type {
   CapCharge,
+  DraftProspect,
   GameDate,
   GameResult,
   LeagueEvent,
@@ -39,6 +40,10 @@ export interface LeagueState {
   capCharges: CapCharge[];
   /** The offseason free-agency window is open (after `offseason.openFreeAgency`, until the next season starts). */
   freeAgencyOpen: boolean;
+  /** Next draft's class, announced when the champion is crowned; drafted players leave it. */
+  draftClass: DraftProspect[];
+  /** Each team's ranked wish list for the draft. */
+  draftBoards: Record<string, string[]>;
   /** Count of events applied so far; the next event's id is built from it. */
   eventSeq: number;
 }
@@ -117,6 +122,13 @@ export function applyEvent(state: LeagueState, event: LeagueEvent): void {
     }
     case 'player.drafted':
       state.players[event.player.id] = structuredClone(event.player);
+      state.draftClass = state.draftClass.filter((d) => d.player.id !== event.player.id);
+      return;
+    case 'draft.classAnnounced':
+      state.draftClass = structuredClone(event.prospects);
+      return;
+    case 'draft.boardSet':
+      state.draftBoards[event.teamId] = [...event.order];
       return;
     case 'player.signed': {
       const p = state.players[event.playerId];
@@ -135,6 +147,8 @@ export function applyEvent(state: LeagueState, event: LeagueEvent): void {
       state.championTeamId = null;
       state.capCharges = state.capCharges.filter((c) => c.season >= event.season);
       state.freeAgencyOpen = false;
+      state.draftClass = [];
+      state.draftBoards = {};
       return;
     case 'freeAgency.opened':
       state.freeAgencyOpen = true;

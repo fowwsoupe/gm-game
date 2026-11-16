@@ -203,6 +203,8 @@ export class SaveFile {
       ),
       championTeamId: (this.getMeta('championTeamId') as TeamId | undefined) ?? null,
       freeAgencyOpen: this.getMeta('freeAgencyOpen') === '1',
+      draftClass: JSON.parse(this.getMeta('draftClass') ?? '[]'),
+      draftBoards: JSON.parse(this.getMeta('draftBoards') ?? '{}'),
       capCharges: (
         this.db
           .prepare(
@@ -388,6 +390,9 @@ export class SaveFile {
           case 'team.controlChanged':
             setControl.run(e.userControlled ? 1 : 0, e.teamId);
             break;
+          case 'draft.classAnnounced':
+          case 'draft.boardSet':
+            break; // stored with the clock below
           case 'freeAgency.opened':
             this.setMeta('freeAgencyOpen', '1');
             break;
@@ -418,6 +423,9 @@ export class SaveFile {
     this.setMeta('day', String(state.date.day));
     this.setMeta('rngState', String(state.rngState));
     this.setMeta('eventSeq', String(state.eventSeq));
+    // Small (one draft class): kept as JSON in meta rather than its own table.
+    this.setMeta('draftClass', JSON.stringify(state.draftClass));
+    this.setMeta('draftBoards', JSON.stringify(state.draftBoards));
   }
 
   // ---------- queries ----------

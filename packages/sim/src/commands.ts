@@ -21,6 +21,7 @@ import { buyoutCharges } from './cba';
 import { classifyTeams, computeStandings, nextRound, seedPlayoffs } from './league';
 import { giveSeasonAwards } from './awards';
 import {
+  announceDraftClass,
   isExpiring,
   openFreeAgency,
   resignContract,
@@ -189,6 +190,28 @@ export function handleCommand(
       const events: LeagueEvent[] = [];
       openFreeAgency(state, ctx, emitter(state, events));
       return { ok: true, events };
+    }
+
+    case 'draft.setBoard': {
+      const team = state.teams[command.teamId];
+      if (!team) return { ok: false, error: { code: 'invalid', message: 'unknown team' } };
+      const yours =
+        actor.controls.includes(team.id) || (actor.id === 'local' && team.userControlled);
+      if (!yours) return { ok: false, error: { code: 'not_allowed', message: 'not your team' } };
+      const eligible = new Set(state.draftClass.map((d) => d.player.id as string));
+      if (
+        new Set(command.order).size !== command.order.length ||
+        !command.order.every((id) => eligible.has(id))
+      ) {
+        return { ok: false, error: { code: 'invalid', message: 'not in the draft class' } };
+      }
+      const ev = makeEvent(state, 'minor', [team.id], {
+        kind: 'draft.boardSet',
+        teamId: team.id,
+        order: [...command.order],
+      });
+      applyEvent(state, ev);
+      return { ok: true, events: [ev] };
     }
 
     case 'contract.sign': {
@@ -383,6 +406,7 @@ function advance(
             }),
           );
           giveSeasonAwards(state, ctx, emitter(state, events));
+          announceDraftClass(state, ctx, rng.fork('draftClass'), emitter(state, events));
         } else {
           for (const series of nextRound(current)) {
             emit(

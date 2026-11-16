@@ -209,6 +209,32 @@ export const en = {
   'sign.threshold': 'He signs at {n} or more.',
   'sign.action': 'Sign him',
   'sign.done': 'Signed.',
+  'nav.draft': 'Draft',
+  'draft.empty': 'The draft class is announced when the playoffs end.',
+  'draft.classTitle': 'Draft class',
+  'draft.scoutNote':
+    "Ranges are your scouts' read of each prospect's potential. They can be wrong, for every team.",
+  'draft.range': 'Scouted potential',
+  'draft.onBoard': 'On your list',
+  'draft.add': 'Add',
+  'draft.remove': 'Remove',
+  'draft.boardTitle': 'Your list',
+  'draft.boardEmpty':
+    "Add prospects to rank them. Without a list your picks go by the scouts' order.",
+  'draft.boardNote': 'At each of your picks you take the first player still on your list.',
+  'event.draftClass': 'The draft class has been announced',
+  'standings.team': 'Team',
+  'standings.gp': 'GP',
+  'standings.w': 'W',
+  'standings.l': 'L',
+  'standings.otl': 'OTL',
+  'standings.pts': 'PTS',
+  'standings.gf': 'GF',
+  'standings.ga': 'GA',
+  'standings.diff': 'DIFF',
+  'standings.odds': 'Playoff %',
+  'standings.power': 'Power',
+  'standings.status': 'Status',
 } as const;
 
 export type MessageKey = keyof typeof en;

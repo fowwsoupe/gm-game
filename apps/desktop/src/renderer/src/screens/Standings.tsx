@@ -7,36 +7,61 @@ import {
   useReactTable,
   type SortingState,
 } from '@tanstack/react-table';
-import type { StandingsRow, Team } from '@gm/shared';
-import { useStandings, useTeams } from '@/lib/queries';
+import type { PulseRow, StandingsRow, Team } from '@gm/shared';
+import { usePulse, useStandings, useTeams } from '@/lib/queries';
+import { useT, type MessageKey } from '@/i18n';
 
-type Row = StandingsRow & { team: Team | undefined };
+type Row = StandingsRow & { team: Team | undefined; pulse: PulseRow | undefined; power: number };
 const col = createColumnHelper<Row>();
 
-const columns = [
-  col.accessor((r) => (r.team ? `${r.team.city} ${r.team.name}` : r.teamId), {
-    id: 'team',
-    header: 'Team',
-  }),
-  col.accessor('gp', { header: 'GP' }),
-  col.accessor('w', { header: 'W' }),
-  col.accessor('l', { header: 'L' }),
-  col.accessor('otl', { header: 'OTL' }),
-  col.accessor('pts', { header: 'PTS' }),
-  col.accessor('gf', { header: 'GF' }),
-  col.accessor('ga', { header: 'GA' }),
-  col.accessor((r) => r.gf - r.ga, { id: 'diff', header: 'DIFF' }),
-];
+function useColumns() {
+  const t = useT();
+  return [
+    col.accessor((r) => (r.team ? `${r.team.city} ${r.team.name}` : r.teamId), {
+      id: 'team',
+      header: t('standings.team'),
+    }),
+    col.accessor('gp', { header: t('standings.gp') }),
+    col.accessor('w', { header: t('standings.w') }),
+    col.accessor('l', { header: t('standings.l') }),
+    col.accessor('otl', { header: t('standings.otl') }),
+    col.accessor('pts', { header: t('standings.pts') }),
+    col.accessor('gf', { header: t('standings.gf') }),
+    col.accessor('ga', { header: t('standings.ga') }),
+    col.accessor((r) => r.gf - r.ga, { id: 'diff', header: t('standings.diff') }),
+    col.accessor((r) => r.pulse?.playoffOdds ?? 0, {
+      id: 'odds',
+      header: t('standings.odds'),
+      cell: (c) => `${Math.round(c.getValue() * 100)}%`,
+    }),
+    col.accessor('power', { header: t('standings.power') }),
+    col.accessor((r) => r.pulse?.status ?? 'bubble', {
+      id: 'status',
+      header: t('standings.status'),
+      cell: (c) => t(`status.${c.getValue()}` as MessageKey),
+    }),
+  ];
+}
 
 export function Standings() {
   const { data: rows = [] } = useStandings();
   const { data: teams = [] } = useTeams();
+  const { data: pulse = [] } = usePulse();
+  const columns = useColumns();
   const [sorting, setSorting] = useState<SortingState>([]);
 
   const data = useMemo<Row[]>(() => {
     const byId = new Map(teams.map((t) => [t.id, t]));
-    return rows.map((r) => ({ ...r, team: byId.get(r.teamId) }));
-  }, [rows, teams]);
+    const pulseById = new Map(pulse.map((p) => [p.teamId, p]));
+    // Power rank: 1 = highest rating.
+    const order = [...pulse].sort((a, b) => b.rating - a.rating).map((p) => p.teamId);
+    return rows.map((r) => ({
+      ...r,
+      team: byId.get(r.teamId),
+      pulse: pulseById.get(r.teamId),
+      power: order.indexOf(r.teamId) + 1,
+    }));
+  }, [rows, teams, pulse]);
 
   const table = useReactTable({
     data,

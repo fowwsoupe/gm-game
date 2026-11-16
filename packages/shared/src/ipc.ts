@@ -1,11 +1,13 @@
 import type {
   AwardEntry,
   CapSheet,
+  DraftBoardEntry,
   GameDetail,
   GameSummary,
   Leaderboard,
   PlayerProfile,
   PlayoffSeries,
+  PulseRow,
   RecordEntry,
   ResignOffer,
   RosterPlayer,
@@ -69,6 +71,12 @@ export interface GmApi {
     players(input: { teamId: TeamId | null }): Promise<PlayerProfile[]>;
     /** What the other team would say to a trade, without making it. */
     evaluateTrade(input: TradeProposal): Promise<TradeEvaluation>;
+    /** Next draft's class (empty until the champion is crowned) and `teamId`'s board. */
+    draftClass(input: {
+      teamId: TeamId;
+    }): Promise<{ prospects: DraftBoardEntry[]; board: string[] }>;
+    /** Playoff odds, power rating and status for every team. */
+    pulse(): Promise<PulseRow[]>;
     /** Date, phase and which windows (trades, free agency) are open. */
     status(): Promise<LeagueStatus>;
     /** How a free agent feels about an offer from `teamId` (null if he is not a free agent). */
@@ -111,6 +119,8 @@ export const IPC = {
   players: 'league:players',
   evaluateTrade: 'league:evaluateTrade',
   status: 'league:status',
+  pulse: 'league:pulse',
+  draftClass: 'league:draftClass',
   signingInterest: 'league:signingInterest',
   feedList: 'feed:list',
   dispatch: 'commands:dispatch',
