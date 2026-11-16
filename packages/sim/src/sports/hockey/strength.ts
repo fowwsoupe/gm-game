@@ -47,12 +47,16 @@ const byRating = (a: Player, b: Player) => overall(b) - overall(a) || a.id.local
 
 /**
  * The lineup a coach would pick: the best centre, left wing and right wing together on line 1,
- * the next best on line 2, and so on; defence in pairs by rating; goalies by rating.
+ * the next best on line 2, and so on; defence in pairs; goalies in order. `depth` (the GM's
+ * order, best first) ranks players ahead of their ratings; anyone not in it follows by rating.
  * Injured players are left out by the caller (the engine passes only healthy players).
- * TODO(feature): user-set lines, chemistry, line matching.
+ * TODO(feature): chemistry, line matching, playing a player out of position.
  */
-export function autoLineup(players: readonly Player[]): Lineup {
-  const at = (position: string) => players.filter((p) => p.position === position).sort(byRating);
+export function autoLineup(players: readonly Player[], depth: readonly string[] = []): Lineup {
+  const rank = new Map(depth.map((id, i) => [id, i]));
+  const order = (a: Player, b: Player) =>
+    (rank.get(a.id) ?? Infinity) - (rank.get(b.id) ?? Infinity) || byRating(a, b);
+  const at = (position: string) => players.filter((p) => p.position === position).sort(order);
   const [c, lw, rw, d] = [at('C'), at('LW'), at('RW'), at('D')];
   // A line short of a centre or winger (injuries) takes the best spare forward of any position.
   const spares = [c, lw, rw]
@@ -72,7 +76,11 @@ export function autoLineup(players: readonly Player[]): Lineup {
     defense: pairs,
     goalies: players
       .filter((p) => isGoalie(p.position))
-      .sort((a, b) => goalieScore(b) - goalieScore(a)),
+      .sort(
+        (a, b) =>
+          (rank.get(a.id) ?? Infinity) - (rank.get(b.id) ?? Infinity) ||
+          goalieScore(b) - goalieScore(a),
+      ),
   };
 }
 
@@ -108,8 +116,11 @@ function weighted(
  * Rules-based team strength from the lineup: stars on the top lines count more because they
  * play more. One of the places an ML model (trained in /ml) can replace hand-tuned weights.
  */
-export function teamStrength(players: readonly Player[]): TeamStrength {
-  const lineup = autoLineup(players);
+export function teamStrength(
+  players: readonly Player[],
+  depth: readonly string[] = [],
+): TeamStrength {
+  const lineup = autoLineup(players, depth);
   const { forwards, defense, goalies } = lineup;
   const f = ICE_TIME.forwardLines;
   const d = ICE_TIME.defensePairs;
@@ -131,4 +142,17 @@ export function teamStrength(players: readonly Player[]): TeamStrength {
     backupGoaltending: goalies[1] ? goalieScore(goalies[1]) : 40,
     lineup,
   };
+}
+
+/** The lineup as named units for the lines screen: F1–F4, D1–D3, then goalies in order. */
+export function lineupUnits(
+  players: readonly Player[],
+  depth: readonly string[] = [],
+): { unit: string; playerIds: string[] }[] {
+  const { forwards, defense, goalies } = autoLineup(players, depth);
+  return [
+    ...forwards.map((l, i) => ({ unit: `F${i + 1}`, playerIds: l.map((p) => p.id) })),
+    ...defense.map((l, i) => ({ unit: `D${i + 1}`, playerIds: l.map((p) => p.id) })),
+    { unit: 'G', playerIds: goalies.map((p) => p.id) },
+  ];
 }

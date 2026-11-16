@@ -45,6 +45,7 @@ export function createLeague(
     freeAgencyOpen: false,
     draftClass: [],
     draftBoards: {},
+    depthCharts: {},
     eventSeq: 0,
   };
 }

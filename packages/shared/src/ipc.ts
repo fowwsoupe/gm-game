@@ -71,6 +71,8 @@ export interface GmApi {
     resignOffers(input: { teamId: TeamId }): Promise<ResignOffer[]>;
     /** Player cards for a team's players, or the free agents (`teamId: null`). */
     players(input: { teamId: TeamId | null }): Promise<PlayerProfile[]>;
+    /** The lineup a team would dress tonight (healthy players, its depth order), as named units. */
+    lines(input: { teamId: TeamId }): Promise<{ unit: string; playerIds: string[] }[]>;
     /** A player's finished regular seasons, oldest first. */
     career(input: { playerId: string }): Promise<CareerLine[]>;
     /** What the other team would say to a trade, without making it. */
@@ -128,6 +130,7 @@ export const IPC = {
   resignOffers: 'league:resignOffers',
   players: 'league:players',
   career: 'league:career',
+  lines: 'league:lines',
   evaluateTrade: 'league:evaluateTrade',
   status: 'league:status',
   pulse: 'league:pulse',

@@ -194,6 +194,30 @@ export function handleCommand(
       return { ok: true, events };
     }
 
+    case 'lines.set': {
+      const team = state.teams[command.teamId];
+      if (!team) return { ok: false, error: { code: 'invalid', message: 'unknown team' } };
+      const yours =
+        actor.controls.includes(team.id) || (actor.id === 'local' && team.userControlled);
+      if (!yours) return { ok: false, error: { code: 'not_allowed', message: 'not your team' } };
+      if (
+        new Set(command.order).size !== command.order.length ||
+        !command.order.every((id) => state.players[id]?.teamId === team.id)
+      ) {
+        return {
+          ok: false,
+          error: { code: 'invalid', message: 'only your own players, once each' },
+        };
+      }
+      const ev = makeEvent(state, 'minor', [team.id], {
+        kind: 'lines.set',
+        teamId: team.id,
+        order: [...command.order],
+      });
+      applyEvent(state, ev);
+      return { ok: true, events: [ev] };
+    }
+
     case 'draft.setBoard': {
       const team = state.teams[command.teamId];
       if (!team) return { ok: false, error: { code: 'invalid', message: 'unknown team' } };
@@ -290,7 +314,7 @@ function advance(
     let cached = strengths.get(team);
     if (!cached || cached.out !== out) {
       const healthy = hurt.length ? roster.filter((p) => !hurt.includes(p)) : roster;
-      cached = { out, strength: sport.teamStrength(healthy) };
+      cached = { out, strength: sport.teamStrength(healthy, state.depthCharts[team]) };
       strengths.set(team, cached);
     }
     return cached.strength;

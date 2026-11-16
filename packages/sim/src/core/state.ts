@@ -44,6 +44,8 @@ export interface LeagueState {
   draftClass: DraftProspect[];
   /** Each team's ranked wish list for the draft. */
   draftBoards: Record<string, string[]>;
+  /** Each human team's depth order for its lines, best first (absent = by rating). */
+  depthCharts: Record<string, string[]>;
   /** Count of events applied so far; the next event's id is built from it. */
   eventSeq: number;
 }
@@ -131,6 +133,9 @@ export function applyEvent(state: LeagueState, event: LeagueEvent): void {
       return;
     case 'draft.boardSet':
       state.draftBoards[event.teamId] = [...event.order];
+      return;
+    case 'lines.set':
+      state.depthCharts[event.teamId] = [...event.order];
       return;
     case 'player.signed': {
       const p = state.players[event.playerId];
