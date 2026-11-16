@@ -20,13 +20,18 @@ export type Screen =
 interface UiState {
   screen: Screen;
   locale: Locale;
+  /** Set by Cmd+K: the Roster screen shows this team ('fa' = free agents) and player. */
+  focus: { teamId: string; playerId?: string | undefined } | null;
   setScreen: (screen: Screen) => void;
   setLocale: (locale: Locale) => void;
+  openRoster: (teamId: string, playerId?: string) => void;
 }
 
 export const useUi = create<UiState>((set) => ({
   screen: 'home',
   locale: 'en',
+  focus: null,
+  openRoster: (teamId, playerId) => set({ screen: 'roster', focus: { teamId, playerId } }),
   setScreen: (screen) => set({ screen }),
   setLocale: (locale) => set({ locale }),
 }));

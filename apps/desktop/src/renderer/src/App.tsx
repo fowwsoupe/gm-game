@@ -1,4 +1,5 @@
-import { useState } from 'react';
+import { useEffect, useState } from 'react';
+import { CommandK } from '@/CommandK';
 import {
   useDispatch,
   useNewLeague,
@@ -47,6 +48,17 @@ export function App() {
   const { data: playoffs } = usePlayoffs();
   const { data: status } = useStatus();
   const hasLeague = !isError && teams.length > 0;
+  const [searching, setSearching] = useState(false);
+  useEffect(() => {
+    const onKey = (e: KeyboardEvent) => {
+      if ((e.metaKey || e.ctrlKey) && e.key.toLowerCase() === 'k') {
+        e.preventDefault();
+        setSearching((s) => !s);
+      }
+    };
+    window.addEventListener('keydown', onKey);
+    return () => window.removeEventListener('keydown', onKey);
+  }, []);
 
   const sim = (days: number, stopOn: 'never' | 'major' = 'never') =>
     dispatch.mutate(
@@ -63,6 +75,7 @@ export function App() {
 
   return (
     <div className="flex h-full">
+      {searching && <CommandK screens={NAV} onClose={() => setSearching(false)} />}
       <aside className="flex w-56 flex-col gap-1 border-r border-line bg-panel p-3">
         <div className="mb-4 px-2 text-lg font-semibold">{t('app.name')}</div>
         {NAV.map((n) => (

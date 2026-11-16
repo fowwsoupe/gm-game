@@ -1,4 +1,5 @@
-import { useState } from 'react';
+import { useEffect, useState } from 'react';
+import { useUi } from '@/stores/ui';
 import type { PlayerProfile, TeamId } from '@gm/shared';
 import { useCareer, useDispatch, usePlayers, useSigningInterest, useTeams } from '@/lib/queries';
 import { useT, type MessageKey } from '@/i18n';
@@ -11,8 +12,14 @@ const FREE_AGENTS = 'fa';
 export function Roster() {
   const t = useT();
   const { data: teams = [] } = useTeams();
-  const [picked, setPicked] = useState<string>();
-  const [selected, setSelected] = useState<string>();
+  const focus = useUi((s) => s.focus);
+  const [picked, setPicked] = useState<string | undefined>(focus?.teamId);
+  const [selected, setSelected] = useState<string | undefined>(focus?.playerId);
+  useEffect(() => {
+    if (!focus) return;
+    setPicked(focus.teamId);
+    setSelected(focus.playerId);
+  }, [focus]);
   const value = picked ?? (teams.find((x) => x.userControlled) ?? teams[0])?.id;
   const teamId = value === FREE_AGENTS ? null : (value as TeamId | undefined);
   const { data: players = [] } = usePlayers(value === undefined ? undefined : teamId);

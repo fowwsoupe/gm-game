@@ -329,4 +329,9 @@ export const fr: Record<MessageKey, string> = {
   'event.tradeRequested': '{player} a demandé aux {team} de l’échanger',
   'event.requestWithdrawn': '{player} a retiré sa demande d’échange',
   'event.requestStands': '{player} veut toujours partir après sa rencontre avec le DG',
+  'palette.placeholder': 'Chercher joueurs, équipes, écrans…',
+  'palette.empty': 'Aucun résultat',
+  'palette.player': 'Joueur',
+  'palette.team': 'Équipe',
+  'palette.screen': 'Écran',
 };

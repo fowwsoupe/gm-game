@@ -1,6 +1,7 @@
 import type { ReactNode } from 'react';
 
 export { Face } from './Face';
+export { Palette, type PaletteItem } from './Palette';
 
 /**
  * Design-system components. Screens are built from these, not from raw divs with
