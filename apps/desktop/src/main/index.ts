@@ -75,6 +75,7 @@ function registerIpc() {
   ipcMain.handle(IPC.evaluateTrade, (_e, input: TradeProposal) => league.evaluateTrade(input));
   ipcMain.handle(IPC.status, () => league.status());
   ipcMain.handle(IPC.pulse, () => league.pulse());
+  ipcMain.handle(IPC.dashboard, (_e, input: { teamId: TeamId }) => league.dashboard(input.teamId));
   ipcMain.handle(IPC.draftClass, (_e, input: { teamId: TeamId }) =>
     league.draftClass(input.teamId),
   );

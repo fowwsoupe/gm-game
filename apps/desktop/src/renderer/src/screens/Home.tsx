@@ -1,5 +1,15 @@
-import type { LeagueEvent } from '@gm/shared';
-import { useFeed, usePlayoffs, useTeams } from '@/lib/queries';
+import type { LeagueEvent, TeamId } from '@gm/shared';
+import {
+  useCapSheet,
+  useDashboard,
+  useFeed,
+  usePlayoffs,
+  usePulse,
+  useStandings,
+  useTeams,
+} from '@/lib/queries';
+import { useUi } from '@/stores/ui';
+import { money } from '@/lib/format';
 import { useT, type MessageKey } from '@/i18n';
 import { Card } from '@/ui';
 
@@ -13,16 +23,97 @@ export function Home({
   lastSim: string | null;
 }) {
   const t = useT();
+  const { data: teams = [] } = useTeams();
+  const mine = teams.find((x) => x.userControlled);
   if (!hasLeague) return <p className="text-muted">{t('home.empty')}</p>;
   return (
-    <div className="grid max-w-4xl gap-4 md:grid-cols-2">
+    <div className="grid max-w-5xl gap-4 md:grid-cols-2">
+      {mine ? <TeamStrip teamId={mine.id} /> : null}
       <Card>
         <p>{t('home.teamsLoaded', { count: teamCount })}</p>
         {lastSim && <p className="mt-2 text-sm text-muted">{lastSim}</p>}
       </Card>
+      {mine && <TodoCard teamId={mine.id} />}
       <FeedCard />
       <PlayoffCard />
     </div>
+  );
+}
+
+/** Record, place, playoff odds, cap space and the next game, across the top. */
+function TeamStrip({ teamId }: { teamId: TeamId }) {
+  const t = useT();
+  const { data: teams = [] } = useTeams();
+  const { data: rows = [] } = useStandings();
+  const { data: pulse = [] } = usePulse();
+  const { data: sheet } = useCapSheet(teamId);
+  const { data: home } = useDashboard(teamId);
+  const row = rows.find((r) => r.teamId === teamId);
+  const odds = pulse.find((p) => p.teamId === teamId)?.playoffOdds;
+  const space = sheet?.seasons[0]?.space;
+  const opponent = teams.find((x) => x.id === home?.nextGame?.opponentId);
+  const stats: { label: string; value: string }[] = [
+    {
+      label: t('home.record'),
+      value: row ? `${row.w}-${row.l}-${row.otl}` : '–',
+    },
+    {
+      label: t('home.place'),
+      value: row ? t('home.placeValue', { n: rows.indexOf(row) + 1, of: rows.length }) : '–',
+    },
+    { label: t('home.odds'), value: odds === undefined ? '–' : `${Math.round(odds * 100)}%` },
+    { label: t('home.capSpace'), value: space === undefined ? '–' : money(space) },
+    {
+      label: t('home.nextGame'),
+      value:
+        home?.nextGame && opponent
+          ? t(home.nextGame.home ? 'home.vs' : 'home.at', { team: opponent.abbreviation })
+          : '–',
+    },
+  ];
+  return (
+    <Card className="md:col-span-2">
+      <div className="grid grid-cols-5 gap-4">
+        {stats.map((s) => (
+          <div key={s.label}>
+            <div className="text-xs uppercase tracking-wider text-muted">{s.label}</div>
+            <div className="tabular text-lg font-semibold">{s.value}</div>
+          </div>
+        ))}
+      </div>
+    </Card>
+  );
+}
+
+/** Decisions waiting on you. Clears to zero. */
+function TodoCard({ teamId }: { teamId: TeamId }) {
+  const t = useT();
+  const setScreen = useUi((s) => s.setScreen);
+  const { data: home } = useDashboard(teamId);
+  const items = home?.todo ?? [];
+  return (
+    <Card title={t('home.todoTitle')}>
+      {items.length === 0 ? (
+        <p className="text-sm text-good">{t('home.todoClear')}</p>
+      ) : (
+        <ul className="space-y-1 text-sm">
+          {items.map((item) => {
+            const params = { ...item.params };
+            if (typeof params.amount === 'number') params.amount = money(params.amount);
+            return (
+              <li key={item.code + JSON.stringify(params)}>
+                <button
+                  onClick={() => setScreen(item.screen)}
+                  className="text-left hover:text-accent"
+                >
+                  {t(`todo.${item.code}` as MessageKey, params)}
+                </button>
+              </li>
+            );
+          })}
+        </ul>
+      )}
+    </Card>
   );
 }
 
