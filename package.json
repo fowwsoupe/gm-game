@@ -19,7 +19,8 @@
     "check": "pnpm format:check && pnpm lint && pnpm typecheck && pnpm test && pnpm ml:test",
     "lab": "pnpm --filter @gm/balance-lab lab --",
     "roster:template": "pnpm --filter @gm/balance-lab roster:template",
-    "xg:template": "pnpm --filter @gm/balance-lab xg:template"
+    "xg:template": "pnpm --filter @gm/balance-lab xg:template",
+    "ratings:fit": "pnpm --filter @gm/balance-lab ratings:fit --"
   },
   "devDependencies": {
     "@eslint/js": "^9.39.0",

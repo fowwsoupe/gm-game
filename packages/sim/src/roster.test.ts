@@ -5,9 +5,13 @@ import {
   defaultContext,
   exportHockeyRoster,
   handleCommand,
+  hockeySeasonStats,
   importHockeyRoster,
   payroll,
+  ratingsFromStats,
   Rng,
+  statFeatures,
+  STATS_TO_RATINGS,
 } from './index';
 
 const ctx = defaultContext();
@@ -108,5 +112,57 @@ describe('roster files', () => {
         'players.2.contract: ended before the 2027 season',
       ]);
     }
+  });
+});
+
+describe('stats to ratings', () => {
+  const games = ctx.ruleset.season.gamesPerTeam;
+
+  it('falls back to the position average and its full spread with no games', () => {
+    const est = ratingsFromStats(
+      STATS_TO_RATINGS,
+      'C',
+      { gp: 0, goals: 0, assists: 0, shots: 0, plusMinus: 0, toi: 0 },
+      games,
+    );
+    const fit = STATS_TO_RATINGS.groups.F.shooting!;
+    expect(est.shooting).toEqual({
+      value: Math.round(fit.mean),
+      sd: Math.round(10 * fit.priorSd) / 10,
+    });
+  });
+
+  it('recovers ratings from a season it was not fitted on, with honest uncertainty', () => {
+    const state = createLeague(3, ctx); // the fit uses seeds 10000+
+    handleCommand(
+      state,
+      { kind: 'sim.advance', days: ctx.ruleset.season.calendar.regularSeasonDays },
+      { id: 'local', controls: [] },
+      ctx,
+    );
+    const { skaters, goalies } = hockeySeasonStats(Object.values(state.results));
+    const pairs: [number, number][] = [];
+    let within = 0;
+    let total = 0;
+    for (const p of Object.values(state.players)) {
+      const totals = skaters.get(p.id) ?? goalies.get(p.id);
+      if (!totals || statFeatures(p.position, totals, games).share < 1) continue;
+      const est = ratingsFromStats(STATS_TO_RATINGS, p.position, totals, games);
+      for (const [key, e] of Object.entries(est)) {
+        total++;
+        if (Math.abs(e.value - p.ratings[key]!) <= 2 * e.sd) within++;
+      }
+      if (!isGoalie(p.position)) pairs.push([est.shooting!.value, p.ratings.shooting!]);
+    }
+    const r = (() => {
+      const m = (k: 0 | 1) => pairs.reduce((s, x) => s + x[k], 0) / pairs.length;
+      const [ma, mb] = [m(0), m(1)];
+      const cov = pairs.reduce((s, [a, b]) => s + (a - ma) * (b - mb), 0);
+      const va = pairs.reduce((s, [a]) => s + (a - ma) ** 2, 0);
+      const vb = pairs.reduce((s, [, b]) => s + (b - mb) ** 2, 0);
+      return cov / Math.sqrt(va * vb);
+    })();
+    expect(r).toBeGreaterThan(0.75); // shooting: the best-measured skater rating
+    expect(within / total).toBeGreaterThan(0.9); // ±2 sd covers ~95% if the sd is honest
   });
 });

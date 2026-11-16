@@ -44,5 +44,18 @@ export {
 export { parseXgTable, xgTableFromModel, type XgTable, type XgTableResult } from './xgTable';
 export { teamStrength, autoLineup, ICE_TIME, type TeamStrength, type Lineup } from './strength';
 export { importHockeyRoster, exportHockeyRoster } from './roster';
-export { hockeyLeaders, hockeySeasonStats } from './stats';
+export { hockeyLeaders, hockeySeasonStats, type SkaterTotals, type GoalieTotals } from './stats';
+export {
+  ratingsFromStats,
+  statFeatures,
+  ratingGroup,
+  FULL_SAMPLE,
+  SKATER_FEATURES,
+  GOALIE_FEATURES,
+  type RatingGroup,
+  type RatingFit,
+  type RatingEstimate,
+  type StatsToRatingsTable,
+} from './ratingsFromStats';
+export { STATS_TO_RATINGS } from './ratingsFromStatsTable';
 export { HOCKEY_DEVELOPMENT } from './aging';

@@ -8,7 +8,8 @@
     "typecheck": "tsc -p tsconfig.json",
     "test": "vitest run --passWithNoTests",
     "roster:template": "tsx src/roster-template.ts",
-    "xg:template": "tsx src/xg-template.ts"
+    "xg:template": "tsx src/xg-template.ts",
+    "ratings:fit": "tsx src/ratings-fit.ts"
   },
   "dependencies": {
     "@gm/shared": "workspace:*",
