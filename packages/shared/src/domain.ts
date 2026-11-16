@@ -389,3 +389,16 @@ export interface DraftPick {
   originalTeamId: TeamId;
   ownerTeamId: TeamId;
 }
+
+/** A retired player voted into the Hall of Fame, with his career totals and awards. */
+export interface HallOfFamer {
+  playerId: PlayerId;
+  name: string;
+  position: string;
+  retiredSeason: number;
+  seasons: number;
+  /** Regular-season career totals, sport-defined keys. */
+  totals: Record<string, number>;
+  /** Award keys he won, one entry per win. */
+  awards: string[];
+}

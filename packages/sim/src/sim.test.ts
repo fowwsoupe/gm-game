@@ -313,3 +313,24 @@ describe('builds and role tags', () => {
     }
   });
 });
+
+describe('hall of fame rule', () => {
+  const hof = ctx.sport.hallOfFame;
+  it('inducts long, productive careers and repeat MVPs, and sums the totals', () => {
+    const season = { gp: 80, goals: 30, assists: 40, points: 70 };
+    expect(hof({ position: 'C', seasons: Array(15).fill(season), awards: [] })).toMatchObject({
+      inducted: true,
+      totals: { gp: 1200, points: 1050 },
+    });
+    expect(hof({ position: 'C', seasons: Array(5).fill(season), awards: ['mvp'] }).inducted).toBe(
+      false,
+    );
+    expect(
+      hof({ position: 'C', seasons: Array(5).fill(season), awards: ['mvp', 'mvp'] }).inducted,
+    ).toBe(true);
+    const goalie = { gp: 60, shotsAgainst: 1800, saves: 1640, savePct: 0.911 };
+    const g = hof({ position: 'G', seasons: Array(14).fill(goalie), awards: [] });
+    expect(g.inducted).toBe(true);
+    expect(g.totals.savePct).toBeCloseTo(1640 / 1800, 5);
+  });
+});

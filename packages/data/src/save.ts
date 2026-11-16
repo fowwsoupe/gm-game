@@ -543,6 +543,46 @@ export class SaveFile {
     });
   }
 
+  /** Retired players with their archived seasons (for the Hall of Fame). */
+  retiredCareers(): {
+    id: PlayerId;
+    name: string;
+    position: string;
+    retiredSeason: number;
+    lines: Record<string, number>[];
+  }[] {
+    const rows = this.db
+      .prepare(
+        `SELECT p.id, p.first_name, p.last_name, p.position, p.retired_season, s.stats_json
+         FROM players p JOIN player_seasons s ON s.player_id = p.id
+         WHERE p.retired_season IS NOT NULL ORDER BY p.id, s.season`,
+      )
+      .all() as {
+      id: PlayerId;
+      first_name: string;
+      last_name: string;
+      position: string;
+      retired_season: number;
+      stats_json: string;
+    }[];
+    const out = new Map<string, ReturnType<SaveFile['retiredCareers']>[number]>();
+    for (const r of rows) {
+      let p = out.get(r.id);
+      if (!p) {
+        p = {
+          id: r.id,
+          name: `${r.first_name} ${r.last_name}`,
+          position: r.position,
+          retiredSeason: r.retired_season,
+          lines: [],
+        };
+        out.set(r.id, p);
+      }
+      p.lines.push(JSON.parse(r.stats_json) as Record<string, number>);
+    }
+    return [...out.values()];
+  }
+
   /** A player's archived regular seasons, oldest first. */
   careerLines(playerId: string): CareerLine[] {
     const rows = this.db

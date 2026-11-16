@@ -34,6 +34,7 @@ import type {
   GameId,
   GameResult,
   GameSummary,
+  HallOfFamer,
   Importance,
   LeagueStatus,
   PulseRow,
@@ -144,6 +145,35 @@ export class LeagueService {
 
   awards() {
     return this.open().save.listAwards();
+  }
+
+  hallOfFame(): HallOfFamer[] {
+    const { save, state } = this.open();
+    const { sport } = defaultContext(state.rulesetId);
+    const awards = new Map<string, string[]>();
+    for (const a of save.listAwards()) {
+      if (a.playerId) awards.set(a.playerId, [...(awards.get(a.playerId) ?? []), a.award]);
+    }
+    return save
+      .retiredCareers()
+      .flatMap((c) => {
+        const won = awards.get(c.id) ?? [];
+        const verdict = sport.hallOfFame({ position: c.position, seasons: c.lines, awards: won });
+        return verdict.inducted
+          ? [
+              {
+                playerId: c.id,
+                name: c.name,
+                position: c.position,
+                retiredSeason: c.retiredSeason,
+                seasons: c.lines.length,
+                totals: verdict.totals,
+                awards: won,
+              },
+            ]
+          : [];
+      })
+      .sort((a, b) => b.retiredSeason - a.retiredSeason || a.name.localeCompare(b.name));
   }
 
   leaders() {

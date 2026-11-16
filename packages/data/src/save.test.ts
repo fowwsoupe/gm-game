@@ -107,6 +107,10 @@ describe('SaveFile', () => {
     const scorer = Object.values(state.players).find((p) => p.teamId && p.position === 'C')!;
     expect(save.careerLines(scorer.id)).toMatchObject([{ season: state.date.season }]);
     expect(save.careerLines(scorer.id)[0]!.stats.gp).toBeGreaterThan(0);
+    // Players who retired this summer keep their careers for the Hall of Fame.
+    const retired = save.retiredCareers();
+    expect(retired.length).toBeGreaterThan(0);
+    expect(retired.some((c) => c.lines.length > 0)).toBe(true);
     const logged = save.listEvents(5000).find((e) => e.kind === 'stats.archived');
     expect(logged && 'lines' in logged && logged.lines).toBeFalsy();
     const res = handleCommand(state, { kind: 'season.rollover' }, local, ctx);

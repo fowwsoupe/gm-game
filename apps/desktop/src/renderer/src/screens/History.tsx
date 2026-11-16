@@ -1,4 +1,5 @@
-import { useAwards, useRecords, useTeams } from '@/lib/queries';
+import { useAwards, useHallOfFame, useRecords, useTeams } from '@/lib/queries';
+import { statValue } from '@/lib/format';
 import { useT, type MessageKey } from '@/i18n';
 import { Card } from '@/ui';
 
@@ -8,6 +9,7 @@ export function History() {
   const { data: awards = [] } = useAwards();
   const { data: teams = [] } = useTeams();
   const { data: records = [] } = useRecords();
+  const { data: legends = [] } = useHallOfFame();
   const teamName = (id: string) => {
     const team = teams.find((x) => x.id === id);
     return team ? `${team.city} ${team.name}` : id;
@@ -17,6 +19,34 @@ export function History() {
   const seasons = [...new Set(awards.map((a) => a.season))];
   return (
     <div className="grid max-w-4xl gap-4 md:grid-cols-2">
+      {legends.length > 0 && (
+        <Card title={t('history.hallOfFame')} className="md:col-span-2">
+          <ul className="space-y-1 text-sm">
+            {legends.map((h) => {
+              const key = 'points' in h.totals ? 'points' : 'gp';
+              const won = [...new Set(h.awards)].map(
+                (a) =>
+                  `${t(`award.${a}` as MessageKey)}${h.awards.filter((x) => x === a).length > 1 ? ` ×${h.awards.filter((x) => x === a).length}` : ''}`,
+              );
+              return (
+                <li key={h.playerId} className="flex justify-between gap-4">
+                  <span>
+                    {h.name} <span className="text-muted">({h.position})</span>
+                  </span>
+                  <span className="text-muted">
+                    {t('history.hofLine', {
+                      stat: `${t(`stat.${key}` as MessageKey)} ${statValue(key, h.totals[key] ?? 0)}`,
+                      seasons: h.seasons,
+                      retired: h.retiredSeason,
+                    })}
+                    {won.length > 0 && ` · ${won.join(', ')}`}
+                  </span>
+                </li>
+              );
+            })}
+          </ul>
+        </Card>
+      )}
       <Card title={t('history.records')}>
         <ul className="space-y-1 text-sm">
           {records.map((r) => (

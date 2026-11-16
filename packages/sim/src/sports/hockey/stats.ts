@@ -148,3 +148,26 @@ export function hockeyHighlights(result: GameResult) {
   }
   return out;
 }
+
+/**
+ * Hall of Fame rule (hockey, for a 16-team, 84-game league where the scoring champion has about
+ * 90 points): skaters with 1,000 career points or two MVPs; goalies with 800 games or two Top
+ * Goalie awards. About one inductee a season over a 20-year league. Totals sum the season lines (save % recomputed from saves and shots).
+ */
+export function hockeyHallOfFame(input: {
+  position: string;
+  seasons: readonly Record<string, number>[];
+  awards: readonly string[];
+}) {
+  const totals: Record<string, number> = {};
+  for (const line of input.seasons) {
+    for (const [k, v] of Object.entries(line))
+      if (k !== 'savePct') totals[k] = (totals[k] ?? 0) + v;
+  }
+  const won = (award: string) => input.awards.filter((a) => a === award).length;
+  if (input.position === 'G') {
+    if (totals.shotsAgainst) totals.savePct = (totals.saves ?? 0) / totals.shotsAgainst;
+    return { inducted: (totals.gp ?? 0) >= 800 || won('topGoalie') >= 2, totals };
+  }
+  return { inducted: (totals.points ?? 0) >= 1000 || won('mvp') >= 2, totals };
+}

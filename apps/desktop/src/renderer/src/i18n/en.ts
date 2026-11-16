@@ -312,6 +312,8 @@ export const en = {
   'standings.view.league': 'League',
   'standings.view.conference': 'Conference',
   'standings.view.division': 'Division',
+  'history.hallOfFame': 'Hall of Fame',
+  'history.hofLine': '{stat} · {seasons} seasons · retired {retired}',
 } as const;
 
 export type MessageKey = keyof typeof en;

@@ -7,6 +7,7 @@ import type {
   DraftBoardEntry,
   GameDetail,
   GameSummary,
+  HallOfFamer,
   Leaderboard,
   PlayerProfile,
   PlayoffSeries,
@@ -45,6 +46,8 @@ export interface GmApi {
     listTeams(): Promise<Team[]>;
     standings(): Promise<StandingsRow[]>;
     playoffs(): Promise<{ series: PlayoffSeries[]; championTeamId: TeamId | null }>;
+    /** Retired players in the Hall of Fame, most recent first. */
+    hallOfFame(): Promise<HallOfFamer[]>;
     /** Every award given so far, newest season first. */
     awards(): Promise<AwardEntry[]>;
     /** Stat leaders of the season so far. */
@@ -123,6 +126,7 @@ export const IPC = {
   standings: 'league:standings',
   playoffs: 'league:playoffs',
   awards: 'league:awards',
+  hallOfFame: 'league:hallOfFame',
   records: 'league:records',
   leaders: 'league:leaders',
   capSheet: 'league:capSheet',
