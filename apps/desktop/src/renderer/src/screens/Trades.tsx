@@ -15,11 +15,18 @@ export function Trades() {
   const partner = partnerPick ?? others[0]?.id;
   const [give, setGive] = useState<PlayerId[]>([]);
   const [get, setGet] = useState<PlayerId[]>([]);
+  /** Share of each given player's cap hit you keep paying (0 = none). */
+  const [retain, setRetain] = useState<Record<string, number>>({});
   const [message, setMessage] = useState<string | null>(null);
   const { data: myPlayers = [] } = usePlayers(mine?.id);
   const { data: theirPlayers = [] } = usePlayers(partner);
+  const kept = give
+    .filter((id) => (retain[id] ?? 0) > 0)
+    .map((id) => ({ playerId: id, pct: retain[id]! }));
   const proposal =
-    mine && partner ? { fromTeamId: mine.id, toTeamId: partner, give, get } : undefined;
+    mine && partner
+      ? { fromTeamId: mine.id, toTeamId: partner, give, get, ...(kept.length && { retain: kept }) }
+      : undefined;
   const { data: verdict } = useTradeEvaluation(proposal);
   const dispatch = useDispatch();
   const reasonText = useReasonText();
@@ -76,6 +83,7 @@ export function Trades() {
                     if (res.ok) {
                       setGive([]);
                       setGet([]);
+                      setRetain({});
                     }
                   },
                 },
@@ -93,6 +101,8 @@ export function Trades() {
           players={myPlayers}
           picked={give}
           onToggle={(id) => toggle(give, setGive, id)}
+          retain={retain}
+          onRetain={(id, pct) => setRetain({ ...retain, [id]: pct })}
         />
         <Side
           title={t('trade.youGet')}
@@ -114,16 +124,24 @@ function useReasonText() {
   };
 }
 
+/** Retention choices; the ruleset's limit is checked by the sim. */
+const RETAIN_STEPS = [0, 10, 20, 30, 40, 50];
+
 function Side({
   title,
   players,
   picked,
   onToggle,
+  retain,
+  onRetain,
 }: {
   title: string;
   players: PlayerProfile[];
   picked: PlayerId[];
   onToggle: (id: PlayerId) => void;
+  /** Only on your side: how much of a given player's cap hit you keep. */
+  retain?: Record<string, number>;
+  onRetain?: (id: PlayerId, pct: number) => void;
 }) {
   const t = useT();
   return (
@@ -160,7 +178,24 @@ function Side({
                 </td>
                 <td className="px-2 py-1 text-left">{p.position}</td>
                 <td className="px-2 py-1">{p.age}</td>
-                <td className="px-2 py-1">{p.contract ? money(p.contract.capHit) : ''}</td>
+                <td className="px-2 py-1">
+                  {p.contract ? money(p.contract.capHit) : ''}
+                  {onRetain && picked.includes(p.id) && (
+                    <select
+                      aria-label={t('trade.retain')}
+                      value={retain?.[p.id] ?? 0}
+                      onClick={(e) => e.stopPropagation()}
+                      onChange={(e) => onRetain(p.id, Number(e.target.value))}
+                      className="ml-2 rounded border border-line bg-panel px-1 text-xs"
+                    >
+                      {RETAIN_STEPS.map((s) => (
+                        <option key={s} value={s}>
+                          {t('trade.retainOption', { pct: s })}
+                        </option>
+                      ))}
+                    </select>
+                  )}
+                </td>
                 <td className="px-2 py-1">{p.contract?.expiresAfterSeason ?? ''}</td>
                 <td className="px-2 py-1">
                   {p.stats[key] === undefined ? '' : statValue(key, p.stats[key])}

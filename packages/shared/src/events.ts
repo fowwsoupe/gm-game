@@ -6,6 +6,7 @@ import type {
   Player,
   PlayerId,
   PlayoffSeries,
+  RetainedSalary,
   ScheduledGame,
   TeamId,
 } from './domain';
@@ -117,6 +118,7 @@ export type LeagueEvent =
       toTeamId: TeamId;
       give: PlayerId[];
       get: PlayerId[];
+      retained?: RetainedSalary[];
     })
   | (EventBase & { kind: 'team.controlChanged'; teamId: TeamId; userControlled: boolean })
   | (EventBase & { kind: 'season.phaseChanged'; from: SeasonPhase; to: SeasonPhase })

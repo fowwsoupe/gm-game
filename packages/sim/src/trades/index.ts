@@ -5,5 +5,5 @@
  * AI GMs trade with each other once a week at most (`aiTrades`).
  * TODO(M6): draft picks, retained salary, trade block.
  */
-export { evaluateTrade, tradeWindowOpen, teamContext } from './evaluate';
+export { evaluateTrade, planRetention, tradeWindowOpen, teamContext } from './evaluate';
 export { aiTrades } from './ai';

@@ -16,7 +16,6 @@ export const en = {
   'cap.summaryTitle': 'Cap by season',
   'cap.season': 'Season',
   'cap.committed': 'Contracts',
-  'cap.deadCap': 'Dead cap',
   'cap.total': 'Total',
   'cap.space': 'Space',
   'cap.limit': 'Limit',
@@ -267,6 +266,11 @@ export const en = {
   'lines.unit.D': 'Defence pair {n}',
   'lines.unit.G': 'Goalies (starter first)',
   'lines.scratches': 'Scratches and injured',
+  'trade.retain': 'Salary you keep',
+  'trade.retainOption': 'keep {pct}%',
+  'cap.deadCap': 'Dead / retained',
+  'trade.reason.retention':
+    "You can't keep that share of {player}'s salary (at most {max}%, {contracts} contracts at once, and never twice on one contract).",
 } as const;
 
 export type MessageKey = keyof typeof en;

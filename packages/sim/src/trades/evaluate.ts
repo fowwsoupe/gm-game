@@ -1,6 +1,13 @@
-import type { Player, TeamId, TradeEvaluation, TradeProposal, TradeReason } from '@gm/shared';
+import type {
+  Player,
+  RetainedSalary,
+  TeamId,
+  TradeEvaluation,
+  TradeProposal,
+  TradeReason,
+} from '@gm/shared';
 import { pct, phaseOf, type LeagueState } from '../core';
-import { capYearIssues, capYearOf, teamCapTotal } from '../cba';
+import { capYearIssues, capYearOf, retentionIssues, teamCapTotal } from '../cba';
 import type { TeamContext } from '../value';
 import type { SimContext } from '../context';
 
@@ -28,6 +35,61 @@ export function tradeWindowOpen(state: LeagueState, ctx: SimContext): boolean {
 
 const count = (players: readonly Player[], teamId: TeamId, position: string) =>
   players.filter((p) => p.teamId === teamId && p.position === position).length;
+
+/**
+ * The salary `fromTeamId` keeps on players it gives (`proposal.retain`), checked against the
+ * ruleset: at most the max share, the max number of retained contracts, and no retaining a
+ * contract that already carries retained salary (ponytail: the cooldown is treated as the whole
+ * contract; track the retention day if a shorter cooldown matters). It charges each season left
+ * on the deal in full, the current one included (no proration yet).
+ */
+export function planRetention(
+  state: LeagueState,
+  ctx: SimContext,
+  proposal: TradeProposal,
+): { retained: RetainedSalary[] } | { error: TradeReason } {
+  const season = capYearOf(state);
+  const retainedNow = (teamId: TeamId) =>
+    new Set(
+      state.capCharges
+        .filter((c) => c.kind === 'retained' && c.teamId === teamId && c.season >= season)
+        .map((c) => c.playerId),
+    ).size;
+  const retained: RetainedSalary[] = [];
+  for (const { playerId, pct: share } of proposal.retain ?? []) {
+    const p = state.players[playerId];
+    const contract = p?.contract;
+    const name = p ? `${p.firstName} ${p.lastName}` : playerId;
+    const { maxRetentionPct: max, maxRetainedContracts: contracts } = ctx.ruleset.trades;
+    const fail = {
+      error: { code: 'retention' as const, params: { player: name, max, contracts } },
+    };
+    if (!p || !contract || !proposal.give.includes(p.id) || contract.expiresAfterSeason < season) {
+      return fail;
+    }
+    if (!Number.isInteger(share) || share <= 0) return fail;
+    const before = state.capCharges.some((c) => c.kind === 'retained' && c.playerId === p.id);
+    const issues = retentionIssues(ctx.ruleset, {
+      retainPct: share,
+      teamRetainedCount: retainedNow(proposal.fromTeamId) + retained.length,
+      daysSinceRetained: before ? 0 : null,
+    });
+    if (issues.length) return fail;
+    const amount = Math.round((contract.capHit * share) / 100);
+    retained.push({
+      playerId: p.id,
+      capHit: contract.capHit - amount,
+      charges: Array.from({ length: contract.expiresAfterSeason - season + 1 }, (_, i) => ({
+        teamId: proposal.fromTeamId,
+        playerId: p.id,
+        kind: 'retained' as const,
+        season: season + i,
+        amount,
+      })),
+    });
+  }
+  return { retained };
+}
 
 /** What `teamId` knows about itself when it values players (see the value engine). */
 export function teamContext(state: LeagueState, ctx: SimContext, teamId: TeamId): TeamContext {
@@ -84,12 +146,26 @@ export function evaluateTrade(
     }
   }
 
+  const plan = planRetention(state, ctx, proposal);
+  if ('error' in plan) return { accepted: false, value: 0, reasons: [plan.error] };
+  const kept = new Map(plan.retained.map((r) => [r.playerId as string, r]));
+  const season = capYearOf(state);
   const before = Object.values(state.players);
-  const after = before.map((p) =>
-    give.includes(p.id) ? { ...p, teamId: to } : get.includes(p.id) ? { ...p, teamId: from } : p,
-  );
+  const after = before.map((p) => {
+    const r = kept.get(p.id);
+    const moved = give.includes(p.id)
+      ? { ...p, teamId: to }
+      : get.includes(p.id)
+        ? { ...p, teamId: from }
+        : p;
+    return r && p.contract ? { ...moved, contract: { ...p.contract, capHit: r.capHit } } : moved;
+  });
+  const newCharges = plan.retained
+    .flatMap((r) => r.charges)
+    .filter((c) => c.season === season)
+    .reduce((sum, c) => sum + c.amount, 0);
   for (const teamId of [from, to]) {
-    const total = teamCapTotal(state, teamId, after);
+    const total = teamCapTotal(state, teamId, after) + (teamId === from ? newCharges : 0);
     if (
       capYearIssues(ruleset, state, total).length &&
       total > teamCapTotal(state, teamId, before)
@@ -107,8 +183,10 @@ export function evaluateTrade(
   }
 
   const team = teamContext(state, ctx, to);
+  const afterById = new Map(after.map((p) => [p.id as string, p]));
+  // Incoming players are valued at their cap hit after any retention.
   const valueOf = (id: string) => {
-    const p = state.players[id]!;
+    const p = afterById.get(id)!;
     return { p, ...ctx.models.valuation.value(p, team, ruleset) };
   };
   const incoming = give.map(valueOf).sort((a, b) => b.surplus - a.surplus);

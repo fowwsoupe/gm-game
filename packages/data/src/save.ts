@@ -285,6 +285,7 @@ export class SaveFile {
     const setStatus = this.db.prepare('UPDATE teams SET status = ? WHERE id = ?');
     const setControl = this.db.prepare('UPDATE teams SET user_controlled = ? WHERE id = ?');
     const setTeam = this.db.prepare('UPDATE players SET team_id = ? WHERE id = ?');
+    const setContractOnly = this.db.prepare('UPDATE players SET contract_json = ? WHERE id = ?');
     const archiveLine = this.db.prepare(
       'INSERT OR REPLACE INTO player_seasons (player_id, season, team_id, stats_json) VALUES (?, ?, ?, ?)',
     );
@@ -420,6 +421,11 @@ export class SaveFile {
           case 'trade.completed':
             for (const id of e.give) setTeam.run(e.toTeamId, id);
             for (const id of e.get) setTeam.run(e.fromTeamId, id);
+            for (const r of e.retained ?? []) {
+              const contract = state.players[r.playerId]?.contract;
+              if (contract) setContractOnly.run(JSON.stringify(contract), r.playerId);
+              for (const c of r.charges) insertCharge(c);
+            }
             break;
           case 'clock.advanced':
           case 'season.phaseChanged':

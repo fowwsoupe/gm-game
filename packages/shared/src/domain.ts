@@ -21,13 +21,13 @@ export interface Contract {
 }
 
 /**
- * Cap money a team owes that is not a current player's contract. Today: buyouts (dead cap).
- * Retained salary from trades will be a second kind (M6).
+ * Cap money a team owes that is not a current player's contract: buyouts (dead cap), and salary
+ * it kept when trading a player (retained).
  */
 export interface CapCharge {
   teamId: TeamId;
   playerId: PlayerId;
-  kind: 'buyout';
+  kind: 'buyout' | 'retained';
   season: number;
   /** Whole dollars counted against that season's cap. */
   amount: number;
@@ -243,12 +243,23 @@ export interface ScheduledGame {
   awayTeamId: TeamId;
 }
 
-/** A two-team trade: `give` goes from `fromTeamId` to `toTeamId`, `get` comes back. */
+/**
+ * A two-team trade: `give` goes from `fromTeamId` to `toTeamId`, `get` comes back. `retain`:
+ * share (whole percent) of a given player's cap hit `fromTeamId` keeps paying.
+ */
 export interface TradeProposal {
   fromTeamId: TeamId;
   toTeamId: TeamId;
   give: PlayerId[];
   get: PlayerId[];
+  retain?: { playerId: PlayerId; pct: number }[];
+}
+
+/** Salary kept in a trade: the player's new cap hit, and what the old team owes each season. */
+export interface RetainedSalary {
+  playerId: PlayerId;
+  capHit: number;
+  charges: CapCharge[];
 }
 
 /** Why a trade is accepted or refused. The UI translates `code`; `params` fill the text. */
@@ -265,7 +276,8 @@ export interface TradeReason {
     | 'short_at'
     | 'closed'
     | 'empty'
-    | 'not_on_team';
+    | 'not_on_team'
+    | 'retention';
   params?: Record<string, string | number>;
 }
 
