@@ -243,3 +243,56 @@ describe('AI-to-AI trades', () => {
     expect(run(2).trades).toEqual(seasons[0]!.trades);
   }, 60_000);
 });
+
+describe('retained salary', () => {
+  it('keeps part of the cap hit on your books for the rest of the deal', () => {
+    const { state, mine, partner, myC } = setup();
+    const ctx = stubContext({ [myC[0]!]: 10 * M });
+    const p = state.players[myC[0]!]!;
+    p.contract = { capHit: 4 * M, expiresAfterSeason: state.date.season + 2 };
+    const proposal = {
+      fromTeamId: mine,
+      toTeamId: partner,
+      give: [p.id],
+      get: [],
+      retain: [{ playerId: p.id, pct: 50 }],
+    };
+    const res = handleCommand(state, { kind: 'trade.propose', proposal }, local, ctx);
+    if (!res.ok) throw new Error(res.error.message);
+    expect(state.players[p.id]!.contract!.capHit).toBe(2 * M);
+    const kept = state.capCharges.filter((c) => c.kind === 'retained' && c.teamId === mine);
+    expect(kept.map((c) => c.season)).toEqual([0, 1, 2].map((i) => state.date.season + i));
+    expect(kept.every((c) => c.amount === 2 * M)).toBe(true);
+  });
+
+  it('refuses too much, a fourth contract, or retaining the same contract twice', () => {
+    const { state, mine, partner, myC } = setup();
+    const ctx = stubContext(Object.fromEntries(myC.map((id) => [id, 10 * M])));
+    const offer = (id: string, pct: number) =>
+      evaluateTrade(state, ctx, {
+        fromTeamId: mine,
+        toTeamId: partner,
+        give: [id as PlayerId],
+        get: [],
+        retain: [{ playerId: id as PlayerId, pct }],
+      }).reasons[0]!.code;
+    for (const id of myC) {
+      state.players[id]!.contract = { capHit: 2 * M, expiresAfterSeason: state.date.season + 1 };
+    }
+    expect(offer(myC[0]!, 60)).toBe('retention');
+    expect(offer(myC[0]!, 50)).toBe('accepted');
+    // Three contracts already retained on: no fourth.
+    const charge = (playerId: string) => ({
+      teamId: mine,
+      playerId: playerId as PlayerId,
+      kind: 'retained' as const,
+      season: state.date.season,
+      amount: M,
+    });
+    state.capCharges.push(charge('x1'), charge('x2'), charge('x3'));
+    expect(offer(myC[0]!, 20)).toBe('retention');
+    state.capCharges = [{ ...charge(myC[1]!), teamId: partner }];
+    expect(offer(myC[1]!, 20)).toBe('retention');
+    expect(offer(myC[0]!, 20)).toBe('accepted');
+  });
+});

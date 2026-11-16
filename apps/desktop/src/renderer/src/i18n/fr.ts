@@ -14,7 +14,6 @@ export const fr: Record<MessageKey, string> = {
   'cap.summaryTitle': 'Masse salariale par saison',
   'cap.season': 'Saison',
   'cap.committed': 'Contrats',
-  'cap.deadCap': 'Masse morte',
   'cap.total': 'Total',
   'cap.space': 'Marge',
   'cap.limit': 'Plafond',
@@ -265,4 +264,9 @@ export const fr: Record<MessageKey, string> = {
   'lines.unit.D': 'Paire défensive {n}',
   'lines.unit.G': 'Gardiens (partant en premier)',
   'lines.scratches': 'Réservistes et blessés',
+  'trade.retain': 'Salaire retenu',
+  'trade.retainOption': 'retenir {pct} %',
+  'cap.deadCap': 'Rachats / retenues',
+  'trade.reason.retention':
+    'Impossible de retenir cette part du salaire de {player} ({max} % au plus, {contracts} contrats à la fois, jamais deux fois sur un même contrat).',
 };

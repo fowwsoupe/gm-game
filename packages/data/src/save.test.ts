@@ -45,7 +45,13 @@ describe('SaveFile', () => {
       state,
       {
         kind: 'trade.propose',
-        proposal: { fromTeamId: from, toTeamId: to, give: [cheapest.id], get: [] },
+        proposal: {
+          fromTeamId: from,
+          toTeamId: to,
+          give: [cheapest.id],
+          get: [],
+          retain: [{ playerId: cheapest.id, pct: 25 }],
+        },
       },
       local,
       generous,
@@ -53,6 +59,7 @@ describe('SaveFile', () => {
     if (!res.ok) throw new Error(res.error.message);
     save.persist(res.events, state);
     expect(save.loadState().players[cheapest.id]!.teamId).toBe(to);
+    expect(save.loadState().capCharges.some((c) => c.kind === 'retained')).toBe(true);
     expect(save.loadState()).toEqual(state);
     save.close();
   });

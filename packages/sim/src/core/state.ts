@@ -180,6 +180,11 @@ export function applyEvent(state: LeagueState, event: LeagueEvent): void {
       };
       move(event.give, event.toTeamId);
       move(event.get, event.fromTeamId);
+      for (const r of event.retained ?? []) {
+        const p = state.players[r.playerId]!;
+        if (p.contract) p.contract = { ...p.contract, capHit: r.capHit };
+        state.capCharges.push(...r.charges.map((c) => ({ ...c })));
+      }
       return;
     }
     case 'award.given':

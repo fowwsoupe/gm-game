@@ -29,7 +29,7 @@ import {
   rolloverSeason,
   signFreeAgent,
 } from './offseason';
-import { aiTrades, evaluateTrade } from './trades';
+import { aiTrades, evaluateTrade, planRetention } from './trades';
 import type { SimContext } from './context';
 
 /**
@@ -155,12 +155,15 @@ export function handleCommand(
           },
         };
       }
+      const plan = planRetention(state, ctx, proposal);
+      const retained = 'retained' in plan ? plan.retained : [];
       const ev = makeEvent(state, 'major', [proposal.fromTeamId, proposal.toTeamId], {
         kind: 'trade.completed',
         fromTeamId: proposal.fromTeamId,
         toTeamId: proposal.toTeamId,
         give: [...proposal.give],
         get: [...proposal.get],
+        ...(retained.length > 0 && { retained }),
       });
       applyEvent(state, ev);
       const names = (ids: readonly string[]) =>
