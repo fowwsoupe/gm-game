@@ -114,8 +114,13 @@ const DRAFT_POSITIONS: HockeyPosition[] = [
   'D',
   'G',
 ];
-/** Prospect tuning: potential = base + two dice of 0-15; today's rating is potential minus a gap. */
-const PROSPECT = { potentialBase: 53, gap: [12, 26] as const };
+/**
+ * Prospect tuning: potential = base + two dice of 0-15; today's rating is potential minus a gap.
+ * The base and the fictional league's starting ages (20-34) are set together so that a league
+ * 20 years on, built only from prospects, has the average rating it started with (balance lab,
+ * "League avg rating drift").
+ */
+const PROSPECT = { potentialBase: 52, gap: [12, 26] as const };
 
 const clamp = (n: number) => Math.max(1, Math.min(99, Math.round(n)));
 /** One value per rating key, drawn in the order the keys are listed. */
@@ -133,6 +138,7 @@ export function generateFictionalLeague(
 ): { teams: Team[]; players: Player[] } {
   const teams: Team[] = [];
   const players: Player[] = [];
+  let level = 0;
   for (let t = 0; t < teamCount; t++) {
     const name = `${CITIES[t % CITIES.length]!}|${NAMES[t % NAMES.length]!}`;
     const [city, nick] = name.split('|') as [string, string];
@@ -149,6 +155,7 @@ export function generateFictionalLeague(
     });
 
     const quality = rng.int(-8, 8);
+    level += quality / teamCount;
     const teamStart = players.length;
     for (const position of ROSTER) {
       const base = 62 + quality + rng.int(-10, 12);
@@ -157,7 +164,7 @@ export function generateFictionalLeague(
         id: `p${players.length}` as PlayerId,
         firstName: rng.pick(FIRST),
         lastName: rng.pick(LAST),
-        birthYear: rng.int(1990, 2007),
+        birthYear: rng.int(1993, 2007),
         teamId: id,
         position,
         ratings: {},
@@ -168,6 +175,12 @@ export function generateFictionalLeague(
       players.push(p);
     }
     fitPayroll(players.slice(teamStart), ruleset, rng.fork(`payroll${t}`));
+  }
+  // Every league starts at the same level, whatever the dice gave its teams: strong and weak
+  // teams around an average one.
+  for (const p of players) {
+    for (const k of Object.keys(p.ratings)) p.ratings[k] = clamp(p.ratings[k]! - level);
+    p.potential = clamp(p.potential - level);
   }
   return { teams, players };
 }
