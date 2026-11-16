@@ -1,6 +1,7 @@
 import type { Player, PlayerId, TeamId } from '@gm/shared';
 import type { Emit, LeagueState, Rng } from '../core';
 import type { SimContext } from '../context';
+import { payroll } from '../cba';
 import { overall } from '../players';
 import {
   ageIn,
@@ -47,7 +48,7 @@ export function expireContracts(state: LeagueState, emit: Emit): Map<TeamId, Pla
 }
 
 /**
- * Step 5a: each team re-signs its own expired players, best first, while it has a roster spot
+ * Step 5: each team re-signs its own expired players, best first, while it has a roster spot
  * and cap room. Players clearly below the league's typical rostered player walk, unless the
  * team needs that position.
  */
@@ -91,7 +92,7 @@ export function reSignPlayers(
 }
 
 /**
- * Step 5b: free agency. In rounds, each team below its position or roster minimum signs the
+ * Step 6: free agency. In rounds, each team below its position or roster minimum signs the
  * best free agent it can afford for what it needs; if the pool has nobody it can afford, it
  * signs a freshly generated undrafted player instead, so a team is never left short.
  * Teams only fill to the minimum. Worst teams go first.
@@ -148,5 +149,46 @@ export function fillRosters(
 
   while (order.map(signOne).some(Boolean)) {
     // keep going until a whole pass signs nobody
+  }
+}
+
+/**
+ * Step 7: a team below the cap floor signs the best free agent it can, paying at least what
+ * it is short of the floor (real teams overpay to get there). Usually one signing does it.
+ * Worst teams go first. Like the draft, this can take a roster past the maximum: until
+ * prospects and minor leagues exist, every signed player counts as rostered.
+ */
+export function meetCapFloor(
+  state: LeagueState,
+  ctx: SimContext,
+  rng: Rng,
+  emit: Emit,
+  season: number,
+  order: readonly TeamId[],
+) {
+  const { ruleset } = ctx;
+  for (const teamId of order) {
+    for (;;) {
+      const roster = rosterOf(state, teamId);
+      const short = ruleset.cap.lowerLimit - payroll(roster);
+      if (short <= 0) break;
+      const signed = freeAgents(state)
+        .sort((a, b) => overall(b) - overall(a) || a.id.localeCompare(b.id))
+        .some((p) => {
+          const contract = offerContract(
+            ruleset,
+            roster,
+            p,
+            season,
+            wantedYears(ageIn(p, season), rng),
+            { isResign: false, discount: false, atLeast: short },
+          );
+          if (contract) {
+            emit('minor', [teamId], { kind: 'player.signed', playerId: p.id, teamId, contract });
+          }
+          return contract !== null;
+        });
+      if (!signed) break;
+    }
   }
 }

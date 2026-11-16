@@ -5,9 +5,11 @@ import { app } from 'electron';
 import { openSave, type SaveFile } from '@gm/data';
 import {
   applyEvent,
+  capSheet,
   computeStandings,
   createLeague,
   defaultContext,
+  phaseOf,
   playerRecords,
   teamRecords,
   type LeagueState,
@@ -58,7 +60,7 @@ export class LeagueService {
     } catch {
       return { ok: false as const, errors: ['This file is not valid JSON.'] };
     }
-    const roster = ctx.sport.importRoster(json);
+    const roster = ctx.sport.importRoster(json, ctx.ruleset);
     if (!roster.ok) return { ok: false as const, errors: roster.errors };
     return { ok: true as const, ...this.start(createLeague(seed, ctx, roster)) };
   }
@@ -128,6 +130,24 @@ export class LeagueService {
       ),
     }));
     return [...teamRecords(seasons, champions), ...playerRecords(boards)];
+  }
+
+  /**
+   * The cap year in play (next season once the champion is crowned, since expiring deals are
+   * then off the books) and the seasons after it, as far as the longest possible contract.
+   */
+  capSheet(teamId: TeamId) {
+    const { state } = this.open();
+    const { ruleset } = defaultContext(state.rulesetId);
+    const over = state.championTeamId !== null;
+    return capSheet(ruleset, {
+      teamId,
+      players: Object.values(state.players),
+      charges: state.capCharges,
+      fromSeason: state.date.season + (over ? 1 : 0),
+      years: ruleset.contracts.maxYearsResign,
+      phase: over ? 'offseason' : phaseOf(ruleset.season.calendar, state.date),
+    });
   }
 
   feed(limit: number, minImportance?: Importance): LeagueEvent[] {

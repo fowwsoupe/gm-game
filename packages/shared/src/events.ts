@@ -1,4 +1,5 @@
 import type {
+  CapCharge,
   Contract,
   GameResult,
   Player,
@@ -54,6 +55,13 @@ export type LeagueEvent =
       changes: { playerId: PlayerId; ratings: Record<string, number>; potential: number }[];
     })
   | (EventBase & { kind: 'player.retired'; playerId: PlayerId })
+  /** Bought out: the player becomes a free agent and the team carries `charges` as dead cap. */
+  | (EventBase & {
+      kind: 'contract.boughtOut';
+      playerId: PlayerId;
+      teamId: TeamId;
+      charges: CapCharge[];
+    })
   /** Hurt in a game: out until day `until` (first day back) of the current season. */
   | (EventBase & { kind: 'player.injured'; playerId: PlayerId; days: number; until: number })
   /** Contract ran out: the player becomes a free agent. */

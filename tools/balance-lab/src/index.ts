@@ -23,6 +23,7 @@ import {
   teamStrength,
   type LeagueState,
   payroll,
+  validateContract,
 } from '@gm/sim';
 
 interface Check {
@@ -126,6 +127,8 @@ let payrollShare = 0;
 let payrollSamples = 0;
 let teamsOverCap = 0;
 let teamsUnderMinimum = 0;
+let teamsBelowFloor = 0;
+let illegalContracts = 0;
 let teamsOverPlayoffCap = 0;
 let maxPool = 0;
 for (let l = 0; l < leagues; l++) {
@@ -152,6 +155,17 @@ for (let l = 0; l < leagues; l++) {
       payrollShare += total / ctx.ruleset.cap.upperLimit;
       payrollSamples++;
       if (total > ctx.ruleset.cap.upperLimit) teamsOverCap++;
+      if (total < ctx.ruleset.cap.lowerLimit) teamsBelowFloor++;
+      // Every contract on the books must still pass the rules for the seasons it has left.
+      for (const p of roster) {
+        const left = p.contract ? p.contract.expiresAfterSeason - state.date.season + 1 : 0;
+        const issues = validateContract(ctx.ruleset, {
+          salaries: Array<number>(Math.max(1, left)).fill(p.contract?.capHit ?? 0),
+          signingAge: state.date.season - p.birthYear,
+          isResign: true,
+        });
+        if (!p.contract || left < 1 || issues.length > 0) illegalContracts++;
+      }
       const short = Object.entries(ctx.ruleset.roster.positionMin).some(
         ([pos, min]) => roster.filter((p) => p.position === pos).length < min,
       );
@@ -241,6 +255,8 @@ const checks: Check[] = [
     max: 12,
   },
   { name: 'Teams over the cap', value: teamsOverCap, min: 0, max: 0 },
+  { name: 'Teams below the cap floor', value: teamsBelowFloor, min: 0, max: 0 },
+  { name: 'Illegal or missing contracts on rosters', value: illegalContracts, min: 0, max: 0 },
   { name: 'Teams over the playoff cap', value: teamsOverPlayoffCap, min: 0, max: 0 },
   { name: 'Teams below roster minimum', value: teamsUnderMinimum, min: 0, max: 0 },
   { name: 'Free-agent pool, largest (unverified)', value: maxPool, min: 0, max: 150 },

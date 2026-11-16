@@ -56,9 +56,9 @@ export function offerContract(
   player: Player,
   season: number,
   years: number,
-  opts: { isResign: boolean; discount: boolean },
+  opts: { isResign: boolean; discount: boolean; atLeast?: number },
 ): Contract | null {
-  const ask = marketSalary(rules, player);
+  const ask = Math.max(marketSalary(rules, player), opts.atLeast ?? 0);
   const room = capRoom(rules, roster, player);
   const price = Math.min(ask, maxPlayerCapHit(rules), opts.discount ? room : ask);
   if (price < rules.cap.minSalary || price > room) return null;
@@ -78,7 +78,7 @@ export function entryContract(
   const years = elcYears(rules, ageIn(player, season));
   const price = Math.min(rules.contracts.elcSalary, capRoom(rules, roster, player));
   if (years === null || price < rules.cap.minSalary) return null;
-  return legal(rules, player, season, years, price, false);
+  return legal(rules, player, season, years, price, false, true);
 }
 
 function legal(
@@ -88,6 +88,7 @@ function legal(
   years: number,
   price: number,
   isResign: boolean,
+  elc = false,
 ): Contract | null {
   const maxYears = isResign ? rules.contracts.maxYearsResign : rules.contracts.maxYearsNewTeam;
   const length = Math.max(1, Math.min(years, maxYears));
@@ -95,6 +96,7 @@ function legal(
     salaries: Array<number>(length).fill(price),
     signingAge: ageIn(player, season),
     isResign,
+    elc,
   });
   return issues.length === 0 ? { capHit: price, expiresAfterSeason: season + length - 1 } : null;
 }

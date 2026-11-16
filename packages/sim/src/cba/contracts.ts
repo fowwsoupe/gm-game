@@ -17,6 +17,8 @@ export interface ContractTerms {
   signingAge: number;
   /** True if re-signing with the player's current team. */
   isResign: boolean;
+  /** An entry-level contract: its length is set by signing age and its salary is capped. */
+  elc?: boolean;
 }
 
 export type ContractIssue =
@@ -25,6 +27,9 @@ export type ContractIssue =
   | { code: 'above_maximum'; max: Dollars }
   | { code: 'variance'; season: number }
   | { code: 'year_too_low'; season: number }
+  | { code: 'elc_age'; age: number }
+  | { code: 'elc_length'; years: number }
+  | { code: 'elc_salary'; max: Dollars }
   | { code: 'empty' };
 
 export const averageAnnualValue = (salaries: Dollars[]): Dollars =>
@@ -56,7 +61,16 @@ export function validateContract(rules: Ruleset, terms: ContractTerms): Contract
     if (s < pct(highest, rules.contracts.minYearPctOfHighestYear))
       issues.push({ code: 'year_too_low', season: i });
   });
-  // TODO(feature): bonuses, 35+ rules, ELC limits.
+  if (terms.elc) {
+    const years = elcYears(rules, terms.signingAge);
+    if (years === null) issues.push({ code: 'elc_age', age: terms.signingAge });
+    else if (terms.salaries.length !== years) issues.push({ code: 'elc_length', years });
+    if (terms.salaries.some((s) => s > rules.contracts.elcSalary)) {
+      issues.push({ code: 'elc_salary', max: rules.contracts.elcSalary });
+    }
+  }
+  // Not modelled yet, so they cannot be broken: bonuses (contracts have none), 35+ contracts
+  // and the ELC slide (rules still to verify, see ruleset-nhl-2026.ts).
   return issues;
 }
 

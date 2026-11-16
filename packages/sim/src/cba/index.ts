@@ -13,3 +13,4 @@ export {
   type ContractTerms,
   type ContractIssue,
 } from './contracts';
+export { capIssues, capSheet, buyoutCharges, retentionIssues, type RetentionIssue } from './cap';

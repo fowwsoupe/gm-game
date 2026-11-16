@@ -1,6 +1,7 @@
 import Database from 'better-sqlite3';
 import type {
   AwardEntry,
+  CapCharge,
   GameResult,
   Importance,
   LeagueEvent,
@@ -97,6 +98,7 @@ export class SaveFile {
     const insertGame = this.db.prepare(
       'INSERT INTO games (id, season, day, home_team_id, away_team_id) VALUES (?, ?, ?, ?, ?)',
     );
+    const insertCharge = this.insertCapCharge();
     this.db.transaction(() => {
       for (const t of Object.values(state.teams)) {
         insertTeam.run(
@@ -125,6 +127,7 @@ export class SaveFile {
       }
       for (const g of state.schedule)
         insertGame.run(g.id, g.date.season, g.date.day, g.homeTeamId, g.awayTeamId);
+      for (const c of state.capCharges) insertCharge(c);
       this.writeClock(state);
       this.setMeta('sport', state.sport);
       this.setMeta('rulesetId', state.rulesetId);
@@ -199,7 +202,33 @@ export class SaveFile {
         ]),
       ),
       championTeamId: (this.getMeta('championTeamId') as TeamId | undefined) ?? null,
+      capCharges: (
+        this.db
+          .prepare(
+            'SELECT team_id, player_id, kind, season, amount FROM cap_charges ORDER BY rowid',
+          )
+          .all() as {
+          team_id: TeamId;
+          player_id: PlayerId;
+          kind: CapCharge['kind'];
+          season: number;
+          amount: number;
+        }[]
+      ).map((r) => ({
+        teamId: r.team_id,
+        playerId: r.player_id,
+        kind: r.kind,
+        season: r.season,
+        amount: r.amount,
+      })),
     };
+  }
+
+  private insertCapCharge() {
+    const stmt = this.db.prepare(
+      'INSERT INTO cap_charges (team_id, player_id, kind, season, amount) VALUES (?, ?, ?, ?, ?)',
+    );
+    return (c: CapCharge) => stmt.run(c.teamId, c.playerId, c.kind, c.season, c.amount);
   }
 
   /** Stores events and the rows they changed, in one transaction. */
@@ -236,6 +265,8 @@ export class SaveFile {
       'UPDATE players SET retired_season = ?, team_id = NULL, contract_json = NULL WHERE id = ?',
     );
     const setInjury = this.db.prepare('UPDATE players SET injured_until = ? WHERE id = ?');
+    const insertCharge = this.insertCapCharge();
+    const dropOldCharges = this.db.prepare('DELETE FROM cap_charges WHERE season < ?');
     const healAll = this.db.prepare('UPDATE players SET injured_until = NULL');
     const insertScheduled = this.db.prepare(
       'INSERT INTO games (id, season, day, home_team_id, away_team_id) VALUES (?, ?, ?, ?, ?)',
@@ -311,6 +342,10 @@ export class SaveFile {
           case 'player.retired':
             retire.run(e.date.season, e.playerId);
             break;
+          case 'contract.boughtOut':
+            setContract.run(null, null, e.playerId);
+            for (const c of e.charges) insertCharge(c);
+            break;
           case 'player.injured':
             setInjury.run(e.until, e.playerId);
             break;
@@ -341,6 +376,7 @@ export class SaveFile {
             }
             this.db.prepare("DELETE FROM meta WHERE key = 'championTeamId'").run();
             healAll.run();
+            dropOldCharges.run(e.season);
             break;
           case 'team.statusChanged':
             setStatus.run(e.to, e.teamId);

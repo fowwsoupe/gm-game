@@ -1,5 +1,5 @@
 import type { LeagueEvent } from './events';
-import type { TeamId } from './domain';
+import type { PlayerId, TeamId } from './domain';
 
 /**
  * Every action a human (or, later, a remote player) takes is a Command. Nothing in the UI
@@ -14,7 +14,9 @@ export type Command =
   | { kind: 'sim.advance'; days: number; stopOn?: 'never' | 'major' }
   | { kind: 'team.setUserControlled'; teamId: TeamId; userControlled: boolean }
   /** After the champion is crowned: age, retire, draft, re-sign and sign, then start next season. */
-  | { kind: 'season.rollover' };
+  | { kind: 'season.rollover' }
+  /** Buy out a player's contract (offseason only, once the champion is crowned). */
+  | { kind: 'contract.buyout'; playerId: PlayerId };
 // Planned (not implemented yet): 'trade.propose', 'contract.offer', 'lines.set', 'draft.pick' ...
 
 export type CommandKind = Command['kind'];

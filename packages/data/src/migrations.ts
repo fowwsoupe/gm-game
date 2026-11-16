@@ -118,4 +118,14 @@ export const migrations: readonly string[] = [
       json_extract(ratings_json, '$.hockeyIq')) / 7.0) AS INTEGER))
   WHERE position <> 'G' AND json_extract(ratings_json, '$.faceoffs') IS NULL;
   `,
+  // 10: dead cap (buyouts) a team owes in a season. Rows for past seasons are deleted.
+  `
+  CREATE TABLE IF NOT EXISTS cap_charges (
+    team_id TEXT NOT NULL REFERENCES teams(id),
+    player_id TEXT NOT NULL REFERENCES players(id),
+    kind TEXT NOT NULL,
+    season INTEGER NOT NULL,
+    amount INTEGER NOT NULL
+  );
+  `,
 ];

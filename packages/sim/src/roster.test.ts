@@ -17,7 +17,7 @@ describe('roster files', () => {
   it('round-trips: export a league, import it back, same players', () => {
     const league = fictional();
     const file = exportHockeyRoster(league, { season: 2027, name: 'Test' });
-    const res = importHockeyRoster(JSON.parse(JSON.stringify(file)));
+    const res = importHockeyRoster(JSON.parse(JSON.stringify(file)), ctx.ruleset);
     expect(res.ok).toBe(true);
     if (!res.ok) return;
     expect(res.teams).toHaveLength(league.teams.length);
@@ -28,7 +28,9 @@ describe('roster files', () => {
 
   it('a loaded roster is a playable league', () => {
     const file = exportHockeyRoster(fictional(), { season: 2031, name: 'Test' });
-    const res = importHockeyRoster(file);
+    // The fictional league starts in 2027: move its contracts to the file's season.
+    for (const p of file.players) if (p.contract) p.contract.expiresAfterSeason += 4;
+    const res = importHockeyRoster(file, ctx.ruleset);
     if (!res.ok) throw new Error(res.errors.join('\n'));
     const state = createLeague(1, ctx, res);
     expect(state.date.season).toBe(2031);
@@ -43,10 +45,10 @@ describe('roster files', () => {
   });
 
   it('rejects bad files with readable errors', () => {
-    expect(importHockeyRoster({ hello: 'world' }).ok).toBe(false);
+    expect(importHockeyRoster({ hello: 'world' }, ctx.ruleset).ok).toBe(false);
     const file = exportHockeyRoster(fictional(), { season: 2027, name: 'Test' });
     file.players[0]!.team = 'ZZZ';
-    const res = importHockeyRoster(file);
+    const res = importHockeyRoster(file, ctx.ruleset);
     expect(res.ok).toBe(false);
     if (!res.ok) expect(res.errors.join(' ')).toMatch(/Unknown team ZZZ/);
   });
@@ -55,7 +57,7 @@ describe('roster files', () => {
     const file = exportHockeyRoster(fictional(), { season: 2027, name: 'Test' });
     const abbr = file.teams[1]!.abbreviation;
     file.players = file.players.filter((p) => !(p.team === abbr && p.position === 'G'));
-    const res = importHockeyRoster(file);
+    const res = importHockeyRoster(file, ctx.ruleset);
     expect(res.ok).toBe(false);
   });
 
@@ -74,7 +76,7 @@ describe('roster files', () => {
     for (const p of file.players) if (p.skater) delete p.skater.faceoffs;
     const skater = file.players.find((p: { skater?: object }) => p.skater);
     const others = Object.values(skater.skater as Record<string, number>);
-    const res = importHockeyRoster(file);
+    const res = importHockeyRoster(file, ctx.ruleset);
     if (!res.ok) throw new Error(res.errors.join('\n'));
     const loaded = res.players.find((p) => p.id === `p_${skater.id}`)!;
     expect(loaded.ratings.faceoffs).toBe(
@@ -89,6 +91,22 @@ describe('roster files', () => {
     for (const team of league.teams) {
       const roster = league.players.filter((p) => p.teamId === team.id);
       expect(payroll(roster)).toBeLessThanOrEqual(tight.cap.upperLimit);
+    }
+  });
+
+  it('rejects contracts the league rules forbid, with readable lines', () => {
+    const file = exportHockeyRoster(fictional(), { season: 2027, name: 'Test' });
+    file.players[0]!.contract = { capHit: 30_000_000, expiresAfterSeason: 2028 };
+    file.players[1]!.contract = { capHit: 1_000_000, expiresAfterSeason: 2040 };
+    file.players[2]!.contract = { capHit: 1_000_000, expiresAfterSeason: 2025 };
+    const res = importHockeyRoster(file, ctx.ruleset);
+    expect(res.ok).toBe(false);
+    if (!res.ok) {
+      expect(res.errors).toEqual([
+        'players.0.contract: cap hit is above the maximum of $20.80M',
+        'players.1.contract: runs longer than the 7-season maximum',
+        'players.2.contract: ended before the 2027 season',
+      ]);
     }
   });
 });

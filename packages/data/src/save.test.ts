@@ -110,4 +110,34 @@ describe('SaveFile', () => {
     }
     save.close();
   });
+
+  it('saves a buyout and its dead cap, and drops past seasons at the rollover', () => {
+    const save = openSave(':memory:');
+    const state = createLeague(21, ctx);
+    save.saveNewLeague(state);
+    const played = handleCommand(state, { kind: 'sim.advance', days: 260 }, local, ctx);
+    if (!played.ok) throw new Error(played.error.message);
+    save.persist(played.events, state);
+    const target = Object.values(state.players).find(
+      (p) =>
+        p.teamId &&
+        state.teams[p.teamId]!.userControlled &&
+        p.contract!.expiresAfterSeason > state.date.season,
+    )!;
+    const bought = handleCommand(
+      state,
+      { kind: 'contract.buyout', playerId: target.id },
+      local,
+      ctx,
+    );
+    if (!bought.ok) throw new Error(bought.error.message);
+    save.persist(bought.events, state);
+    expect(state.capCharges.length).toBeGreaterThan(0);
+    expect(save.loadState()).toEqual(state);
+    const rolled = handleCommand(state, { kind: 'season.rollover' }, local, ctx);
+    if (!rolled.ok) throw new Error(rolled.error.message);
+    save.persist(rolled.events, state);
+    expect(save.loadState()).toEqual(state);
+    save.close();
+  });
 });
