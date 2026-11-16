@@ -37,9 +37,11 @@ export const UNIT_WEIGHT = {
 
 /**
  * Faceoffs: each point of the centres' draw skill (by ice time) above 50 adds this much to both
- * attack and defence. Small on purpose: possession off a draw is worth little in real games.
+ * attack and defence. Calibrated (ml/src/faceoffs.py, NHL 2022-25): one SD of team faceoff % is
+ * worth about +0.07 goals/game after prior-season goal diff (95% CI -0.04 to 0.17). At 0.2 the sim
+ * gives about +0.05 per SD of draw skill (balance lab "Faceoff effect" check).
  */
-export const FACEOFF_WEIGHT = 0.05;
+export const FACEOFF_WEIGHT = 0.2;
 
 const byRating = (a: Player, b: Player) => overall(b) - overall(a) || a.id.localeCompare(b.id);
 

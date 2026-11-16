@@ -1,6 +1,6 @@
 # Player ratings (hockey)
 
-Status: **v0.1 list in code (roster format v2); `faceoffs` is provisional.** The list is code in
+Status: **v0.1 list in code (roster format v2).** The list is code in
 `packages/shared/src/sports/hockey.ts` (`SKATER_RATINGS`, `GOALIE_RATINGS`). The roster
 schema, player generation and roster export are all built from those two lists, so this file
 explains them and the code defines them. Final M1 sign-off still waits on the data-scope
@@ -19,16 +19,16 @@ Changing the list means: edit the constant, bump `ROSTER_FORMAT_VERSION`, upgrad
 
 ## Skaters (C, LW, RW, D)
 
-| Key            | Meaning                                    | In the sim today                                        |
-| -------------- | ------------------------------------------ | ------------------------------------------------------- |
-| `skating`      | Speed and agility                          | 10% of a skater's attack                                |
-| `shooting`     | Getting shots off from good ice, finishing | 40% of attack; who shoots and how dangerous the shot is |
-| `passing`      | Setting up chances                         | 30% of attack; who gets the assists                     |
-| `puckHandling` | Holding the puck, controlled entries/exits | 20% of attack                                           |
-| `defense`      | Suppressing shots and chances against      | 50% of a skater's defence; picks the penalty killers    |
-| `physical`     | Battles, hits, net-front play              | 20% of defence; who takes penalties                     |
-| `hockeyIq`     | Decision quality                           | 30% of defence                                          |
-| `faceoffs`     | Winning draws (matters for centres)        | The centres' draw skill nudges both attack and defence  |
+| Key            | Meaning                                    | In the sim today                                                           |
+| -------------- | ------------------------------------------ | -------------------------------------------------------------------------- |
+| `skating`      | Speed and agility                          | 10% of a skater's attack                                                   |
+| `shooting`     | Getting shots off from good ice, finishing | 40% of attack; who shoots and how dangerous the shot is                    |
+| `passing`      | Setting up chances                         | 30% of attack; who gets the assists                                        |
+| `puckHandling` | Holding the puck, controlled entries/exits | 20% of attack                                                              |
+| `defense`      | Suppressing shots and chances against      | 50% of a skater's defence; picks the penalty killers                       |
+| `physical`     | Battles, hits, net-front play              | 20% of defence; who takes penalties                                        |
+| `hockeyIq`     | Decision quality                           | 30% of defence                                                             |
+| `faceoffs`     | Winning draws (matters for centres)        | The centres' draw skill nudges both attack and defence (calibrated, below) |
 
 ## Goalies (G)
 
@@ -56,7 +56,7 @@ season's goals per 60.
 | On/off-ice xG% gap        | 0.80    | 0.61           | Carries team and usage effects; does not isolate a key      |
 | Takeaways per 60          | 0.58    | 0.33           | Weak support for `defense` / `hockeyIq`, not a measurement  |
 | Finishing over xG per 60  | 0.32    | 0.13           | Finishing is real but small: one `shooting` key, not two    |
-| Faceoff %                 | 0.75    | —              | Repeatable: `faceoffs` key, provisional (no win effect yet) |
+| Faceoff %                 | 0.75    | —              | Repeatable, small win effect (below): `faceoffs` key        |
 | Hits per 60               | 0.91    | −0.14          | A real style, not a scoring skill: `physical` stays small   |
 | Goalie GSAx per 60        | 0.11    | —              | Barely repeats, includes team effects: keep goalies small   |
 
@@ -73,10 +73,14 @@ estimate. Treat these as design choices, not measured talents.
 
 - **Split `shooting` into accuracy and power?** No. The shot data cannot separate them (shot
   type is the only hint), and finishing above expected repeats weakly (r 0.32).
-- **Faceoffs: own key or part of `hockeyIq`?** Own key, **provisional**. Faceoff % repeats at
-  r 0.75, and the study calls it repeatable enough to test as a separate centre skill, but it did
-  not measure an effect on winning. The sim weight is kept small until that is tested. Saves and v1 roster files start each skater's `faceoffs` at the average of his other
-  ratings, so nobody's overall moves.
+- **Faceoffs: own key or part of `hockeyIq`?** Own key, **kept**. Faceoff % repeats at r 0.75.
+  The effect on winning (`ml/src/faceoffs.py`, 128 team seasons): one SD of team faceoff % (2.6
+  points) goes with +0.23 goals/game raw, which mostly reflects better teams having better
+  centres, and +0.067 goals/game (95% CI -0.04 to 0.17) after the prior season's goal diff. The
+  sim's `FACEOFF_WEIGHT` was 0.05, worth about +0.01 per SD, so faceoffs did almost nothing. It is
+  now 0.2, about +0.05 per SD, and the balance lab checks it stays within 0.02-0.17. Saves and v1
+  roster files start each skater's `faceoffs` at the average of his other ratings, so nobody's
+  overall moves.
 - **`discipline` and `durability`?** Not for v0.1. The study has no penalty or injury data to
   base them on; `physical` drives penalties and injuries use a flat rate. Revisit with data.
 - **Handedness?** A fixed player attribute (not a 1–99 rating) when line fit and power-play
