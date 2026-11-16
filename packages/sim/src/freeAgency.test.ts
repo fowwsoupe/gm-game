@@ -4,7 +4,10 @@ import {
   createLeague,
   defaultContext,
   handleCommand,
+  overall,
   personalityOf,
+  roomFor,
+  seenBy,
   signFreeAgent,
   signingInterest,
   type LeagueState,
@@ -155,6 +158,46 @@ describe('AI offers in free agency', () => {
       (e) => e.kind === 'news.posted' && e.headline === 'event.lostFreeAgent',
     );
     expect(lost).toBe(target.teamId !== mine);
+  });
+
+  it('a full contender lets its worst depth player go for a star, nobody else does', () => {
+    const { state } = finishedSeason(23);
+    run(state, { kind: 'offseason.openFreeAgency' });
+    const { maxActive } = ctx.ruleset.roster;
+    const size = (id: TeamId) => Object.values(state.players).filter((x) => x.teamId === id).length;
+    const team = Object.values(state.teams).find(
+      (t) => !t.userControlled && size(t.id) < maxActive,
+    )!;
+    // Fill the roster from the pool (cheap deals) and free a star from another team.
+    for (const p of freeAgents(state)) {
+      if (size(team.id) >= maxActive) break;
+      p.teamId = team.id;
+      p.contract = { capHit: ctx.ruleset.cap.minSalary, expiresAfterSeason: state.date.season + 2 };
+    }
+    const seen = (p: Player) => overall(seenBy(team, p));
+    const star = Object.values(state.players)
+      .filter((p) => p.teamId !== null && p.teamId !== team.id)
+      .sort((a, b) => seen(b) - seen(a))[0]!;
+    star.teamId = null;
+    delete star.contract;
+    const salary = ctx.ruleset.cap.minSalary;
+
+    team.plan = { kind: 'retool', since: state.date.season };
+    expect(roomFor(state, ctx, team.id, star, salary)).toBeNull();
+
+    team.plan = { kind: 'contend', since: state.date.season };
+    const room = roomFor(state, ctx, team.id, star, salary)!;
+    expect(room.letGo).toHaveLength(1);
+    const roster = Object.values(state.players)
+      .filter((p) => p.teamId === team.id)
+      .sort((a, b) => seen(b) - seen(a));
+    // Outside the core, and nobody outside the core rated lower at a position he can spare.
+    expect(roster.slice(0, 8)).not.toContain(room.letGo[0]);
+    expect(seen(room.letGo[0]!)).toBeLessThan(seen(star));
+    expect(room.freed).toBeGreaterThan(0);
+    // A depth free agent is no reason to make room.
+    const weak = freeAgents(state).sort((a, b) => seen(a) - seen(b))[0]!;
+    expect(roomFor(state, ctx, team.id, weak, salary)).toBeNull();
   });
 
   it('advancing a day needs free agency open', () => {
