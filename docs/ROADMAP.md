@@ -24,7 +24,7 @@ Builds the engines everything else depends on.
 - [x] NHL-only held-out study done ([report](M1_PROTOTYPE_REPORT.md)); rating list v2 in code ([RATINGS.md](RATINGS.md)); `faceoffs` effect measured and calibrated (`ml/src/faceoffs.py`); M1 signed off on the NHL-only prototype
 - [x] Hidden ratings (list v2) + stats-to-ratings model v1 (`ratingsFromStats`, fitted on the sim by `pnpm ratings:fit`, with uncertainty); roster import does not use it yet (M4)
 - [x] Line-by-line game sim (`sports/hockey/game.ts`) + "result only" mode; trained shot model (Azmi) plugs into `GoalModel` as a `gm-xg-table`
-- [x] Balance lab: league-health report (`pnpm lab`) with multi-year checks (talent drift, dynasties, cap, playoff turnover, goalie save % repeatability, faceoff effect, goals vs expected); green except "better team wins a best-of-7", about half a point under its floor since goalie form
+- [x] Balance lab: league-health report (`pnpm lab`) with multi-year checks (talent drift, dynasties, cap, playoff turnover, goalie save % repeatability, faceoff effect, goals vs expected); green except "playoff teams new each year" (about 30.7% against a 31% floor, the same on three seed sets) and the long-run known gaps it lists
 - [x] Speed test in CI: day, season and year-20 budgets, plus year-20 screen data (standings, leaders, cap sheet)
 - [x] Design system: tokens, team theming, Card, Button, PercentileBar, PlayerCard, BroadcastCaption
 - [x] Command layer + event log + single reducer (multiplayer-ready)
@@ -47,7 +47,7 @@ Build order, owners and "done when" for each step: **[V0.1_PLAN.md](V0.1_PLAN.md
 - [~] Full season calendar: 84 games (divisions, conferences, back-to-backs) → playoffs → awards → draft → re-sign → FA done; camp and a trade deadline that matters wait for trades (M6)
 - [~] Trades v1: surplus value per team (status, rentals, negative contracts), anti-quantity, cap and position checks, AI explains itself, trade screen, AI-to-AI trades (both GMs must accept), retained salary, draft picks (next three drafts, value curve by projected slot) done, AI GMs pay with picks; trade block, conditional picks to do
 - [~] Contracts & cap: CBA checks, buyouts, cap sheet screen, cap advisor, offseason re-signing and in-season extensions done; RFA / UFA, bonuses, trade protection to do
-- [~] Free agency v1: free-agency window in the summer, offers with an interest meter (money, winning, role, term weighted by age), signings any time outside the playoffs done; personalities, loyalty and hometown discounts, AI bidding to do
+- [~] Free agency v1: free-agency window in the summer, offers with an interest meter (money, winning, role, term weighted by age), signings any time outside the playoffs, personalities (greed, ambition), AI offers, and AI re-signing by loyalty and ambition done; loyalty and hometown discounts to do
 - [~] Draft v1: class announced after the playoffs with scouted potential ranges (AI sees the same ranges), your ranked list drives your picks; scout reports and draft-room trades to do
 - [x] Playoffs: bracket, NHL-style wild cards, honest momentum (per-game goalie form, calibrated), Playoff MVP, playoff cap; the cup is "Champion" until it is named
 - [x] Awards, records, history (own award names, Playoff MVP included)

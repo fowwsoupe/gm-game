@@ -1,7 +1,7 @@
 /**
  * People engine.
  * Owns: personalities, morale, player priorities, AI GM and owner styles, chemistry inputs.
- * Personalities come from the player's id (`personalityOf`); free agency weighs them.
+ * Personalities come from the player's id (`personalityOf`); free agency and re-signing weigh them.
  * AI GMs (`gmOf`) have a style and a skill; AI decisions look at players as their GM sees them (`seenBy`).
  * Chemistry v1 is time together (`chemistry`), worth at most a rating point in the game.
  * TODO(feature): morale; chemistry from linemates, builds and leaders.
