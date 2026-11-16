@@ -2,7 +2,7 @@ import { useState } from 'react';
 import type { PlayerProfile, TeamId } from '@gm/shared';
 import { useCareer, useDispatch, usePlayers, useSigningInterest, useTeams } from '@/lib/queries';
 import { useT, type MessageKey } from '@/i18n';
-import { Button, Card, PercentileBar, PlayerCard } from '@/ui';
+import { Button, Card, Face, PercentileBar, PlayerCard } from '@/ui';
 import { money, statValue } from '@/lib/format';
 
 const FREE_AGENTS = 'fa';
@@ -129,6 +129,7 @@ function Profile({ player: p, signFor }: { player: PlayerProfile; signFor: TeamI
     <div className="space-y-2">
       <PlayerCard
         name={`${p.firstName} ${p.lastName}`}
+        face={<Face seed={p.id} age={p.age} />}
         subtitle={t('roster.subtitle', { position: p.position, age: p.age })}
         bars={p.percentiles.map((x) => ({
           label: t(`rating.${x.key}` as MessageKey),

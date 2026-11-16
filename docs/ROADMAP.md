@@ -59,7 +59,7 @@ Build order, owners and "done when" for each step: **[V0.1_PLAN.md](V0.1_PLAN.md
 - [~] Home hub: top strip (record, place, playoff odds, cap space, next game), To do that clears to zero, news, playoffs done; sim-to-date bar to do
 - [~] Roster & lines: roster screen with stats and player cards done; drag-and-drop lines, PP/PK formations, goalie rules to do
 - [~] Player profile, stats & leaders, standings, team pages, game center: percentile player card, leaders, standings, game center done; full profile (career stats, history) to do
-- [ ] Generated faces
+- [~] Generated faces: deterministic SVG face per player that greys and lines with age, on the player card; more variety and use across screens to do
 
 **Rosters**
 

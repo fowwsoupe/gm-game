@@ -1,5 +1,7 @@
 import type { ReactNode } from 'react';
 
+export { Face } from './Face';
+
 /**
  * Design-system components. Screens are built from these, not from raw divs with
  * one-off styles, so the whole game looks like one product. Add components here first.
@@ -75,18 +77,24 @@ export function PlayerCard({
   name,
   subtitle,
   bars,
+  face,
   className = '',
 }: {
   name: string;
   subtitle?: ReactNode;
+  /** Optional portrait (e.g. a generated `Face`). */
+  face?: ReactNode;
   bars: { label: string; value: number }[];
   className?: string;
 }) {
   return (
     <Card className={className}>
-      <div className="mb-3 border-l-4 border-[var(--team-primary)] pl-3">
-        <div className="text-lg font-semibold leading-tight">{name}</div>
-        {subtitle && <div className="text-sm text-muted">{subtitle}</div>}
+      <div className="mb-3 flex items-center gap-3">
+        {face}
+        <div className="border-l-4 border-[var(--team-primary)] pl-3">
+          <div className="text-lg font-semibold leading-tight">{name}</div>
+          {subtitle && <div className="text-sm text-muted">{subtitle}</div>}
+        </div>
       </div>
       <div className="space-y-1.5">
         {bars.map((b) => (
