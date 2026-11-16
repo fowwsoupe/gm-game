@@ -138,5 +138,5 @@ describe('chemistry in games', () => {
     // Worth something, but capped: a few tenths of a goal a game at most.
     expect(diff / games).toBeGreaterThan(0.02);
     expect(diff / games).toBeLessThan(0.6);
-  });
+  }, 30_000); // ~1.5 s locally, ~5 s on CI; seeded, so the threshold never flakes
 });
