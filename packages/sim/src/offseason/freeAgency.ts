@@ -3,7 +3,7 @@ import type { Emit, LeagueState, Rng } from '../core';
 import type { SimContext } from '../context';
 import { payroll } from '../cba';
 import { overall } from '../players';
-import { seenBy } from '../people';
+import { planStatus, seenBy } from '../people';
 import {
   ageIn,
   resignAsk,
@@ -24,6 +24,9 @@ function typicalRating(state: LeagueState): number {
     .sort((a, b) => a - b);
   return rostered[Math.floor(rostered.length / 2)] ?? 0;
 }
+
+/** A rebuilding team does not re-sign players this old. */
+const REBUILD_LETS_GO = 30;
 
 /** Chance a player agrees to re-sign with his team: players like to stay with a winner. */
 const RESIGN_CHANCE: Record<TeamStatus, number> = {
@@ -97,8 +100,11 @@ export function reSignPlayers(
       if (roster.length >= ruleset.roster.maxActive) break;
       const needed = countAt(roster, p.position) < (ruleset.roster.positionMin[p.position] ?? 0);
       if (!needed && seen(p) < typical - RESIGN_SLACK) continue;
+      // A rebuilding team lets its veterans go (unless it needs the position).
+      if (!needed && team.plan?.kind === 'rebuild' && ageIn(p, season) >= REBUILD_LETS_GO) continue;
       // Not every player wants to stay: some test the market (and the worst teams pick first).
-      if (!rng.chance(RESIGN_CHANCE[state.teamStatus[teamId] ?? 'bubble'])) continue;
+      if (!rng.chance(RESIGN_CHANCE[planStatus(team, state.teamStatus[teamId] ?? 'bubble')]))
+        continue;
       const contract = offerContract(
         ruleset,
         roster,

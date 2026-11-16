@@ -92,7 +92,7 @@ export class SaveFile {
 
   saveNewLeague(state: LeagueState) {
     const insertTeam = this.db.prepare(
-      'INSERT INTO teams (id, city, name, abbreviation, user_controlled, status, conference, division, gm_json) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)',
+      'INSERT INTO teams (id, city, name, abbreviation, user_controlled, status, conference, division, gm_json, plan_json) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?)',
     );
     const insertPlayer = this.db.prepare(
       `INSERT INTO players (id, team_id, first_name, last_name, birth_year, position, potential, ratings_json, contract_json)
@@ -114,6 +114,7 @@ export class SaveFile {
           t.conference ?? null,
           t.division ?? null,
           t.gm ? JSON.stringify(t.gm) : null,
+          t.plan ? JSON.stringify(t.plan) : null,
         );
       }
       for (const p of Object.values(state.players)) {
@@ -292,6 +293,7 @@ export class SaveFile {
     const setStatus = this.db.prepare('UPDATE teams SET status = ? WHERE id = ?');
     const setControl = this.db.prepare('UPDATE teams SET user_controlled = ? WHERE id = ?');
     const setGm = this.db.prepare('UPDATE teams SET gm_json = ? WHERE id = ?');
+    const setPlan = this.db.prepare('UPDATE teams SET plan_json = ? WHERE id = ?');
     const setTeam = this.db.prepare('UPDATE players SET team_id = ? WHERE id = ?');
     // Who joined a new team (or left one) in these events; written from the final state below.
     const moved = new Set<string>();
@@ -421,6 +423,9 @@ export class SaveFile {
           case 'team.gmChanged':
             setGm.run(JSON.stringify(e.gm), e.teamId);
             break;
+          case 'team.planChanged':
+            setPlan.run(JSON.stringify(e.plan), e.teamId);
+            break;
           case 'contract.extended':
             setExtension.run(JSON.stringify(e.contract), e.playerId);
             break;
@@ -541,6 +546,7 @@ export class SaveFile {
       conference: string | null;
       division: string | null;
       gm_json: string | null;
+      plan_json: string | null;
     }[];
     return rows.map((r) => ({
       id: r.id as Team['id'],
@@ -551,6 +557,7 @@ export class SaveFile {
       ...(r.division ? { division: r.division } : {}),
       userControlled: r.user_controlled === 1,
       ...(r.gm_json ? { gm: JSON.parse(r.gm_json) as NonNullable<Team['gm']> } : {}),
+      ...(r.plan_json ? { plan: JSON.parse(r.plan_json) as NonNullable<Team['plan']> } : {}),
     }));
   }
 

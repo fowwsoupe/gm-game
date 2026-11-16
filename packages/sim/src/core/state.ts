@@ -79,6 +79,11 @@ export function applyEvent(state: LeagueState, event: LeagueEvent): void {
       state.date = event.to;
       state.rngState = event.rngState;
       return;
+    case 'team.planChanged': {
+      const team = state.teams[event.teamId];
+      if (team) team.plan = event.plan;
+      return;
+    }
     case 'team.gmChanged': {
       const team = state.teams[event.teamId];
       if (team) team.gm = event.gm;

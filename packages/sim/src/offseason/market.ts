@@ -20,6 +20,11 @@ export const MARKET_DAYS = 5;
 
 /** A team with a full-enough roster only goes after a clear upgrade at the position. */
 const UPGRADE_MARGIN = 3;
+/** A contender chases smaller upgrades and pays this much more again. */
+const CONTEND_MARGIN = 1;
+const CONTEND_PREMIUM = 0.05;
+/** A rebuilding team signs nobody older than this unless it is short. */
+const REBUILD_MAX_AGE = 27;
 
 /** Asking price times this is what an AI team offers (some pay a little over to win him). */
 const PREMIUMS = [1, 1.05, 1.1, 1.15];
@@ -86,21 +91,25 @@ function makeOffers(state: LeagueState, ctx: SimContext, rng: Rng, emit: Emit): 
     const needed = neededPosition(ruleset, roster);
     const short = needed !== null || roster.length < ruleset.roster.minActive;
     if (!short && roster.length >= ruleset.roster.maxActive) continue;
+    const plan = team.plan?.kind;
     const wants = (p: Player) => {
       if (needed !== null) return p.position === needed;
       if (short) return true;
+      if (plan === 'rebuild' && season - p.birthYear > REBUILD_MAX_AGE) return false;
       const worst = Math.min(
         ...roster.filter((r) => r.position === p.position).map(seen),
         Infinity,
       );
-      return seen(p) >= worst + UPGRADE_MARGIN;
+      return seen(p) >= worst + (plan === 'contend' ? CONTEND_MARGIN : UPGRADE_MARGIN);
     };
     for (const p of pool) {
       if (p.teamId !== null || !wants(p)) continue;
       if (state.faOffers.some((o) => o.playerId === p.id && o.teamId === teamId)) continue;
       const ask = ctx.models.contractDemand.ask(ruleset, p);
       const premium =
-        PREMIUMS[rng.int(0, PREMIUMS.length - 1)]! + LEAN_PREMIUM * GM_LEAN[gmOf(team).style];
+        PREMIUMS[rng.int(0, PREMIUMS.length - 1)]! +
+        LEAN_PREMIUM * GM_LEAN[gmOf(team).style] +
+        (plan === 'contend' ? CONTEND_PREMIUM : 0);
       const salary = Math.round(ask * Math.max(1, premium));
       const years = Math.min(
         wantedYears(season - p.birthYear, rng),

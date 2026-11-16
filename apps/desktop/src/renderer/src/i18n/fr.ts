@@ -97,6 +97,8 @@ export const fr: Record<MessageKey, string> = {
   'event.lotteryWon': '{team} a remporté la loterie du repêchage',
   'event.gmFired': '{team} congédie son directeur général',
   'event.gmLeft': 'Le directeur général de {team} passe à autre chose',
+  'event.planRebuild': '{team} annonce une reconstruction',
+  'event.planContend': '{team} mise tout sur la saison',
   'event.championCrowned': '{team} a remporté le championnat',
   'event.awardWon': '{player} ({team}) a remporté le titre de {award}',
   'award.champion': 'Champion',

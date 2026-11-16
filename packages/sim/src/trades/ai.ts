@@ -1,9 +1,15 @@
 import type { Player, TeamId, TeamStatus } from '@gm/shared';
 import type { Emit, LeagueState, Rng } from '../core';
 import type { SimContext } from '../context';
-import { evaluateTrade, teamContext, tradeWindowOpen } from './evaluate';
+import {
+  cachedContext,
+  evaluateTrade,
+  newTradeCache,
+  tradeWindowOpen,
+  type TradeCache,
+} from './evaluate';
 import { draftPicks } from '../league';
-import { GM_LEAN, gmOf, seenBy } from '../people';
+import { GM_LEAN, gmOf, planStatus, seenBy } from '../people';
 
 /** Chance the league makes a trade in a given week (when a deal both sides like exists). */
 const WEEKLY_TRADE_CHANCE = 0.8;
@@ -19,15 +25,13 @@ const SELLING: readonly TeamStatus[] = ['seller', 'rebuilder', 'crisis'];
  * Player values for one week's trade talks, memoized: contexts scan the whole league and values
  * run the valuator, so each is computed once per player and team.
  */
-function valuer(state: LeagueState, ctx: SimContext) {
-  const contexts = new Map<TeamId, ReturnType<typeof teamContext>>();
+function valuer(state: LeagueState, ctx: SimContext, cache: TradeCache) {
   const values = new Map<string, number>();
   return (p: Player, teamId: TeamId) => {
     const key = `${p.id}@${teamId}`;
     let v = values.get(key);
     if (v === undefined) {
-      let team = contexts.get(teamId);
-      if (!team) contexts.set(teamId, (team = teamContext(state, ctx, teamId)));
+      const team = cachedContext(state, ctx, teamId, cache);
       v = ctx.models.valuation.value(seenBy(state.teams[teamId]!, p), team, ctx.ruleset).surplus;
       values.set(key, v);
     }
@@ -48,7 +52,8 @@ export function aiTrades(state: LeagueState, ctx: SimContext, rng: Rng, emit: Em
     .filter((t) => !t.userControlled)
     .map((t) => t.id)
     .sort();
-  const status = (id: TeamId) => state.teamStatus[id] ?? 'bubble';
+  // An AI team acts on its plan over today's standings (a rebuilder sells even when winning).
+  const status = (id: TeamId) => planStatus(state.teams[id]!, state.teamStatus[id] ?? 'bubble');
   // A team on the bubble goes the way its GM leans: a win-now GM buys, a builder sells.
   const lean = (id: TeamId) => GM_LEAN[gmOf(state.teams[id]!).style];
   const buys = (id: TeamId) =>
@@ -64,7 +69,8 @@ export function aiTrades(state: LeagueState, ctx: SimContext, rng: Rng, emit: Em
     Object.values(state.players)
       .filter((p) => p.teamId === id)
       .sort((a, b) => a.id.localeCompare(b.id));
-  const value = valuer(state, ctx);
+  const cache = newTradeCache();
+  const value = valuer(state, ctx, cache);
 
   for (let i = 0; i < PAIRS_TRIED; i++) {
     const buyer = rng.pick(buyers);
@@ -90,21 +96,31 @@ export function aiTrades(state: LeagueState, ctx: SimContext, rng: Rng, emit: Em
     ];
     for (const offer of offers) {
       const get = [target.id];
-      const sellerSays = evaluateTrade(state, ctx, {
-        fromTeamId: buyer,
-        toTeamId: seller,
-        give: offer.give as Player['id'][],
-        get,
-        givePicks: offer.givePicks,
-      });
+      const sellerSays = evaluateTrade(
+        state,
+        ctx,
+        {
+          fromTeamId: buyer,
+          toTeamId: seller,
+          give: offer.give as Player['id'][],
+          get,
+          givePicks: offer.givePicks,
+        },
+        cache,
+      );
       if (!sellerSays.accepted) continue;
-      const buyerSays = evaluateTrade(state, ctx, {
-        fromTeamId: seller,
-        toTeamId: buyer,
-        give: get,
-        get: offer.give as Player['id'][],
-        getPicks: offer.givePicks,
-      });
+      const buyerSays = evaluateTrade(
+        state,
+        ctx,
+        {
+          fromTeamId: seller,
+          toTeamId: buyer,
+          give: get,
+          get: offer.give as Player['id'][],
+          getPicks: offer.givePicks,
+        },
+        cache,
+      );
       if (!buyerSays.accepted) continue;
       emit('major', [buyer, seller], {
         kind: 'trade.completed',
@@ -148,7 +164,8 @@ export function aiOffers(state: LeagueState, ctx: SimContext, rng: Rng, emit: Em
   const teams = Object.values(state.teams).sort((a, b) => a.id.localeCompare(b.id));
   const ai = teams.filter((t) => !t.userControlled).map((t) => t.id);
   if (!ai.length) return;
-  const value = valuer(state, ctx);
+  const cache = newTradeCache();
+  const value = valuer(state, ctx, cache);
   const roster = (id: TeamId) =>
     Object.values(state.players)
       .filter((p) => p.teamId === id)
@@ -165,12 +182,17 @@ export function aiOffers(state: LeagueState, ctx: SimContext, rng: Rng, emit: Em
       .sort((a, b) => gap(b, human, caller) - gap(a, human, caller))
       .find(
         (p) =>
-          evaluateTrade(state, ctx, {
-            fromTeamId: human,
-            toTeamId: caller,
-            give: [target.id],
-            get: [p.id],
-          }).accepted,
+          evaluateTrade(
+            state,
+            ctx,
+            {
+              fromTeamId: human,
+              toTeamId: caller,
+              give: [target.id],
+              get: [p.id],
+            },
+            cache,
+          ).accepted,
       );
     if (!offer) continue;
     emit('notable', [human, caller], {

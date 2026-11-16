@@ -150,4 +150,8 @@ export const migrations: readonly string[] = [
   `
   ALTER TABLE teams ADD COLUMN gm_json TEXT;
   `,
+  // 15: the AI GM's plan for his team (contend, retool, rebuild). NULL = none yet.
+  `
+  ALTER TABLE teams ADD COLUMN plan_json TEXT;
+  `,
 ];

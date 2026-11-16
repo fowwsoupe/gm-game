@@ -1,6 +1,14 @@
 import { describe, expect, it } from 'vitest';
 import type { Team } from '@gm/shared';
-import { createLeague, defaultContext, gmOf, misread, seenBy } from './index';
+import {
+  choosePlan,
+  createLeague,
+  defaultContext,
+  gmOf,
+  misread,
+  planStatus,
+  seenBy,
+} from './index';
 
 const ctx = defaultContext();
 
@@ -44,5 +52,45 @@ describe('AI GMs', () => {
     const seen = seenBy({ ...team, gm: { style: 'balanced', skill: 0 } }, player);
     expect(JSON.stringify(player)).toBe(before);
     expect(seen.potential).not.toBe(player.potential);
+  });
+
+  it('plans: a good young core contends, a weak old one rebuilds, a rebuild gets 2-4 seasons', () => {
+    const plan = (
+      coreZ: number,
+      coreAge: number,
+      current?: { kind: 'rebuild' | 'contend'; since: number },
+    ) => choosePlan({ coreZ, coreAge, style: 'balanced', current, season: 2030 });
+    expect(plan(1.2, 26)).toBe('contend');
+    expect(plan(-1.2, 30)).toBe('rebuild');
+    expect(plan(0, 27)).toBe('retool');
+    // A good core that has aged closes the window.
+    expect(plan(0.8, 33)).not.toBe('contend');
+    // A rebuild is not abandoned after one season, and ends after four.
+    expect(plan(0.4, 24, { kind: 'rebuild', since: 2029 })).toBe('rebuild');
+    expect(plan(-2, 30, { kind: 'rebuild', since: 2026 })).toBe('retool');
+    // A contender holds on a little longer than it would start.
+    expect(plan(0.35, 28, { kind: 'contend', since: 2028 })).toBe('contend');
+    expect(plan(0.35, 28)).toBe('retool');
+  });
+
+  it('planStatus: a rebuilder sells while winning, a contender buys through a slump, humans unaffected', () => {
+    const team = {
+      id: 't1',
+      city: 'A',
+      name: 'B',
+      abbreviation: 'AB',
+      userControlled: false,
+    } as Team;
+    expect(planStatus({ ...team, plan: { kind: 'rebuild', since: 2030 } }, 'buyer')).toBe(
+      'rebuilder',
+    );
+    expect(planStatus({ ...team, plan: { kind: 'contend', since: 2030 } }, 'seller')).toBe('buyer');
+    expect(planStatus({ ...team, plan: { kind: 'retool', since: 2030 } }, 'seller')).toBe('seller');
+    expect(
+      planStatus(
+        { ...team, userControlled: true, plan: { kind: 'rebuild', since: 2030 } },
+        'buyer',
+      ),
+    ).toBe('buyer');
   });
 });
