@@ -21,3 +21,4 @@ simpler rules-based versions.
 - Sandbox settings, classic rules or a future CBA are new data, not code changes.
 - Any model can be swapped in tests and in the balance lab with fixed seeds.
 - Engines must never read a number that belongs in the ruleset from a constant.
+- Since [0005](0005-calibrate-first.md) most defaults are calibrated rules; only stats to ratings and development get trained models.

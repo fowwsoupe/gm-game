@@ -1,13 +1,15 @@
 # ml/
 
-Python is used for **training only**. The shipped game never runs Python.
+Python trains **two models** where a fit is needed, stats to ratings and development, and
+runs calibration studies that set the balance lab's targets and the sim's tuning numbers.
+Everything else is calibrated rules ([ADR 0005](../docs/adr/0005-calibrate-first.md)). The shipped game never runs Python.
 
 ```
 ml/
   data/raw/         # downloaded historical data (git-ignored)
   data/processed/   # cleaned features (git-ignored)
   notebooks/        # exploration
-  src/              # training scripts
+  src/              # pipeline, model training, calibration studies
 models/           # exported model tables (JSON) the game loads (committed, keep them small)
 ```
 
@@ -95,23 +97,35 @@ or European player seasons. The [prototype results](../docs/M1_PROTOTYPE_REPORT.
 include the season-held-out study. Raw and processed files remain git-ignored;
 **commercial ML and shipped-model rights are still pending**.
 
-## Later model workflow
+## Calibration workflow
 
-Build features from fields available to the game. If a model needs something the game
-doesn't track, it can't be used in-game. Train with scikit-learn / XGBoost / PyTorch,
-then export the model as a data table in `models/` (the sim has no ONNX runtime; ONNX is
-fine as a training-side step before sampling the table). Formats are in
-[`docs/MODEL_CONTRACTS.md`](../docs/MODEL_CONTRACTS.md). Compare against the rules-based
-fallback with fixed seeds before switching.
+Measure something the game can reproduce: a league-level rate, an effect size or a
+distribution. Write the study in `src/`, put the number in the balance lab as a check
+(or in the sim as a tuning constant), and cite the study next to it, as `faceoffs` and
+`form` do. Change the rules until the lab is green with a fixed seed.
 
-## Good first models
+## Models (machine learning)
 
-- Expected goals per shot (shot quality)
-- Player development / aging curves
-- Player value for AI trade and contract logic
+Train with scikit-learn (XGBoost if it earns it), split by season or by league, never by
+row, and export a table in the format from
+[`docs/MODEL_CONTRACTS.md`](../docs/MODEL_CONTRACTS.md). Compare against the rules default
+with a fixed seed in the lab before switching.
 
-Keep the rules-based sim as the fallback, and compare every model against it with a
-fixed seed before switching.
+- **Stats to ratings** (`gm-stats-to-ratings`): trained on simulated leagues (the data
+  `pnpm ratings:fit` produces, no licence issue), held out by league. Must beat the v1 R²
+  per key; goalies (0.25-0.36) have the most room.
+- **Development** (`RulesDevelopmentConfig`): trained on NHL careers with player fixed
+  effects (or imputation) against survivor bias; an `AgingCurve` per position plus
+  retirement, with `noise` from the spread between careers. Shipping waits on data rights.
+
+## Next studies
+- "Better team wins a best-of-7" back above its floor (about half a point under since goalie form)
+- Shot quality: goal rate by distance, angle and type, to check the rules `gm-xg-table`
+- Trade and contract anchors (rental tiers, pick prices, asks in percent of cap) as spot checks
+- Playtest analysis before Early Access
+
+A third model needs a lab check that shows the rules falling short in a way players
+would notice, and data we have rights to.
 
 ## Setup
 
