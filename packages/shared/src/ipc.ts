@@ -12,6 +12,8 @@ import type {
   StandingsRow,
   Team,
   TeamId,
+  TradeEvaluation,
+  TradeProposal,
 } from './domain';
 import type { Command, CommandResult } from './commands';
 import type { Importance, LeagueEvent } from './events';
@@ -63,6 +65,8 @@ export interface GmApi {
     resignOffers(input: { teamId: TeamId }): Promise<ResignOffer[]>;
     /** Player cards for a team's players, or the free agents (`teamId: null`). */
     players(input: { teamId: TeamId | null }): Promise<PlayerProfile[]>;
+    /** What the other team would say to a trade, without making it. */
+    evaluateTrade(input: TradeProposal): Promise<TradeEvaluation>;
   };
   feed: {
     list(input: { limit: number; minImportance?: Importance }): Promise<LeagueEvent[]>;
@@ -94,6 +98,7 @@ export const IPC = {
   exhibition: 'league:exhibition',
   resignOffers: 'league:resignOffers',
   players: 'league:players',
+  evaluateTrade: 'league:evaluateTrade',
   feedList: 'feed:list',
   dispatch: 'commands:dispatch',
   steamStatus: 'steam:status',

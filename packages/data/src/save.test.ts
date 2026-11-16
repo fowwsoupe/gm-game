@@ -26,6 +26,36 @@ describe('SaveFile', () => {
     save.close();
   });
 
+  it('saves a trade', () => {
+    const save = openSave(':memory:');
+    const state = createLeague(8, ctx);
+    save.saveNewLeague(state);
+    // Every player is worth a lot to this partner, so a gift is always accepted.
+    const generous = defaultContext(ctx.ruleset.id, {
+      models: { valuation: { value: () => ({ surplus: 50_000_000, reasons: [] }) } },
+    });
+    const teams = Object.values(state.teams);
+    const from = teams.find((t) => t.userControlled)!.id;
+    const to = teams.find((t) => !t.userControlled)!.id;
+    const cheapest = Object.values(state.players)
+      .filter((p) => p.teamId === from && p.position === 'C')
+      .sort((a, b) => a.contract!.capHit - b.contract!.capHit)[0]!;
+    const res = handleCommand(
+      state,
+      {
+        kind: 'trade.propose',
+        proposal: { fromTeamId: from, toTeamId: to, give: [cheapest.id], get: [] },
+      },
+      local,
+      generous,
+    );
+    if (!res.ok) throw new Error(res.error.message);
+    save.persist(res.events, state);
+    expect(save.loadState().players[cheapest.id]!.teamId).toBe(to);
+    expect(save.loadState()).toEqual(state);
+    save.close();
+  });
+
   it('resumes a playoff series and saves the champion', () => {
     const save = openSave(':memory:');
     const state = createLeague(17, ctx);

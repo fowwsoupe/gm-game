@@ -10,7 +10,8 @@
  *   cba, players, people,    shared rules and pure building blocks
  *   finance
  *   value, league            shared decisions and league structure
- *   awards, offseason                the yearly rollover, built from the engines above
+ *   awards, offseason,       the yearly rollover and trades, built from the engines above
+ *   trades
  *   sports/<sport>           sport-specific: positions, ratings, game sim, generator, rulesets
  *   models, context,         wiring: sport + rules + swappable brains, commands
  *   create, commands
@@ -24,6 +25,7 @@ export * from './value';
 export * from './league';
 export { rolloverSeason, lotteryOrder, resignOffers } from './offseason';
 export { giveSeasonAwards } from './awards';
+export * from './trades';
 export * from './sports';
 export { defaultModels, type Models } from './models';
 export { defaultContext, RULESETS, SPORTS, type ModelOverrides, type SimContext } from './context';

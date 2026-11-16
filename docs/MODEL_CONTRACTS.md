@@ -48,7 +48,7 @@ teams-over-the-cap lines.
 
 ## 3. Player value: `PlayerValuator.value(player, team) -> Valuation` (M6)
 
-Surplus value per team (can be negative). Placeholder: `naiveValuator`.
+Surplus value per team (can be negative). Default: `surplusValuator` (market salary at the projected rating minus cap hit, per contract season, weighted by team status; restricted years after the deal count at a discount).
 
 ## 4. Development: `DevelopmentModel` (M4)
 

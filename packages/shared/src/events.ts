@@ -88,6 +88,14 @@ export type LeagueEvent =
       schedule: ScheduledGame[];
       rngState: number;
     })
+  /** A trade went through: `give` moved from `fromTeamId` to `toTeamId`, `get` the other way. */
+  | (EventBase & {
+      kind: 'trade.completed';
+      fromTeamId: TeamId;
+      toTeamId: TeamId;
+      give: PlayerId[];
+      get: PlayerId[];
+    })
   | (EventBase & { kind: 'team.controlChanged'; teamId: TeamId; userControlled: boolean })
   | (EventBase & { kind: 'season.phaseChanged'; from: SeasonPhase; to: SeasonPhase })
   | (EventBase & { kind: 'team.statusChanged'; teamId: TeamId; from: TeamStatus; to: TeamStatus })

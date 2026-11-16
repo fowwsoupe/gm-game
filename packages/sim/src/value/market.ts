@@ -10,7 +10,12 @@ import { overall } from '../players';
  * TODO(M6, Azmi): contract demand model calibrated on real signings, with age and market.
  */
 export function marketSalary(rules: Ruleset, player: Player): Dollars {
-  const above = Math.max(0, overall(player) - 45);
+  return salaryForOverall(rules, overall(player));
+}
+
+/** The market salary of a player of this overall rating (see `marketSalary`). */
+export function salaryForOverall(rules: Ruleset, rating: number): Dollars {
+  const above = Math.max(0, rating - 45);
   const raw = rules.cap.minSalary + pct(rules.cap.upperLimit, 0.0075) * above * above;
   const rounded = Math.round(raw / 100_000) * 100_000;
   return Math.min(maxPlayerCapHit(rules), Math.max(rules.cap.minSalary, rounded));

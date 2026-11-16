@@ -37,7 +37,7 @@ Build order, owners and "done when" for each step: **[V0.1_PLAN.md](V0.1_PLAN.md
 **Engines**
 
 - [ ] Players (`sim/players`): percentiles, builds, role tags, traits, non-linear development, injuries
-- [ ] Value (`sim/value`): per-team surplus value (can be negative), pick value curve, market value
+- [~] Value (`sim/value`): per-team surplus value (can be negative) and market value done; pick value curve to do
 - [ ] People (`sim/people`): personalities, morale, player priorities, AI GM styles
 - [ ] League & events (`sim/league`): calendar, team status (league pulse), event engine, news
 - [ ] Minor / junior / European leagues: light stats-only sim for prospects
@@ -45,7 +45,7 @@ Build order, owners and "done when" for each step: **[V0.1_PLAN.md](V0.1_PLAN.md
 **Features**
 
 - [~] Full season calendar: 84 games (divisions, conferences, back-to-backs) → playoffs → awards → draft → re-sign → FA done; camp and a trade deadline that matters wait for trades (M6)
-- [ ] Trades v1: team status, rentals, leverage, scarcity, trade block, conditional picks, retention, AI explains
+- [~] Trades v1: surplus value per team (status, rentals, negative contracts), anti-quantity, cap and position checks, AI explains itself, trade screen done; picks, retention, trade block, AI-to-AI trades to do
 - [~] Contracts & cap: CBA checks, buyouts, cap sheet screen, cap advisor and offseason re-signing done; RFA / UFA, bonuses, trade protection, in-season extensions to do
 - [ ] Free agency v1: player priorities + interest meter
 - [ ] Draft v1: visual board, follow list, floor/ceiling ranges, scout reports

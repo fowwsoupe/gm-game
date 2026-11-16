@@ -1,7 +1,7 @@
 import { join } from 'node:path';
 import { app, BrowserWindow, dialog, ipcMain } from 'electron';
 import { IPC } from '@gm/shared/ipc';
-import type { Command, Importance, TeamId } from '@gm/shared';
+import type { Command, Importance, TeamId, TradeProposal } from '@gm/shared';
 import { LeagueService } from './league';
 import { initSteam, steamStatus } from './steam';
 
@@ -72,6 +72,7 @@ function registerIpc() {
   ipcMain.handle(IPC.players, (_e, input: { teamId: TeamId | null }) =>
     league.players(input.teamId),
   );
+  ipcMain.handle(IPC.evaluateTrade, (_e, input: TradeProposal) => league.evaluateTrade(input));
   ipcMain.handle(IPC.feedList, (_e, input: { limit: number; minImportance?: Importance }) =>
     league.feed(input.limit, input.minImportance),
   );

@@ -276,6 +276,7 @@ export class SaveFile {
     );
     const setStatus = this.db.prepare('UPDATE teams SET status = ? WHERE id = ?');
     const setControl = this.db.prepare('UPDATE teams SET user_controlled = ? WHERE id = ?');
+    const setTeam = this.db.prepare('UPDATE players SET team_id = ? WHERE id = ?');
 
     this.db.transaction(() => {
       for (const e of events) {
@@ -383,6 +384,10 @@ export class SaveFile {
             break;
           case 'team.controlChanged':
             setControl.run(e.userControlled ? 1 : 0, e.teamId);
+            break;
+          case 'trade.completed':
+            for (const id of e.give) setTeam.run(e.toTeamId, id);
+            for (const id of e.get) setTeam.run(e.fromTeamId, id);
             break;
           case 'clock.advanced':
           case 'season.phaseChanged':

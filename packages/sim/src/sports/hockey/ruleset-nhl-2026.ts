@@ -46,6 +46,7 @@ export const NHL_2026: Ruleset = {
       { minAge: 24, maxAge: 24, years: 1 },
     ],
     elcSalary: dollars(1),
+    ufaAge: 27,
   },
   // The real draft has 7 rounds, but most picks stay in junior or college and never take an NHL
   // roster spot. Until prospects exist as a separate pool, only the picks that sign are drafted.
