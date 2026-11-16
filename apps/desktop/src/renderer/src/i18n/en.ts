@@ -252,6 +252,9 @@ export const en = {
   'todo.rosterShort': 'Short {count} at {position}',
   'todo.overCap': 'Over the cap by {amount}',
   'todo.deadline': 'Trade deadline in {days} day(s)',
+  'career.title': 'Career',
+  'career.season': 'Season',
+  'career.now': 'Now',
 } as const;
 
 export type MessageKey = keyof typeof en;

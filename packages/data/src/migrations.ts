@@ -128,4 +128,14 @@ export const migrations: readonly string[] = [
     amount INTEGER NOT NULL
   );
   `,
+  // 11: each player's regular-season stat line, archived when the season ends (career stats).
+  `
+  CREATE TABLE IF NOT EXISTS player_seasons (
+    player_id TEXT NOT NULL,
+    season INTEGER NOT NULL,
+    team_id TEXT,
+    stats_json TEXT NOT NULL,
+    PRIMARY KEY (player_id, season)
+  );
+  `,
 ];

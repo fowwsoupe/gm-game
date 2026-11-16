@@ -20,6 +20,23 @@ export { resignOffers, resignContract, isExpiring } from './resign';
 import { expireContracts, fillRosters, meetCapFloor, reSignPlayers } from './freeAgency';
 import { developPlayers, retirePlayers } from './progression';
 
+/** Step 0: the season's stat lines go to the record books before anyone ages, moves or retires. */
+function archiveStats(state: LeagueState, ctx: SimContext, emit: Emit) {
+  const lines = ctx.sport.playerLines(
+    Object.values(state.results).filter((g) => !g.playoffSeriesId),
+  );
+  emit('minor', [], {
+    kind: 'stats.archived',
+    season: state.date.season,
+    lines: [...lines]
+      .sort(([a], [b]) => a.localeCompare(b))
+      .flatMap(([id, stats]) => {
+        const p = state.players[id];
+        return p ? [{ playerId: p.id, teamId: p.teamId, stats }] : [];
+      }),
+  });
+}
+
 /** Worst team first, from this season's standings (taken before anything changes). */
 function worstFirst(state: LeagueState, ctx: SimContext): TeamId[] {
   const teamIds = Object.keys(state.teams).sort() as TeamId[];
@@ -36,6 +53,7 @@ export function openFreeAgency(state: LeagueState, ctx: SimContext, emit: Emit):
   const season = state.date.season + 1;
   const rng = new Rng(state.rngState);
   const order = worstFirst(state, ctx);
+  archiveStats(state, ctx, emit);
   developPlayers(state, ctx.models.development, rng.fork('development'), emit, season);
   retirePlayers(state, ctx.models.development, rng.fork('retirement'), emit, season);
   const expiring = expireContracts(state, emit);

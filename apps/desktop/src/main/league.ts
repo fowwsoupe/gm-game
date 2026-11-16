@@ -310,6 +310,10 @@ export class LeagueService {
     };
   }
 
+  career(playerId: string) {
+    return this.open().save.careerLines(playerId);
+  }
+
   dashboard(teamId: TeamId) {
     const { state } = this.open();
     return dashboard(state, defaultContext(state.rulesetId), teamId);

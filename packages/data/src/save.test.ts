@@ -70,6 +70,12 @@ describe('SaveFile', () => {
     }
     expect(save.loadState().freeAgencyOpen).toBe(true);
     expect(save.loadState()).toEqual(state);
+    // The season's lines are archived for career stats, and kept out of the event log.
+    const scorer = Object.values(state.players).find((p) => p.teamId && p.position === 'C')!;
+    expect(save.careerLines(scorer.id)).toMatchObject([{ season: state.date.season }]);
+    expect(save.careerLines(scorer.id)[0]!.stats.gp).toBeGreaterThan(0);
+    const logged = save.listEvents(5000).find((e) => e.kind === 'stats.archived');
+    expect(logged && 'lines' in logged && logged.lines).toBeFalsy();
     const res = handleCommand(state, { kind: 'season.rollover' }, local, ctx);
     if (!res.ok) throw new Error(res.error.message);
     save.persist(res.events, state);

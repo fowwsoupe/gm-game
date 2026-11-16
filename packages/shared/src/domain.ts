@@ -344,3 +344,10 @@ export interface Dashboard {
   todo: TodoItem[];
   nextGame: { opponentId: TeamId; home: boolean; day: number } | null;
 }
+
+/** One season of a player's career: his team at the end of it and his regular-season line. */
+export interface CareerLine {
+  season: number;
+  teamId: TeamId | null;
+  stats: Record<string, number>;
+}

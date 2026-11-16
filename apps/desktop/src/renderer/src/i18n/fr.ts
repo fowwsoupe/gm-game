@@ -251,4 +251,7 @@ export const fr: Record<MessageKey, string> = {
   'todo.rosterShort': 'Il manque {count} joueur(s) à {position}',
   'todo.overCap': 'Au-dessus du plafond de {amount}',
   'todo.deadline': 'Date limite des échanges dans {days} jour(s)',
+  'career.title': 'Carrière',
+  'career.season': 'Saison',
+  'career.now': 'En cours',
 };
