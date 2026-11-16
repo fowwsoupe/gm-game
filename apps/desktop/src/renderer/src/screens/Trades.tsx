@@ -47,20 +47,6 @@ export function Trades() {
           ))}
         </select>
       </label>
-      <div className="grid gap-4 lg:grid-cols-2">
-        <Side
-          title={t('trade.youGive')}
-          players={myPlayers}
-          picked={give}
-          onToggle={(id) => toggle(give, setGive, id)}
-        />
-        <Side
-          title={t('trade.youGet')}
-          players={theirPlayers}
-          picked={get}
-          onToggle={(id) => toggle(get, setGet, id)}
-        />
-      </div>
       <Card title={t('trade.answerTitle')}>
         {!verdict || give.length + get.length === 0 ? (
           <p className="text-sm text-muted">{t('trade.pickPlayers')}</p>
@@ -101,6 +87,20 @@ export function Trades() {
           {message && <span className="text-sm text-muted">{message}</span>}
         </div>
       </Card>
+      <div className="grid gap-4 lg:grid-cols-2">
+        <Side
+          title={t('trade.youGive')}
+          players={myPlayers}
+          picked={give}
+          onToggle={(id) => toggle(give, setGive, id)}
+        />
+        <Side
+          title={t('trade.youGet')}
+          players={theirPlayers}
+          picked={get}
+          onToggle={(id) => toggle(get, setGet, id)}
+        />
+      </div>
     </div>
   );
 }

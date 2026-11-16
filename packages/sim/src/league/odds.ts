@@ -4,8 +4,11 @@ import type { Ruleset } from '../cba';
 import { computeStandings } from './standings';
 import { seedPlayoffs } from './playoffs';
 
-/** Games of league-average scoring added to every team's record, so early odds are not wild. */
-const PRIOR_GAMES = 10;
+/**
+ * Games of league-average scoring added to every team's record. Standings take about half a
+ * season to say more about talent than luck (NHL), so early odds stay modest.
+ */
+const PRIOR_GAMES = 30;
 /** Before this many games, use the defaults below for home edge and overtime share. */
 const MIN_SAMPLE = 50;
 const DEFAULT_HOME_WIN = 0.53;
