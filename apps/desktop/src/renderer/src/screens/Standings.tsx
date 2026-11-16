@@ -10,6 +10,7 @@ import {
 import type { PulseRow, StandingsRow, Team } from '@gm/shared';
 import { usePulse, useStandings, useTeams } from '@/lib/queries';
 import { useT, type MessageKey } from '@/i18n';
+import { Button, Card } from '@/ui';
 
 type Row = StandingsRow & { team: Team | undefined; pulse: PulseRow | undefined; power: number };
 const col = createColumnHelper<Row>();
@@ -47,8 +48,8 @@ export function Standings() {
   const { data: rows = [] } = useStandings();
   const { data: teams = [] } = useTeams();
   const { data: pulse = [] } = usePulse();
-  const columns = useColumns();
-  const [sorting, setSorting] = useState<SortingState>([]);
+  const t = useT();
+  const [view, setView] = useState<'league' | 'conference' | 'division'>('league');
 
   const data = useMemo<Row[]>(() => {
     const byId = new Map(teams.map((t) => [t.id, t]));
@@ -63,6 +64,37 @@ export function Standings() {
     }));
   }, [rows, teams, pulse]);
 
+  // Rows keep the standings order inside each group.
+  const groups = new Map<string, Row[]>();
+  for (const r of data) {
+    const key = view === 'league' ? '' : (r.team?.[view] ?? '');
+    groups.set(key, [...(groups.get(key) ?? []), r]);
+  }
+  const hasStructure = teams.some((x) => x.division || x.conference);
+
+  return (
+    <div className="space-y-4">
+      {hasStructure && (
+        <div className="flex gap-2">
+          {(['league', 'conference', 'division'] as const).map((v) => (
+            <Button key={v} variant={view === v ? 'primary' : 'ghost'} onClick={() => setView(v)}>
+              {t(`standings.view.${v}`)}
+            </Button>
+          ))}
+        </div>
+      )}
+      {[...groups].map(([name, rowsIn]) => (
+        <Card key={name || 'league'} {...(name && { title: name })}>
+          <StandingsTable data={rowsIn} />
+        </Card>
+      ))}
+    </div>
+  );
+}
+
+function StandingsTable({ data }: { data: Row[] }) {
+  const columns = useColumns();
+  const [sorting, setSorting] = useState<SortingState>([]);
   const table = useReactTable({
     data,
     columns,

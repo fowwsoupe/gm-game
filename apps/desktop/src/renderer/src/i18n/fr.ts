@@ -307,4 +307,7 @@ export const fr: Record<MessageKey, string> = {
   'actions.simToSummer': 'Simuler jusqu’à la fin des séries',
   'home.yourTeam': 'Votre équipe',
   'home.noTeam': 'Spectateur (aucune équipe)',
+  'standings.view.league': 'Ligue',
+  'standings.view.conference': 'Association',
+  'standings.view.division': 'Section',
 };
