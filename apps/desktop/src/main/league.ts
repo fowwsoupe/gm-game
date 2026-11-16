@@ -345,6 +345,12 @@ export class LeagueService {
     };
   }
 
+  tradeRequests(teamId: TeamId) {
+    return this.open()
+      .state.tradeRequests.filter((r) => r.teamId === teamId)
+      .map((r) => r.playerId);
+  }
+
   tradeOffers(teamId: TeamId) {
     return this.open().state.tradeOffers.filter((o) => o.proposal.toTeamId === teamId);
   }

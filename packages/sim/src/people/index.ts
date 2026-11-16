@@ -17,3 +17,4 @@ export {
   type Priority,
 } from './personality';
 export { chemistry, CHEMISTRY_FULL_SEASONS } from './chemistry';
+export { talkedDown, tradeRequests } from './requests';

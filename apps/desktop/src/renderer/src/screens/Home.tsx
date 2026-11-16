@@ -210,6 +210,15 @@ function FeedCard() {
               team: teamName(e.player.teamId ?? ''),
             })
           : null;
+      case 'player.tradeRequested':
+        return t('event.tradeRequested', {
+          player: names[e.playerId] ?? '',
+          team: teamName(e.teamId),
+        });
+      case 'player.tradeRequestEnded':
+        return e.withdrawn
+          ? t('event.requestWithdrawn', { player: names[e.playerId] ?? '' })
+          : null;
       case 'trade.offered':
         return t('event.tradeOffered', { team: teamName(e.offer.proposal.fromTeamId) });
       case 'freeAgency.opened':
@@ -225,7 +234,8 @@ function FeedCard() {
           e.headline === 'event.winStreak' ||
           e.headline === 'event.losingStreak' ||
           e.headline === 'event.hatTrick' ||
-          e.headline === 'event.shutout'
+          e.headline === 'event.shutout' ||
+          e.headline === 'event.requestStands'
         )
           return t(e.headline, e.params);
         if (e.headline === 'event.awardWon')

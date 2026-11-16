@@ -123,6 +123,10 @@ export type LeagueEvent =
       givePicks?: string[];
       getPicks?: string[];
     })
+  /** An unhappy player asks his (human) team to trade him. */
+  | (EventBase & { kind: 'player.tradeRequested'; playerId: PlayerId; teamId: TeamId })
+  /** A trade request ends: withdrawn after a talk, or he was traded. */
+  | (EventBase & { kind: 'player.tradeRequestEnded'; playerId: PlayerId; withdrawn: boolean })
   /** An AI GM offers a human team a trade (see `TradeOffer`). */
   | (EventBase & { kind: 'trade.offered'; offer: TradeOffer })
   /** An offer is gone: accepted (a `trade.completed` follows), declined or expired. */

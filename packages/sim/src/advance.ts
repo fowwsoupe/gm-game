@@ -12,7 +12,7 @@ import { classifyTeams, computeStandings, nextRound, seedPlayoffs } from './leag
 import { giveSeasonAwards } from './awards';
 import { announceDraftClass } from './offseason';
 import { aiOffers, aiTrades } from './trades';
-import { chemistry } from './people';
+import { chemistry, tradeRequests } from './people';
 import type { SimContext } from './context';
 
 /**
@@ -263,6 +263,7 @@ export function advance(
       const before = events.length;
       aiTrades(state, ctx, rng.fork(`trades${today.day}`), emitter(state, events));
       aiOffers(state, ctx, rng.fork(`offers${today.day}`), emitter(state, events));
+      tradeRequests(state, rng.fork(`requests${today.day}`), emitter(state, events));
       if (events.length > before) loadRosters();
     }
 

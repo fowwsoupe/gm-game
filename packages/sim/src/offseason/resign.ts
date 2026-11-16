@@ -32,19 +32,22 @@ export function resignOffers(state: LeagueState, ctx: SimContext, teamId: TeamId
     years: ruleset.contracts.maxYearsResign,
     phase: 'offseason',
   });
-  return rosterOf(state, teamId)
-    .filter((p) => expiring(state, p))
-    .map((p) => {
-      const ask = ctx.models.contractDemand.ask(ruleset, p);
-      return {
-        playerId: p.id,
-        ask,
-        maxYears: ruleset.contracts.maxYearsResign,
-        issues: sheet.seasons.map((s, i) =>
-          capIssues(ruleset, s.total + ask, i === 0 ? 'offseason' : 'future'),
-        ),
-      };
-    });
+  return (
+    rosterOf(state, teamId)
+      // A player who asked out will not re-sign until that is settled.
+      .filter((p) => expiring(state, p) && !state.tradeRequests.some((r) => r.playerId === p.id))
+      .map((p) => {
+        const ask = ctx.models.contractDemand.ask(ruleset, p);
+        return {
+          playerId: p.id,
+          ask,
+          maxYears: ruleset.contracts.maxYearsResign,
+          issues: sheet.seasons.map((s, i) =>
+            capIssues(ruleset, s.total + ask, i === 0 ? 'offseason' : 'future'),
+          ),
+        };
+      })
+  );
 }
 
 /** The contract for re-signing `player` for `years` starting next season, or why it is illegal. */

@@ -371,7 +371,8 @@ export interface TodoItem {
     | 'rosterShort'
     | 'overCap'
     | 'deadline'
-    | 'tradeOffers';
+    | 'tradeOffers'
+    | 'tradeRequest';
   params?: Record<string, string | number>;
   screen: 'roster' | 'cap' | 'draft' | 'trades';
 }
