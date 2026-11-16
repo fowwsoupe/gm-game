@@ -8,8 +8,11 @@ export type HockeyPosition = (typeof HOCKEY_POSITIONS)[number];
 /** Special-teams units a GM can set: power-play 1 and 2, penalty-kill 1 and 2. */
 export const SPECIAL_UNITS = ['pp1', 'pp2', 'pk1', 'pk2'] as const;
 export type SpecialUnit = (typeof SPECIAL_UNITS)[number];
-/** Skaters in a saved unit: a power play is 3 forwards and 2 defencemen, a kill 2 and 2. */
-export const SPECIAL_UNIT_SIZE = { pp: { f: 3, d: 2 }, pk: { f: 2, d: 2 } } as const;
+/**
+ * Skaters in a saved unit. A power play is any five skaters with 3 to 5 forwards (4F+1D is the
+ * common mix, 3F+2D and 5F are used too). A penalty kill is 2 forwards and 2 defencemen.
+ */
+export const SPECIAL_UNIT_SIZE = { pp: { total: 5, minForwards: 3 }, pk: { f: 2, d: 2 } } as const;
 
 /**
  * The hidden rating keys: the single source of truth. The roster schema, generation and

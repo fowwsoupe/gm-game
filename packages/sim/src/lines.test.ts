@@ -73,7 +73,13 @@ describe('power-play and penalty-kill units', () => {
     const pair = auto.defense[2]!.map((p) => p.id);
     const set = (unit: 'pp1' | 'pk1', playerIds: PlayerId[]) =>
       handleCommand(state, { kind: 'units.set', teamId: mine, unit, playerIds }, local, ctx).ok;
-    expect(set('pp1', [...fourth.slice(0, 2), ...pair])).toBe(false); // 2F+2D is not a power play
+    expect(set('pp1', [...fourth.slice(0, 2), ...pair])).toBe(false); // four skaters
+    const twoPairs = [...auto.defense[1]!, ...pair].map((p) => (typeof p === 'string' ? p : p.id));
+    expect(set('pp1', [fourth[0]!, ...twoPairs])).toBe(false); // 1F+4D
+    const fifth = auto.forwards[2]!.slice(0, 2).map((p) => p.id);
+    expect(set('pp1', [...fourth, ...fifth])).toBe(true); // 5F
+    expect(set('pp1', [...fourth, fifth[0]!, pair[0]!])).toBe(true); // 4F+1D
+    expect(set('pk1', [...fourth, pair[0]!])).toBe(false); // a kill stays 2F+2D
     expect(set('pp1', [...fourth, fourth[0]!, pair[0]!])).toBe(false); // once each
     expect(set('pp1', [...fourth, ...pair])).toBe(true);
     expect(state.specialUnits[mine]!.pp1).toEqual([...fourth, ...pair]);
@@ -108,6 +114,11 @@ describe('power-play and penalty-kill units', () => {
     const plain = ppToi();
     expect(custom(fourth[0]!)).toBeGreaterThan(plain(fourth[0]!));
     expect(custom(topWinger)).toBeLessThan(plain(topWinger));
+    // A 4F+1D unit keeps its mix in games: the extra forward plays, the second defenceman does not.
+    expect(set('pp1', [...fourth, fifth[0]!, pair[0]!])).toBe(true);
+    const fourF = ppToi(state.specialUnits[mine] as Record<string, PlayerId[]>);
+    expect(fourF(fifth[0]!)).toBeGreaterThan(plain(fifth[0]!));
+    expect(fourF(pair[1]!)).toBeLessThan(custom(pair[1]!));
     expect(set('pp1', [])).toBe(true);
     expect(state.specialUnits[mine]!.pp1).toBeUndefined();
   });

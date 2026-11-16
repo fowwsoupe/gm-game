@@ -364,8 +364,13 @@ function playGame(
         rng,
       );
       const mine = s.saved[kind][k];
-      d = (mine?.d ?? s.pairs[k] ?? []).slice(0, nd);
-      f = (mine?.f ?? (kind === 'pp' ? (s.lines[k] ?? []) : (s.killers[k] ?? []))).slice(0, nf);
+      // A saved power play keeps its own mix (4F+1D, 5F...): the defence count comes from the unit.
+      const nds = kind === 'pp' && mine ? Math.min(mine.d.length, nd) : nd;
+      d = (mine?.d ?? s.pairs[k] ?? []).slice(0, nds);
+      f = (mine?.f ?? (kind === 'pp' ? (s.lines[k] ?? []) : (s.killers[k] ?? []))).slice(
+        0,
+        size - nds,
+      );
     }
     const unit = [...f, ...d];
     return unit

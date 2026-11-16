@@ -28,15 +28,17 @@ export interface Lineup {
 export type SavedUnits = Partial<Record<SpecialUnit, readonly string[]>>;
 
 const isD = (p: Player) => p.position === 'D';
-const size = (unit: SpecialUnit) => SPECIAL_UNIT_SIZE[unit.startsWith('pp') ? 'pp' : 'pk'];
 
-/** A unit has the right mix: 3F+2D for a power play, 2F+2D for a kill; no goalies. */
+/** A unit has a legal mix: five skaters with 3-5 forwards for a power play, 2F+2D for a kill. */
 export function unitOk(unit: SpecialUnit, players: readonly Player[]): boolean {
-  const { f, d } = size(unit);
   const nd = players.filter(isD).length;
+  const mix = unit.startsWith('pp')
+    ? players.length === SPECIAL_UNIT_SIZE.pp.total &&
+      players.length - nd >= SPECIAL_UNIT_SIZE.pp.minForwards
+    : players.length === SPECIAL_UNIT_SIZE.pk.f + SPECIAL_UNIT_SIZE.pk.d &&
+      nd === SPECIAL_UNIT_SIZE.pk.d;
   return (
-    players.length === f + d &&
-    nd === d &&
+    mix &&
     players.every((p) => p.position !== 'G') &&
     new Set(players.map((p) => p.id)).size === players.length
   );
