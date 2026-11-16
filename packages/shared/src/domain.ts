@@ -96,6 +96,8 @@ export interface PlayerProfile extends RosterPlayer {
   /** Sport-defined build and role tags (hockey: 'sniper', 'shutdownD'...; tags 'speed', 'shot'...). */
   build: string;
   tags: string[];
+  /** Personality traits worth mentioning (people engine keys: 'loyalty', 'hotHeaded'...). */
+  traits: string[];
   /** This regular season's stat line, sport-defined keys (hockey: gp, goals, assists...). */
   stats: Record<string, number>;
   /** What he would ask per year on a new contract today, whole dollars. */

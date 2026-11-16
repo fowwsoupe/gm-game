@@ -2,12 +2,14 @@ import type { Contract, Player, SigningInterest, TeamId, TeamStatus } from '@gm/
 import { phaseOf, type LeagueState } from '../core';
 import { capYearIssues, capYearOf, teamCapTotal, validateContract } from '../cba';
 import { overall } from '../players';
+import { personalityOf } from '../people';
 import type { SimContext } from '../context';
 
 /**
  * Free agency v1: a free agent weighs an offer on money, winning, his role and the term, with
  * weights that shift with age (young players chase money and ice time, veterans a winner).
- * He signs when his interest reaches the threshold. No personalities yet (people engine, M6).
+ * Greed and ambition (people engine) tilt those weights. He signs when his interest reaches the
+ * threshold.
  */
 
 /** He signs at this interest or above. */
@@ -23,10 +25,29 @@ const WINNING: Record<TeamStatus, number> = {
 };
 
 /** What a player of this age cares about (weights sum to 1). */
-function priorities(age: number) {
+function byAge(age: number) {
   if (age < 26) return { money: 0.4, winning: 0.15, role: 0.35, term: 0.1 };
   if (age < 32) return { money: 0.4, winning: 0.3, role: 0.15, term: 0.15 };
   return { money: 0.25, winning: 0.45, role: 0.1, term: 0.2 };
+}
+
+/** Age sets the base; greed leans toward money, ambition toward winning (weights still sum to 1). */
+function priorities(age: number, playerId: string) {
+  const { greed, ambition } = personalityOf(playerId);
+  const w = byAge(age);
+  const tilted = {
+    money: w.money * (0.7 + 0.6 * greed),
+    winning: w.winning * (0.7 + 0.6 * ambition),
+    role: w.role,
+    term: w.term,
+  };
+  const total = tilted.money + tilted.winning + tilted.role + tilted.term;
+  return {
+    money: tilted.money / total,
+    winning: tilted.winning / total,
+    role: tilted.role / total,
+    term: tilted.term / total,
+  };
 }
 
 /** Years he would like (more years is never worse for him). */
@@ -56,7 +77,7 @@ export function signingInterest(
     role: clamp(1 - better / depth, 0.2, 1),
     term: clamp(offer.years / wantedYears(age), 0, 1),
   };
-  const weights = priorities(age);
+  const weights = priorities(age, player.id);
   const keys = ['money', 'winning', 'role', 'term'] as const;
   const interest = keys.reduce((sum, k) => sum + scores[k] * weights[k], 0);
   return {

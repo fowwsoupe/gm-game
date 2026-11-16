@@ -1,6 +1,7 @@
 import type { PlayerProfile, TeamId } from '@gm/shared';
 import type { LeagueState } from './core';
 import { percentileRank } from './players';
+import { notableTraits, personalityOf } from './people';
 import type { SimContext } from './context';
 
 /**
@@ -61,6 +62,7 @@ export function playerProfiles(
         ...((p.injuredUntil ?? 0) > state.date.day && { injuredUntil: p.injuredUntil }),
         percentiles,
         ...sport.role(p.position, percentiles),
+        traits: notableTraits(personalityOf(p.id)),
         stats: lines.get(p.id) ?? {},
         ask: ctx.models.contractDemand.ask(ctx.ruleset, p),
       };

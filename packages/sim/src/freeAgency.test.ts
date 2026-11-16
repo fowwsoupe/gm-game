@@ -4,6 +4,7 @@ import {
   createLeague,
   defaultContext,
   handleCommand,
+  personalityOf,
   signingInterest,
   type LeagueState,
 } from './index';
@@ -118,5 +119,23 @@ describe('free agency', () => {
       ok: false,
       error: { message: 'signings are closed in the playoffs' },
     });
+  });
+});
+
+describe('personality in free agency', () => {
+  it('is fixed per player, and greedy players weigh money more', () => {
+    expect(personalityOf('p1')).toEqual(personalityOf('p1'));
+    expect(personalityOf('p1')).not.toEqual(personalityOf('p2'));
+    const state = createLeague(26, ctx);
+    const mine = Object.values(state.teams).find((t) => t.userControlled)!.id;
+    const age = (p: Player) => state.date.season - p.birthYear;
+    const prime = Object.values(state.players).filter((p) => age(p) >= 26 && age(p) < 32);
+    const greedy = prime.find((p) => personalityOf(p.id).greed > 0.8)!;
+    const modest = prime.find((p) => personalityOf(p.id).greed < 0.2)!;
+    const moneyWeight = (p: Player) =>
+      signingInterest(state, ctx, p, mine, { salary: 1, years: 1 }).factors.find(
+        (f) => f.key === 'money',
+      )!.weight;
+    expect(moneyWeight(greedy)).toBeGreaterThan(moneyWeight(modest));
   });
 });
