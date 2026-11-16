@@ -34,8 +34,9 @@ decide tied games.
 
 These observations describe outcomes. The hidden ratings in [RATINGS.md](RATINGS.md)
 are inputs to the sim, and no single observed stat is a direct measurement of one
-rating. Community authors can supply ratings now; an optional stats-to-ratings
-converter belongs to M4 and must report uncertainty when the sample is small.
+rating. Community authors can supply ratings now. A stats-to-ratings converter v1 exists
+(`ratingsFromStats`, [MODEL_CONTRACTS.md](MODEL_CONTRACTS.md) §5): it reports an uncertainty
+that widens when the sample is small. Using it in roster import belongs to M4.
 
 The NHL study found that shot geometry predicts goals in held-out seasons and that
 skater shot generation and playmaking measures help predict later scoring. Team win
