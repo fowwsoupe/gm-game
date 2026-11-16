@@ -232,6 +232,7 @@ export class LeagueService {
         Object.values(state.players).filter(
           (p) => p.teamId === id && (p.injuredUntil ?? 0) <= state.date.day,
         ),
+        state.depthCharts[id],
       );
     const result = ctx.sport.simGame(
       {
@@ -307,6 +308,14 @@ export class LeagueService {
       tradeDeadlineDay: cal.tradeDeadlineDay,
       tradesOpen: tradeWindowOpen(state, ctx),
     };
+  }
+
+  lines(teamId: TeamId) {
+    const { state } = this.open();
+    const healthy = Object.values(state.players).filter(
+      (p) => p.teamId === teamId && (p.injuredUntil ?? 0) <= state.date.day,
+    );
+    return defaultContext(state.rulesetId).sport.lineup(healthy, state.depthCharts[teamId]);
   }
 
   career(playerId: string) {

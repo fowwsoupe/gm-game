@@ -26,11 +26,13 @@ export type Command =
    * teams re-sign, then open free agency for the human GM. `season.rollover` finishes the summer.
    */
   | { kind: 'offseason.openFreeAgency' }
+  /** Set your depth order (best first); the lineup follows it ahead of ratings. */
+  | { kind: 'lines.set'; teamId: TeamId; order: PlayerId[] }
   /** Rank the draft class for your picks (best first). Players missing from it go by the scouts' order. */
   | { kind: 'draft.setBoard'; teamId: TeamId; order: PlayerId[] }
   /** Offer a free agent `salary` a year for `years`; he signs if interested (see `signingInterest`). */
   | { kind: 'contract.sign'; playerId: PlayerId; teamId: TeamId; salary: number; years: number };
-// Planned (not implemented yet): 'lines.set' ...
+// Planned (not implemented yet): formations, line tactics ...
 
 export type CommandKind = Command['kind'];
 

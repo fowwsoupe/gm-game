@@ -207,6 +207,7 @@ export class SaveFile {
       freeAgencyOpen: this.getMeta('freeAgencyOpen') === '1',
       draftClass: JSON.parse(this.getMeta('draftClass') ?? '[]'),
       draftBoards: JSON.parse(this.getMeta('draftBoards') ?? '{}'),
+      depthCharts: JSON.parse(this.getMeta('depthCharts') ?? '{}'),
       capCharges: (
         this.db
           .prepare(
@@ -411,6 +412,7 @@ export class SaveFile {
             break;
           case 'draft.classAnnounced':
           case 'draft.boardSet':
+          case 'lines.set':
             break; // stored with the clock below
           case 'freeAgency.opened':
             this.setMeta('freeAgencyOpen', '1');
@@ -445,6 +447,7 @@ export class SaveFile {
     // Small (one draft class): kept as JSON in meta rather than its own table.
     this.setMeta('draftClass', JSON.stringify(state.draftClass));
     this.setMeta('draftBoards', JSON.stringify(state.draftBoards));
+    this.setMeta('depthCharts', JSON.stringify(state.depthCharts));
   }
 
   // ---------- queries ----------

@@ -99,6 +99,8 @@ export type LeagueEvent =
       season: number;
       lines: { playerId: PlayerId; teamId: TeamId | null; stats: Record<string, number> }[];
     })
+  /** A team's depth order changed (lines). */
+  | (EventBase & { kind: 'lines.set'; teamId: TeamId; order: PlayerId[] })
   /** The offseason's free-agency window opened (closes when the next season starts). */
   | (EventBase & { kind: 'freeAgency.opened' })
   /** A new season: fresh schedule, clock back to opening night, results cleared. */

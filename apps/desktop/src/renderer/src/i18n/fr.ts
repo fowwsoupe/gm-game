@@ -258,4 +258,11 @@ export const fr: Record<MessageKey, string> = {
   'event.signed': '{player} signe avec les {team} : {amount} par année jusqu’en {season}',
   'event.extended': '{player} prolonge avec les {team} : {amount} par année jusqu’en {season}',
   'event.firstPick': 'Les {team} choisissent {player} au premier rang',
+  'nav.lines': 'Trios',
+  'lines.auto': 'Trios automatiques',
+  'lines.note': 'Montez ou descendez les joueurs dans leur position. Les matchs suivent cet ordre.',
+  'lines.unit.F': 'Trio {n}',
+  'lines.unit.D': 'Paire défensive {n}',
+  'lines.unit.G': 'Gardiens (partant en premier)',
+  'lines.scratches': 'Réservistes et blessés',
 };

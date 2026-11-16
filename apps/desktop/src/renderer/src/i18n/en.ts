@@ -260,6 +260,13 @@ export const en = {
   'event.extended':
     '{player} signed an extension with the {team}: {amount} a year through {season}',
   'event.firstPick': 'The {team} take {player} first overall',
+  'nav.lines': 'Lines',
+  'lines.auto': 'Auto lines',
+  'lines.note': 'Move players up or down within their position. Games use this order.',
+  'lines.unit.F': 'Forward line {n}',
+  'lines.unit.D': 'Defence pair {n}',
+  'lines.unit.G': 'Goalies (starter first)',
+  'lines.scratches': 'Scratches and injured',
 } as const;
 
 export type MessageKey = keyof typeof en;

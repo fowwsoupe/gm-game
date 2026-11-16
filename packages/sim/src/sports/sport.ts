@@ -71,8 +71,17 @@ export interface SportModule<Strength = unknown> {
   /** Loads a community roster file (untrusted JSON) for this sport. */
   importRoster(json: unknown, rules: Ruleset): RosterImport;
 
-  /** Summarizes a roster into whatever the sport's game sim needs. */
-  teamStrength(players: readonly Player[]): Strength;
+  /**
+   * Summarizes a roster into whatever the sport's game sim needs. `depth` is the GM's order of
+   * players, best first; the lineup follows it ahead of ratings.
+   */
+  teamStrength(players: readonly Player[], depth?: readonly string[]): Strength;
+
+  /** The lineup the game would dress, as named units in order (hockey: F1–F4, D1–D3, G). */
+  lineup(
+    players: readonly Player[],
+    depth?: readonly string[],
+  ): { unit: string; playerIds: string[] }[];
 
   /** Simulates one game. Must use only `rng` for randomness. */
   simGame(
