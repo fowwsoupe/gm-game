@@ -159,6 +159,10 @@ function playGame(
       const draws = FACEOFF_WEIGHT * ((S[n].draw[f[0]!] ?? 50) - 50);
       const w = (fs: number[], ds: number[], wt: { forwards: number; defense: number }) =>
         wt.forwards * mean(fs) + wt.defense * mean(ds);
+      // The line's and the pair's own bonus (builds fit): the mean over who is out there.
+      const unit = (bonus: number[]) =>
+        (f.length ? mean(f.map((k) => bonus[k] ?? 0)) : 0) +
+        (d.length ? mean(d.map((k) => bonus[k] ?? 0)) : 0);
       S[n].uAtk =
         w(
           f.map((k) => S[n].atk[k]!),
@@ -166,7 +170,8 @@ function playGame(
           UNIT_WEIGHT.offense,
         ) +
         draws +
-        S[n].chem;
+        S[n].chem +
+        unit(S[n].unitAtk);
       S[n].uDef =
         w(
           f.map((k) => S[n].def[k]!),
@@ -174,7 +179,8 @@ function playGame(
           UNIT_WEIGHT.defense,
         ) +
         draws +
-        S[n].chem;
+        S[n].chem +
+        unit(S[n].unitDef);
     }
     for (const n of [0, 1] as const) {
       const o = (1 - n) as 0 | 1;

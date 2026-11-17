@@ -11,6 +11,12 @@ export interface TeamStrength {
   backupGoaltending: number;
   /** Chemistry's bonus to every unit's attack and defence, in rating points (±CHEMISTRY_POINTS). */
   chemistry: number;
+  /**
+   * Each forward line's and defence pair's own bonus in rating points (builds fit), by unit,
+   * added in the game to the units on the ice. `offense` and `defense` above include their
+   * ice-time-weighted sum.
+   */
+  unitBonus: { forwards: UnitBonus[]; defense: UnitBonus[] };
   /** The depth chart these numbers come from (also who is credited in the box score). */
   lineup: Lineup;
 }
@@ -22,6 +28,11 @@ export interface Lineup {
   goalies: Player[];
   /** Saved power-play and penalty-kill units that can be dressed tonight; others are auto. */
   special?: Partial<Record<SpecialUnit, Player[]>>;
+}
+
+export interface UnitBonus {
+  offense: number;
+  defense: number;
 }
 
 /** Saved units by player id (see `SpecialUnit`). */
@@ -213,11 +224,22 @@ export function teamStrength(
   const lineup = autoLineup(players, depth);
   lineup.special = dressedUnits(lineup, saved);
   const { forwards, defense, goalies } = lineup;
-  const fit = lineupFit(lineup);
-  const fitOffense = FIT_POINTS * (fit.forwards - FIT_BASELINE.forwards);
-  const fitDefense = FIT_POINTS * (fit.defense - FIT_BASELINE.defense);
   const f = ICE_TIME.forwardLines;
   const d = ICE_TIME.defensePairs;
+  // Builds fit: a line's fit moves its attack, a pair's its defence.
+  const unitBonus = {
+    forwards: forwards.map((u) => ({
+      offense: FIT_POINTS * (unitFit(u, finisher, FIT_SPAN.forwards) - FIT_BASELINE.forwards),
+      defense: 0,
+    })),
+    defense: defense.map((u) => ({
+      offense: 0,
+      defense: FIT_POINTS * (unitFit(u, rusher, FIT_SPAN.defense) - FIT_BASELINE.defense),
+    })),
+  };
+  const byIce = (k: keyof UnitBonus) =>
+    unitBonus.forwards.reduce((s, b, i) => s + f[i]! * b[k], 0) +
+    unitBonus.defense.reduce((s, b, i) => s + d[i]! * b[k], 0);
   const mix = (w: { forwards: number; defense: number }, skill: (p: Player) => number) =>
     w.forwards * weighted(forwards, f, skill) + w.defense * weighted(defense, d, skill);
   // The first player on each line takes its draws (its centre, or whoever fills that slot).
@@ -230,11 +252,12 @@ export function teamStrength(
     ) -
       50);
   return {
-    offense: mix(UNIT_WEIGHT.offense, attack) + draws + chem + fitOffense,
-    defense: mix(UNIT_WEIGHT.defense, defence) + draws + chem + fitDefense,
+    offense: mix(UNIT_WEIGHT.offense, attack) + draws + chem + byIce('offense'),
+    defense: mix(UNIT_WEIGHT.defense, defence) + draws + chem + byIce('defense'),
     goaltending: goalies[0] ? goalieScore(goalies[0]) : 40,
     backupGoaltending: goalies[1] ? goalieScore(goalies[1]) : 40,
     chemistry: chem,
+    unitBonus,
     lineup,
   };
 }

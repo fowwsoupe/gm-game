@@ -46,6 +46,9 @@ export interface Side {
   uDef: number;
   /** Chemistry bonus added to every unit (rating points). */
   chem: number;
+  /** Each skater's line or pair bonus (`TeamStrength.unitBonus`), by index. */
+  unitAtk: number[];
+  unitDef: number[];
 }
 
 export function makeSide(strength: TeamStrength, backup: boolean): Side {
@@ -68,6 +71,17 @@ export function makeSide(strength: TeamStrength, backup: boolean): Side {
       }
     );
   };
+  const unitAtk: number[] = [];
+  const unitDef: number[] = [];
+  const credit = (units: number[][], bonus: TeamStrength['unitBonus']['forwards']) =>
+    units.forEach((u, i) =>
+      u.forEach((k) => {
+        unitAtk[k] = bonus[i]?.offense ?? 0;
+        unitDef[k] = bonus[i]?.defense ?? 0;
+      }),
+    );
+  credit(lines, strength.unitBonus.forwards);
+  credit(pairs, strength.unitBonus.defense);
   const start = backup && goalies.length > 1 ? 1 : 0;
   const order = goalies[start] ? [goalies[start]!, ...goalies.filter((_, i) => i !== start)] : [];
   const starter = order[0];
@@ -95,6 +109,8 @@ export function makeSide(strength: TeamStrength, backup: boolean): Side {
     uAtk: 50,
     uDef: 50,
     chem: strength.chemistry ?? 0,
+    unitAtk,
+    unitDef,
     skaters: players.map((p) => ({
       id: p.id,
       toi: 0,
