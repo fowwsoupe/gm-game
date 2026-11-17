@@ -217,6 +217,8 @@ export const fr: Record<MessageKey, string> = {
   'sign.factor.winning': 'Victoire',
   'sign.factor.role': 'Rôle',
   'sign.factor.term': 'Durée',
+  'sign.factor.loyalty': 'Loyauté envers son ancienne équipe',
+  'sign.factor.home': 'Ville natale',
   'sign.threshold': 'Il signe à {n} ou plus.',
   'sign.action': 'Le signer',
   'sign.done': 'Signé.',

@@ -218,6 +218,8 @@ export const en = {
   'sign.factor.winning': 'Winning',
   'sign.factor.role': 'Role',
   'sign.factor.term': 'Term',
+  'sign.factor.loyalty': 'Loyalty to his old team',
+  'sign.factor.home': 'Hometown',
   'sign.threshold': 'He signs at {n} or more.',
   'sign.action': 'Sign him',
   'sign.done': 'Signed.',

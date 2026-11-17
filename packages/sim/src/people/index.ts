@@ -11,6 +11,7 @@ export {
   randomPersonality,
   personalityOf,
   notableTraits,
+  hometownOf,
   TRAITS,
   PRIORITIES,
   type Personality,

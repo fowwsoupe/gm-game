@@ -58,6 +58,8 @@ export interface LeagueState {
   tradeOffers: TradeOffer[];
   /** Open offers to free agents (AI teams' and yours); a free agent picks one the next day. */
   faOffers: FreeAgentOffer[];
+  /** Unsigned free agents whose contract just ran out: the team he left (loyalty may bring him back). */
+  formerTeams: Record<PlayerId, TeamId>;
   /** Unsigned restricted free agents: the team that holds his rights (until he signs or the season starts). */
   rfaRights: Record<PlayerId, TeamId>;
   /** Offer sheets waiting for a human rights team's answer; no answer by the next day declines. */
@@ -159,10 +161,12 @@ export function applyEvent(state: LeagueState, event: LeagueEvent): void {
       const p = state.players[event.playerId];
       if (!p) throw new Error(`unknown player ${event.playerId}`);
       // `joined` stays: if his team re-signs him (`staying`), his time there carries on.
+      const formerTeam = p.teamId;
       p.teamId = null;
       delete p.contract;
       delete p.extension;
       if (event.rightsTeamId) state.rfaRights[p.id] = event.rightsTeamId;
+      if (formerTeam) state.formerTeams[p.id] = formerTeam;
       endRequest(state, p.id);
       return;
     }
@@ -206,6 +210,7 @@ export function applyEvent(state: LeagueState, event: LeagueEvent): void {
       p.contract = { ...event.contract };
       delete p.extension;
       delete state.rfaRights[p.id];
+      delete state.formerTeams[p.id];
       state.rfaSheets = state.rfaSheets.filter((o) => o.playerId !== p.id);
       state.faOffers = state.faOffers.filter((o) => o.playerId !== event.playerId);
       return;
@@ -245,6 +250,7 @@ export function applyEvent(state: LeagueState, event: LeagueEvent): void {
       state.tradeOffers = [];
       state.faOffers = [];
       state.rfaRights = {};
+      state.formerTeams = {};
       state.rfaSheets = [];
       // This season's draft is done: only later drafts' picks still matter.
       for (const id of Object.keys(state.pickOwners)) {
