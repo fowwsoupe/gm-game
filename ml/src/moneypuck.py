@@ -23,6 +23,15 @@ SHOT_COLUMNS = (
     "xCordAdjusted", "yCordAdjusted", "shotType", "xGoal"
 )
 
+# Columns the player-features table reads, so a changed download fails with a clear message
+# instead of a KeyError traceback.
+FEATURE_COLUMNS = {
+    "skaters": ("I_F_goals", "I_F_xGoals", "I_F_primaryAssists", "I_F_hits",
+                "I_F_takeaways", "I_F_giveaways", "faceoffsWon", "faceoffsLost",
+                "onIce_xGoalsPercentage", "offIce_xGoalsPercentage"),
+    "goalies": ("xGoals", "goals", "ongoal"),
+}
+
 
 def _reader(stream, required: tuple[str, ...], label: str):
     reader = csv.DictReader(stream)
@@ -173,8 +182,10 @@ def convert(raw: Path, staged: Path, seasons: list[int]) -> dict:
         for season in sorted(seasons):
             for kind in ("skaters", "goalies"):
                 path = raw / f"{kind}_{season}.csv"
+                required = ("playerId", "season", "position", "situation", "icetime")
+                required += FEATURE_COLUMNS[kind]
                 with path.open(newline="", encoding="utf-8-sig") as stream:
-                    for row in csv.DictReader(stream):
+                    for row in _reader(stream, required, str(path)):
                         if row["situation"] != "all":
                             continue
                         position = {"L": "LW", "R": "RW"}.get(row["position"],
