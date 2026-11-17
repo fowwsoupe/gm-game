@@ -325,6 +325,12 @@ export function applyEvent(state: LeagueState, event: LeagueEvent): void {
           !(event.give as string[]).includes(r.playerId) &&
           !(event.get as string[]).includes(r.playerId),
       );
+      // A traded holdout is somebody else's problem (and must not sit out for his new team).
+      state.holdouts = state.holdouts.filter(
+        (h) =>
+          !(event.give as string[]).includes(h.playerId) &&
+          !(event.get as string[]).includes(h.playerId),
+      );
       for (const id of event.givePicks ?? []) {
         state.pickOwners[id] = event.toTeamId;
         if (event.protectTop && id.split('-')[1] === '1') {
