@@ -1,3 +1,4 @@
+import { TIRED_GOALIE } from '@gm/shared';
 import type {
   GameId,
   GameResult,
@@ -418,6 +419,9 @@ export interface MatchupInput {
   /** The team played yesterday: its backup goalie starts (never in the playoffs). */
   homeBackToBack?: boolean;
   awayBackToBack?: boolean;
+  /** The starter is playing the second night of a back-to-back: he is a little worse. */
+  homeTired?: boolean;
+  awayTired?: boolean;
 }
 
 export function simGame(
@@ -426,10 +430,21 @@ export function simGame(
   model: GoalModel = rulesGoalModel,
 ): GameResult {
   const backup = (backToBack?: boolean) => !!backToBack && !input.playoff;
+  const rested = (s: TeamStrength, tired?: boolean): TeamStrength => {
+    const g = s.lineup.goalies[0];
+    if (!tired || input.playoff || !g) return s;
+    const ratings = Object.fromEntries(
+      Object.entries(g.ratings).map(([k, v]) => [k, v * TIRED_GOALIE]),
+    );
+    return {
+      ...s,
+      lineup: { ...s.lineup, goalies: [{ ...g, ratings }, ...s.lineup.goalies.slice(1)] },
+    };
+  };
   const played = playGame(
     {
-      home: input.home,
-      away: input.away,
+      home: rested(input.home, input.homeTired),
+      away: rested(input.away, input.awayTired),
       homeBackup: backup(input.homeBackToBack),
       awayBackup: backup(input.awayBackToBack),
       playoff: !!input.playoff,

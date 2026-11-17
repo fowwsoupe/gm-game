@@ -26,6 +26,7 @@ import type {
   TradeOffer,
   TradeProposal,
 } from './domain';
+import type { GoalieRotation } from './sports/hockey';
 import type { Command, CommandResult } from './commands';
 import type { Importance, LeagueEvent } from './events';
 
@@ -85,6 +86,8 @@ export interface GmApi {
       special: Record<string, { playerIds: string[]; custom: boolean }>;
       /** Team chemistry 0–1 and the average seasons together it comes from. */
       chemistry: { value: number; seasons: number };
+      /** How the team's goalies share starts. */
+      rotation: GoalieRotation;
     }>;
     /** A player's finished regular seasons, oldest first. */
     career(input: { playerId: string }): Promise<CareerLine[]>;

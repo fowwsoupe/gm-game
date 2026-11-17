@@ -7,6 +7,7 @@ import type {
   TeamId,
   TradeProposal,
 } from '@gm/shared';
+import { GOALIE_ROTATIONS } from '@gm/shared';
 import { Rng, applyEvent, emitter, makeEvent, type LeagueState } from './core';
 import { buyoutCharges, capYearIssues, capYearOf, teamCapTotal } from './cba';
 import { parsePick } from './league';
@@ -259,6 +260,22 @@ export function handleCommand(
         kind: 'lines.set',
         teamId: team.id,
         order: [...command.order],
+      });
+      applyEvent(state, ev);
+      return { ok: true, events: [ev] };
+    }
+
+    case 'goalies.setRotation': {
+      const team = state.teams[command.teamId];
+      if (!team) return { ok: false, error: { code: 'invalid', message: 'unknown team' } };
+      if (!controls(actor, team)) return notYours;
+      if (!GOALIE_ROTATIONS.includes(command.rotation)) {
+        return { ok: false, error: { code: 'invalid', message: 'unknown rotation' } };
+      }
+      const ev = makeEvent(state, 'minor', [team.id], {
+        kind: 'goalies.rotationSet',
+        teamId: team.id,
+        rotation: command.rotation,
       });
       applyEvent(state, ev);
       return { ok: true, events: [ev] };

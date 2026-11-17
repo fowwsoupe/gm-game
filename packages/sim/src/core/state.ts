@@ -3,6 +3,7 @@ import type {
   DraftProspect,
   GameDate,
   FreeAgentOffer,
+  GoalieRotation,
   GameResult,
   LeagueEvent,
   PlayoffSeries,
@@ -58,6 +59,8 @@ export interface LeagueState {
   tradeOffers: TradeOffer[];
   /** Open offers to free agents (AI teams' and yours); a free agent picks one the next day. */
   faOffers: FreeAgentOffer[];
+  /** Teams that changed how their goalies share starts; absent = back-to-backs only. */
+  goalieRotation: Record<TeamId, GoalieRotation>;
   /** Unsigned free agents whose contract just ran out: the team he left (loyalty may bring him back). */
   formerTeams: Record<PlayerId, TeamId>;
   /** Unsigned restricted free agents: the team that holds his rights (until he signs or the season starts). */
@@ -195,6 +198,9 @@ export function applyEvent(state: LeagueState, event: LeagueEvent): void {
       return;
     case 'lines.set':
       state.depthCharts[event.teamId] = [...event.order];
+      return;
+    case 'goalies.rotationSet':
+      state.goalieRotation[event.teamId] = event.rotation;
       return;
     case 'units.set': {
       const mine = (state.specialUnits[event.teamId] ??= {});

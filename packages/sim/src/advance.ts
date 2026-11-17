@@ -147,6 +147,16 @@ export function advance(
     playing.set(g.date.day, day.add(g.homeTeamId).add(g.awayTeamId));
   }
   const backToBack = (team: TeamId, day: number) => playing.get(day - 1)?.has(team) ?? false;
+  // Who starts in goal: the team's rotation setting decides (AI teams: the backup on back-to-backs).
+  const rest = <S extends 'home' | 'away'>(team: TeamId, day: number, side: S) => {
+    const b2b = backToBack(team, day);
+    const rotation = state.goalieRotation[team] ?? 'backToBack';
+    const backup = rotation === 'always' ? false : b2b || (rotation === 'split' && day % 4 === 3);
+    return {
+      [`${side}BackToBack`]: backup,
+      [`${side}Tired`]: rotation === 'always' && b2b,
+    } as Record<`${S}BackToBack` | `${S}Tired`, boolean>;
+  };
   const byDay = new Map<number, ScheduledGame[]>();
   for (const g of state.schedule) {
     if (g.date.season !== state.date.season || state.results[g.id]) continue;
@@ -167,8 +177,8 @@ export function advance(
           awayTeamId: g.awayTeamId,
           home: strengthOf(g.homeTeamId, today.day),
           away: strengthOf(g.awayTeamId, today.day),
-          homeBackToBack: backToBack(g.homeTeamId, today.day),
-          awayBackToBack: backToBack(g.awayTeamId, today.day),
+          ...rest(g.homeTeamId, today.day, 'home'),
+          ...rest(g.awayTeamId, today.day, 'away'),
         },
         rng,
       );
