@@ -65,6 +65,7 @@ export function playerProfiles(
         traits: notableTraits(personalityOf(p.id)),
         stats: lines.get(p.id) ?? {},
         ask: ctx.models.contractDemand.ask(ctx.ruleset, p),
+        ...(p.teamId === null && state.rfaRights[p.id] && { rightsTeamId: state.rfaRights[p.id] }),
         rivalOffers: state.faOffers.filter(
           (o) => o.playerId === p.id && !state.teams[o.teamId]?.userControlled,
         ).length,

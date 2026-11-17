@@ -79,6 +79,12 @@ export const useTradeRequests = (teamId: TeamId | undefined) =>
     queryFn: () => window.gm.league.tradeRequests({ teamId: teamId! }),
     enabled: !!teamId,
   });
+export const useOfferSheets = (teamId: TeamId | undefined) =>
+  useQuery({
+    queryKey: ['league', 'offerSheets', teamId] as const,
+    queryFn: () => window.gm.league.offerSheets({ teamId: teamId! }),
+    enabled: !!teamId,
+  });
 export const useTradeOffers = (teamId: TeamId | undefined) =>
   useQuery({
     queryKey: ['league', 'tradeOffers', teamId] as const,

@@ -218,6 +218,8 @@ export class SaveFile {
       tradeOffers: JSON.parse(this.getMeta('tradeOffers') ?? '[]'),
       tradeRequests: JSON.parse(this.getMeta('tradeRequests') ?? '[]'),
       faOffers: JSON.parse(this.getMeta('faOffers') ?? '[]'),
+      rfaRights: JSON.parse(this.getMeta('rfaRights') ?? '{}'),
+      rfaSheets: JSON.parse(this.getMeta('rfaSheets') ?? '[]'),
       capCharges: (
         this.db
           .prepare(
@@ -442,6 +444,8 @@ export class SaveFile {
           case 'units.set':
           case 'trade.offered':
           case 'freeAgency.offered':
+          case 'freeAgency.sheetReceived':
+          case 'freeAgency.sheetDropped':
           case 'player.tradeRequested':
           case 'player.tradeRequestEnded':
           case 'trade.offerClosed':
@@ -495,6 +499,8 @@ export class SaveFile {
     this.setMeta('tradeOffers', JSON.stringify(state.tradeOffers));
     this.setMeta('tradeRequests', JSON.stringify(state.tradeRequests));
     this.setMeta('faOffers', JSON.stringify(state.faOffers));
+    this.setMeta('rfaRights', JSON.stringify(state.rfaRights));
+    this.setMeta('rfaSheets', JSON.stringify(state.rfaSheets));
   }
 
   // ---------- queries ----------

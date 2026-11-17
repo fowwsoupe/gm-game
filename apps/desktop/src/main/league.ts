@@ -361,6 +361,11 @@ export class LeagueService {
       .map((r) => r.playerId);
   }
 
+  offerSheets(teamId: TeamId) {
+    const { state } = this.open();
+    return state.rfaSheets.filter((o) => state.rfaRights[o.playerId] === teamId);
+  }
+
   tradeOffers(teamId: TeamId) {
     return this.open().state.tradeOffers.filter((o) => o.proposal.toTeamId === teamId);
   }

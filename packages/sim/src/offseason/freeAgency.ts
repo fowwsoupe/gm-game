@@ -67,7 +67,11 @@ export const wantedYears = (age: number, rng: Rng) => rng.int(1, age < 28 ? 5 : 
  * in season: then the extension starts. Returns who expired from which team, so that team can
  * try to re-sign them first.
  */
-export function expireContracts(state: LeagueState, emit: Emit): Map<TeamId, PlayerId[]> {
+export function expireContracts(
+  state: LeagueState,
+  ctx: SimContext,
+  emit: Emit,
+): Map<TeamId, PlayerId[]> {
   const expiring = new Map<TeamId, PlayerId[]>();
   for (const p of allPlayers(state)) {
     if (p.teamId === null || !p.contract || p.contract.expiresAfterSeason > state.date.season)
@@ -82,7 +86,13 @@ export function expireContracts(state: LeagueState, emit: Emit): Map<TeamId, Pla
       continue;
     }
     expiring.set(p.teamId, [...(expiring.get(p.teamId) ?? []), p.id]);
-    emit('minor', [p.teamId], { kind: 'contract.expired', playerId: p.id });
+    // Young players are restricted: their team keeps the right to match another team's offer.
+    const restricted = ageIn(p, state.date.season + 1) < ctx.ruleset.contracts.ufaAge;
+    emit('minor', [p.teamId], {
+      kind: 'contract.expired',
+      playerId: p.id,
+      ...(restricted ? { rightsTeamId: p.teamId } : {}),
+    });
   }
   return expiring;
 }

@@ -104,6 +104,8 @@ export interface PlayerProfile extends RosterPlayer {
   ask: number;
   /** Free agents: how many AI teams have an open offer to him (they compete with yours). */
   rivalOffers: number;
+  /** Restricted free agent: the team holding his rights (it may match another team's offer sheet). */
+  rightsTeamId?: TeamId;
 }
 
 /** An open offer to a free agent; he answers the next day, picking the one he likes best. */
