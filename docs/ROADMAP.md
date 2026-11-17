@@ -21,7 +21,7 @@ Ready now (code can start):
 2. Contract bonuses (cap and CBA checks, so tests first). Trade protection is done: no-trade clauses (ruleset age and per-team limit, the player values one, trades refuse them).
 3. Holdouts: done for human teams (opening day, greed and pay decide; a talk or the weeks end it). AI-team holdouts wait for a balance pass.
 4. Chemistry from linemates, builds, personalities and leaders (`pnpm lab` before and after).
-5. Re-injury risk (`pnpm lab` before and after).
+5. Re-injury risk: done (hurt earlier this season +30%, +3% per past injury, capped at 2x; injuries per team-season 7.9-8.1 to 8.2-8.5).
 6. Player profile screen of its own and more face variety: done (open it from Leaders or the roster card).
 
 Needs a design first (a short brief in `docs/research/`, then jobs):
@@ -58,7 +58,7 @@ Build order, owners and "done when" for each step: **[V0.1_PLAN.md](V0.1_PLAN.md
 
 **Engines**
 
-- [~] Players (`sim/players`): percentiles, builds and role tags (rules), injuries and injury history (shown on the player card) done; traits, clustered builds, re-injury risk to do
+- [~] Players (`sim/players`): percentiles, builds and role tags (rules), injuries and injury history (shown on the player card) done; re-injury risk done; traits, clustered builds to do
 - [x] Value (`sim/value`): per-team surplus value (can be negative), market value, pick value curve (rules-based; calibrated curve is Azmi's)
 - [x] People (`sim/people`): personalities (from the player id), free-agent priorities by age and personality, AI GM styles and skill, team plans, morale (shown on the player card; no effects yet) done
 - [ ] League & events (`sim/league`): calendar, team status (league pulse), event engine, news
