@@ -60,7 +60,8 @@ export function resignContract(
   const season = state.date.season + 1;
   const capHit = resignAsk(ctx, player, season);
   const issues = validateContract(ctx.ruleset, {
-    salaries: Array<number>(Math.max(0, years)).fill(capHit),
+    // A fractional or NaN term would throw in Array(); it is empty instead (refused).
+    salaries: Array<number>(Number.isInteger(years) ? Math.max(0, years) : 0).fill(capHit),
     signingAge: ageIn(player, season),
     isResign: true,
   });
