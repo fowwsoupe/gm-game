@@ -391,6 +391,10 @@ export class LeagueService {
     };
   }
 
+  history(playerId: string) {
+    return this.open().save.playerHistory(playerId);
+  }
+
   career(playerId: string) {
     return this.open().save.careerLines(playerId);
   }

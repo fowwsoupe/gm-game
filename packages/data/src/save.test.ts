@@ -236,3 +236,27 @@ describe('SaveFile', () => {
     save.close();
   });
 });
+
+describe('player history', () => {
+  it("lists a drafted player's signing and the awards he won, oldest first", () => {
+    const save = openSave(':memory:');
+    const state = createLeague(11, ctx);
+    save.saveNewLeague(state);
+    const { regularSeasonDays, playoffDays } = ctx.ruleset.season.calendar;
+    for (const command of [
+      { kind: 'sim.advance', days: regularSeasonDays + playoffDays },
+      { kind: 'season.rollover' },
+    ] as const) {
+      const res = handleCommand(state, command, local, ctx);
+      if (!res.ok) throw new Error(res.error.message);
+      save.persist(res.events, state);
+    }
+    const mvp = save.listAwards().find((a) => a.award === 'mvp')!;
+    const history = save.playerHistory(mvp.playerId!);
+    expect(history.awards).toContainEqual({ season: mvp.season, award: 'mvp' });
+    expect(save.playerHistory('nobody')).toEqual({ awards: [], moves: [] });
+    const drafted = Object.values(state.players).find((p) => p.id.startsWith('d'))!;
+    expect(save.playerHistory(drafted.id).moves[0]).toMatchObject({ kind: 'drafted' });
+    save.close();
+  });
+});
