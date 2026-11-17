@@ -33,3 +33,4 @@ graphify-out/
 
 # Vendored design-helper skill (not game code)
 .claude/skills/ui-ux-pro-max/
+.claude/skills/rtk/
