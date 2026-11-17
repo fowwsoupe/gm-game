@@ -17,6 +17,9 @@ function translate(
     : template;
 }
 
+/** Whether a string from the sim (a news headline) is a key we can translate. */
+export const isMessageKey = (key: string): key is MessageKey => key in en;
+
 /** Hook used by components: `const t = useT(); t('nav.home')`. */
 export function useT() {
   const locale = useUi((s) => s.locale);

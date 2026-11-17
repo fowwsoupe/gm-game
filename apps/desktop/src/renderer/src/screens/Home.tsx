@@ -13,7 +13,7 @@ import {
 } from '@/lib/queries';
 import { useUi } from '@/stores/ui';
 import { money } from '@/lib/format';
-import { useT, type MessageKey } from '@/i18n';
+import { isMessageKey, useT, type MessageKey } from '@/i18n';
 import { Button, Card, StatRow } from '@/ui';
 
 export function Home({
@@ -235,25 +235,12 @@ function FeedCard() {
       case 'season.phaseChanged':
         return t('event.phaseChanged', { phase: t(`phase.${e.to}`) });
       case 'news.posted':
-        if (
-          e.headline === 'event.seriesWon' ||
-          e.headline === 'event.championCrowned' ||
-          e.headline === 'event.lotteryWon' ||
-          e.headline === 'event.trade' ||
-          e.headline === 'event.winStreak' ||
-          e.headline === 'event.losingStreak' ||
-          e.headline === 'event.hatTrick' ||
-          e.headline === 'event.shutout' ||
-          e.headline === 'event.requestStands' ||
-          e.headline === 'event.lostFreeAgent'
-        )
-          return t(e.headline, e.params);
         if (e.headline === 'event.awardWon')
           return t(e.headline, {
             ...e.params,
             award: t(`award.${e.params?.award}` as MessageKey),
           });
-        return e.headline;
+        return isMessageKey(e.headline) ? t(e.headline, e.params) : e.headline;
       default:
         return null;
     }
