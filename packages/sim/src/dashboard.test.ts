@@ -79,7 +79,7 @@ describe('streak and highlight news', () => {
     };
     const whole = news(200);
     expect(whole).toEqual(news(10));
-    for (const key of ['winStreak', 'losingStreak', 'hatTrick', 'shutout']) {
+    for (const key of ['winStreak', 'losingStreak', 'hatTrick', 'shutout', 'slump']) {
       expect(whole.some((l) => l.includes(`event.${key}`))).toBe(true);
     }
   });

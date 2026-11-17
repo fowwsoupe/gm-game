@@ -13,6 +13,7 @@ import { giveSeasonAwards } from './awards';
 import { announceDraftClass } from './offseason';
 import { aiOffers, aiTrades } from './trades';
 import { chemistry, tradeRequests } from './people';
+import { overall } from './players';
 import type { SimContext } from './context';
 
 /**
@@ -83,6 +84,15 @@ export function advance(
       streaks.set(id, won ? Math.max(0, run) + 1 : Math.min(0, run) - 1);
     }
   }
+  // Games in a row each skater has played without a point (a goalie has no points, so never here).
+  const droughts = new Map<string, number>();
+  const trackDroughts = (game: GameResult) => {
+    for (const [id, line] of sport.playerLines([game])) {
+      if (line.points === undefined || !line.gp) continue;
+      droughts.set(id, line.points > 0 ? 0 : (droughts.get(id) ?? 0) + 1);
+    }
+  };
+  for (const g of Object.values(state.results)) if (!g.playoffSeriesId) trackDroughts(g);
   /** Records a finished game and the injuries it caused (the injuries are not kept on the result). */
   const finishGame = (result: GameResult, day: number) => {
     const { injuries = [], ...game } = result;
@@ -106,8 +116,29 @@ export function advance(
         }),
       );
     }
-    // Streaks: news when a run reaches a milestone (regular season only).
+    // Streaks and slumps: news when a run reaches a milestone (regular season only).
     if (!game.playoffSeriesId) {
+      trackDroughts(game);
+      for (const teamId of [game.homeTeamId, game.awayTeamId]) {
+        const stars = Object.values(state.players)
+          .filter((p) => p.teamId === teamId && droughts.has(p.id))
+          .sort((a, b) => overall(b) - overall(a) || a.id.localeCompare(b.id))
+          .slice(0, SLUMP_STARS);
+        for (const p of stars) {
+          if (droughts.get(p.id) !== SLUMP_GAMES) continue;
+          emit(
+            makeEvent(state, state.teams[teamId]!.userControlled ? 'notable' : 'minor', [teamId], {
+              kind: 'news.posted',
+              headline: 'event.slump',
+              params: {
+                player: `${p.firstName} ${p.lastName}`,
+                team: team(teamId),
+                n: SLUMP_GAMES,
+              },
+            }),
+          );
+        }
+      }
       const homeWon = game.homeScore > game.awayScore;
       for (const [id, won] of [
         [game.homeTeamId, homeWon],
@@ -333,6 +364,10 @@ export function advance(
 
 /** Win or losing streaks of these lengths make the news. */
 const STREAK_MILESTONES = [6, 9, 12];
+
+/** A top-6 skater without a point for this many games is in a slump. */
+const SLUMP_GAMES = 10;
+const SLUMP_STARS = 6;
 
 /** Injuries at least this long to one of your players stop "sim until it matters". */
 const LONG_INJURY_DAYS = 14;
