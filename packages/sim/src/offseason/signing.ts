@@ -113,6 +113,8 @@ export function signFreeAgent(
   if (inPlayoffs && !state.championTeamId) return { error: 'signings are closed in the playoffs' };
   const salary = Math.round(offer.salary);
   if (!Number.isInteger(offer.years)) return { error: 'illegal term' };
+  // NaN would slip past every comparison below.
+  if (!Number.isFinite(salary)) return { error: 'illegal salary' };
   const season = capYearOf(state);
   const issues = validateContract(ruleset, {
     salaries: Array<number>(Math.max(0, offer.years)).fill(salary),

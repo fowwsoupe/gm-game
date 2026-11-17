@@ -137,7 +137,13 @@ export function reSignPlayers(
         },
       );
       if (contract) {
-        emit('minor', [teamId], { kind: 'player.signed', playerId: p.id, teamId, contract });
+        emit('minor', [teamId], {
+          kind: 'player.signed',
+          playerId: p.id,
+          teamId,
+          contract,
+          staying: true,
+        });
       }
     }
   }

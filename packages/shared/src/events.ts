@@ -85,8 +85,17 @@ export type LeagueEvent =
    * `round` and `pick` are 0 for an undrafted free agent signed to fill a roster.
    */
   | (EventBase & { kind: 'player.drafted'; player: Player; round: number; pick: number })
-  /** Re-signing, free agency or an undrafted free agent: player joins `teamId` on `contract`. */
-  | (EventBase & { kind: 'player.signed'; playerId: PlayerId; teamId: TeamId; contract: Contract })
+  /**
+   * Re-signing, free agency or an undrafted free agent: player joins `teamId` on `contract`.
+   * `staying`: he re-signs with the team whose contract just expired, so his time there carries on.
+   */
+  | (EventBase & {
+      kind: 'player.signed';
+      playerId: PlayerId;
+      teamId: TeamId;
+      contract: Contract;
+      staying?: true;
+    })
   /** End of season: who won an award. `playerId` is absent for team awards (champion). */
   | (EventBase & {
       kind: 'award.given';

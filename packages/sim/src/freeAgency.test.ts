@@ -101,6 +101,23 @@ describe('free agency', () => {
     expect(broke).toMatchObject({ ok: false, error: { message: 'no cap room' } });
   });
 
+  it('refuses a NaN salary and a fractional re-sign term', () => {
+    const { state, mine } = finishedSeason(5);
+    const own = Object.values(state.players).find((p) => p.teamId === mine)!;
+    own.contract = { ...own.contract!, expiresAfterSeason: state.date.season };
+    delete own.extension;
+    const res = handleCommand(
+      state,
+      { kind: 'contract.resign', playerId: own.id, years: 2.5 },
+      local,
+      ctx,
+    );
+    expect(res.ok).toBe(false);
+    run(state, { kind: 'offseason.openFreeAgency' });
+    const fa = freeAgents(state)[0]!;
+    expect('error' in signFreeAgent(state, ctx, fa, mine, { salary: NaN, years: 1 })).toBe(true);
+  });
+
   it('a veteran wants a winner more than a rebuild', () => {
     const { state, mine } = finishedSeason(24);
     const vet = Object.values(state.players).find(
@@ -226,6 +243,16 @@ describe('personality in free agency', () => {
 });
 
 describe('re-signing with his own team', () => {
+  it('keeps his time with the team (chemistry does not reset)', () => {
+    const { state } = finishedSeason(12);
+    const before = new Map(Object.values(state.players).map((p) => [p.id, p.joined]));
+    const stayed = run(state, { kind: 'offseason.openFreeAgency' }).flatMap((e) =>
+      e.kind === 'player.signed' && e.staying ? [e.playerId] : [],
+    );
+    expect(stayed.length).toBeGreaterThan(0);
+    for (const id of stayed) expect(state.players[id]!.joined).toBe(before.get(id));
+  });
+
   const ids = Array.from({ length: 500 }, (_, i) => `p${i}`);
   const most = (trait: 'loyalty' | 'ambition', sign: 1 | -1) =>
     ids.reduce((a, b) => (sign * personalityOf(b)[trait] > sign * personalityOf(a)[trait] ? b : a));

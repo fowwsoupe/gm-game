@@ -147,10 +147,10 @@ export function applyEvent(state: LeagueState, event: LeagueEvent): void {
     case 'contract.expired': {
       const p = state.players[event.playerId];
       if (!p) throw new Error(`unknown player ${event.playerId}`);
+      // `joined` stays: if his team re-signs him (`staying`), his time there carries on.
       p.teamId = null;
       delete p.contract;
       delete p.extension;
-      delete p.joined;
       return;
     }
     case 'player.drafted':
@@ -188,7 +188,7 @@ export function applyEvent(state: LeagueState, event: LeagueEvent): void {
     case 'player.signed': {
       const p = state.players[event.playerId];
       if (!p) throw new Error(`unknown player ${event.playerId}`);
-      if (p.teamId !== event.teamId) p.joined = moveSeason(state);
+      if (p.teamId !== event.teamId && !event.staying) p.joined = moveSeason(state);
       p.teamId = event.teamId;
       p.contract = { ...event.contract };
       delete p.extension;
