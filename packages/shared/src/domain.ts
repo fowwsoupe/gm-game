@@ -305,6 +305,11 @@ export interface TradeProposal {
   /** Draft picks (ids like `2028-1-t3`: draft season, round, original team) each way. */
   givePicks?: string[];
   getPicks?: string[];
+  /**
+   * Top-N protection on the first-round picks you give: if one lands in the first `protectTop`
+   * picks of that draft you keep it instead of passing it on.
+   */
+  protectTop?: number;
 }
 
 /** Salary kept in a trade: the player's new cap hit, and what the old team owes each season. */

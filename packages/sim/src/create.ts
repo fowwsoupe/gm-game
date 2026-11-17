@@ -51,6 +51,7 @@ export function createLeague(
     depthCharts: {},
     specialUnits: {},
     pickOwners: {},
+    pickProtection: {},
     tradeOffers: [],
     tradeRequests: [],
     faOffers: [],

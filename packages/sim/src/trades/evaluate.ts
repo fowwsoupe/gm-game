@@ -23,6 +23,8 @@ const MARGIN_PCT_OF_CAP = 0.5;
 const DEPTH_DISCOUNT = 0.5;
 /** Reasons quoted at most. */
 const MAX_REASONS = 4;
+/** A first-round pick that projects inside its top-N protection is worth this share to the receiver. */
+const PROTECTED_SHARE = 0.25;
 
 /** Trades are open in the preseason, the regular season up to the deadline, and once the champion is crowned. */
 export function tradeWindowOpen(state: LeagueState, ctx: SimContext): boolean {
@@ -164,6 +166,8 @@ export function evaluateTrade(
   if (from === to || !state.teams[from] || !state.teams[to]) return refuse('not_on_team');
   const givePicks = proposal.givePicks ?? [];
   const getPicks = proposal.getPicks ?? [];
+  const protectTop = proposal.protectTop ?? 0;
+  if (!Number.isInteger(protectTop) || protectTop < 0) return refuse('empty');
   const assets = [...give, ...get, ...givePicks, ...getPicks];
   if (assets.length === 0 || new Set(assets).size !== assets.length) return refuse('empty');
   // Built only when picks are in the deal (AI trade talks call this hundreds of times a week).
@@ -261,7 +265,7 @@ export function evaluateTrade(
     return order.worstFirst.indexOf(teamId) + 1;
   };
   const next = nextDraftSeason(state);
-  const pickOf = (id: string) => {
+  const pickOf = (id: string, protectedTop = 0) => {
     const pick = picks.get(id)!;
     const slot =
       pick.season === next && played > 0
@@ -270,15 +274,18 @@ export function evaluateTrade(
     return {
       p: undefined,
       label: label(id),
-      surplus: pickValue(
-        ruleset,
-        { slot, teams: teamCount, round: pick.round, yearsAway: pick.season - next },
-        team.status,
+      // Protected picks that project inside the protection are worth little to the receiver.
+      surplus: Math.round(
+        pickValue(
+          ruleset,
+          { slot, teams: teamCount, round: pick.round, yearsAway: pick.season - next },
+          team.status,
+        ) * (pick.round === 1 && slot <= protectedTop ? PROTECTED_SHARE : 1),
       ),
       reasons: [] as const,
     };
   };
-  const incoming = [...give.map(valueOf), ...givePicks.map(pickOf)].sort(
+  const incoming = [...give.map(valueOf), ...givePicks.map((id) => pickOf(id, protectTop))].sort(
     (a, b) => b.surplus - a.surplus,
   );
   const outgoing = [...get.map(valueOf), ...getPicks.map(pickOf)];

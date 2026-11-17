@@ -148,6 +148,8 @@ export type LeagueEvent =
       retained?: RetainedSalary[];
       givePicks?: string[];
       getPicks?: string[];
+      /** Top-N protection on the picks `fromTeamId` gave (it keeps one that lands that high). */
+      protectTop?: number;
     })
   /** An unhappy player asks his (human) team to trade him. */
   | (EventBase & { kind: 'player.tradeRequested'; playerId: PlayerId; teamId: TeamId })

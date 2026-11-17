@@ -27,6 +27,8 @@ export function Trades() {
   const [retain, setRetain] = useState<Record<string, number>>({});
   const [givePicks, setGivePicks] = useState<string[]>([]);
   const [getPicks, setGetPicks] = useState<string[]>([]);
+  /** Top-N protection on the first-round picks you give (0 = none). */
+  const [protectTop, setProtectTop] = useState(0);
   const { data: myPicks = [] } = usePicks(mine?.id);
   const { data: theirPicks = [] } = usePicks(partner);
   const [message, setMessage] = useState<string | null>(null);
@@ -45,6 +47,7 @@ export function Trades() {
           ...(kept.length && { retain: kept }),
           ...(givePicks.length && { givePicks }),
           ...(getPicks.length && { getPicks }),
+          ...(protectTop && givePicks.length && { protectTop }),
         }
       : undefined;
   const { data: verdict } = useTradeEvaluation(proposal);
@@ -121,6 +124,22 @@ export function Trades() {
           {message && <span className="text-sm text-muted">{message}</span>}
         </div>
       </Card>
+      {givePicks.length > 0 && (
+        <label className="flex items-center gap-2 text-sm text-muted">
+          {t('trade.protect')}
+          <select
+            value={protectTop}
+            onChange={(e) => setProtectTop(Number(e.target.value))}
+            className="rounded border border-line bg-panel px-2 py-1 text-ink"
+          >
+            {[0, 3, 5, 10].map((n) => (
+              <option key={n} value={n}>
+                {n === 0 ? t('trade.protectNone') : t('trade.protectTop', { n })}
+              </option>
+            ))}
+          </select>
+        </label>
+      )}
       <div className="grid gap-4 lg:grid-cols-2">
         <Side
           title={t('trade.youGive')}

@@ -217,6 +217,7 @@ export class SaveFile {
       depthCharts: JSON.parse(this.getMeta('depthCharts') ?? '{}'),
       specialUnits: JSON.parse(this.getMeta('specialUnits') ?? '{}'),
       pickOwners: JSON.parse(this.getMeta('pickOwners') ?? '{}'),
+      pickProtection: JSON.parse(this.getMeta('pickProtection') ?? '{}'),
       tradeOffers: JSON.parse(this.getMeta('tradeOffers') ?? '[]'),
       tradeRequests: JSON.parse(this.getMeta('tradeRequests') ?? '[]'),
       faOffers: JSON.parse(this.getMeta('faOffers') ?? '[]'),
@@ -503,6 +504,7 @@ export class SaveFile {
     this.setMeta('depthCharts', JSON.stringify(state.depthCharts));
     this.setMeta('specialUnits', JSON.stringify(state.specialUnits));
     this.setMeta('pickOwners', JSON.stringify(state.pickOwners));
+    this.setMeta('pickProtection', JSON.stringify(state.pickProtection));
     this.setMeta('tradeOffers', JSON.stringify(state.tradeOffers));
     this.setMeta('tradeRequests', JSON.stringify(state.tradeRequests));
     this.setMeta('faOffers', JSON.stringify(state.faOffers));

@@ -205,3 +205,23 @@ describe('trade block', () => {
     for (const id of asked) expect(id).toBe(own[7]!.id);
   });
 });
+
+describe('protected picks', () => {
+  it('a protected first-round pick that lands high stays with the team that traded it', () => {
+    const state = createLeague(5, ctx);
+    run(state, { kind: 'sim.advance', days: 300 });
+    const [a, b] = Object.keys(state.teams) as TeamId[];
+    const id = `${state.date.season + 1}-1-${a}`;
+    state.pickOwners[id] = b!;
+    state.pickProtection[id] = { top: 100, keeper: a! };
+    const events = run(state, { kind: 'season.rollover' });
+    const firstRound = (team: TeamId) =>
+      events.filter(
+        (e) => e.kind === 'player.drafted' && e.round === 1 && e.player.teamId === team,
+      );
+    // Traded without protection `a` would have none and `b` two; protected, each keeps its own.
+    expect(firstRound(a!)).toHaveLength(1);
+    expect(firstRound(b!)).toHaveLength(1);
+    expect(state.pickProtection[id]).toBeUndefined();
+  });
+});
