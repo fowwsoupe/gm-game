@@ -61,6 +61,8 @@ export {
   teamStrength,
   autoLineup,
   lineupUnits,
+  lineupFit,
+  unitFit,
   ICE_TIME,
   type TeamStrength,
   type Lineup,

@@ -13,6 +13,8 @@ import {
   parseXgTable,
   playerProfiles,
   chemistry,
+  autoLineup,
+  lineupFit,
   dashboard,
   raceNight,
   draftPicks,
@@ -389,6 +391,7 @@ export class LeagueService {
         state.specialUnits[teamId],
       ),
       chemistry: chemistry(healthy, state.date.season),
+      fit: lineupFit(autoLineup(healthy, state.depthCharts[teamId])),
       rotation: state.goalieRotation[teamId] ?? 'backToBack',
     };
   }
