@@ -92,6 +92,7 @@ export interface PlayerProfile extends RosterPlayer {
   age: number;
   /** First day back from injury, if hurt. */
   injuredUntil?: number;
+  injuryHistory?: InjuryHistory;
   percentiles: { key: string; value: number }[];
   /** Sport-defined build and role tags (hockey: 'sniper', 'shutdownD'...; tags 'speed', 'shot'...). */
   build: string;
@@ -143,6 +144,14 @@ export interface Player {
   joined?: number;
   /** Injured: first day (of the current season) he can play again. Absent = healthy. Heals over the summer. */
   injuredUntil?: number;
+  /** Career injuries and days missed. Absent = never hurt. */
+  injuryHistory?: InjuryHistory;
+}
+
+/** How often and how long a player has been hurt. */
+export interface InjuryHistory {
+  count: number;
+  days: number;
 }
 
 export interface Team {

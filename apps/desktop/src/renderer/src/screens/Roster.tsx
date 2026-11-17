@@ -198,6 +198,14 @@ function Profile({ player: p, signFor }: { player: PlayerProfile; signFor: TeamI
         {p.injuredUntil !== undefined && (
           <p className="mt-1 text-sm text-bad">{t('roster.injured', { day: p.injuredUntil })}</p>
         )}
+        {p.injuryHistory && (
+          <p className="mt-1 text-xs text-muted">
+            {t('roster.injuryHistory', {
+              count: p.injuryHistory.count,
+              days: p.injuryHistory.days,
+            })}
+          </p>
+        )}
       </Card>
       <Career player={p} />
       {p.teamId !== null && p.teamId === signFor && <BlockToggle player={p} teamId={signFor} />}

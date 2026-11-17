@@ -152,6 +152,7 @@ export const en = {
   'roster.through': 'Through',
   'roster.injuredShort': 'INJ',
   'roster.injured': 'Injured: back on day {day}.',
+  'roster.injuryHistory': 'Injury history: {count} injuries, {days} days missed',
   'roster.subtitle': '{position} · age {age}',
   'roster.contract': '{amount} a year through {season}',
   'roster.noContract': 'No contract (free agent)',

@@ -147,6 +147,10 @@ export function applyEvent(state: LeagueState, event: LeagueEvent): void {
       const p = state.players[event.playerId];
       if (!p) throw new Error(`unknown player ${event.playerId}`);
       p.injuredUntil = event.until;
+      p.injuryHistory = {
+        count: (p.injuryHistory?.count ?? 0) + 1,
+        days: (p.injuryHistory?.days ?? 0) + event.days,
+      };
       return;
     }
     case 'contract.boughtOut': {
