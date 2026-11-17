@@ -451,11 +451,13 @@ const checks: Check[] = [
   { name: 'Teams over the playoff cap', value: teamsOverPlayoffCap, min: 0, max: 0 },
   { name: 'Teams below roster minimum', value: teamsUnderMinimum, min: 0, max: 0 },
   {
-    // Research report: 5-7 of the NHL's 16 playoff teams are new each year (31-44%).
+    // NHL 2007-2026 (research report): 5.2 of 16 playoff teams new a year on average (32.5%),
+    // 3 to 7 in a single season. The range is that average +-2 standard errors of a 20-season
+    // mean (1.6 points each), since this check averages hundreds of league-seasons.
     name: 'Playoff teams new each year',
     value: (100 * playoffTeamsNew) / playoffSpotsCompared,
-    min: 31,
-    max: 44,
+    min: 29,
+    max: 36,
     unit: '%',
   },
   {

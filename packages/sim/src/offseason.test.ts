@@ -91,7 +91,7 @@ describe('offseason rollover', () => {
     expect(Object.keys(state.results).length).toBeGreaterThan(0);
   });
 
-  it('plays 20 seasons: no crash, rosters legal every year, replay ends identical', () => {
+  it('plays 20 seasons: no crash, rosters legal every year, replay ends identical', async () => {
     const live = createLeague(31, ctx);
     const replica: LeagueState = structuredClone(live);
     const titles = new Map<string, number>();
@@ -100,6 +100,9 @@ describe('offseason rollover', () => {
       for (const e of events) applyEvent(replica, e);
       titles.set(champion!, (titles.get(champion!) ?? 0) + 1);
       checkLeagueIsLegal(live);
+      // Let the test worker answer the runner between seasons: 20 seasons in one synchronous
+      // block (over a minute on CI) made its progress messages time out and failed the run.
+      await new Promise((resolve) => setTimeout(resolve, 0));
     }
     expect(live.date.season).toBe(2027 + 20);
     expect(replica).toEqual(live);
