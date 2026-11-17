@@ -29,6 +29,8 @@ export interface ContractTerms {
   elc?: boolean;
   /** A no-trade clause on the deal, and how many the team already holds. */
   noTrade?: { held: number };
+  /** Share (whole percent) of each year's cap hit paid as a signing bonus. */
+  bonusPct?: number;
 }
 
 export type ContractIssue =
@@ -42,6 +44,7 @@ export type ContractIssue =
   | { code: 'elc_salary'; max: Dollars }
   | { code: 'no_trade_age'; min: number }
   | { code: 'no_trade_limit'; max: number }
+  | { code: 'bonus_too_high'; max: number }
   | { code: 'empty' };
 
 export const averageAnnualValue = (salaries: Dollars[]): Dollars =>
@@ -81,13 +84,19 @@ export function validateContract(rules: Ruleset, terms: ContractTerms): Contract
       issues.push({ code: 'elc_salary', max: rules.contracts.elcSalary });
     }
   }
+  if (
+    terms.bonusPct !== undefined &&
+    (terms.bonusPct < 0 || terms.bonusPct > rules.contracts.maxBonusPct)
+  ) {
+    issues.push({ code: 'bonus_too_high', max: rules.contracts.maxBonusPct });
+  }
   if (terms.noTrade) {
     if (terms.elc || terms.signingAge < rules.contracts.ufaAge)
       issues.push({ code: 'no_trade_age', min: rules.contracts.ufaAge });
     if (terms.noTrade.held >= rules.contracts.maxNoTradePerTeam)
       issues.push({ code: 'no_trade_limit', max: rules.contracts.maxNoTradePerTeam });
   }
-  // Not modelled yet, so they cannot be broken: bonuses (contracts have none), 35+ contracts
+  // Not modelled yet, so they cannot be broken: performance bonuses, 35+ contracts
   // and the ELC slide (rules still to verify, see ruleset-nhl-2026.ts).
   return issues;
 }

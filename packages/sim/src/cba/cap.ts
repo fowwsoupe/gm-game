@@ -108,7 +108,8 @@ export function buyoutCharges(
   const age = input.season - input.player.birthYear;
   const { shareOwedUnderAge, shareOwedOtherwise, termMultiplier } = rules.buyouts;
   const share = age < shareOwedUnderAge.age ? shareOwedUnderAge.share : shareOwedOtherwise;
-  const owed = Math.round(share * contract.capHit * remaining);
+  // A signing bonus was paid up front: only the salary part is owed on a buyout.
+  const owed = Math.round(share * (contract.capHit - (contract.bonus ?? 0)) * remaining);
   const spread = Math.max(1, Math.round(termMultiplier * remaining));
   const each = Math.floor(owed / spread);
   return Array.from({ length: spread }, (_, i) => ({

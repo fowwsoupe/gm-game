@@ -120,6 +120,7 @@ export interface GmApi {
       salary: number;
       years: number;
       noTrade?: true;
+      bonusPct?: number;
     }): Promise<SigningInterest | null>;
   };
   feed: {

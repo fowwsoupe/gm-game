@@ -62,6 +62,8 @@ export interface Ruleset {
     ufaAge: number;
     /** A no-trade clause needs a player at least `ufaAge` old, and a team holds at most this many. */
     maxNoTradePerTeam: number;
+    /** Most of a year's cap hit that may be paid as a signing bonus, in whole percent. */
+    maxBonusPct: number;
   };
 
   draft: {

@@ -229,6 +229,7 @@ export const fr: Record<MessageKey, string> = {
   'sign.threshold': 'Il signe à {n} ou plus.',
   'sign.action': 'Le signer',
   'sign.done': 'Signé.',
+  'sign.bonus': 'Prime de signature %',
   'sign.noTrade': 'Clause de non-échange',
   'sign.pending': 'Offre faite. Il répond demain, avec les autres offres.',
   'sign.rights': 'Restreint : {team} détient ses droits et peut égaler toute offre hostile.',

@@ -48,6 +48,8 @@ export const NHL_2026: Ruleset = {
     elcSalary: dollars(1),
     ufaAge: 27,
     maxNoTradePerTeam: 16,
+    // TODO(verify): the real signing-bonus limit; 50 is a placeholder like the other unverified rules.
+    maxBonusPct: 50,
   },
   // The real draft has 7 rounds, but most picks stay in junior or college and never take an NHL
   // roster spot. Until prospects exist as a separate pool, only the picks that sign are drafted.
