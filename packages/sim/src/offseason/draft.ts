@@ -137,7 +137,17 @@ export function runDraft(
       season,
       deadCap(state, teamId, season),
     );
-    const player: Player = contract ? { ...prospect, teamId, contract } : prospect;
+    // First-rounders sign with the most the rules allow in performance bonuses.
+    const player: Player = contract
+      ? {
+          ...prospect,
+          teamId,
+          contract:
+            round === 1
+              ? { ...contract, perfBonus: ctx.ruleset.contracts.maxPerformanceBonus }
+              : contract,
+        }
+      : prospect;
     emit(i === 0 ? 'notable' : 'minor', [teamId], {
       kind: 'player.drafted',
       player,

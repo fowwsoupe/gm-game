@@ -84,6 +84,12 @@ export interface SportModule<Strength = unknown> {
     awards: readonly string[];
   }): { inducted: boolean; totals: Record<string, number> };
 
+  /**
+   * Share (0-1) of his performance bonus a player earned with this season's stat line
+   * (`playerLines`), out of `seasonGames` regular-season games.
+   */
+  bonusEarned(line: Readonly<Record<string, number>>, seasonGames: number): number;
+
   /** Standout individual nights in a finished game (hockey: hat tricks, shutouts), as news keys. */
   highlights(result: GameResult): { key: string; playerId: PlayerId; teamId: TeamId }[];
 

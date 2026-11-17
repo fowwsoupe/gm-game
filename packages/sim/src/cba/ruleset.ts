@@ -64,6 +64,11 @@ export interface Ruleset {
     maxNoTradePerTeam: number;
     /** Most of a year's cap hit that may be paid as a signing bonus, in whole percent. */
     maxBonusPct: number;
+    /**
+     * Most an entry-level contract may pay in performance bonuses a year. They sit outside the
+     * cap hit; earned bonuses over the cap count against next season's.
+     */
+    maxPerformanceBonus: Dollars;
   };
 
   draft: {

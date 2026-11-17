@@ -50,6 +50,8 @@ export const NHL_2026: Ruleset = {
     maxNoTradePerTeam: 16,
     // TODO(verify): the real signing-bonus limit; 50 is a placeholder like the other unverified rules.
     maxBonusPct: 50,
+    // The NHL's "Schedule A" entry-level bonus limit, $850,000 a year.
+    maxPerformanceBonus: dollars(0.85),
   },
   // The real draft has 7 rounds, but most picks stay in junior or college and never take an NHL
   // roster spot. Until prospects exist as a separate pool, only the picks that sign are drafted.

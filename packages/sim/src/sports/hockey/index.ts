@@ -13,7 +13,13 @@ import { generateFictionalLeague, generateProspect } from './generate';
 import { NHL_2026 } from './ruleset-nhl-2026';
 import { pickAwards } from './awards';
 import { importHockeyRoster } from './roster';
-import { hockeyHallOfFame, hockeyHighlights, hockeyLeaders, hockeyPlayerLines } from './stats';
+import {
+  hockeyBonusEarned,
+  hockeyHallOfFame,
+  hockeyHighlights,
+  hockeyLeaders,
+  hockeyPlayerLines,
+} from './stats';
 import { hockeyRole } from './builds';
 
 /**
@@ -39,6 +45,7 @@ export function hockeySport(goalModel: GoalModel = rulesGoalModel): SportModule<
     unitOk: (unit, players) => unitOk(unit as SpecialUnit, players),
     leaders: hockeyLeaders,
     playerLines: hockeyPlayerLines,
+    bonusEarned: hockeyBonusEarned,
     highlights: hockeyHighlights,
     hallOfFame: hockeyHallOfFame,
     role: hockeyRole,

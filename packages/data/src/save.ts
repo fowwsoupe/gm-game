@@ -445,6 +445,9 @@ export class SaveFile {
           case 'contract.extended':
             setExtension.run(JSON.stringify(e.contract), e.playerId);
             break;
+          case 'bonuses.paid':
+            for (const c of e.charges) insertCharge(c);
+            break;
           case 'stats.archived':
             for (const l of e.lines) {
               archiveLine.run(l.playerId, e.season, l.teamId, JSON.stringify(l.stats));
