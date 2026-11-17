@@ -134,3 +134,24 @@ describe('loyalty and hometown', () => {
     expect(homes.size).toBe(teams.length);
   });
 });
+
+describe('goalie rotation', () => {
+  it('only the team that owns it can change it, and it applies to later games', () => {
+    const state = createLeague(5, ctx);
+    const mine = Object.values(state.teams).find((t) => t.userControlled)!.id;
+    const other = Object.keys(state.teams).find((t) => t !== mine) as TeamId;
+    expect(
+      handleCommand(
+        state,
+        { kind: 'goalies.setRotation', teamId: other, rotation: 'always' },
+        { id: 'x', controls: [mine] },
+        ctx,
+      ).ok,
+    ).toBe(false);
+    run(state, { kind: 'goalies.setRotation', teamId: mine, rotation: 'split' });
+    expect(state.goalieRotation[mine]).toBe('split');
+    // A season still plays out legally with the setting on.
+    run(state, { kind: 'sim.advance', days: 40 });
+    expect(Object.keys(state.results).length).toBeGreaterThan(0);
+  });
+});

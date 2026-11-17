@@ -388,6 +388,7 @@ export class LeagueService {
         state.specialUnits[teamId],
       ),
       chemistry: chemistry(healthy, state.date.season),
+      rotation: state.goalieRotation[teamId] ?? 'backToBack',
     };
   }
 

@@ -1,4 +1,4 @@
-import type { SpecialUnit } from './sports/hockey';
+import type { GoalieRotation, SpecialUnit } from './sports/hockey';
 import type {
   CapCharge,
   Contract,
@@ -119,6 +119,8 @@ export type LeagueEvent =
   | (EventBase & { kind: 'lines.set'; teamId: TeamId; order: PlayerId[] })
   /** A team's power-play or penalty-kill unit changed (empty = auto). */
   | (EventBase & { kind: 'units.set'; teamId: TeamId; unit: SpecialUnit; playerIds: PlayerId[] })
+  /** A team changed how its goalies share starts. */
+  | (EventBase & { kind: 'goalies.rotationSet'; teamId: TeamId; rotation: GoalieRotation })
   /** A team made a free agent an offer (replaces its earlier one); he answers next day. */
   | (EventBase & { kind: 'freeAgency.offered'; offer: FreeAgentOffer })
   /** An offer sheet to a restricted free agent: the team holding his rights may match it or not. */

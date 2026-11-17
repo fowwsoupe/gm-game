@@ -1,6 +1,8 @@
 import { useState } from 'react';
 import {
+  GOALIE_ROTATIONS,
   SPECIAL_UNITS,
+  type GoalieRotation,
   SPECIAL_UNIT_SIZE,
   type PlayerId,
   type PlayerProfile,
@@ -130,6 +132,29 @@ export function Lines() {
               seasons: data.chemistry.seasons.toFixed(1),
             })}
           </span>
+        )}
+        {data && (
+          <label className="flex items-center gap-2 text-sm text-muted">
+            {t('lines.rotation')}
+            <select
+              value={data.rotation}
+              disabled={dispatch.isPending}
+              onChange={(e) =>
+                dispatch.mutate({
+                  kind: 'goalies.setRotation',
+                  teamId: mine,
+                  rotation: e.target.value as GoalieRotation,
+                })
+              }
+              className="rounded border border-line bg-panel px-2 py-1 text-ink"
+            >
+              {GOALIE_ROTATIONS.map((r) => (
+                <option key={r} value={r}>
+                  {t(`lines.rotation.${r}` as MessageKey)}
+                </option>
+              ))}
+            </select>
+          </label>
         )}
         {error && <span className="text-sm text-bad">{error}</span>}
       </div>

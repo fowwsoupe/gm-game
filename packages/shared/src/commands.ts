@@ -1,6 +1,6 @@
 import type { LeagueEvent } from './events';
 import type { PlayerId, TeamId, TradeProposal } from './domain';
-import type { SpecialUnit } from './sports/hockey';
+import type { GoalieRotation, SpecialUnit } from './sports/hockey';
 
 /**
  * Every action a human (or, later, a remote player) takes is a Command. Nothing in the UI
@@ -35,6 +35,8 @@ export type Command =
   | { kind: 'lines.set'; teamId: TeamId; order: PlayerId[] }
   /** Set a power-play or penalty-kill unit (3F+2D / 2F+2D); an empty list goes back to auto. */
   | { kind: 'units.set'; teamId: TeamId; unit: SpecialUnit; playerIds: PlayerId[] }
+  /** How your goalies share starts (see `GoalieRotation`). */
+  | { kind: 'goalies.setRotation'; teamId: TeamId; rotation: GoalieRotation }
   /** Rank the draft class for your picks (best first). Players missing from it go by the scouts' order. */
   | { kind: 'draft.setBoard'; teamId: TeamId; order: PlayerId[] }
   /** One day of free agency: free agents answer the offers they have, then AI teams make new ones. */
