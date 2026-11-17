@@ -140,7 +140,16 @@ function PlayerTable({
   );
 }
 
-function Profile({ player: p, signFor }: { player: PlayerProfile; signFor: TeamId | undefined }) {
+export function Profile({
+  player: p,
+  signFor,
+  standalone = false,
+}: {
+  player: PlayerProfile;
+  signFor: TeamId | undefined;
+  /** On the player's own page: no link to it. */
+  standalone?: boolean;
+}) {
   const t = useT();
   const strengths = [...p.percentiles].sort((a, b) => b.value - a.value).slice(0, 2);
   return (
@@ -209,6 +218,7 @@ function Profile({ player: p, signFor }: { player: PlayerProfile; signFor: TeamI
         )}
       </Card>
       <Career player={p} />
+      {!standalone && <OpenProfile player={p} />}
       {p.teamId !== null && p.teamId === signFor && <BlockToggle player={p} teamId={signFor} />}
       {p.teamId === null && signFor && <Offer key={p.id} player={p} teamId={signFor} />}
     </div>
@@ -516,4 +526,10 @@ function HoldoutLine({ playerId }: { playerId: PlayerId }) {
       </Button>
     </p>
   );
+}
+
+function OpenProfile({ player }: { player: PlayerProfile }) {
+  const t = useT();
+  const openPlayer = useUi((s) => s.openPlayer);
+  return <Button onClick={() => openPlayer(player.teamId, player.id)}>{t('player.open')}</Button>;
 }
