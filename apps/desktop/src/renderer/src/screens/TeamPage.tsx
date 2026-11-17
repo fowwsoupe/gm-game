@@ -1,7 +1,7 @@
 import { useCapSheet, useLines, useRoster, useTeams } from '@/lib/queries';
 import { useUi } from '@/stores/ui';
 import { useT, type MessageKey } from '@/i18n';
-import { Button, Card } from '@/ui';
+import { Button, Card, Td, Th } from '@/ui';
 import { money } from '@/lib/format';
 import { Summary } from '@/screens/Cap';
 
@@ -49,21 +49,19 @@ export function TeamPage() {
         <table className="tabular w-full text-sm">
           <thead>
             <tr className="border-b border-line text-left text-muted">
-              <th className="px-3 py-2 font-medium">{t('cap.player')}</th>
-              <th className="px-3 py-2 font-medium">{t('team.pos')}</th>
-              <th className="px-3 py-2 text-right font-medium">{t('team.hit')}</th>
-              <th className="px-3 py-2 text-right font-medium">{t('team.thru')}</th>
+              <Th>{t('cap.player')}</Th>
+              <Th>{t('team.pos')}</Th>
+              <Th>{t('team.hit')}</Th>
+              <Th>{t('team.thru')}</Th>
             </tr>
           </thead>
           <tbody>
             {roster.map((p) => (
               <tr key={p.id} className="border-b border-line/50">
-                <td className="px-3 py-1.5">{name(p.id)}</td>
-                <td className="px-3 py-1.5">{p.position}</td>
-                <td className="px-3 py-1.5 text-right">
-                  {p.contract ? money(p.contract.capHit) : ''}
-                </td>
-                <td className="px-3 py-1.5 text-right">{p.contract?.expiresAfterSeason ?? ''}</td>
+                <Td>{name(p.id)}</Td>
+                <Td>{p.position}</Td>
+                <Td>{p.contract ? money(p.contract.capHit) : ''}</Td>
+                <Td>{p.contract?.expiresAfterSeason ?? ''}</Td>
               </tr>
             ))}
           </tbody>

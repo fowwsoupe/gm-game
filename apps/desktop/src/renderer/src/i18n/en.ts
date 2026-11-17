@@ -10,6 +10,7 @@ export const en = {
   'nav.roster': 'Roster',
   'nav.leaders': 'Leaders',
   'nav.history': 'History',
+  'nav.freeAgency': 'Free agency',
   'nav.cap': 'Cap',
   'team.back': 'Back to standings',
   'team.view': 'View team page',

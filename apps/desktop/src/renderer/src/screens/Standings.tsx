@@ -10,7 +10,7 @@ import {
 import type { PulseRow, StandingsRow, Team } from '@gm/shared';
 import { usePulse, useStandings, useTeams } from '@/lib/queries';
 import { useT, type MessageKey } from '@/i18n';
-import { Button, Card, TeamLink } from '@/ui';
+import { Button, Card, TeamLink, Td, Th } from '@/ui';
 
 type Row = StandingsRow & { team: Team | undefined; pulse: PulseRow | undefined; power: number };
 const col = createColumnHelper<Row>();
@@ -111,14 +111,15 @@ function StandingsTable({ data }: { data: Row[] }) {
         {table.getHeaderGroups().map((hg) => (
           <tr key={hg.id} className="border-b border-line text-left text-muted">
             {hg.headers.map((h) => (
-              <th
+              <Th
                 key={h.id}
+                left
                 onClick={h.column.getToggleSortingHandler()}
-                className="cursor-pointer px-3 py-2 font-medium hover:text-ink"
+                className="cursor-pointer hover:text-ink"
               >
                 {flexRender(h.column.columnDef.header, h.getContext())}
                 {{ asc: ' ▲', desc: ' ▼' }[h.column.getIsSorted() as string] ?? ''}
-              </th>
+              </Th>
             ))}
           </tr>
         ))}
@@ -130,9 +131,7 @@ function StandingsTable({ data }: { data: Row[] }) {
             className={`border-b border-line/50 ${row.original.team?.userControlled ? 'text-accent' : ''}`}
           >
             {row.getVisibleCells().map((cell) => (
-              <td key={cell.id} className="px-3 py-1.5">
-                {flexRender(cell.column.columnDef.cell, cell.getContext())}
-              </td>
+              <Td key={cell.id}>{flexRender(cell.column.columnDef.cell, cell.getContext())}</Td>
             ))}
           </tr>
         ))}

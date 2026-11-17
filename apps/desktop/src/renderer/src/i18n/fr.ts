@@ -8,6 +8,7 @@ export const fr: Record<MessageKey, string> = {
   'nav.roster': 'Alignement',
   'nav.leaders': 'Meneurs',
   'nav.history': 'Historique',
+  'nav.freeAgency': 'Autonomes',
   'nav.cap': 'Masse salariale',
   'team.back': 'Retour au classement',
   'team.view': "Voir la page de l'équipe",
