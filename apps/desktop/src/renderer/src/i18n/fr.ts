@@ -357,6 +357,7 @@ export const fr: Record<MessageKey, string> = {
   'trait.professionalism': 'Professionnel',
   'trait.hotHeaded': 'Tête brûlée',
   'home.raceNight': 'prochain match : victoire {win} · défaite {lose}',
+  'event.slump': '{player} ({team}) est resté {n} matchs sans point',
   'event.winStreak': 'Les {team} ont gagné {n} matchs de suite',
   'event.losingStreak': 'Les {team} ont perdu {n} matchs de suite',
   'event.hatTrick': 'Tour du chapeau pour {player} ({team})',
