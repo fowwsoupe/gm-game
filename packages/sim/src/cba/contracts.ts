@@ -27,6 +27,8 @@ export interface ContractTerms {
   isResign: boolean;
   /** An entry-level contract: its length is set by signing age and its salary is capped. */
   elc?: boolean;
+  /** A no-trade clause on the deal, and how many the team already holds. */
+  noTrade?: { held: number };
 }
 
 export type ContractIssue =
@@ -38,6 +40,8 @@ export type ContractIssue =
   | { code: 'elc_age'; age: number }
   | { code: 'elc_length'; years: number }
   | { code: 'elc_salary'; max: Dollars }
+  | { code: 'no_trade_age'; min: number }
+  | { code: 'no_trade_limit'; max: number }
   | { code: 'empty' };
 
 export const averageAnnualValue = (salaries: Dollars[]): Dollars =>
@@ -76,6 +80,12 @@ export function validateContract(rules: Ruleset, terms: ContractTerms): Contract
     if (terms.salaries.some((s) => s > rules.contracts.elcSalary)) {
       issues.push({ code: 'elc_salary', max: rules.contracts.elcSalary });
     }
+  }
+  if (terms.noTrade) {
+    if (terms.elc || terms.signingAge < rules.contracts.ufaAge)
+      issues.push({ code: 'no_trade_age', min: rules.contracts.ufaAge });
+    if (terms.noTrade.held >= rules.contracts.maxNoTradePerTeam)
+      issues.push({ code: 'no_trade_limit', max: rules.contracts.maxNoTradePerTeam });
   }
   // Not modelled yet, so they cannot be broken: bonuses (contracts have none), 35+ contracts
   // and the ELC slide (rules still to verify, see ruleset-nhl-2026.ts).

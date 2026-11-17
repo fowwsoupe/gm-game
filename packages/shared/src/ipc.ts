@@ -119,6 +119,7 @@ export interface GmApi {
       teamId: TeamId;
       salary: number;
       years: number;
+      noTrade?: true;
     }): Promise<SigningInterest | null>;
   };
   feed: {

@@ -18,6 +18,8 @@ export interface Contract {
   capHit: number;
   /** Season the contract ends, e.g. 2029 means it expires after 2028–29. */
   expiresAfterSeason: number;
+  /** He cannot be traded without his say; trades involving him are refused (no waiver yet). */
+  noTrade?: true;
 }
 
 /**
@@ -120,6 +122,7 @@ export interface FreeAgentOffer {
   /** Per year, whole dollars. */
   salary: number;
   years: number;
+  noTrade?: true;
 }
 
 export interface Player {
@@ -345,6 +348,7 @@ export interface TradeReason {
     | 'not_on_team'
     | 'retention'
     | 'not_your_pick'
+    | 'no_trade'
     | 'pick';
   params?: Record<string, string | number>;
 }

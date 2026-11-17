@@ -197,6 +197,7 @@ export function evaluateTrade(
     for (const id of ids) {
       const p = state.players[id];
       if (p?.teamId !== owner) return refuse('not_on_team', { player: p ? name(p) : id });
+      if (p.contract?.noTrade) return refuse('no_trade', { player: name(p) });
     }
   }
 

@@ -65,7 +65,7 @@ export function signingInterest(
   ctx: SimContext,
   player: Player,
   teamId: TeamId,
-  offer: { salary: number; years: number },
+  offer: { salary: number; years: number; noTrade?: true },
 ): SigningInterest {
   const { ruleset } = ctx;
   const age = capYearOf(state) - player.birthYear;
@@ -79,7 +79,8 @@ export function signingInterest(
     money: clamp((offer.salary / ask - 0.6) / 0.4, 0, 1.5),
     winning: WINNING[state.teamStatus[teamId] ?? 'bubble'],
     role: clamp(1 - better / depth, 0.2, 1),
-    term: clamp(offer.years / wantedYears(age), 0, 1),
+    // A no-trade clause is job security: worth about a quarter of the term he wants.
+    term: clamp(offer.years / wantedYears(age) + (offer.noTrade ? 0.25 : 0), 0, 1),
   };
   // Playing for his old team or his hometown is worth something on top: a full-score factor that
   // takes its weight from the others, so the same money goes further there (a "discount").
@@ -129,7 +130,7 @@ export function signFreeAgent(
   ctx: SimContext,
   player: Player,
   teamId: TeamId,
-  offer: { salary: number; years: number },
+  offer: { salary: number; years: number; noTrade?: true },
   /** Cap the team will free before he signs (a contender making room, `roomFor`). */
   capFreed = 0,
 ): { contract: Contract } | { error: string } {
@@ -146,11 +147,27 @@ export function signFreeAgent(
     salaries: Array<number>(Math.max(0, offer.years)).fill(salary),
     signingAge: season - player.birthYear,
     isResign: false,
+    ...(offer.noTrade && {
+      noTrade: {
+        held: Object.values(state.players).filter((p) => p.teamId === teamId && p.contract?.noTrade)
+          .length,
+      },
+    }),
   });
   if (issues.length) return { error: `illegal contract: ${issues[0]!.code}` };
   const total = teamCapTotal(state, teamId) + salary - capFreed;
   if (capYearIssues(ruleset, state, total).length) return { error: 'no cap room' };
-  const view = signingInterest(state, ctx, player, teamId, { salary, years: offer.years });
+  const view = signingInterest(state, ctx, player, teamId, {
+    salary,
+    years: offer.years,
+    ...(offer.noTrade && { noTrade: true as const }),
+  });
   if (view.interest < view.threshold) return { error: 'he is not interested' };
-  return { contract: { capHit: salary, expiresAfterSeason: season + offer.years - 1 } };
+  return {
+    contract: {
+      capHit: salary,
+      expiresAfterSeason: season + offer.years - 1,
+      ...(offer.noTrade && { noTrade: true as const }),
+    },
+  };
 }
