@@ -28,11 +28,11 @@ Season pages: [2006 playoffs](https://en.wikipedia.org/wiki/2006_Stanley_Cup_pla
 
 ## Where the sim stands
 
-| Measure (sim years 10+)  | Sim          | Real  |
-| ------------------------ | ------------ | ----- |
-| Points %, year-to-year r | 0.49 to 0.51 | 0.51  |
-| Points %, SD             | 0.077        | 0.095 |
-| New playoff teams a year | 30% to 32%   | 32.5% |
+| Measure (sim years 10+)  | Sim (lab, seeds 1, 101, 201) | Real  |
+| ------------------------ | ---------------------------- | ----- |
+| Points %, year-to-year r | 0.46 to 0.48                 | 0.51  |
+| Points %, SD             | 0.076 to 0.079               | 0.095 |
+| New playoff teams a year | 30.4% to 31.7%               | 32.5% |
 
 A season's points % SD mixes team quality with luck (about 0.05 over 82 games). Taking the luck
 out, team quality varies about 0.059 in the settled sim against about 0.080 in the NHL, and it
