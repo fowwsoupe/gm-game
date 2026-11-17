@@ -268,4 +268,43 @@ describe('chemistry in games', () => {
     expect(diff / games).toBeGreaterThan(0.02);
     expect(diff / games).toBeLessThan(0.6);
   }, 30_000); // ~1.5 s locally, ~5 s on CI; seeded, so the threshold never flakes
+
+  it('line bonuses (builds fit) reach the game, not only the strength numbers', () => {
+    const state = createLeague(75, ctx);
+    const roster = Object.values(state.players).filter(
+      (p) => p.teamId === Object.keys(state.teams)[0],
+    );
+    const base = teamStrength(roster, [], 0.5);
+    const zero = (bs: { offense: number; defense: number }[]) =>
+      bs.map(() => ({ offense: 0, defense: 0 }));
+    const plus = (bs: { offense: number; defense: number }[]) =>
+      bs.map(() => ({ offense: 2, defense: 2 }));
+    const flat = {
+      ...base,
+      unitBonus: { forwards: zero(base.unitBonus.forwards), defense: zero(base.unitBonus.defense) },
+    };
+    const fit = {
+      ...base,
+      unitBonus: { forwards: plus(base.unitBonus.forwards), defense: plus(base.unitBonus.defense) },
+    };
+    const rng = new Rng(9);
+    let diff = 0;
+    const games = 4000;
+    for (let i = 0; i < games; i++) {
+      const home = i % 2 === 0;
+      const g = ctx.sport.simGame(
+        {
+          id: `f${i}` as GameId,
+          homeTeamId: 'a' as TeamId,
+          awayTeamId: 'b' as TeamId,
+          home: home ? fit : flat,
+          away: home ? flat : fit,
+          resultOnly: true,
+        },
+        rng,
+      );
+      diff += home ? g.homeScore - g.awayScore : g.awayScore - g.homeScore;
+    }
+    expect(diff / games).toBeGreaterThan(0.05);
+  }, 30_000);
 });
