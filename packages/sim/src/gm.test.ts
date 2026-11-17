@@ -42,6 +42,14 @@ describe('AI GMs', () => {
     expect(spread(0)).toBeGreaterThan(5);
     const gm = { style: 'balanced', skill: 0.3 } as const;
     expect(misread(gm, 't1' as Team['id'], 'p1')).toBe(misread(gm, 't1' as Team['id'], 'p1'));
+    // A new GM at the same team has blind spots of his own, not his predecessor's.
+    const next = { style: 'winNow', skill: 0.3 } as const;
+    const same = Array.from({ length: 100 }, (_, i) => `p${i}`).filter(
+      (id) =>
+        Math.sign(misread(gm, 't1' as Team['id'], id)) ===
+        Math.sign(misread(next, 't1' as Team['id'], id)),
+    );
+    expect(same.length).toBeLessThan(80);
   });
 
   it('seenBy shifts ratings and potential, never the real player', () => {
