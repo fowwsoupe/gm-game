@@ -80,6 +80,7 @@ export const en = {
   'games.open': 'Open',
   'games.noGame': 'Open a played game or play a matchup to see it here.',
   'actions.newLeague': 'New league',
+  'actions.confirmReplace': 'Replace your current league? Your saved league will be deleted.',
   'actions.loadRoster': 'Load roster file…',
   'actions.simDay': 'Sim day',
   'actions.simWeek': 'Sim week',

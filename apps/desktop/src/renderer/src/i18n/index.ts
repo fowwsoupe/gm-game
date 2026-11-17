@@ -6,7 +6,7 @@ export type Locale = 'en' | 'fr';
 const dictionaries: Record<Locale, Record<MessageKey, string>> = { en, fr };
 
 /** Translate a key, filling {placeholders}. Missing translations fall back to English. */
-export function translate(
+function translate(
   locale: Locale,
   key: MessageKey,
   vars?: Record<string, string | number>,

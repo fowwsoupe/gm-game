@@ -1,4 +1,12 @@
-import type { Actor, Command, CommandResult, LeagueEvent, TeamId, TradeProposal } from '@gm/shared';
+import type {
+  Actor,
+  Command,
+  CommandResult,
+  LeagueEvent,
+  Team,
+  TeamId,
+  TradeProposal,
+} from '@gm/shared';
 import { Rng, applyEvent, emitter, makeEvent, type LeagueState } from './core';
 import { buyoutCharges } from './cba';
 import { parsePick } from './league';
@@ -15,6 +23,14 @@ import {
 import { evaluateTrade, planRetention } from './trades';
 import { advance } from './advance';
 import type { SimContext } from './context';
+
+/** A human controls a team if the actor was given it, or is the local player and it is theirs. */
+const controls = (actor: Actor, team: Team) =>
+  actor.controls.includes(team.id) || (actor.id === 'local' && team.userControlled);
+const notYours: CommandResult = {
+  ok: false,
+  error: { code: 'not_allowed', message: 'not your team' },
+};
 
 /**
  * The single entry point for changing a league. Every command, from any human (local or,
@@ -58,9 +74,7 @@ export function handleCommand(
       if (!player || !team || !player.contract) {
         return { ok: false, error: { code: 'invalid', message: 'no contract to buy out' } };
       }
-      const yours =
-        actor.controls.includes(team.id) || (actor.id === 'local' && team.userControlled);
-      if (!yours) return { ok: false, error: { code: 'not_allowed', message: 'not your team' } };
+      if (!controls(actor, team)) return notYours;
       // The buyout window is the offseason: after the champion is crowned, before the rollover.
       if (!state.championTeamId) {
         return {
@@ -95,9 +109,7 @@ export function handleCommand(
       if (!player || !team) {
         return { ok: false, error: { code: 'invalid', message: 'unknown player' } };
       }
-      const yours =
-        actor.controls.includes(team.id) || (actor.id === 'local' && team.userControlled);
-      if (!yours) return { ok: false, error: { code: 'not_allowed', message: 'not your team' } };
+      if (!controls(actor, team)) return notYours;
       if (state.tradeRequests.some((r) => r.playerId === player.id)) {
         return { ok: false, error: { code: 'invalid', message: 'he has asked to be traded' } };
       }
@@ -129,9 +141,7 @@ export function handleCommand(
       const { proposal } = command;
       const from = state.teams[proposal.fromTeamId];
       if (!from) return { ok: false, error: { code: 'invalid', message: 'unknown team' } };
-      const yours =
-        actor.controls.includes(from.id) || (actor.id === 'local' && from.userControlled);
-      if (!yours) return { ok: false, error: { code: 'not_allowed', message: 'not your team' } };
+      if (!controls(actor, from)) return notYours;
       const verdict = evaluateTrade(state, ctx, proposal);
       if (!verdict.accepted) {
         return {
@@ -149,9 +159,7 @@ export function handleCommand(
       const offer = state.tradeOffers.find((o) => o.id === command.offerId);
       if (!offer) return { ok: false, error: { code: 'invalid', message: 'no such offer' } };
       const human = state.teams[offer.proposal.toTeamId]!;
-      const yours =
-        actor.controls.includes(human.id) || (actor.id === 'local' && human.userControlled);
-      if (!yours) return { ok: false, error: { code: 'not_allowed', message: 'not your team' } };
+      if (!controls(actor, human)) return notYours;
       const close = (accepted: boolean) => {
         const ev = makeEvent(state, 'minor', [human.id, offer.proposal.fromTeamId], {
           kind: 'trade.offerClosed',
@@ -189,9 +197,7 @@ export function handleCommand(
       const request = state.tradeRequests.find((r) => r.playerId === command.playerId);
       if (!request) return { ok: false, error: { code: 'invalid', message: 'no such request' } };
       const team = state.teams[request.teamId]!;
-      const yours =
-        actor.controls.includes(team.id) || (actor.id === 'local' && team.userControlled);
-      if (!yours) return { ok: false, error: { code: 'not_allowed', message: 'not your team' } };
+      if (!controls(actor, team)) return notYours;
       const p = state.players[command.playerId]!;
       const withdrawn = talkedDown(p.id);
       const ev = withdrawn
@@ -235,9 +241,7 @@ export function handleCommand(
     case 'lines.set': {
       const team = state.teams[command.teamId];
       if (!team) return { ok: false, error: { code: 'invalid', message: 'unknown team' } };
-      const yours =
-        actor.controls.includes(team.id) || (actor.id === 'local' && team.userControlled);
-      if (!yours) return { ok: false, error: { code: 'not_allowed', message: 'not your team' } };
+      if (!controls(actor, team)) return notYours;
       if (
         new Set(command.order).size !== command.order.length ||
         !command.order.every((id) => state.players[id]?.teamId === team.id)
@@ -259,9 +263,7 @@ export function handleCommand(
     case 'units.set': {
       const team = state.teams[command.teamId];
       if (!team) return { ok: false, error: { code: 'invalid', message: 'unknown team' } };
-      const yours =
-        actor.controls.includes(team.id) || (actor.id === 'local' && team.userControlled);
-      if (!yours) return { ok: false, error: { code: 'not_allowed', message: 'not your team' } };
+      if (!controls(actor, team)) return notYours;
       const ps = command.playerIds.map((id) => state.players[id]);
       if (
         command.playerIds.length &&
@@ -286,9 +288,7 @@ export function handleCommand(
     case 'draft.setBoard': {
       const team = state.teams[command.teamId];
       if (!team) return { ok: false, error: { code: 'invalid', message: 'unknown team' } };
-      const yours =
-        actor.controls.includes(team.id) || (actor.id === 'local' && team.userControlled);
-      if (!yours) return { ok: false, error: { code: 'not_allowed', message: 'not your team' } };
+      if (!controls(actor, team)) return notYours;
       const eligible = new Set(state.draftClass.map((d) => d.player.id as string));
       if (
         new Set(command.order).size !== command.order.length ||
@@ -311,9 +311,7 @@ export function handleCommand(
       if (!player || !team) {
         return { ok: false, error: { code: 'invalid', message: 'unknown player or team' } };
       }
-      const yours =
-        actor.controls.includes(team.id) || (actor.id === 'local' && team.userControlled);
-      if (!yours) return { ok: false, error: { code: 'not_allowed', message: 'not your team' } };
+      if (!controls(actor, team)) return notYours;
       const deal = signFreeAgent(state, ctx, player, team.id, command);
       if ('error' in deal) return { ok: false, error: { code: 'invalid', message: deal.error } };
       // With AI offers on the table he weighs them all tomorrow; otherwise he decides now.

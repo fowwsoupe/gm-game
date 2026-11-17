@@ -18,6 +18,16 @@ export interface WorkerRequest {
 parentPort?.on('message', (req: WorkerRequest) => {
   const xg = req.xg === undefined ? undefined : parseXgTable(req.xg);
   const ctx = defaultContext(req.state.rulesetId, xg?.ok ? { goalModel: xg.model } : {});
-  const result: CommandResult = handleCommand(req.state, req.command, req.actor, ctx);
+  // A throw would kill this thread and leave every later command waiting forever. The state here
+  // is a throwaway copy, so reporting the error and carrying on is safe.
+  let result: CommandResult;
+  try {
+    result = handleCommand(req.state, req.command, req.actor, ctx);
+  } catch (err) {
+    result = {
+      ok: false,
+      error: { code: 'invalid', message: `sim error: ${(err as Error).message}` },
+    };
+  }
   parentPort?.postMessage(result);
 });

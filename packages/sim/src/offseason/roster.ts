@@ -17,7 +17,7 @@ export const countAt = (roster: readonly Player[], position: string): number =>
   roster.filter((p) => p.position === position).length;
 
 /** Players a team still has to add to reach the position minimums and the roster minimum. */
-export function openSlots(rules: Ruleset, roster: readonly Player[]): number {
+function openSlots(rules: Ruleset, roster: readonly Player[]): number {
   let short = 0;
   for (const [position, min] of Object.entries(rules.roster.positionMin)) {
     short += Math.max(0, min - countAt(roster, position));

@@ -1,4 +1,4 @@
-import { existsSync, mkdirSync, readFileSync, rmSync } from 'node:fs';
+import { existsSync, mkdirSync, readFileSync, renameSync, rmSync } from 'node:fs';
 import { join } from 'node:path';
 import type { Worker } from 'node:worker_threads';
 import { app } from 'electron';
@@ -117,12 +117,19 @@ export class LeagueService {
   }
 
   private start(state: LeagueState) {
-    this.save?.close();
     mkdirSync(join(app.getPath('userData'), 'saves'), { recursive: true });
-    rmSync(this.savePath(), { force: true });
+    // Build the new save beside the old one and swap it in, so a crash never leaves no save.
+    const fresh = `${this.savePath()}.new`;
+    rmSync(fresh, { force: true });
+    const next = openSave(fresh);
+    next.saveNewLeague(state);
+    next.close(); // checkpoints the WAL into the file, so the rename moves everything
+    this.save?.close();
+    this.save = null;
+    for (const ext of ['', '-wal', '-shm']) rmSync(this.savePath() + ext, { force: true });
+    renameSync(fresh, this.savePath());
     this.save = openSave(this.savePath());
     this.state = state;
-    this.save.saveNewLeague(this.state);
     return { teams: this.save.listTeams() };
   }
 
@@ -489,7 +496,13 @@ export class LeagueService {
     const result = await this.runInWorker({ state, command, actor: LOCAL, xg: this.xg });
     if (result.ok) {
       for (const e of result.events) applyEvent(state, e);
-      save.persist(result.events, state);
+      try {
+        save.persist(result.events, state);
+      } catch (err) {
+        // The write rolled back, so memory is ahead of the disk: go back to what the disk has.
+        this.state = save.loadState();
+        throw err;
+      }
     }
     return result;
   }
@@ -502,6 +515,7 @@ export class LeagueService {
       };
       const onError = (err: Error) => {
         this.worker.off('message', onMessage);
+        this.worker = createSimWorker({}); // the old thread is dead; later commands need a new one
         reject(err);
       };
       this.worker.once('message', onMessage);

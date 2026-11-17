@@ -116,12 +116,16 @@ export function App() {
         <div className="mb-6 flex flex-wrap gap-2">
           <Button
             variant="primary"
-            onClick={() => newLeague.mutate(Math.floor(Math.random() * 1e9))}
+            onClick={() => {
+              if (!hasLeague || window.confirm(t('actions.confirmReplace')))
+                newLeague.mutate(Math.floor(Math.random() * 1e9));
+            }}
           >
             {t('actions.newLeague')}
           </Button>
           <Button
             onClick={() =>
+              (!hasLeague || window.confirm(t('actions.confirmReplace'))) &&
               fromRoster.mutate(Math.floor(Math.random() * 1e9), {
                 onSuccess: (res) => {
                   if (res.ok === 'canceled') return;
