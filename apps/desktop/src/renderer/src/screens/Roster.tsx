@@ -198,6 +198,7 @@ function Profile({ player: p, signFor }: { player: PlayerProfile; signFor: TeamI
         {p.injuredUntil !== undefined && (
           <p className="mt-1 text-sm text-bad">{t('roster.injured', { day: p.injuredUntil })}</p>
         )}
+        {p.holdout && <HoldoutLine playerId={p.id} />}
         {p.injuryHistory && (
           <p className="mt-1 text-xs text-muted">
             {t('roster.injuryHistory', {
@@ -482,5 +483,37 @@ function BlockToggle({ player, teamId }: { player: PlayerProfile; teamId: TeamId
         <span className="text-xs text-muted">{t('block.note')}</span>
       </div>
     </Card>
+  );
+}
+
+/** He refuses to report: a talk may bring him back, a new contract will. */
+function HoldoutLine({ playerId }: { playerId: PlayerId }) {
+  const t = useT();
+  const dispatch = useDispatch();
+  const [message, setMessage] = useState<string | null>(null);
+  return (
+    <p className="mt-1 flex items-center gap-2 text-sm text-bad">
+      {message ?? t('roster.holdout')}
+      <Button
+        disabled={dispatch.isPending}
+        onClick={() =>
+          dispatch.mutate(
+            { kind: 'holdout.talk', playerId },
+            {
+              onSuccess: (res) =>
+                setMessage(
+                  !res.ok
+                    ? res.error.message
+                    : res.events.some((e) => e.kind === 'player.holdoutEnded')
+                      ? t('roster.holdoutTalkWorked')
+                      : t('roster.holdoutTalkFailed'),
+                ),
+            },
+          )
+        }
+      >
+        {t('trade.talk')}
+      </Button>
+    </p>
   );
 }

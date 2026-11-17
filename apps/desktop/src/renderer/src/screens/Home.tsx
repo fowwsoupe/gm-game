@@ -217,6 +217,13 @@ function FeedCard() {
           player: names[e.playerId] ?? '',
           team: teamName(e.teamId),
         });
+      case 'player.holdoutStarted':
+        return t('event.holdoutStarted', {
+          player: names[e.playerId] ?? '',
+          team: teamName(e.teamId),
+        });
+      case 'player.holdoutEnded':
+        return t('event.holdoutEnded', { player: names[e.playerId] ?? '' });
       case 'player.tradeRequestEnded':
         return e.withdrawn
           ? t('event.requestWithdrawn', { player: names[e.playerId] ?? '' })

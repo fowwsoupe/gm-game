@@ -36,6 +36,16 @@ export function dashboard(state: LeagueState, ctx: SimContext, teamId: TeamId): 
       });
     }
   }
+  for (const h of state.holdouts.filter((x) => x.teamId === teamId)) {
+    const p = state.players[h.playerId];
+    if (p) {
+      todo.push({
+        code: 'holdout',
+        params: { player: `${p.firstName} ${p.lastName}` },
+        screen: 'roster',
+      });
+    }
+  }
   const offers = state.tradeOffers.filter((o) => o.proposal.toTeamId === teamId).length;
   if (offers > 0) todo.push({ code: 'tradeOffers', params: { count: offers }, screen: 'trades' });
   const hurt = roster.filter((p) => (p.injuredUntil ?? 0) > state.date.day).length;

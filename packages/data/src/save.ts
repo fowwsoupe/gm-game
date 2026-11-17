@@ -223,6 +223,7 @@ export class SaveFile {
       pickProtection: JSON.parse(this.getMeta('pickProtection') ?? '{}'),
       tradeOffers: JSON.parse(this.getMeta('tradeOffers') ?? '[]'),
       tradeRequests: JSON.parse(this.getMeta('tradeRequests') ?? '[]'),
+      holdouts: JSON.parse(this.getMeta('holdouts') ?? '[]'),
       faOffers: JSON.parse(this.getMeta('faOffers') ?? '[]'),
       rfaRights: JSON.parse(this.getMeta('rfaRights') ?? '{}'),
       formerTeams: JSON.parse(this.getMeta('formerTeams') ?? '{}'),
@@ -461,6 +462,8 @@ export class SaveFile {
           case 'freeAgency.sheetDropped':
           case 'player.tradeRequested':
           case 'player.tradeRequestEnded':
+          case 'player.holdoutStarted':
+          case 'player.holdoutEnded':
           case 'trade.offerClosed':
             break; // stored with the clock below
           case 'freeAgency.opened':
@@ -513,6 +516,7 @@ export class SaveFile {
     this.setMeta('pickProtection', JSON.stringify(state.pickProtection));
     this.setMeta('tradeOffers', JSON.stringify(state.tradeOffers));
     this.setMeta('tradeRequests', JSON.stringify(state.tradeRequests));
+    this.setMeta('holdouts', JSON.stringify(state.holdouts));
     this.setMeta('faOffers', JSON.stringify(state.faOffers));
     this.setMeta('rfaRights', JSON.stringify(state.rfaRights));
     this.setMeta('formerTeams', JSON.stringify(state.formerTeams));
