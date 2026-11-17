@@ -51,6 +51,32 @@ describe('holdouts', () => {
     throw new Error('no holdout in 40 seeds');
   });
 
+  it('a traded holdout is no longer holding out', () => {
+    for (let seed = 1; seed < 40; seed++) {
+      const { state, mine } = atStart(seed);
+      if (state.holdouts.length === 0) continue;
+      const { playerId } = state.holdouts[0]!;
+      const partner = Object.values(state.teams).find((t) => t.id !== mine)!.id;
+      const generous = defaultContext(ctx.ruleset.id, {
+        models: { valuation: { value: () => ({ surplus: 50_000_000, reasons: [] }) } },
+      });
+      const res = handleCommand(
+        state,
+        {
+          kind: 'trade.propose',
+          proposal: { fromTeamId: mine, toTeamId: partner, give: [playerId], get: [] },
+        },
+        local,
+        generous,
+      );
+      if (!res.ok) throw new Error(res.error.message);
+      expect(state.players[playerId]!.teamId).toBe(partner);
+      expect(state.holdouts).toHaveLength(0);
+      return;
+    }
+    throw new Error('no holdout in 40 seeds');
+  });
+
   it('the AI teams never hold out', () => {
     const { state, mine } = atStart(3);
     expect(state.holdouts.every((h) => h.teamId === mine)).toBe(true);
