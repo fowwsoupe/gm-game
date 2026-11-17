@@ -47,7 +47,7 @@ describe('speed budget', () => {
     expect(performance.now() - t0).toBeLessThan(250);
   });
 
-  it('still sims a season and rolls over fast in year 20', () => {
+  it('still sims a season and rolls over fast in year 20', async () => {
     const state = createLeague(77, ctx);
     const local = { id: 'local', controls: [] };
     const { regularSeasonDays, playoffDays } = ctx.ruleset.season.calendar;
@@ -60,7 +60,11 @@ describe('speed budget', () => {
       );
       return handleCommand(state, { kind: 'season.rollover' }, local, ctx);
     };
-    for (let y = 0; y < 19; y++) expect(year().ok).toBe(true);
+    for (let y = 0; y < 19; y++) {
+      expect(year().ok).toBe(true);
+      // Let the test worker answer the runner between seasons (see offseason.test.ts).
+      await new Promise((resolve) => setTimeout(resolve, 0));
+    }
     const t0 = performance.now();
     expect(year().ok).toBe(true);
     expect(performance.now() - t0).toBeLessThan(6_000);
@@ -89,5 +93,5 @@ describe('speed budget', () => {
         }),
       ),
     ).toBeLessThan(250);
-  }, 120_000); // 20 seasons take ~7 s on a slow CI machine; the budget is for the last one
+  }, 120_000); // 20 seasons take ~30 s on CI; the time budget is for the last one
 });
