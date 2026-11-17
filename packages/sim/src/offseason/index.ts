@@ -16,6 +16,7 @@ import { runDraft } from './draft';
 import { changeGms, setPlans } from './gms';
 
 export { lotteryOrder, announceDraftClass } from './draft';
+export { scoutReport } from './scouting';
 export { signingInterest, signFreeAgent } from './signing';
 export { acceptSheet, marketDay, roomFor } from './market';
 export { resignOffers, resignContract, isExpiring, resignWindowOpen } from './resign';

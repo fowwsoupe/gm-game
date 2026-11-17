@@ -1,7 +1,7 @@
 import { useState } from 'react';
 import type { PlayerId } from '@gm/shared';
 import { useDispatch, useDraftClass, useTeams } from '@/lib/queries';
-import { useT } from '@/i18n';
+import { useT, type MessageKey } from '@/i18n';
 import { Button, Card, RangeBar, Td, Th } from '@/ui';
 
 /**
@@ -45,7 +45,8 @@ export function Draft() {
               <Th>{t('roster.player')}</Th>
               <Th>{t('roster.pos')}</Th>
               <Th>{t('roster.age')}</Th>
-              <Th className="w-1/3">{t('draft.range')}</Th>
+              <Th className="w-1/4">{t('draft.range')}</Th>
+              <Th left>{t('draft.report')}</Th>
               <Th />
             </tr>
           </thead>
@@ -60,6 +61,15 @@ export function Draft() {
                 <Td>{p.age}</Td>
                 <Td>
                   <RangeBar low={p.low} high={p.high} />
+                </Td>
+                <Td left className="text-xs text-muted">
+                  {t('draft.reportLine', {
+                    strengths: p.report.strengths
+                      .map((k) => t(`rating.${k}` as MessageKey))
+                      .join(', '),
+                    weakness: t(`rating.${p.report.weakness}` as MessageKey),
+                    ready: t(p.report.ready ? 'draft.ready' : 'draft.raw'),
+                  })}
                 </Td>
                 <Td>
                   {board.includes(p.id) ? (

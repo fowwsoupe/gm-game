@@ -31,6 +31,7 @@ export {
   resignOffers,
   RFA_DISCOUNT,
   roomFor,
+  scoutReport,
   signFreeAgent,
   signingInterest,
   stayChance,
