@@ -24,6 +24,7 @@ import { Trades } from '@/screens/Trades';
 import { Lines } from '@/screens/Lines';
 import { Draft } from '@/screens/Draft';
 import { TeamPage } from '@/screens/TeamPage';
+import { Player } from '@/screens/Player';
 
 const NAV: { id: Screen; label: MessageKey }[] = [
   { id: 'home', label: 'nav.home' },
@@ -223,6 +224,7 @@ export function App() {
         {screen === 'trades' && <Trades />}
         {screen === 'draft' && <Draft />}
         {screen === 'team' && <TeamPage />}
+        {screen === 'player' && <Player />}
       </main>
     </div>
   );
