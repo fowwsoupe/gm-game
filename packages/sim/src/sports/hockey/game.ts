@@ -9,16 +9,11 @@ import type {
   TeamId,
 } from '@gm/shared';
 import type { Rng } from '../../core';
-import {
-  FACEOFF_WEIGHT,
-  goalieScore,
-  ICE_TIME,
-  rating,
-  UNIT_WEIGHT,
-  type TeamStrength,
-} from './strength';
+import { FACEOFF_WEIGHT, goalieScore, rating, UNIT_WEIGHT, type TeamStrength } from './strength';
 import { HOCKEY_TUNING, rulesGoalModel, type GoalModel } from './tuning';
-import { makeSide, type Side } from './side';
+import { finishBox, makeSide } from './side';
+import { buildUnit, mean, pick } from './units';
+import { playShootout } from './shootout';
 
 // ---------- the play-by-play engine ----------
 
@@ -41,19 +36,8 @@ const INJURY_DAYS = [
   { weight: 30, days: [15, 60] },
   { weight: 10, days: [61, 180] },
 ] as const;
-/** Share of power-play and penalty-kill time played by the first and second unit. */
-const UNIT_SPLIT = [0.55, 0.45] as const;
 const REGULATION = 3600;
 const PLAYOFF_OVERTIME = 1200;
-
-/** Index of one weight picked in proportion to its size. */
-function pick(weights: readonly number[], rng: Rng): number {
-  let roll = rng.next() * weights.reduce((a, b) => a + b, 0);
-  const i = weights.findIndex((w) => (roll -= w) < 0);
-  return i < 0 ? weights.length - 1 : i;
-}
-
-const mean = (xs: number[]) => (xs.length ? xs.reduce((a, b) => a + b, 0) / xs.length : 50);
 
 interface Played {
   /** Goals each side [home, away] counted in the score, not shootout goals. */
@@ -137,53 +121,8 @@ function playGame(
   const lam: [number, number] = [0, 0];
   const penRate: [number, number] = [0, 0];
 
-  /** A forward line and a defence pair, by ice time (empty ones never play). */
-  const pickShare = (units: number[][], shares: readonly number[]) => {
-    const weights = units.map((u, i) => (u.length ? shares[i]! : 0));
-    return weights.some((w) => w > 0) ? pick(weights, rng) : -1;
-  };
-  /** A skater of the same kind who is healthy and not already out there; the deepest first. */
-  const spare = (n: 0 | 1, k: number, unit: number[]) => {
-    const s = S[n];
-    const group = (s.isD[k] ? s.pairs : s.lines).flat();
-    return group.filter((j) => !unit.includes(j) && !s.out.has(j)).at(-1);
-  };
-  const build = (n: 0 | 1, kind: 'ev' | 'pp' | 'pk', size: number): number[] => {
-    const s = S[n];
-    const nd = size >= 4 ? 2 : 1;
-    const nf = size - nd;
-    let f: number[];
-    let d: number[];
-    if (kind === 'ev') {
-      const li = pickShare(s.lines, ICE_TIME.forwardLines);
-      const pi = pickShare(s.pairs, ICE_TIME.defensePairs);
-      f = li < 0 ? [] : s.lines[li]!.slice(0, nf);
-      d = pi < 0 ? [] : s.pairs[pi]!.slice(0, nd);
-      // An extra attacker (goalie pulled) is the best other forward still in the game.
-      const extra = s.lines
-        .flat()
-        .filter((k) => !f.includes(k) && !s.out.has(k))
-        .sort((a, b) => s.atk[b]! - s.atk[a]! || a - b);
-      while (f.length < nf && extra.length) f.push(extra.shift()!);
-    } else {
-      const k = pick(
-        UNIT_SPLIT.map((w, i) => (s.pairs[i]?.length || s.lines[i]?.length ? w : 0)),
-        rng,
-      );
-      const mine = s.saved[kind][k];
-      // A saved power play keeps its own mix (4F+1D, 5F...): the defence count comes from the unit.
-      const nds = kind === 'pp' && mine ? Math.min(mine.d.length, nd) : nd;
-      d = (mine?.d ?? s.pairs[k] ?? []).slice(0, nds);
-      f = (mine?.f ?? (kind === 'pp' ? (s.lines[k] ?? []) : (s.killers[k] ?? []))).slice(
-        0,
-        size - nds,
-      );
-    }
-    const unit = [...f, ...d];
-    return unit
-      .map((k) => (s.out.has(k) ? (spare(n, k, unit) ?? k) : k))
-      .filter((k) => !S[n].out.has(k));
-  };
+  const build = (n: 0 | 1, kind: 'ev' | 'pp' | 'pk', size: number) =>
+    buildUnit(S[n], kind, size, rng);
 
   /** Puts out new units for the situation and recomputes every rate. */
   const refresh = (regulation: boolean, allowPenalties: boolean) => {
@@ -447,75 +386,14 @@ function playGame(
         penalties: false,
         suddenDeath: true,
       });
-      if (overtimeGoal === null) shootoutWinner = shootout();
+      if (overtimeGoal === null) shootoutWinner = playShootout(S, rng, goalFactor);
     }
-  }
-
-  /** Three shooters each, then one at a time. Skill is shooting and hands. */
-  function shootout(): 0 | 1 {
-    const order = ([0, 1] as const).map((n) =>
-      S[n].players
-        .map((_, k) => k)
-        .filter((k) => !S[n].out.has(k) && !S[n].isD[k])
-        .sort(
-          (a, b) =>
-            S[n].shoot[b]! +
-              rating(S[n].players[b]!, 'puckHandling') -
-              (S[n].shoot[a]! + rating(S[n].players[a]!, 'puckHandling')) || a - b,
-        ),
-    );
-    const tally = [0, 0];
-    const taken = [0, 0];
-    const attempt = (n: 0 | 1, round: number) => {
-      const list = order[n]!;
-      const k = list[round % Math.max(1, list.length)];
-      const skill =
-        k === undefined ? 50 : S[n].shoot[k]! + rating(S[n].players[k]!, 'puckHandling');
-      const p = T.shootoutGoal * (skill / 130) ** 2 * goalFactor((1 - n) as 0 | 1);
-      return rng.chance(Math.min(0.9, p));
-    };
-    for (let round = 0; round < 3; round++) {
-      for (const n of [0, 1] as const) {
-        if (attempt(n, round)) tally[n]!++;
-        taken[n]!++;
-        // Decided once the trailing side cannot catch up with the shots it has left.
-        if (tally[0]! > tally[1]! + (3 - taken[1]!)) return 0;
-        if (tally[1]! > tally[0]! + (3 - taken[0]!)) return 1;
-      }
-    }
-    if (tally[0] !== tally[1]) return tally[0]! > tally[1]! ? 0 : 1;
-    for (let round = 3; round < 40; round++) {
-      const a = attempt(0, round);
-      const b = attempt(1, round);
-      if (a !== b) return a ? 0 : 1;
-    }
-    return rng.chance(0.5) ? 0 : 1;
   }
 
   const credited: [number, number] = [goals[0], goals[1]];
-  const minutes = (sec: number) => Math.round((sec / 60) * 10) / 10;
   let box: HockeyBoxScore | undefined;
   if (input.keepBox) {
-    for (const s of S) {
-      for (const line of s.skaters) {
-        line.toi = minutes(line.toi);
-        line.ppToi = minutes(line.ppToi);
-        line.pkToi = minutes(line.pkToi);
-      }
-      for (const line of s.goalieLines) line.toi = minutes(line.toi);
-    }
-    const side = (s: Side) => ({
-      skaters: s.skaters,
-      goalie: s.goalieLines[0] ?? { id: '', toi: 0, shotsAgainst: 0, saves: 0 },
-      ...(s.goalieLines[1] ? { relief: s.goalieLines[1] } : {}),
-    });
-    box = {
-      home: side(S[0]),
-      away: side(S[1]),
-      shots,
-      penalties,
-      ...(emptyNet[0] + emptyNet[1] > 0 ? { emptyNet } : {}),
-    };
+    box = finishBox(S, shots, penalties, emptyNet);
   }
   return {
     goals: credited,
