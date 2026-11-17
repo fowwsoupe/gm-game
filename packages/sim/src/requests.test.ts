@@ -51,4 +51,13 @@ describe('trade requests', () => {
     expect(res.ok).toBe(true);
     expect(state.tradeRequests.length).toBe(talkedDown(playerId) ? 0 : 1);
   });
+
+  it('end when he leaves the team, so the next one can come', () => {
+    for (const kind of ['contract.expired', 'player.retired'] as const) {
+      const state = withRequest();
+      const { playerId, teamId } = state.tradeRequests[0]!;
+      emitter(state, [])('minor', [teamId], { kind, playerId });
+      expect(state.tradeRequests).toEqual([]);
+    }
+  });
 });

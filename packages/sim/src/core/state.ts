@@ -71,6 +71,11 @@ export interface LeagueState {
 /** The season a move counts for: next season once the champion is crowned. */
 const moveSeason = (state: LeagueState) => state.date.season + (state.championTeamId ? 1 : 0);
 
+/** His trade request is settled: withdrawn, or he left the team (it would block new ones). */
+const endRequest = (state: LeagueState, playerId: string) => {
+  state.tradeRequests = state.tradeRequests.filter((r) => r.playerId !== playerId);
+};
+
 export function applyEvent(state: LeagueState, event: LeagueEvent): void {
   // Every applied event advances the sequence, in every copy of the state, so ids stay in sync.
   state.eventSeq++;
@@ -139,10 +144,12 @@ export function applyEvent(state: LeagueState, event: LeagueEvent): void {
       delete p.extension;
       delete p.joined;
       state.capCharges.push(...event.charges.map((c) => ({ ...c })));
+      endRequest(state, p.id);
       return;
     }
     case 'player.retired':
       delete state.players[event.playerId];
+      endRequest(state, event.playerId);
       return;
     case 'contract.expired': {
       const p = state.players[event.playerId];
@@ -151,6 +158,7 @@ export function applyEvent(state: LeagueState, event: LeagueEvent): void {
       p.teamId = null;
       delete p.contract;
       delete p.extension;
+      endRequest(state, p.id);
       return;
     }
     case 'player.drafted':
@@ -168,7 +176,7 @@ export function applyEvent(state: LeagueState, event: LeagueEvent): void {
       state.tradeRequests.push({ playerId: event.playerId, teamId: event.teamId });
       return;
     case 'player.tradeRequestEnded':
-      state.tradeRequests = state.tradeRequests.filter((r) => r.playerId !== event.playerId);
+      endRequest(state, event.playerId);
       return;
     case 'trade.offered':
       state.tradeOffers.push(structuredClone(event.offer));

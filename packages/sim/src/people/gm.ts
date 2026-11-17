@@ -29,12 +29,12 @@ const READ_SD = { best: 1, worst: 6 };
 
 /**
  * How many rating points this team's GM over- (positive) or underrates this player. Fixed per
- * team and player, so a poor GM keeps falling for the same players; nothing is stored and no
- * draw comes from the league's random stream.
+ * GM, team and player, so a poor GM keeps falling for the same players and his successor has
+ * blind spots of his own; nothing is stored and no draw comes from the league's random stream.
  */
 export function misread(gm: GmProfile, teamId: TeamId, playerId: string): number {
   const sd = READ_SD.best + (1 - gm.skill) * (READ_SD.worst - READ_SD.best);
-  return new Rng(hash(`read:${teamId}:${playerId}`)).normal(0, sd);
+  return new Rng(hash(`read:${teamId}:${gm.style}:${gm.skill}:${playerId}`)).normal(0, sd);
 }
 
 const clamp = (n: number) => Math.max(1, Math.min(99, n));
