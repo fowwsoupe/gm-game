@@ -14,13 +14,12 @@ Status: `[ ]` not started · `[~]` in progress · `[x]` done
 Ready jobs, each one PR. Pick from the top. Update this list in the PR that finishes a job.
 
 1. Alternate: a sim feature with its screen, then a UI-only item.
-   1. Home: sim-to-date bar.
-   2. Morale (People), shown on the player card.
-   3. Player profile: career stats and history.
-   4. Loyalty and hometown discounts (Free agency), as reasons on the interest meter.
-   5. Lines: drag-and-drop, PP/PK units, goalie rotation rules.
-   6. Draft: scout reports.
-   7. Trades: trade block, conditional picks.
+   1. Morale (People), shown on the player card.
+   2. Player profile: career stats and history.
+   3. Loyalty and hometown discounts (Free agency), as reasons on the interest meter.
+   4. Lines: drag-and-drop, PP/PK units, goalie rotation rules.
+   5. Draft: scout reports.
+   6. Trades: trade block, conditional picks.
 2. **A lasting team edge** (long-run flattening). Needs a design first:
    [research/2026-11-long-run-spread.md](research/2026-11-long-run-spread.md) is the brief.
 
@@ -73,7 +72,7 @@ Build order, owners and "done when" for each step: **[V0.1_PLAN.md](V0.1_PLAN.md
 
 **Screens**
 
-- [~] Home hub: top strip (record, place, playoff odds, cap space, next game), To do that clears to zero, news, playoffs done; sim-to-date bar to do
+- [~] Home hub: top strip (record, place, playoff odds, cap space, next game), To do that clears to zero, news, playoffs done (with a sim-to-date bar)
 - [~] Roster & lines: roster screen with stats and player cards, Lines screen (your depth order sets lines, pairs and the starting goalie, used every game) done; drag-and-drop, PP/PK formations, goalie rotation rules to do
 - [~] Player profile, stats & leaders, standings, team pages, game center: percentile player card, leaders, standings, game center done; full profile (career stats, history) to do
 - [~] Generated faces: deterministic SVG face per player that greys and lines with age, on the player card; more variety and use across screens to do

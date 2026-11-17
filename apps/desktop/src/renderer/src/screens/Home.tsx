@@ -1,3 +1,4 @@
+import { useState } from 'react';
 import type { LeagueEvent, TeamId } from '@gm/shared';
 import {
   useCapSheet,
@@ -13,7 +14,7 @@ import {
 import { useUi } from '@/stores/ui';
 import { money } from '@/lib/format';
 import { useT, type MessageKey } from '@/i18n';
-import { Card, StatRow } from '@/ui';
+import { Button, Card, StatRow } from '@/ui';
 
 export function Home({
   hasLeague,
@@ -32,6 +33,7 @@ export function Home({
     <div className="grid max-w-5xl gap-4 md:grid-cols-2">
       <TeamPicker />
       {mine ? <TeamStrip teamId={mine.id} /> : null}
+      <SimBar />
       <Card>
         <p>{t('home.teamsLoaded', { count: teamCount })}</p>
         {lastSim && <p className="mt-2 text-sm text-muted">{lastSim}</p>}
@@ -297,6 +299,62 @@ function PlayoffCard() {
             </p>
           </div>
         ))}
+      </div>
+    </Card>
+  );
+}
+
+/** Pick a day on the season line (deadline and playoffs marked) and sim straight to it. */
+function SimBar() {
+  const t = useT();
+  const { data: status } = useStatus();
+  const dispatch = useDispatch();
+  const [picked, setPicked] = useState<number | null>(null);
+  if (!status || status.championTeamId || status.day >= status.playoffsEndDay) return null;
+  const first = status.day + 1;
+  const last = status.playoffsEndDay;
+  const target = Math.min(last, Math.max(first, picked ?? first));
+  const at = (day: number) => `${(Math.max(0, Math.min(1, day / last)) * 100).toFixed(1)}%`;
+  const marks = [
+    { day: status.tradeDeadlineDay, label: t('home.simBarDeadline') },
+    { day: status.playoffsStartDay, label: t('home.simBarPlayoffs') },
+  ].filter((m) => m.day > status.day);
+  return (
+    <Card title={t('home.simBarTitle')} className="md:col-span-2">
+      <div className="relative mb-6 h-2 rounded-full bg-panel-2">
+        <div
+          className="absolute h-full rounded-full bg-[var(--team-primary)]"
+          style={{ width: at(status.day) }}
+        />
+        {marks.map((m) => (
+          <div key={m.label} className="absolute top-0 h-full" style={{ left: at(m.day) }}>
+            <div className="h-full w-px bg-ink" />
+            <div className="mt-1 -translate-x-1/2 whitespace-nowrap text-xs text-muted">
+              {m.label}
+            </div>
+          </div>
+        ))}
+      </div>
+      <div className="flex items-center gap-3">
+        <input
+          type="range"
+          aria-label={t('home.simBarTitle')}
+          min={first}
+          max={last}
+          value={target}
+          onChange={(e) => setPicked(Number(e.target.value))}
+          className="flex-1"
+        />
+        <Button
+          variant="primary"
+          disabled={dispatch.isPending}
+          onClick={() => {
+            dispatch.mutate({ kind: 'sim.advance', days: target - status.day, stopOn: 'major' });
+            setPicked(null);
+          }}
+        >
+          {t('home.simBarGo', { day: target })}
+        </Button>
       </div>
     </Card>
   );
