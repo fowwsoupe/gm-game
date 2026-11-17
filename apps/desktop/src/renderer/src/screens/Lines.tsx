@@ -126,7 +126,15 @@ export function Lines() {
         </Button>
         <span className="text-sm text-muted">{t('lines.note')}</span>
         {data && (
-          <span className="ml-auto text-sm">
+          <span className="ml-auto text-sm text-muted">
+            {t('lines.fit', {
+              forwards: Math.round(data.fit.forwards * 100),
+              defense: Math.round(data.fit.defense * 100),
+            })}
+          </span>
+        )}
+        {data && (
+          <span className="text-sm">
             {t('lines.chemistry', {
               value: Math.round(data.chemistry.value * 100),
               seasons: data.chemistry.seasons.toFixed(1),

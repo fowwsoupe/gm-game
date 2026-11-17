@@ -1,8 +1,9 @@
 import { describe, expect, it } from 'vitest';
-import type { Actor, GameId, PlayerId, TeamId } from '@gm/shared';
+import type { Actor, GameId, Player, PlayerId, TeamId } from '@gm/shared';
 import {
   autoLineup,
   chemistry,
+  unitFit,
   personalityOf,
   createLeague,
   defaultContext,
@@ -122,6 +123,51 @@ describe('power-play and penalty-kill units', () => {
     expect(fourF(pair[1]!)).toBeLessThan(custom(pair[1]!));
     expect(set('pp1', [])).toBe(true);
     expect(state.specialUnits[mine]!.pp1).toBeUndefined();
+  });
+});
+
+describe('builds fit', () => {
+  const mk = (id: string, shooting: number, passing: number): Player =>
+    ({
+      id,
+      firstName: id,
+      lastName: id,
+      birthYear: 1995,
+      teamId: null,
+      position: 'C',
+      potential: 70,
+      ratings: { shooting, passing, puckHandling: 60, skating: 60 },
+    }) as unknown as Player;
+
+  it('a finisher with a creator fits; three of a kind or three generalists do not', () => {
+    const span = 15;
+    const lean = (p: Player) => p.ratings.shooting! - p.ratings.passing!;
+    const pair = [mk('a', 80, 60), mk('b', 60, 80), mk('c', 70, 70)];
+    expect(unitFit(pair, lean, span)).toBeGreaterThan(0.9);
+    expect(unitFit([mk('a', 80, 60), mk('b', 85, 55), mk('c', 78, 62)], lean, span)).toBe(0);
+    expect(unitFit([mk('a', 70, 70), mk('b', 71, 70), mk('c', 70, 71)], lean, span)).toBeLessThan(
+      0.1,
+    );
+    expect(unitFit([mk('a', 80, 60)], lean, span)).toBe(0);
+  });
+
+  it('a better-fitting top line scores more offence from the same total skill', () => {
+    const roster = (leans: [number, number][]): Player[] =>
+      leans.flatMap(([s, p], i) => [
+        { ...mk(`c${i}`, s, p), position: 'C' },
+        { ...mk(`l${i}`, s, p), position: 'LW' },
+        { ...mk(`r${i}`, s, p), position: 'RW' },
+      ]);
+    const kinds = Array<[number, number]>(4).fill([70, 70]);
+    // Same average shooting and passing, but line 1 splits them across its players.
+    const mixed = roster(kinds).map((p) =>
+      p.id === 'c0' ? { ...p, ratings: { ...p.ratings, shooting: 90, passing: 50 } } : p,
+    );
+    const alike = roster(kinds);
+    mixed.find((p) => p.id === 'l0')!.ratings = { ...mixed[0]!.ratings, shooting: 50, passing: 90 };
+    const a = teamStrength(alike, [], 0.5).offense;
+    const m = teamStrength(mixed, [], 0.5).offense;
+    expect(m).toBeGreaterThan(a);
   });
 });
 

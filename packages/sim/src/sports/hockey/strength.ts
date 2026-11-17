@@ -87,6 +87,49 @@ export const FACEOFF_WEIGHT = 0.2;
  */
 export const CHEMISTRY_POINTS = 1;
 
+/**
+ * Builds fit: a forward line wants a finisher (shooting over passing) and a creator (passing over
+ * shooting) as different players; a defence pair wants one who joins the attack and one who stays
+ * home. A unit's fit is 0-1: how far its most extreme player on each side is from even, up to a
+ * span of rating points. Three of a kind, or three generalists, fit at 0.
+ */
+export const FIT_SPAN = { forwards: 15, defense: 8 } as const;
+/** Rating points a team with a perfectly fitting set of units adds (units weighted by ice time). */
+export const FIT_POINTS = 3;
+/**
+ * The league's typical team fit (ice-time-weighted, measured on generated leagues), subtracted so
+ * an average team nets zero and the bonus only separates teams.
+ */
+export const FIT_BASELINE = { forwards: 0.21, defense: 0.12 } as const;
+
+const finisher = (p: Player) => r(p, 'shooting') - r(p, 'passing');
+const rusher = (p: Player) => attack(p) - defence(p);
+
+/** 0-1: how well a unit's players complement each other, by how `lean` splits them. */
+export function unitFit(
+  unit: readonly Player[],
+  lean: (p: Player) => number,
+  span: number,
+): number {
+  if (unit.length < 2) return 0;
+  const leans = unit.map(lean);
+  return Math.max(0, Math.min(1, Math.min(Math.max(...leans), -Math.min(...leans)) / span));
+}
+
+/** A team's fit, ice-time-weighted, for its forward lines and its defence pairs. */
+export function lineupFit(lineup: Lineup): { forwards: number; defense: number } {
+  const sum = (
+    units: Player[][],
+    w: readonly number[],
+    lean: (p: Player) => number,
+    span: number,
+  ) => units.reduce((t, u, i) => t + w[i]! * unitFit(u, lean, span), 0);
+  return {
+    forwards: sum(lineup.forwards, ICE_TIME.forwardLines, finisher, FIT_SPAN.forwards),
+    defense: sum(lineup.defense, ICE_TIME.defensePairs, rusher, FIT_SPAN.defense),
+  };
+}
+
 const byRating = (a: Player, b: Player) => overall(b) - overall(a) || a.id.localeCompare(b.id);
 
 /**
@@ -170,6 +213,9 @@ export function teamStrength(
   const lineup = autoLineup(players, depth);
   lineup.special = dressedUnits(lineup, saved);
   const { forwards, defense, goalies } = lineup;
+  const fit = lineupFit(lineup);
+  const fitOffense = FIT_POINTS * (fit.forwards - FIT_BASELINE.forwards);
+  const fitDefense = FIT_POINTS * (fit.defense - FIT_BASELINE.defense);
   const f = ICE_TIME.forwardLines;
   const d = ICE_TIME.defensePairs;
   const mix = (w: { forwards: number; defense: number }, skill: (p: Player) => number) =>
@@ -184,8 +230,8 @@ export function teamStrength(
     ) -
       50);
   return {
-    offense: mix(UNIT_WEIGHT.offense, attack) + draws + chem,
-    defense: mix(UNIT_WEIGHT.defense, defence) + draws + chem,
+    offense: mix(UNIT_WEIGHT.offense, attack) + draws + chem + fitOffense,
+    defense: mix(UNIT_WEIGHT.defense, defence) + draws + chem + fitDefense,
     goaltending: goalies[0] ? goalieScore(goalies[0]) : 40,
     backupGoaltending: goalies[1] ? goalieScore(goalies[1]) : 40,
     chemistry: chem,

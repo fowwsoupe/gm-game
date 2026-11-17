@@ -18,6 +18,8 @@ export {
   HOCKEY_DEVELOPMENT,
   teamStrength,
   autoLineup,
+  lineupFit,
+  unitFit,
   hockeyLeaders,
   hockeySeasonStats,
   type SkaterTotals,
