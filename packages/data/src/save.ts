@@ -60,6 +60,8 @@ interface PlayerRow {
   extension_json: string | null;
   joined_season: number | null;
   injured_until: number | null;
+  injury_count: number;
+  injury_days: number;
 }
 
 /**
@@ -290,7 +292,9 @@ export class SaveFile {
     const retire = this.db.prepare(
       'UPDATE players SET retired_season = ?, team_id = NULL, contract_json = NULL WHERE id = ?',
     );
-    const setInjury = this.db.prepare('UPDATE players SET injured_until = ? WHERE id = ?');
+    const setInjury = this.db.prepare(
+      'UPDATE players SET injured_until = ?, injury_count = injury_count + 1, injury_days = injury_days + ? WHERE id = ?',
+    );
     const insertCharge = this.insertCapCharge();
     const dropOldCharges = this.db.prepare('DELETE FROM cap_charges WHERE season < ?');
     const healAll = this.db.prepare('UPDATE players SET injured_until = NULL');
@@ -388,7 +392,7 @@ export class SaveFile {
             for (const c of e.charges) insertCharge(c);
             break;
           case 'player.injured':
-            setInjury.run(e.until, e.playerId);
+            setInjury.run(e.until, e.days, e.playerId);
             break;
           case 'contract.expired':
             moved.add(e.playerId);
@@ -601,6 +605,7 @@ export class SaveFile {
       if (r.extension_json) p.extension = JSON.parse(r.extension_json);
       if (r.joined_season !== null) p.joined = r.joined_season;
       if (r.injured_until !== null) p.injuredUntil = r.injured_until;
+      if (r.injury_count > 0) p.injuryHistory = { count: r.injury_count, days: r.injury_days };
       return p;
     });
   }

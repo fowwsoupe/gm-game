@@ -151,6 +151,7 @@ export const fr: Record<MessageKey, string> = {
   'roster.through': 'Jusqu’à',
   'roster.injuredShort': 'BL',
   'roster.injured': 'Blessé : de retour au jour {day}.',
+  'roster.injuryHistory': 'Historique de blessures : {count} blessures, {days} jours manqués',
   'roster.subtitle': '{position} · {age} ans',
   'roster.contract': '{amount} par année jusqu’en {season}',
   'roster.noContract': 'Sans contrat (joueur autonome)',

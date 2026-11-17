@@ -154,4 +154,9 @@ export const migrations: readonly string[] = [
   `
   ALTER TABLE teams ADD COLUMN plan_json TEXT;
   `,
+  // 16: career injuries and days missed (injury history).
+  `
+  ALTER TABLE players ADD COLUMN injury_count INTEGER NOT NULL DEFAULT 0;
+  ALTER TABLE players ADD COLUMN injury_days INTEGER NOT NULL DEFAULT 0;
+  `,
 ];

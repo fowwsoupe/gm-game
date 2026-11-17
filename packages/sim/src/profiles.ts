@@ -60,6 +60,7 @@ export function playerProfiles(
         age: state.date.season - p.birthYear,
         ...(p.contract && { contract: { ...p.contract } }),
         ...((p.injuredUntil ?? 0) > state.date.day && { injuredUntil: p.injuredUntil }),
+        ...(p.injuryHistory && { injuryHistory: { ...p.injuryHistory } }),
         percentiles,
         ...sport.role(p.position, percentiles),
         traits: notableTraits(personalityOf(p.id)),

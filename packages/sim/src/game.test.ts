@@ -327,6 +327,7 @@ describe('injuries', () => {
     expect(state.players[id]!.injuredUntil).toBe(9);
     applyEvent(state, { ...base, kind: 'season.started', season: 2028, schedule: [], rngState: 1 });
     expect(state.players[id]!.injuredUntil).toBeUndefined();
+    expect(state.players[id]!.injuryHistory).toEqual({ count: 1, days: 5 }); // history stays
   });
 
   it('fills a short line with a spare forward of another position', () => {
