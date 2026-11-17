@@ -91,6 +91,7 @@ export class LeagueService {
 
   private open(): { save: SaveFile; state: LeagueState } {
     if (!this.save) {
+      mkdirSync(join(app.getPath('userData'), 'saves'), { recursive: true }); // first run: no folder yet
       this.save = openSave(this.savePath());
       if (this.save.getMeta('season')) this.state = this.save.loadState();
     }

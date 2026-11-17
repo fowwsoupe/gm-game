@@ -1,5 +1,5 @@
 import { EventEmitter } from 'node:events';
-import { existsSync, mkdtempSync } from 'node:fs';
+import { existsSync, mkdtempSync, rmSync } from 'node:fs';
 import { tmpdir } from 'node:os';
 import { join } from 'node:path';
 import { beforeEach, describe, expect, it, vi } from 'vitest';
@@ -58,6 +58,13 @@ const cmd = { kind: 'sim.advance', days: 1 } as const;
 describe('LeagueService', () => {
   beforeEach(() => {
     FakeWorker.all = [];
+  });
+
+  it('says there is no league on a first run, instead of failing on a missing folder', () => {
+    rmSync(join(dir, 'saves'), { recursive: true, force: true });
+    const svc = new LeagueService();
+    expect(() => svc.listTeams()).toThrow('No league yet');
+    svc.dispose();
   });
 
   it('replaces the save with a new league and leaves no temp file', () => {
