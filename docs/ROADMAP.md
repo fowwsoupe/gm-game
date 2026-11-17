@@ -3,9 +3,11 @@
 First roadmap for the GM game (NHL first). Full feature detail lives in
 [FEATURE_SPEC.md](FEATURE_SPEC.md); architecture rules in [ARCHITECTURE.md](ARCHITECTURE.md).
 
-**Goal of v0.1 (Early Access):** a complete multi-season loop, polished. Season, playoffs,
-draft, re-signing, free agency, next season, for 20+ years without hitting a wall.
-Fewer features, each one finished.
+**Goal of the first public release:** the full NHL game, Phase 1 and Phase 2 together: a
+complete multi-season loop, polished (season, playoffs, draft, re-signing, free agency, next
+season, for 20+ years without hitting a wall), plus the owner and finance layer, front office,
+live draft and free-agency rooms, media, match viewer, cutscenes, sandbox and multiplayer.
+Phase 3 (NBA, NFL) stays after release. Fewer features, each one finished.
 
 Status: `[ ]` not started · `[~]` in progress · `[x]` done
 
@@ -13,10 +15,21 @@ Status: `[ ]` not started · `[~]` in progress · `[x]` done
 
 Ready jobs, each one PR. Pick from the top. Update this list in the PR that finishes a job.
 
-1. **A lasting team edge** (long-run flattening). Needs a design first:
-   [research/2026-11-long-run-spread.md](research/2026-11-long-run-spread.md) is the brief.
+Ready now (code can start):
 
-Not ready yet: minor / junior leagues (needs a design), camp and a trade deadline that matters.
+1. Draft-room trades (extends the trade and draft engines).
+2. Contract bonuses and trade protection (cap and CBA checks, so tests first).
+3. Holdouts (a player under contract refuses to report; personality decides).
+4. Chemistry from linemates, builds, personalities and leaders (`pnpm lab` before and after).
+5. Re-injury risk (`pnpm lab` before and after).
+6. Player profile screen of its own; more face variety.
+
+Needs a design first (a short brief in `docs/research/`, then jobs):
+
+- **A lasting team edge** (long-run flattening): [research/2026-11-long-run-spread.md](research/2026-11-long-run-spread.md) is the brief.
+- Minor / junior leagues; camp and a trade deadline that matters; player traits and clustered builds.
+- Every Phase 2 headline below. Owner and finance comes first among them: hot seat, and
+  frustrated-owner events, need an owner and a coach to attach to.
 
 ---
 
@@ -81,7 +94,7 @@ Build order, owners and "done when" for each step: **[V0.1_PLAN.md](V0.1_PLAN.md
 - [ ] Legal consult (licensing, company)
 - [ ] Steam store page up early for wishlists; price; demo (Next Fest)
 
-## Phase 2 — Post-launch updates (one headline each)
+## Phase 2 — Part of the first release (one headline each)
 
 - [ ] Owner & finance: decision cards, pricing policy, fans, projects, owner meetings
 - [ ] Front office: scouting, analytics, medical, coaching, development staff
