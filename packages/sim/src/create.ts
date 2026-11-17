@@ -55,6 +55,7 @@ export function createLeague(
     pickProtection: {},
     tradeOffers: [],
     tradeRequests: [],
+    holdouts: [],
     faOffers: [],
     rfaRights: {},
     formerTeams: {},

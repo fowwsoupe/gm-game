@@ -12,7 +12,7 @@ import { classifyTeams, computeStandings, nextRound, seedPlayoffs } from './leag
 import { giveSeasonAwards } from './awards';
 import { announceDraftClass, worstFirst } from './offseason';
 import { aiOffers, aiTrades } from './trades';
-import { chemistry, tradeRequests } from './people';
+import { chemistry, holdoutsWeek, startHoldouts, tradeRequests } from './people';
 import { overall } from './players';
 import type { SimContext } from './context';
 
@@ -52,7 +52,8 @@ export function advance(
   loadRosters();
   const strengthOf = (team: TeamId, day: number) => {
     const roster = rosters.get(team) ?? [];
-    const hurt = roster.filter((p) => (p.injuredUntil ?? 0) > day);
+    const away = new Set(state.holdouts.map((h) => h.playerId));
+    const hurt = roster.filter((p) => (p.injuredUntil ?? 0) > day || away.has(p.id));
     const out = hurt.map((p) => p.id).join();
     let cached = strengths.get(team);
     if (!cached || cached.out !== out) {
@@ -198,6 +199,10 @@ export function advance(
 
   for (let d = 0; d < days; d++) {
     const today = { ...state.date };
+    // Opening day: a player who feels underpaid may refuse to report.
+    if (today.day === 0 && phaseOf(cal, today) === 'regular') {
+      startHoldouts(state, ctx, rng.fork('holdouts'), emitter(state, events));
+    }
     const dayStart = events.length;
 
     for (const g of byDay.get(today.day) ?? []) {
@@ -319,6 +324,7 @@ export function advance(
       aiTrades(state, ctx, rng.fork(`trades${today.day}`), emitter(state, events));
       aiOffers(state, ctx, rng.fork(`offers${today.day}`), emitter(state, events));
       tradeRequests(state, rng.fork(`requests${today.day}`), emitter(state, events));
+      holdoutsWeek(state, rng.fork(`holdouts${today.day}`), emitter(state, events));
       if (events.length > before) loadRosters();
     }
 

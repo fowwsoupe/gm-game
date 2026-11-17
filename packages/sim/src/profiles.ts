@@ -61,6 +61,7 @@ export function playerProfiles(
         ...(p.contract && { contract: { ...p.contract } }),
         ...((p.injuredUntil ?? 0) > state.date.day && { injuredUntil: p.injuredUntil }),
         ...(p.injuryHistory && { injuryHistory: { ...p.injuryHistory } }),
+        ...(state.holdouts.some((h) => h.playerId === p.id) && { holdout: true as const }),
         percentiles,
         ...sport.role(p.position, percentiles),
         traits: notableTraits(personalityOf(p.id)),

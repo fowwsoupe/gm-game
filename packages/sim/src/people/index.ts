@@ -23,6 +23,7 @@ export {
 export { morale, type MoraleInput } from './morale';
 export { chemistry, CHEMISTRY_FULL_SEASONS } from './chemistry';
 export { talkedDown, tradeRequests } from './requests';
+export { startHoldouts, holdoutsWeek, talkedRound } from './holdouts';
 export {
   GM_LEAN,
   GM_STYLES,

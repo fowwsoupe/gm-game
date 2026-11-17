@@ -159,6 +159,10 @@ export type LeagueEvent =
   | (EventBase & { kind: 'player.tradeRequested'; playerId: PlayerId; teamId: TeamId })
   /** A trade request ends: withdrawn after a talk, or he was traded. */
   | (EventBase & { kind: 'player.tradeRequestEnded'; playerId: PlayerId; withdrawn: boolean })
+  /** A player under contract refuses to report until he is paid, talked round or traded. */
+  | (EventBase & { kind: 'player.holdoutStarted'; playerId: PlayerId; teamId: TeamId })
+  /** A holdout ends with the player back at work (`talked`: after a talk with the GM). */
+  | (EventBase & { kind: 'player.holdoutEnded'; playerId: PlayerId; talked: boolean })
   /** An AI GM offers a human team a trade (see `TradeOffer`). */
   | (EventBase & { kind: 'trade.offered'; offer: TradeOffer })
   /** An offer is gone: accepted (a `trade.completed` follows), declined or expired. */

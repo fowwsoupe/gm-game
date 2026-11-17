@@ -11,7 +11,7 @@ import { GOALIE_ROTATIONS } from '@gm/shared';
 import { Rng, applyEvent, emitter, makeEvent, type LeagueState } from './core';
 import { buyoutCharges, capYearIssues, capYearOf, teamCapTotal } from './cba';
 import { parsePick } from './league';
-import { talkedDown } from './people';
+import { talkedDown, talkedRound } from './people';
 import {
   isExpiring,
   acceptSheet,
@@ -214,6 +214,27 @@ export function handleCommand(
         : makeEvent(state, 'notable', [team.id], {
             kind: 'news.posted',
             headline: 'event.requestStands',
+            params: { player: `${p.firstName} ${p.lastName}` },
+          });
+      applyEvent(state, ev);
+      return { ok: true, events: [ev] };
+    }
+
+    case 'holdout.talk': {
+      const holdout = state.holdouts.find((h) => h.playerId === command.playerId);
+      if (!holdout) return { ok: false, error: { code: 'invalid', message: 'no such holdout' } };
+      const team = state.teams[holdout.teamId]!;
+      if (!controls(actor, team)) return notYours;
+      const p = state.players[command.playerId]!;
+      const ev = talkedRound(p.id)
+        ? makeEvent(state, 'notable', [team.id], {
+            kind: 'player.holdoutEnded',
+            playerId: p.id,
+            talked: true,
+          })
+        : makeEvent(state, 'notable', [team.id], {
+            kind: 'news.posted',
+            headline: 'event.holdoutStands',
             params: { player: `${p.firstName} ${p.lastName}` },
           });
       applyEvent(state, ev);

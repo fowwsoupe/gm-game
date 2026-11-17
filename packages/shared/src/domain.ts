@@ -95,6 +95,8 @@ export interface PlayerProfile extends RosterPlayer {
   /** First day back from injury, if hurt. */
   injuredUntil?: number;
   injuryHistory?: InjuryHistory;
+  /** Refusing to report until he is paid. */
+  holdout?: true;
   percentiles: { key: string; value: number }[];
   /** Sport-defined build and role tags (hockey: 'sniper', 'shutdownD'...; tags 'speed', 'shot'...). */
   build: string;
@@ -444,7 +446,8 @@ export interface TodoItem {
     | 'overCap'
     | 'deadline'
     | 'tradeOffers'
-    | 'tradeRequest';
+    | 'tradeRequest'
+    | 'holdout';
   params?: Record<string, string | number>;
   screen: 'roster' | 'cap' | 'draft' | 'trades';
 }

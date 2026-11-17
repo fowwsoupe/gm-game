@@ -19,7 +19,7 @@ Ready now (code can start):
 
 1. Draft-room trades: the lottery is now drawn when the champion is crowned and round-one picks trade at their real slot (done); trading during the live draft stays with the Phase 2 draft room.
 2. Contract bonuses (cap and CBA checks, so tests first). Trade protection is done: no-trade clauses (ruleset age and per-team limit, the player values one, trades refuse them).
-3. Holdouts (a player under contract refuses to report; personality decides).
+3. Holdouts: done for human teams (opening day, greed and pay decide; a talk or the weeks end it). AI-team holdouts wait for a balance pass.
 4. Chemistry from linemates, builds, personalities and leaders (`pnpm lab` before and after).
 5. Re-injury risk (`pnpm lab` before and after).
 6. Player profile screen of its own; more face variety.
@@ -73,7 +73,7 @@ Build order, owners and "done when" for each step: **[V0.1_PLAN.md](V0.1_PLAN.md
 - [~] Draft v1: class announced after the playoffs with scouted potential ranges (AI sees the same ranges), your ranked list drives your picks, scout reports (best and weakest skills, ready or raw) done; lottery drawn before the draft so picks trade at their real slot done; the live draft room is Phase 2
 - [x] Playoffs: bracket, NHL-style wild cards, honest momentum (per-game goalie form, calibrated), Playoff MVP, playoff cap; the cup is "Champion" until it is named
 - [x] Awards, records, history (own award names, Playoff MVP included)
-- [~] Living league: feed with names (trades, signings, extensions, long injuries, first pick), league pulse, playoff odds and power rating, sim until it matters (your team and league-wide moments only), race nights (odds if you win or lose the next game), streak news, trade requests with a talk (personality decides), slump news (a top-6 skater 10 games without a point) done; holdouts, hot seat to do
+- [~] Living league: feed with names (trades, signings, extensions, long injuries, first pick), league pulse, playoff odds and power rating, sim until it matters (your team and league-wide moments only), race nights (odds if you win or lose the next game), streak news, trade requests with a talk (personality decides), slump news (a top-6 skater 10 games without a point), holdouts (your underpaid, greedy core players) done; hot seat to do
 - [~] Chemistry: v1 from time together (visible on Lines, changes with every move, capped at ±1 rating point per unit) done; linemates, builds, personalities and leaders to do
 
 **Screens**

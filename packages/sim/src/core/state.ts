@@ -75,6 +75,8 @@ export interface LeagueState {
   rfaSheets: FreeAgentOffer[];
   /** Players on human teams who asked to be traded (cleared by a talk that works or a trade). */
   tradeRequests: { playerId: PlayerId; teamId: TeamId }[];
+  /** Players on human teams holding out: they sit out until paid, talked round or traded. */
+  holdouts: { playerId: PlayerId; teamId: TeamId }[];
   /** Count of events applied so far; the next event's id is built from it. */
   eventSeq: number;
 }
@@ -89,6 +91,7 @@ const moveSeason = (state: LeagueState) => state.date.season + (state.championTe
 /** His trade request is settled: withdrawn, or he left the team (it would block new ones). */
 const endRequest = (state: LeagueState, playerId: string) => {
   state.tradeRequests = state.tradeRequests.filter((r) => r.playerId !== playerId);
+  state.holdouts = state.holdouts.filter((r) => r.playerId !== playerId);
 };
 
 export function applyEvent(state: LeagueState, event: LeagueEvent): void {
@@ -207,6 +210,12 @@ export function applyEvent(state: LeagueState, event: LeagueEvent): void {
     case 'player.tradeRequestEnded':
       endRequest(state, event.playerId);
       return;
+    case 'player.holdoutStarted':
+      state.holdouts.push({ playerId: event.playerId, teamId: event.teamId });
+      return;
+    case 'player.holdoutEnded':
+      state.holdouts = state.holdouts.filter((h) => h.playerId !== event.playerId);
+      return;
     case 'trade.offered':
       state.tradeOffers.push(structuredClone(event.offer));
       return;
@@ -260,6 +269,8 @@ export function applyEvent(state: LeagueState, event: LeagueEvent): void {
       const p = state.players[event.playerId];
       if (!p) throw new Error(`unknown player ${event.playerId}`);
       p.extension = { ...event.contract };
+      // A raise settles it.
+      state.holdouts = state.holdouts.filter((h) => h.playerId !== p.id);
       return;
     }
     case 'season.started':
@@ -267,6 +278,7 @@ export function applyEvent(state: LeagueState, event: LeagueEvent): void {
       state.rngState = event.rngState;
       state.schedule = event.schedule.map((g) => ({ ...g, date: { ...g.date } }));
       state.results = {};
+      state.holdouts = [];
       for (const p of Object.values(state.players)) delete p.injuredUntil;
       state.playoffSeries = {};
       state.championTeamId = null;
