@@ -65,7 +65,7 @@ export function signingInterest(
   ctx: SimContext,
   player: Player,
   teamId: TeamId,
-  offer: { salary: number; years: number; noTrade?: true },
+  offer: { salary: number; years: number; noTrade?: true; bonusPct?: number },
 ): SigningInterest {
   const { ruleset } = ctx;
   const age = capYearOf(state) - player.birthYear;
@@ -76,7 +76,12 @@ export function signingInterest(
   const depth = (ruleset.roster.positionMin[player.position] ?? 2) + 1;
   const scores = {
     // Asking price = 1; up to 1.5 for an overpay, 0 at 60% of the ask.
-    money: clamp((offer.salary / ask - 0.6) / 0.4, 0, 1.5),
+    // Cash up front is worth a tenth more than the same money spread over the season.
+    money: clamp(
+      ((offer.salary * (1 + (0.1 * (offer.bonusPct ?? 0)) / 100)) / ask - 0.6) / 0.4,
+      0,
+      1.5,
+    ),
     winning: WINNING[state.teamStatus[teamId] ?? 'bubble'],
     role: clamp(1 - better / depth, 0.2, 1),
     // A no-trade clause is job security: worth about a quarter of the term he wants.
@@ -130,7 +135,7 @@ export function signFreeAgent(
   ctx: SimContext,
   player: Player,
   teamId: TeamId,
-  offer: { salary: number; years: number; noTrade?: true },
+  offer: { salary: number; years: number; noTrade?: true; bonusPct?: number },
   /** Cap the team will free before he signs (a contender making room, `roomFor`). */
   capFreed = 0,
 ): { contract: Contract } | { error: string } {
@@ -147,6 +152,7 @@ export function signFreeAgent(
     salaries: Array<number>(Math.max(0, offer.years)).fill(salary),
     signingAge: season - player.birthYear,
     isResign: false,
+    ...(offer.bonusPct !== undefined && { bonusPct: offer.bonusPct }),
     ...(offer.noTrade && {
       noTrade: {
         held: Object.values(state.players).filter((p) => p.teamId === teamId && p.contract?.noTrade)
@@ -161,6 +167,7 @@ export function signFreeAgent(
     salary,
     years: offer.years,
     ...(offer.noTrade && { noTrade: true as const }),
+    ...(offer.bonusPct && { bonusPct: offer.bonusPct }),
   });
   if (view.interest < view.threshold) return { error: 'he is not interested' };
   return {
@@ -168,6 +175,7 @@ export function signFreeAgent(
       capHit: salary,
       expiresAfterSeason: season + offer.years - 1,
       ...(offer.noTrade && { noTrade: true as const }),
+      ...(offer.bonusPct && { bonus: Math.round((salary * offer.bonusPct) / 100) }),
     },
   };
 }

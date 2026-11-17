@@ -230,6 +230,7 @@ export const en = {
   'sign.threshold': 'He signs at {n} or more.',
   'sign.action': 'Sign him',
   'sign.done': 'Signed.',
+  'sign.bonus': 'Signing bonus %',
   'sign.noTrade': 'No-trade clause',
   'sign.pending': 'Offer made. He answers tomorrow, along with the other offers.',
   'sign.rights': 'Restricted: {team} holds his rights and may match any offer sheet.',

@@ -53,6 +53,8 @@ export type Command =
    * Offer a free agent `salary` a year for `years`. He signs now if interested and no AI team has
    * an offer to him; otherwise your offer joins theirs and he picks the best next day. `noTrade`
    * adds a no-trade clause: the player likes it, the CBA caps how many a team may hold.
+   * `bonusPct`: share of the salary paid as a signing bonus (CBA-capped): the player likes the cash,
+   * and a buyout never owes it.
    */
   | {
       kind: 'contract.sign';
@@ -61,6 +63,7 @@ export type Command =
       salary: number;
       years: number;
       noTrade?: true;
+      bonusPct?: number;
     };
 // Planned (not implemented yet): formations, line tactics ...
 

@@ -20,6 +20,8 @@ export interface Contract {
   expiresAfterSeason: number;
   /** He cannot be traded without his say; trades involving him are refused (no waiver yet). */
   noTrade?: true;
+  /** Whole dollars of each year's cap hit paid as a signing bonus: cash up front, never bought out. */
+  bonus?: number;
 }
 
 /**
@@ -125,6 +127,8 @@ export interface FreeAgentOffer {
   salary: number;
   years: number;
   noTrade?: true;
+  /** Share (whole percent) of the salary paid as a signing bonus. */
+  bonusPct?: number;
 }
 
 export interface Player {

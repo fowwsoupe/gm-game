@@ -18,7 +18,7 @@ Ready jobs, each one PR. Pick from the top. Update this list in the PR that fini
 Ready now (code can start):
 
 1. Draft-room trades: the lottery is now drawn when the champion is crowned and round-one picks trade at their real slot (done); trading during the live draft stays with the Phase 2 draft room.
-2. Contract bonuses (cap and CBA checks, so tests first). Trade protection is done: no-trade clauses (ruleset age and per-team limit, the player values one, trades refuse them).
+2. Contract bonuses and trade protection: done. Signing bonuses (CBA-capped share of the cap hit, liked by the player, never bought out) and no-trade clauses (ruleset age and per-team limit, trades refuse them). Performance bonuses and a waiver flow for no-trade stay open.
 3. Holdouts: done for human teams (opening day, greed and pay decide; a talk or the weeks end it). AI-team holdouts wait for a balance pass.
 4. Chemistry: personalities and leaders done (two settled leaders make the room whole; hot-headed, unprofessional players wear on it; lab flat). Linemates and builds still to do.
 5. Re-injury risk: done (hurt earlier this season +30%, +3% per past injury, capped at 2x; injuries per team-season 7.9-8.1 to 8.2-8.5).
@@ -68,7 +68,7 @@ Build order, owners and "done when" for each step: **[V0.1_PLAN.md](V0.1_PLAN.md
 
 - [~] Full season calendar: 84 games (divisions, conferences, back-to-backs) → playoffs → awards → draft → re-sign → FA done; camp and a trade deadline that matters wait for trades (M6)
 - [~] Trades v1: surplus value per team (status, rentals, negative contracts), anti-quantity, cap and position checks, AI explains itself, trade screen, AI-to-AI trades (both GMs must accept), retained salary, draft picks (next three drafts, value curve by projected slot) done, AI GMs pay with picks, trade block (listed players draw more AI offers), top-N protected picks done
-- [~] Contracts & cap: CBA checks, buyouts, cap sheet screen, cap advisor, offseason re-signing and in-season extensions, RFA rights with offer sheets the rights team can match (no compensation picks yet) done; bonuses to do (no-trade clauses done)
+- [~] Contracts & cap: CBA checks, buyouts, cap sheet screen, cap advisor, offseason re-signing and in-season extensions, RFA rights with offer sheets the rights team can match (no compensation picks yet) done; signing bonuses and no-trade clauses done; performance bonuses to do
 - [~] Free agency v1: free-agency window in the summer, offers with an interest meter (money, winning, role, term weighted by age), signings any time outside the playoffs, personalities (greed, ambition), AI offers, AI re-signing by loyalty and ambition, and loyalty (to his old team) and hometown pulls on the interest meter done
 - [~] Draft v1: class announced after the playoffs with scouted potential ranges (AI sees the same ranges), your ranked list drives your picks, scout reports (best and weakest skills, ready or raw) done; lottery drawn before the draft so picks trade at their real slot done; the live draft room is Phase 2
 - [x] Playoffs: bracket, NHL-style wild cards, honest momentum (per-game goalie form, calibrated), Playoff MVP, playoff cap; the cup is "Champion" until it is named

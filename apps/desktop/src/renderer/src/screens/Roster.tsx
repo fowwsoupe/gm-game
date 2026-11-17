@@ -235,12 +235,14 @@ function Offer({ player, teamId }: { player: PlayerProfile; teamId: TeamId }) {
   const [years, setYears] = useState(2);
   const [message, setMessage] = useState<string | null>(null);
   const [noTrade, setNoTrade] = useState(false);
+  const [bonusPct, setBonusPct] = useState(0);
   const { data: view } = useSigningInterest({
     playerId: player.id,
     teamId,
     salary,
     years,
     ...(noTrade && { noTrade: true as const }),
+    ...(bonusPct > 0 && { bonusPct }),
   });
   const dispatch = useDispatch();
   return (
@@ -280,6 +282,18 @@ function Offer({ player, teamId }: { player: PlayerProfile; teamId: TeamId }) {
           ))}
         </select>
         <label className="flex items-center gap-1 text-muted">
+          {t('sign.bonus')}
+          <input
+            type="number"
+            min={0}
+            max={100}
+            step={5}
+            value={bonusPct}
+            onChange={(e) => setBonusPct(Math.max(0, Math.round(Number(e.target.value) || 0)))}
+            className="w-16 rounded border border-line bg-panel px-2 py-1"
+          />
+        </label>
+        <label className="flex items-center gap-1 text-muted">
           <input type="checkbox" checked={noTrade} onChange={(e) => setNoTrade(e.target.checked)} />
           {t('sign.noTrade')}
         </label>
@@ -313,6 +327,7 @@ function Offer({ player, teamId }: { player: PlayerProfile; teamId: TeamId }) {
                 salary,
                 years,
                 ...(noTrade && { noTrade: true as const }),
+                ...(bonusPct > 0 && { bonusPct }),
               },
               {
                 onSuccess: (res) =>

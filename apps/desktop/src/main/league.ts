@@ -474,7 +474,7 @@ export class LeagueService {
   signingInterest(
     playerId: string,
     teamId: TeamId,
-    offer: { salary: number; years: number; noTrade?: true },
+    offer: { salary: number; years: number; noTrade?: true; bonusPct?: number },
   ) {
     const { state } = this.open();
     const player = state.players[playerId];
