@@ -78,6 +78,7 @@ export const fr: Record<MessageKey, string> = {
   'games.open': 'Ouvrir',
   'games.noGame': 'Ouvrez un match joué ou jouez un match pour le voir ici.',
   'actions.newLeague': 'Nouvelle ligue',
+  'actions.confirmReplace': 'Remplacer votre ligue actuelle ? Votre sauvegarde sera supprimée.',
   'actions.loadRoster': 'Charger un fichier d’alignement…',
   'actions.simDay': 'Simuler un jour',
   'actions.simWeek': 'Simuler une semaine',

@@ -126,7 +126,7 @@ function wildcardSeries(
   return out;
 }
 
-export function makeSeries(
+function makeSeries(
   season: number,
   round: number,
   slot: number,

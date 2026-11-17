@@ -33,6 +33,8 @@ export function openSave(path: string): SaveFile {
 
 export function migrate(db: Db): void {
   const current = db.pragma('user_version', { simple: true }) as number;
+  if (current > migrations.length)
+    throw new Error('This save is from a newer version of the game.');
   for (let v = current; v < migrations.length; v++) {
     db.transaction(() => {
       db.exec(migrations[v]!);
