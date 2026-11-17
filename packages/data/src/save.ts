@@ -1,6 +1,8 @@
 import Database from 'better-sqlite3';
 import type {
   AwardEntry,
+  PlayerHistory,
+  PlayerMove,
   CareerLine,
   CapCharge,
   GameResult,
@@ -645,6 +647,58 @@ export class SaveFile {
       teamId: r.team_id,
       stats: JSON.parse(r.stats_json) as Record<string, number>,
     }));
+  }
+
+  /** A player's awards and the contract / team moves recorded in the event log, oldest first. */
+  playerHistory(id: string): PlayerHistory {
+    const playerId = id as PlayerId;
+    const rows = this.db
+      .prepare(
+        `SELECT season, payload_json FROM events
+         WHERE kind IN ('player.drafted', 'player.signed', 'contract.extended', 'trade.completed',
+                        'contract.boughtOut', 'contract.expired')
+           AND payload_json LIKE ? ORDER BY seq`,
+      )
+      .all(`%"${id}"%`) as { season: number; payload_json: string }[];
+    const moves: PlayerMove[] = [];
+    for (const r of rows) {
+      const e = JSON.parse(r.payload_json) as LeagueEvent;
+      const season = r.season;
+      switch (e.kind) {
+        case 'player.drafted':
+          if (e.player.id === playerId && e.player.teamId) {
+            moves.push({ season, kind: 'drafted', teamId: e.player.teamId });
+          }
+          break;
+        case 'player.signed':
+          if (e.playerId === playerId) {
+            moves.push({ season, kind: 'signed', teamId: e.teamId, capHit: e.contract.capHit });
+          }
+          break;
+        case 'contract.extended':
+          if (e.playerId === playerId) {
+            moves.push({ season, kind: 'extended', teamId: e.teamId, capHit: e.contract.capHit });
+          }
+          break;
+        case 'trade.completed':
+          // `give` goes to `toTeamId`, `get` comes to `fromTeamId`.
+          if (e.give.includes(playerId)) moves.push({ season, kind: 'traded', teamId: e.toTeamId });
+          else if (e.get.includes(playerId)) {
+            moves.push({ season, kind: 'traded', teamId: e.fromTeamId });
+          }
+          break;
+        case 'contract.boughtOut':
+          if (e.playerId === playerId) moves.push({ season, kind: 'boughtOut', teamId: e.teamId });
+          break;
+        default:
+          break;
+      }
+    }
+    const awards = this.listAwards()
+      .filter((a) => a.playerId === playerId)
+      .map((a) => ({ season: a.season, award: a.award }))
+      .reverse();
+    return { awards, moves };
   }
 
   /** Seasons that have a champion, oldest first. */

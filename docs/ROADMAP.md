@@ -14,11 +14,10 @@ Status: `[ ]` not started · `[~]` in progress · `[x]` done
 Ready jobs, each one PR. Pick from the top. Update this list in the PR that finishes a job.
 
 1. Alternate: a sim feature with its screen, then a UI-only item.
-   1. Player profile: career stats and history.
-   2. Loyalty and hometown discounts (Free agency), as reasons on the interest meter.
-   3. Lines: drag-and-drop, PP/PK units, goalie rotation rules.
-   4. Draft: scout reports.
-   5. Trades: trade block, conditional picks.
+   1. Loyalty and hometown discounts (Free agency), as reasons on the interest meter.
+   2. Lines: drag-and-drop, PP/PK units, goalie rotation rules.
+   3. Draft: scout reports.
+   4. Trades: trade block, conditional picks.
 2. **A lasting team edge** (long-run flattening). Needs a design first:
    [research/2026-11-long-run-spread.md](research/2026-11-long-run-spread.md) is the brief.
 
@@ -73,7 +72,7 @@ Build order, owners and "done when" for each step: **[V0.1_PLAN.md](V0.1_PLAN.md
 
 - [~] Home hub: top strip (record, place, playoff odds, cap space, next game), To do that clears to zero, news, playoffs done (with a sim-to-date bar)
 - [~] Roster & lines: roster screen with stats and player cards, Lines screen (your depth order sets lines, pairs and the starting goalie, used every game) done; drag-and-drop, PP/PK formations, goalie rotation rules to do
-- [~] Player profile, stats & leaders, standings, team pages, game center: percentile player card, leaders, standings, game center done; full profile (career stats, history) to do
+- [~] Player profile, stats & leaders, standings, team pages, game center: percentile player card, leaders, standings, game center done; career stats with totals, awards and moves history on the card done; a profile screen of its own to do
 - [~] Generated faces: deterministic SVG face per player that greys and lines with age, on the player card; more variety and use across screens to do
 
 **Rosters**

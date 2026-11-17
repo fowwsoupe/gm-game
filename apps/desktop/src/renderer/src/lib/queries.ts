@@ -109,6 +109,12 @@ export const useCareer = (playerId: string | undefined) =>
     queryFn: () => window.gm.league.career({ playerId: playerId! }),
     enabled: !!playerId,
   });
+export const useHistory = (playerId: string | undefined) =>
+  useQuery({
+    queryKey: ['league', 'history', playerId] as const,
+    queryFn: () => window.gm.league.history({ playerId: playerId! }),
+    enabled: !!playerId,
+  });
 export const useStatus = () =>
   useQuery({ queryKey: ['league', 'status'] as const, queryFn: () => window.gm.league.status() });
 export const useSigningInterest = (

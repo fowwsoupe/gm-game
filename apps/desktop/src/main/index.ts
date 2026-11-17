@@ -86,6 +86,7 @@ function registerIpc() {
   );
   ipcMain.handle(IPC.picks, (_e, input: { teamId: TeamId }) => league.picks(input.teamId));
   ipcMain.handle(IPC.lines, (_e, input: { teamId: TeamId }) => league.lines(input.teamId));
+  ipcMain.handle(IPC.history, (_e, input: { playerId: string }) => league.history(input.playerId));
   ipcMain.handle(IPC.career, (_e, input: { playerId: string }) => league.career(input.playerId));
   ipcMain.handle(IPC.pulse, () => league.pulse());
   ipcMain.handle(IPC.dashboard, (_e, input: { teamId: TeamId }) => league.dashboard(input.teamId));

@@ -22,6 +22,7 @@ import type {
   TeamId,
   TradeEvaluation,
   FreeAgentOffer,
+  PlayerHistory,
   TradeOffer,
   TradeProposal,
 } from './domain';
@@ -87,6 +88,8 @@ export interface GmApi {
     }>;
     /** A player's finished regular seasons, oldest first. */
     career(input: { playerId: string }): Promise<CareerLine[]>;
+    /** A player's awards and the moves in his career (drafted, signed, traded...). */
+    history(input: { playerId: string }): Promise<PlayerHistory>;
     /** Draft picks a team owns in the drafts that can be traded. */
     picks(input: { teamId: TeamId }): Promise<DraftPick[]>;
     /** Players on a team who asked to be traded. */
@@ -154,6 +157,7 @@ export const IPC = {
   lines: 'league:lines',
   picks: 'league:picks',
   offerSheets: 'league:offerSheets',
+  history: 'league:history',
   tradeOffers: 'league:tradeOffers',
   tradeRequests: 'league:tradeRequests',
   evaluateTrade: 'league:evaluateTrade',

@@ -3,6 +3,7 @@ import { useUi } from '@/stores/ui';
 import type { PlayerProfile, TeamId } from '@gm/shared';
 import {
   useCareer,
+  useHistory,
   useDispatch,
   useOfferSheets,
   usePlayers,
@@ -313,6 +314,11 @@ function Career({ player }: { player: PlayerProfile }) {
   if (rows.length === 0) return null;
   const keys = [...new Set(rows.flatMap((r) => Object.keys(r.stats)))];
   const abbr = (id: string | null) => teams.find((x) => x.id === id)?.abbreviation ?? '–';
+  // Counting stats add up; a rate (save %) does not.
+  const totals: Record<string, number> = {};
+  for (const k of keys.filter((k) => k !== 'savePct')) {
+    totals[k] = rows.reduce((sum, r) => sum + (r.stats[k] ?? 0), 0);
+  }
   return (
     <Card title={t('career.title')}>
       <table className="tabular w-full text-xs">
@@ -336,8 +342,45 @@ function Career({ player }: { player: PlayerProfile }) {
             </tr>
           ))}
         </tbody>
+        {rows.length > 1 && (
+          <tfoot>
+            <tr className="border-t border-line text-right font-medium">
+              <Td left>{t('career.totals')}</Td>
+              <Td />
+              {keys.map((k) => (
+                <Td key={k}>{totals[k] === undefined ? '' : statValue(k, totals[k])}</Td>
+              ))}
+            </tr>
+          </tfoot>
+        )}
       </table>
+      <History playerId={player.id} abbr={abbr} />
     </Card>
+  );
+}
+
+/** Awards and moves (drafted, signed, traded...) from his story so far. */
+function History({ playerId, abbr }: { playerId: string; abbr: (id: string | null) => string }) {
+  const t = useT();
+  const { data } = useHistory(playerId);
+  if (!data || data.awards.length + data.moves.length === 0) return null;
+  return (
+    <div className="mt-3 space-y-1 border-t border-line pt-2 text-xs">
+      {data.awards.length > 0 && (
+        <p>
+          {data.awards.map((a) => `${a.season} ${t(`award.${a.award}` as MessageKey)}`).join(' · ')}
+        </p>
+      )}
+      {data.moves.map((m, i) => (
+        <p key={i} className="text-muted">
+          {t(`move.${m.kind}` as MessageKey, {
+            season: m.season,
+            team: abbr(m.teamId),
+            amount: m.capHit === undefined ? '' : money(m.capHit),
+          })}
+        </p>
+      ))}
+    </div>
   );
 }
 

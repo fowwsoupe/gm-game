@@ -432,6 +432,22 @@ export interface CareerLine {
   stats: Record<string, number>;
 }
 
+/** One thing that happened to a player's contract or team (from the event log). */
+export interface PlayerMove {
+  season: number;
+  kind: 'drafted' | 'signed' | 'extended' | 'traded' | 'boughtOut' | 'expired';
+  /** The team he joined (drafted, signed, extended, traded to) or left (bought out, expired). */
+  teamId: TeamId;
+  /** Cap hit of the new deal, if there is one. */
+  capHit?: number;
+}
+
+/** A player's awards and moves, oldest first. */
+export interface PlayerHistory {
+  awards: { season: number; award: string }[];
+  moves: PlayerMove[];
+}
+
 /** A draft pick a team owns. `season` is the draft's (the class joins that season). */
 export interface DraftPick {
   id: string;
