@@ -259,6 +259,18 @@ function Offer({ player, teamId }: { player: PlayerProfile; teamId: TeamId }) {
       {player.rivalOffers > 0 && (
         <p className="mb-2 text-sm text-bad">{t('sign.rivals', { n: player.rivalOffers })}</p>
       )}
+      {view?.sheet && (
+        <p className={`mb-2 text-sm ${view.sheet.owned ? 'text-muted' : 'text-bad'}`}>
+          {t(view.sheet.owned ? 'sign.sheetCost' : 'sign.sheetMissing', {
+            picks: view.sheet.picks
+              .map((id) => {
+                const [season, round] = id.split('-');
+                return t('sign.sheetPick', { season: season ?? '', round: round ?? '' });
+              })
+              .join(', '),
+          })}
+        </p>
+      )}
       <div className="mb-3 flex items-center gap-2 text-sm">
         <input
           type="number"
