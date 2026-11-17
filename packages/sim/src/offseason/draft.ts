@@ -48,8 +48,46 @@ export function draftClass(state: LeagueState, ctx: SimContext, rng: Rng): Draft
 }
 
 /** Announces the class once the champion is crowned, so teams can scout and rank it. */
-export function announceDraftClass(state: LeagueState, ctx: SimContext, rng: Rng, emit: Emit) {
-  emit('notable', [], { kind: 'draft.classAnnounced', prospects: draftClass(state, ctx, rng) });
+export function announceDraftClass(
+  state: LeagueState,
+  ctx: SimContext,
+  rng: Rng,
+  emit: Emit,
+  /** Teams from worst to best. */
+  order: readonly TeamId[],
+) {
+  const firstRound = drawLottery(state, ctx, rng.fork('lottery'), emit, order);
+  emit('notable', [], {
+    kind: 'draft.classAnnounced',
+    prospects: draftClass(state, ctx, rng),
+    firstRound,
+  });
+}
+
+/** Draws round one (the lottery), with news when a team jumps to the top. */
+function drawLottery(
+  state: LeagueState,
+  ctx: SimContext,
+  rng: Rng,
+  emit: Emit,
+  order: readonly TeamId[],
+): TeamId[] {
+  const { lottery } = ctx.ruleset.draft;
+  const firstRound = lotteryOrder(
+    order,
+    lottery,
+    order.length - ctx.ruleset.playoffs.teamsQualifying,
+    rng,
+  );
+  if (lottery && firstRound[0] !== order[0] && firstRound[0]) {
+    const team = state.teams[firstRound[0]]!;
+    emit('notable', [team.id], {
+      kind: 'news.posted',
+      headline: 'event.lotteryWon',
+      params: { team: `${team.city} ${team.name}` },
+    });
+  }
+  return firstRound;
 }
 
 /**
@@ -68,21 +106,10 @@ export function runDraft(
   /** Teams from worst to best. */
   order: readonly TeamId[],
 ) {
-  const { lottery } = ctx.ruleset.draft;
-  const firstRound = lotteryOrder(
-    order,
-    lottery,
-    order.length - ctx.ruleset.playoffs.teamsQualifying,
-    rng.fork('lottery'),
-  );
-  if (lottery && firstRound[0] !== order[0] && firstRound[0]) {
-    const team = state.teams[firstRound[0]]!;
-    emit('notable', [team.id], {
-      kind: 'news.posted',
-      headline: 'event.lotteryWon',
-      params: { team: `${team.city} ${team.name}` },
-    });
-  }
+  // Drawn when the class was announced; an old save without it draws now.
+  const firstRound = state.draftOrder.length
+    ? state.draftOrder
+    : drawLottery(state, ctx, rng.fork('lottery'), emit, order);
   const pool = state.draftClass.length
     ? [...state.draftClass]
     : draftClass(state, ctx, rng.fork('class'));

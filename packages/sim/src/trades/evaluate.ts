@@ -267,10 +267,15 @@ export function evaluateTrade(
   const next = nextDraftSeason(state);
   const pickOf = (id: string, protectedTop = 0) => {
     const pick = picks.get(id)!;
+    // Once the lottery is drawn, a round-one pick in the next draft has its real slot.
+    const drawn =
+      pick.season === next && pick.round === 1 ? state.draftOrder.indexOf(pick.originalTeamId) : -1;
     const slot =
-      pick.season === next && played > 0
-        ? Math.round(middle + (slotOf(pick.originalTeamId) - middle) * played)
-        : middle;
+      drawn >= 0
+        ? drawn + 1
+        : pick.season === next && played > 0
+          ? Math.round(middle + (slotOf(pick.originalTeamId) - middle) * played)
+          : middle;
     return {
       p: undefined,
       label: label(id),

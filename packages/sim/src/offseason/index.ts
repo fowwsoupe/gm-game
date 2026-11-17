@@ -44,7 +44,7 @@ function archiveStats(state: LeagueState, ctx: SimContext, emit: Emit) {
 }
 
 /** Worst team first, from this season's standings (taken before anything changes). */
-function worstFirst(state: LeagueState, ctx: SimContext): TeamId[] {
+export function worstFirst(state: LeagueState, ctx: SimContext): TeamId[] {
   const teamIds = Object.keys(state.teams).sort() as TeamId[];
   return computeStandings(teamIds, Object.values(state.results), ctx.ruleset.season.points)
     .map((row) => row.teamId)

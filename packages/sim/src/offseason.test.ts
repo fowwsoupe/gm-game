@@ -250,6 +250,18 @@ describe('offseason steps', () => {
     );
   });
 
+  it('the lottery is drawn when the champion is crowned and the draft follows it', () => {
+    const state = createLeague(9, ctx);
+    run(state, { kind: 'sim.advance', days: calendar.regularSeasonDays + calendar.playoffDays });
+    expect(state.draftOrder).toHaveLength(Object.keys(state.teams).length);
+    const order = [...state.draftOrder];
+    const picks = run(state, { kind: 'season.rollover' }).filter(
+      (e) => e.kind === 'player.drafted' && e.round === 1,
+    );
+    expect(picks.map((e) => e.teamIds[0])).toEqual(order);
+    expect(state.draftOrder).toEqual([]);
+  });
+
   it('players age, develop and retire: nobody ends up older than the retirement age', () => {
     const state = createLeague(12, ctx);
     const before = structuredClone(state.players);

@@ -215,6 +215,7 @@ export class SaveFile {
       championTeamId: (this.getMeta('championTeamId') as TeamId | undefined) ?? null,
       freeAgencyOpen: this.getMeta('freeAgencyOpen') === '1',
       draftClass: JSON.parse(this.getMeta('draftClass') ?? '[]'),
+      draftOrder: JSON.parse(this.getMeta('draftOrder') ?? '[]'),
       draftBoards: JSON.parse(this.getMeta('draftBoards') ?? '{}'),
       depthCharts: JSON.parse(this.getMeta('depthCharts') ?? '{}'),
       specialUnits: JSON.parse(this.getMeta('specialUnits') ?? '{}'),
@@ -504,6 +505,7 @@ export class SaveFile {
     this.setMeta('eventSeq', String(state.eventSeq));
     // Small (one draft class): kept as JSON in meta rather than its own table.
     this.setMeta('draftClass', JSON.stringify(state.draftClass));
+    this.setMeta('draftOrder', JSON.stringify(state.draftOrder));
     this.setMeta('draftBoards', JSON.stringify(state.draftBoards));
     this.setMeta('depthCharts', JSON.stringify(state.depthCharts));
     this.setMeta('specialUnits', JSON.stringify(state.specialUnits));
