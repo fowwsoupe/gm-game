@@ -142,6 +142,9 @@ export function handleCommand(
       const from = state.teams[proposal.fromTeamId];
       if (!from) return { ok: false, error: { code: 'invalid', message: 'unknown team' } };
       if (!controls(actor, from)) return notYours;
+      // A human partner accepts any legal trade, so only someone who runs it may propose one.
+      const to = state.teams[proposal.toTeamId];
+      if (to?.userControlled && !controls(actor, to)) return notYours;
       const verdict = evaluateTrade(state, ctx, proposal);
       if (!verdict.accepted) {
         return {

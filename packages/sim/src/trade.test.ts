@@ -144,6 +144,15 @@ describe('trade evaluation', () => {
     );
     expect(res.ok).toBe(false);
   });
+
+  it("does not auto-accept for another human's team", () => {
+    const { state, mine, partner, myC, theirC } = setup();
+    state.teams[partner]!.userControlled = true;
+    const remote: Actor = { id: 'remote', controls: [mine] };
+    const proposal = { fromTeamId: mine, toTeamId: partner, give: [myC[0]!], get: [theirC[0]!] };
+    const res = handleCommand(state, { kind: 'trade.propose', proposal }, remote, base);
+    expect(res.ok).toBe(false);
+  });
 });
 
 describe('trades with the default valuation', () => {
@@ -302,6 +311,18 @@ describe('retained salary', () => {
     state.capCharges = [{ ...charge(myC[1]!), teamId: partner }];
     expect(offer(myC[1]!, 20)).toBe('retention');
     expect(offer(myC[0]!, 20)).toBe('accepted');
+    // The same player twice would retain 100%.
+    const twice = evaluateTrade(state, ctx, {
+      fromTeamId: mine,
+      toTeamId: partner,
+      give: [myC[0]!],
+      get: [],
+      retain: [
+        { playerId: myC[0]!, pct: 50 },
+        { playerId: myC[0]!, pct: 50 },
+      ],
+    });
+    expect(twice.reasons[0]!.code).toBe('retention');
   });
 });
 
