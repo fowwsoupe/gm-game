@@ -1,4 +1,5 @@
 import { isGoalie, SPECIAL_UNIT_SIZE, type Player, type SpecialUnit } from '@gm/shared';
+import { linemateKey } from '../../core';
 import { overall } from '../../players';
 
 const avg = (xs: number[]) => (xs.length ? xs.reduce((a, b) => a + b, 0) / xs.length : 50);
@@ -12,7 +13,7 @@ export interface TeamStrength {
   /** Chemistry's bonus to every unit's attack and defence, in rating points (±CHEMISTRY_POINTS). */
   chemistry: number;
   /**
-   * Each forward line's and defence pair's own bonus in rating points (builds fit), by unit,
+   * Each forward line's and defence pair's own bonus in rating points (builds fit, linemates), by unit,
    * added in the game to the units on the ice. `offense` and `defense` above include their
    * ice-time-weighted sum.
    */
@@ -112,6 +113,47 @@ export const FIT_POINTS = 3;
  * an average team nets zero and the bonus only separates teams.
  */
 export const FIT_BASELINE = { forwards: 0.21, defense: 0.12 } as const;
+
+/**
+ * Linemates: games a pair has played in the same unit before a unit counts as fully together.
+ * A unit's value is the mean over its pairs; it moves the unit's attack and defence by up to
+ * `LINEMATES_POINTS` either way around a half-together unit (a line and a pair on the ice
+ * together: twice that). Kept small, like chemistry.
+ */
+export const LINEMATES_FULL_GAMES = 20;
+export const LINEMATES_POINTS = 0.5;
+
+/** 0-1: how much a unit's players have played together (1 = every pair `LINEMATES_FULL_GAMES` games). */
+export function unitTogether(
+  unit: readonly Player[],
+  linemates: Readonly<Record<string, number>>,
+): number {
+  let sum = 0;
+  let pairs = 0;
+  for (let i = 0; i < unit.length; i++) {
+    for (let j = i + 1; j < unit.length; j++) {
+      sum += Math.min(
+        1,
+        (linemates[linemateKey(unit[i]!.id, unit[j]!.id)] ?? 0) / LINEMATES_FULL_GAMES,
+      );
+      pairs++;
+    }
+  }
+  return pairs ? sum / pairs : 0;
+}
+
+/** A team's time together, ice-time-weighted, for its forward lines and its defence pairs. */
+export function lineupTogether(
+  lineup: Lineup,
+  linemates: Readonly<Record<string, number>> = {},
+): { forwards: number; defense: number } {
+  const sum = (units: Player[][], w: readonly number[]) =>
+    units.reduce((t, u, i) => t + w[i]! * unitTogether(u, linemates), 0);
+  return {
+    forwards: sum(lineup.forwards, ICE_TIME.forwardLines),
+    defense: sum(lineup.defense, ICE_TIME.defensePairs),
+  };
+}
 
 const finisher = (p: Player) => r(p, 'shooting') - r(p, 'passing');
 const rusher = (p: Player) => attack(p) - defence(p);
@@ -219,6 +261,7 @@ export function teamStrength(
   depth: readonly string[] = [],
   chemistry = 0.5,
   saved: SavedUnits = {},
+  linemates: Readonly<Record<string, number>> = {},
 ): TeamStrength {
   const chem = CHEMISTRY_POINTS * 2 * (Math.max(0, Math.min(1, chemistry)) - 0.5);
   const lineup = autoLineup(players, depth);
@@ -226,15 +269,19 @@ export function teamStrength(
   const { forwards, defense, goalies } = lineup;
   const f = ICE_TIME.forwardLines;
   const d = ICE_TIME.defensePairs;
-  // Builds fit: a line's fit moves its attack, a pair's its defence.
+  // Builds fit: a line's fit moves its attack, a pair's its defence. Linemates move both.
+  const together = (u: Player[]) => LINEMATES_POINTS * (2 * unitTogether(u, linemates) - 1);
   const unitBonus = {
     forwards: forwards.map((u) => ({
-      offense: FIT_POINTS * (unitFit(u, finisher, FIT_SPAN.forwards) - FIT_BASELINE.forwards),
-      defense: 0,
+      offense:
+        FIT_POINTS * (unitFit(u, finisher, FIT_SPAN.forwards) - FIT_BASELINE.forwards) +
+        together(u),
+      defense: together(u),
     })),
     defense: defense.map((u) => ({
-      offense: 0,
-      defense: FIT_POINTS * (unitFit(u, rusher, FIT_SPAN.defense) - FIT_BASELINE.defense),
+      offense: together(u),
+      defense:
+        FIT_POINTS * (unitFit(u, rusher, FIT_SPAN.defense) - FIT_BASELINE.defense) + together(u),
     })),
   };
   const byIce = (k: keyof UnitBonus) =>

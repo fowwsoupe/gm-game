@@ -15,6 +15,7 @@ import {
   chemistry,
   autoLineup,
   lineupFit,
+  lineupTogether,
   dashboard,
   raceNight,
   draftPicks,
@@ -279,6 +280,7 @@ export class LeagueService {
         state.depthCharts[id],
         undefined,
         state.specialUnits[id],
+        state.linemates[id],
       );
     const result = ctx.sport.simGame(
       {
@@ -392,6 +394,10 @@ export class LeagueService {
       ),
       chemistry: chemistry(healthy, state.date.season),
       fit: lineupFit(autoLineup(healthy, state.depthCharts[teamId])),
+      together: lineupTogether(
+        autoLineup(healthy, state.depthCharts[teamId]),
+        state.linemates[teamId],
+      ),
       rotation: state.goalieRotation[teamId] ?? 'backToBack',
     };
   }

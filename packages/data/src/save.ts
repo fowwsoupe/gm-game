@@ -224,6 +224,7 @@ export class SaveFile {
       tradeOffers: JSON.parse(this.getMeta('tradeOffers') ?? '[]'),
       tradeRequests: JSON.parse(this.getMeta('tradeRequests') ?? '[]'),
       holdouts: JSON.parse(this.getMeta('holdouts') ?? '[]'),
+      linemates: JSON.parse(this.getMeta('linemates') ?? '{}'),
       faOffers: JSON.parse(this.getMeta('faOffers') ?? '[]'),
       rfaRights: JSON.parse(this.getMeta('rfaRights') ?? '{}'),
       formerTeams: JSON.parse(this.getMeta('formerTeams') ?? '{}'),
@@ -333,7 +334,7 @@ export class SaveFile {
             // The box score lives in the games table; keeping it here too would double the save.
             JSON.stringify(
               e.kind === 'game.final'
-                ? { ...e, result: { ...e.result, box: undefined } }
+                ? { ...e, result: { ...e.result, box: undefined, units: undefined } }
                 : e.kind === 'stats.archived'
                   ? { ...e, lines: undefined } // kept in player_seasons
                   : e,
@@ -520,6 +521,7 @@ export class SaveFile {
     this.setMeta('tradeOffers', JSON.stringify(state.tradeOffers));
     this.setMeta('tradeRequests', JSON.stringify(state.tradeRequests));
     this.setMeta('holdouts', JSON.stringify(state.holdouts));
+    this.setMeta('linemates', JSON.stringify(state.linemates));
     this.setMeta('faOffers', JSON.stringify(state.faOffers));
     this.setMeta('rfaRights', JSON.stringify(state.rfaRights));
     this.setMeta('formerTeams', JSON.stringify(state.formerTeams));

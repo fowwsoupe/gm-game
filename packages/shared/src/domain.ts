@@ -239,6 +239,11 @@ export interface GameResult {
    * turns it into `player.injured` events and strips it.
    */
   injuries?: { playerId: PlayerId; days: number }[];
+  /**
+   * The units each side dressed (hockey: forward lines and defence pairs), by player id. Only on
+   * the `game.final` event: the reducer counts them into `linemates` and does not keep them.
+   */
+  units?: { home: PlayerId[][]; away: PlayerId[][] };
 }
 
 /** One finished game in a list. */

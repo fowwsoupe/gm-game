@@ -102,13 +102,15 @@ export interface SportModule<Strength = unknown> {
   /**
    * Summarizes a roster into whatever the sport's game sim needs. `depth` is the GM's order of
    * players, best first; the lineup follows it ahead of ratings. `chemistry` (0–1, default 0.5)
-   * is the people engine's team chemistry; the sport decides its (capped) effect.
+   * is the people engine's team chemistry; the sport decides its (capped) effect. `linemates` is
+   * the team's games together by pair (`LeagueState.linemates`).
    */
   teamStrength(
     players: readonly Player[],
     depth?: readonly string[],
     chemistry?: number,
     units?: Partial<Record<string, readonly string[]>>,
+    linemates?: Readonly<Record<string, number>>,
   ): Strength;
 
   /** Power-play / penalty-kill units as the game uses them (`custom` = set by the GM, else auto). */

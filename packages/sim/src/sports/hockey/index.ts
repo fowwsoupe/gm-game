@@ -69,6 +69,8 @@ export {
   autoLineup,
   lineupUnits,
   lineupFit,
+  lineupTogether,
+  LINEMATES_FULL_GAMES,
   unitFit,
   ICE_TIME,
   type TeamStrength,

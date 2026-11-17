@@ -88,6 +88,8 @@ export interface GmApi {
       chemistry: { value: number; seasons: number; leaders: number };
       /** How well the lines' and pairs' builds complement each other, 0–1 (ice-time weighted). */
       fit: { forwards: number; defense: number };
+      /** How much the lines and pairs have played together, 0–1 (ice-time weighted). */
+      together: { forwards: number; defense: number };
       /** How the team's goalies share starts. */
       rotation: GoalieRotation;
     }>;

@@ -395,6 +395,7 @@ export const fr: Record<MessageKey, string> = {
   'history.hallOfFame': 'Temple de la renommée',
   'history.hofLine': '{stat} · {seasons} saisons · retraité en {retired}',
   'lines.fit': 'Complémentarité : attaquants {forwards}/100, défense {defense}/100',
+  'lines.together': 'Joué ensemble : attaquants {forwards}/100, défense {defense}/100',
   'lines.chemistry':
     'Chimie d’équipe {value}/100 ({seasons} saisons ensemble en moyenne, {leaders} meneur(s))',
   'trade.offersTitle': 'Offres reçues',

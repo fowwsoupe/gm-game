@@ -55,7 +55,8 @@ export function advance(
     const roster = rosters.get(team) ?? [];
     const away = new Set(state.holdouts.map((h) => h.playerId));
     const hurt = roster.filter((p) => (p.injuredUntil ?? 0) > day || away.has(p.id));
-    const out = hurt.map((p) => p.id).join();
+    // Rebuilt weekly too, so time together (linemates) shows up as it grows.
+    const out = `${hurt.map((p) => p.id).join()}|${Math.floor(day / 7)}`;
     let cached = strengths.get(team);
     if (!cached || cached.out !== out) {
       const healthy = hurt.length ? roster.filter((p) => !hurt.includes(p)) : roster;
@@ -67,6 +68,7 @@ export function advance(
           state.depthCharts[team],
           chem,
           state.specialUnits[team],
+          state.linemates[team],
         ),
       };
       strengths.set(team, cached);

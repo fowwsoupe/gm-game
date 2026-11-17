@@ -19,6 +19,8 @@ export {
   teamStrength,
   autoLineup,
   lineupFit,
+  lineupTogether,
+  LINEMATES_FULL_GAMES,
   unitFit,
   hockeyLeaders,
   hockeySeasonStats,
