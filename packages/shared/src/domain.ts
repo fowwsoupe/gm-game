@@ -106,6 +106,8 @@ export interface PlayerProfile extends RosterPlayer {
   rivalOffers: number;
   /** Rostered players: how happy he is, 0-100, with the four things behind it (each 0-100). */
   morale?: { value: number; factors: { key: string; score: number }[] };
+  /** On your trade block: AI GMs call about him more often. */
+  onBlock?: true;
   /** Restricted free agent: the team holding his rights (it may match another team's offer sheet). */
   rightsTeamId?: TeamId;
 }

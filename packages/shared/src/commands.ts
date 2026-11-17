@@ -35,6 +35,8 @@ export type Command =
   | { kind: 'lines.set'; teamId: TeamId; order: PlayerId[] }
   /** Set a power-play or penalty-kill unit (3F+2D / 2F+2D); an empty list goes back to auto. */
   | { kind: 'units.set'; teamId: TeamId; unit: SpecialUnit; playerIds: PlayerId[] }
+  /** Put a player on your trade block (AI GMs call about him more) or take him off. */
+  | { kind: 'trade.block'; teamId: TeamId; playerId: PlayerId; onBlock: boolean }
   /** How your goalies share starts (see `GoalieRotation`). */
   | { kind: 'goalies.setRotation'; teamId: TeamId; rotation: GoalieRotation }
   /** Rank the draft class for your picks (best first). Players missing from it go by the scouts' order. */
