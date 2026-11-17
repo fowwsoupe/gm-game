@@ -6,7 +6,7 @@ import zipfile
 from pathlib import Path
 
 from ml.src.moneypuck import SHOT_COLUMNS, convert
-from ml.src.pipeline import build
+from ml.src.pipeline import DataError, build
 
 
 def csv_text(fields, rows):
@@ -65,6 +65,35 @@ class MoneyPuckTest(unittest.TestCase):
             self.assertEqual(players["p1"]["position"], "LW")
             self.assertEqual(players["p1"]["toi_minutes"], "20.0")
             self.assertEqual(players["g1"]["goals"], "0")
+
+    def test_a_download_missing_a_feature_column_fails_with_a_clear_error(self):
+        with tempfile.TemporaryDirectory() as temp:
+            root = Path(temp)
+            raw = root / "raw"
+            raw.mkdir()
+            common = {"season": "2025", "game_id": "g1", "isPlayoffGame": "0",
+                      "homeTeamCode": "A", "awayTeamCode": "B", "homeTeamWon": "1",
+                      "xCordAdjusted": "80", "yCordAdjusted": "10", "xGoal": "0.2",
+                      "id": "1", "teamCode": "A", "shooterPlayerId": "p1",
+                      "goal": "1", "shotType": "WRIST"}
+            with zipfile.ZipFile(raw / "shots_2025.zip", "w") as archive:
+                archive.writestr("shots_2025.csv", csv_text(SHOT_COLUMNS, [common]))
+            # A skater file without the faceoff columns the features table needs.
+            skater = {"playerId": "p1", "season": "2025", "team": "A",
+                      "position": "L", "situation": "all", "games_played": "1",
+                      "icetime": "1200", "I_F_goals": "1.0",
+                      "I_F_primaryAssists": "0.0", "I_F_secondaryAssists": "1.0",
+                      "I_F_shotsOnGoal": "2.0"}
+            (raw / "skaters_2025.csv").write_text(
+                csv_text(tuple(skater), [skater]), encoding="utf-8")
+            goalie = {"playerId": "g1", "season": "2025", "team": "A",
+                      "position": "G", "situation": "all", "games_played": "1",
+                      "icetime": "3600", "xGoals": "2.0", "goals": "1.0",
+                      "ongoal": "20.0"}
+            (raw / "goalies_2025.csv").write_text(
+                csv_text(tuple(goalie), [goalie]), encoding="utf-8")
+            with self.assertRaisesRegex(DataError, "missing columns.*faceoffsWon"):
+                convert(raw, root / "staged", [2025])
 
 
 if __name__ == "__main__":
