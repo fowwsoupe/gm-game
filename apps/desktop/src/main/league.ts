@@ -471,7 +471,11 @@ export class LeagueService {
     };
   }
 
-  signingInterest(playerId: string, teamId: TeamId, offer: { salary: number; years: number }) {
+  signingInterest(
+    playerId: string,
+    teamId: TeamId,
+    offer: { salary: number; years: number; noTrade?: true },
+  ) {
     const { state } = this.open();
     const player = state.players[playerId];
     if (!player || player.teamId !== null || !state.teams[teamId]) return null;

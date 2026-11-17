@@ -118,7 +118,8 @@ export const useHistory = (playerId: string | undefined) =>
 export const useStatus = () =>
   useQuery({ queryKey: ['league', 'status'] as const, queryFn: () => window.gm.league.status() });
 export const useSigningInterest = (
-  input: { playerId: string; teamId: TeamId; salary: number; years: number } | undefined,
+  input:
+    { playerId: string; teamId: TeamId; salary: number; years: number; noTrade?: true } | undefined,
 ) =>
   useQuery({
     queryKey: ['league', 'signingInterest', input] as const,

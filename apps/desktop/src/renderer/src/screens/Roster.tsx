@@ -223,7 +223,14 @@ function Offer({ player, teamId }: { player: PlayerProfile; teamId: TeamId }) {
   const salary = Math.round((Number(text) || 0) * 1e6);
   const [years, setYears] = useState(2);
   const [message, setMessage] = useState<string | null>(null);
-  const { data: view } = useSigningInterest({ playerId: player.id, teamId, salary, years });
+  const [noTrade, setNoTrade] = useState(false);
+  const { data: view } = useSigningInterest({
+    playerId: player.id,
+    teamId,
+    salary,
+    years,
+    ...(noTrade && { noTrade: true as const }),
+  });
   const dispatch = useDispatch();
   return (
     <Card title={t('sign.title')}>
@@ -261,6 +268,10 @@ function Offer({ player, teamId }: { player: PlayerProfile; teamId: TeamId }) {
             </option>
           ))}
         </select>
+        <label className="flex items-center gap-1 text-muted">
+          <input type="checkbox" checked={noTrade} onChange={(e) => setNoTrade(e.target.checked)} />
+          {t('sign.noTrade')}
+        </label>
       </div>
       {view && (
         <div className="space-y-1.5">
@@ -284,7 +295,14 @@ function Offer({ player, teamId }: { player: PlayerProfile; teamId: TeamId }) {
           disabled={!view || view.interest < view.threshold || dispatch.isPending}
           onClick={() =>
             dispatch.mutate(
-              { kind: 'contract.sign', playerId: player.id, teamId, salary, years },
+              {
+                kind: 'contract.sign',
+                playerId: player.id,
+                teamId,
+                salary,
+                years,
+                ...(noTrade && { noTrade: true as const }),
+              },
               {
                 onSuccess: (res) =>
                   setMessage(

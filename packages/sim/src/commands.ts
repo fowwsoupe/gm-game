@@ -401,6 +401,7 @@ export function handleCommand(
               teamId: team.id,
               salary: deal.contract.capHit,
               years: command.years,
+              ...(command.noTrade && { noTrade: true as const }),
             },
           })
         : makeEvent(state, 'notable', [team.id], {

@@ -60,6 +60,8 @@ export interface Ruleset {
      * keeps their rights and re-signs them below market. Value counts those years.
      */
     ufaAge: number;
+    /** A no-trade clause needs a player at least `ufaAge` old, and a team holds at most this many. */
+    maxNoTradePerTeam: number;
   };
 
   draft: {

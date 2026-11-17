@@ -95,8 +95,10 @@ function registerIpc() {
   );
   ipcMain.handle(
     IPC.signingInterest,
-    (_e, input: { playerId: string; teamId: TeamId; salary: number; years: number }) =>
-      league.signingInterest(input.playerId, input.teamId, input),
+    (
+      _e,
+      input: { playerId: string; teamId: TeamId; salary: number; years: number; noTrade?: true },
+    ) => league.signingInterest(input.playerId, input.teamId, input),
   );
   ipcMain.handle(IPC.feedList, (_e, input: { limit: number; minImportance?: Importance }) =>
     league.feed(input.limit, input.minImportance),

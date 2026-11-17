@@ -49,9 +49,17 @@ export type Command =
   | { kind: 'freeAgency.declineSheet'; playerId: PlayerId; teamId: TeamId }
   /**
    * Offer a free agent `salary` a year for `years`. He signs now if interested and no AI team has
-   * an offer to him; otherwise your offer joins theirs and he picks the best next day.
+   * an offer to him; otherwise your offer joins theirs and he picks the best next day. `noTrade`
+   * adds a no-trade clause: the player likes it, the CBA caps how many a team may hold.
    */
-  | { kind: 'contract.sign'; playerId: PlayerId; teamId: TeamId; salary: number; years: number };
+  | {
+      kind: 'contract.sign';
+      playerId: PlayerId;
+      teamId: TeamId;
+      salary: number;
+      years: number;
+      noTrade?: true;
+    };
 // Planned (not implemented yet): formations, line tactics ...
 
 export type CommandKind = Command['kind'];
