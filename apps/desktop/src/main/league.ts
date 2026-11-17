@@ -19,6 +19,7 @@ import {
   playoffOdds,
   teamRatings,
   evaluateTrade,
+  scoutReport,
   signingInterest,
   tradeWindowOpen,
   playerRecords,
@@ -451,16 +452,21 @@ export class LeagueService {
 
   draftClass(teamId: TeamId) {
     const { state } = this.open();
+    const ctx = defaultContext(state.rulesetId);
     return {
-      prospects: state.draftClass.map(({ player: p, low, high }) => ({
-        id: p.id,
-        firstName: p.firstName,
-        lastName: p.lastName,
-        position: p.position,
-        age: state.date.season + 1 - p.birthYear,
-        low,
-        high,
-      })),
+      prospects: state.draftClass.map((d) => {
+        const { player: p, low, high } = d;
+        return {
+          id: p.id,
+          firstName: p.firstName,
+          lastName: p.lastName,
+          position: p.position,
+          age: state.date.season + 1 - p.birthYear,
+          low,
+          high,
+          report: scoutReport(ctx, d),
+        };
+      }),
       board: state.draftBoards[teamId] ?? [],
     };
   }

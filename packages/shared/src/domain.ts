@@ -384,6 +384,13 @@ export interface DraftProspect {
   high: number;
 }
 
+/** What the scouts say about a prospect: rating keys they like and dislike, and if he could play soon. */
+export interface ScoutReport {
+  strengths: string[];
+  weakness: string;
+  ready: boolean;
+}
+
 /** A prospect as the draft board shows him: no hidden ratings. */
 export interface DraftBoardEntry {
   id: PlayerId;
@@ -393,6 +400,7 @@ export interface DraftBoardEntry {
   age: number;
   low: number;
   high: number;
+  report: ScoutReport;
 }
 
 /** One team's league pulse: playoff odds, power rating and status. */

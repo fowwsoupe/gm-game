@@ -5,6 +5,7 @@ import {
   defaultContext,
   handleCommand,
   hometownOf,
+  scoutReport,
   signingInterest,
   type LeagueState,
 } from './index';
@@ -153,5 +154,21 @@ describe('goalie rotation', () => {
     // A season still plays out legally with the setting on.
     run(state, { kind: 'sim.advance', days: 40 });
     expect(Object.keys(state.results).length).toBeGreaterThan(0);
+  });
+});
+
+describe('scout reports', () => {
+  it('are the same every time and name real rating keys', () => {
+    const state = createLeague(5, ctx);
+    run(state, { kind: 'sim.advance', days: 300 });
+    expect(state.draftClass.length).toBeGreaterThan(0);
+    for (const d of state.draftClass.slice(0, 20)) {
+      const a = scoutReport(ctx, d);
+      expect(scoutReport(ctx, d)).toEqual(a);
+      const keys = ctx.sport.ratingKeys(d.player.position);
+      expect(a.strengths).toHaveLength(2);
+      for (const k of [...a.strengths, a.weakness]) expect(keys).toContain(k);
+      expect(a.strengths).not.toContain(a.weakness);
+    }
   });
 });
