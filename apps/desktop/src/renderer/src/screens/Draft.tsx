@@ -2,7 +2,7 @@ import { useState } from 'react';
 import type { PlayerId } from '@gm/shared';
 import { useDispatch, useDraftClass, useTeams } from '@/lib/queries';
 import { useT } from '@/i18n';
-import { Button, Card, RangeBar } from '@/ui';
+import { Button, Card, RangeBar, Td, Th } from '@/ui';
 
 /**
  * Draft board: the class as the scouts see it (a potential range, not the truth) and your
@@ -41,27 +41,27 @@ export function Draft() {
         <table className="tabular w-full text-sm">
           <thead>
             <tr className="border-b border-line text-left text-muted">
-              <th className="px-2 py-1 font-medium">#</th>
-              <th className="px-2 py-1 font-medium">{t('roster.player')}</th>
-              <th className="px-2 py-1 font-medium">{t('roster.pos')}</th>
-              <th className="px-2 py-1 font-medium">{t('roster.age')}</th>
-              <th className="w-1/3 px-2 py-1 font-medium">{t('draft.range')}</th>
-              <th />
+              <Th>#</Th>
+              <Th>{t('roster.player')}</Th>
+              <Th>{t('roster.pos')}</Th>
+              <Th>{t('roster.age')}</Th>
+              <Th className="w-1/3">{t('draft.range')}</Th>
+              <Th />
             </tr>
           </thead>
           <tbody>
             {data.prospects.map((p, i) => (
               <tr key={p.id} className="border-b border-line/50">
-                <td className="px-2 py-1 text-muted">{i + 1}</td>
-                <td className="px-2 py-1">
+                <Td className="text-muted">{i + 1}</Td>
+                <Td>
                   {p.firstName} {p.lastName}
-                </td>
-                <td className="px-2 py-1">{p.position}</td>
-                <td className="px-2 py-1">{p.age}</td>
-                <td className="px-2 py-1">
+                </Td>
+                <Td>{p.position}</Td>
+                <Td>{p.age}</Td>
+                <Td>
                   <RangeBar low={p.low} high={p.high} />
-                </td>
-                <td className="px-2 py-1 text-right">
+                </Td>
+                <Td>
                   {board.includes(p.id) ? (
                     <span className="text-xs text-muted">{t('draft.onBoard')}</span>
                   ) : (
@@ -69,7 +69,7 @@ export function Draft() {
                       {t('draft.add')}
                     </Button>
                   )}
-                </td>
+                </Td>
               </tr>
             ))}
           </tbody>

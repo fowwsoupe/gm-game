@@ -2,7 +2,7 @@ import { useEffect, useMemo, useState } from 'react';
 import type { GameDetail, HockeyBoxScore, HockeyBoxSide, Team, TeamId } from '@gm/shared';
 import { useExhibition, useGames, useOpenGame, useTeams } from '@/lib/queries';
 import { useT } from '@/i18n';
-import { Button, Card, TeamLink } from '@/ui';
+import { Button, Card, TeamLink, SectionHeader, Td, Th } from '@/ui';
 
 const SPEEDS = [60, 180, 600] as const;
 const teamName = (teams: Team[], id: string) => {
@@ -363,29 +363,27 @@ function BoxSide({
   const goalies = [side.goalie, ...(side.relief ? [side.relief] : [])].filter((g) => g.id);
   return (
     <div>
-      <h3 className="mb-2 text-sm font-semibold">{title}</h3>
+      <SectionHeader>{title}</SectionHeader>
       <table className="tabular w-full text-sm">
         <thead>
           <tr className="border-b border-line text-right text-muted">
-            <th className="py-1 pr-2 text-left font-medium">{t('games.player')}</th>
+            <Th left>{t('games.player')}</Th>
             {['TOI', 'G', 'A', 'PTS', '+/-', 'S', 'PIM'].map((h) => (
-              <th key={h} className="px-1 py-1 font-medium">
-                {h}
-              </th>
+              <Th key={h}>{h}</Th>
             ))}
           </tr>
         </thead>
         <tbody>
           {rows.map((s) => (
             <tr key={s.id} className="border-b border-line/40 text-right">
-              <td className="py-1 pr-2 text-left">{names[s.id] ?? s.id}</td>
-              <td className="px-1">{s.toi.toFixed(1)}</td>
-              <td className="px-1">{s.goals}</td>
-              <td className="px-1">{s.assists}</td>
-              <td className="px-1">{s.goals + s.assists}</td>
-              <td className="px-1">{s.plusMinus}</td>
-              <td className="px-1">{s.shots}</td>
-              <td className="px-1">{s.pim}</td>
+              <Td left>{names[s.id] ?? s.id}</Td>
+              <Td>{s.toi.toFixed(1)}</Td>
+              <Td>{s.goals}</Td>
+              <Td>{s.assists}</Td>
+              <Td>{s.goals + s.assists}</Td>
+              <Td>{s.plusMinus}</Td>
+              <Td>{s.shots}</Td>
+              <Td>{s.pim}</Td>
             </tr>
           ))}
         </tbody>
@@ -393,25 +391,25 @@ function BoxSide({
       <table className="tabular mt-3 w-full text-sm">
         <thead>
           <tr className="border-b border-line text-right text-muted">
-            <th className="py-1 pr-2 text-left font-medium">{t('games.goalies')}</th>
-            <th className="px-1 font-medium">TOI</th>
-            <th className="px-1 font-medium">{t('games.shotsAgainst')}</th>
-            <th className="px-1 font-medium">{t('games.saves')}</th>
-            <th className="px-1 font-medium">{t('games.savePct')}</th>
+            <Th left>{t('games.goalies')}</Th>
+            <Th>TOI</Th>
+            <Th>{t('games.shotsAgainst')}</Th>
+            <Th>{t('games.saves')}</Th>
+            <Th>{t('games.savePct')}</Th>
           </tr>
         </thead>
         <tbody>
           {goalies.map((g, i) => (
             <tr key={g.id} className="border-b border-line/40 text-right">
-              <td className="py-1 pr-2 text-left">
+              <Td left>
                 {names[g.id] ?? g.id} {i > 0 ? t('games.relief') : ''}
-              </td>
-              <td className="px-1">{g.toi.toFixed(1)}</td>
-              <td className="px-1">{g.shotsAgainst}</td>
-              <td className="px-1">{g.saves}</td>
-              <td className="px-1">
+              </Td>
+              <Td>{g.toi.toFixed(1)}</Td>
+              <Td>{g.shotsAgainst}</Td>
+              <Td>{g.saves}</Td>
+              <Td>
                 {g.shotsAgainst ? (g.saves / g.shotsAgainst).toFixed(3).replace(/^0/, '') : '—'}
-              </td>
+              </Td>
             </tr>
           ))}
         </tbody>

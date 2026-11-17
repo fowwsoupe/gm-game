@@ -10,7 +10,7 @@ import {
   useTradeRequests,
 } from '@/lib/queries';
 import { useT, type MessageKey } from '@/i18n';
-import { Button, Card, TeamLink } from '@/ui';
+import { Button, Card, TeamLink, Td, Th } from '@/ui';
 import { money, statValue } from '@/lib/format';
 
 /** Build a trade with another team; its GM answers live, with reasons, before you send it. */
@@ -192,12 +192,12 @@ function Side({
       <table className="tabular w-full text-sm">
         <thead>
           <tr className="border-b border-line text-right text-muted">
-            <th className="px-2 py-1 text-left font-medium">{t('roster.player')}</th>
-            <th className="px-2 py-1 text-left font-medium">{t('roster.pos')}</th>
-            <th className="px-2 py-1 font-medium">{t('roster.age')}</th>
-            <th className="px-2 py-1 font-medium">{t('roster.capHit')}</th>
-            <th className="px-2 py-1 font-medium">{t('roster.through')}</th>
-            <th className="px-2 py-1 font-medium">{t('trade.stat')}</th>
+            <Th left>{t('roster.player')}</Th>
+            <Th left>{t('roster.pos')}</Th>
+            <Th>{t('roster.age')}</Th>
+            <Th>{t('roster.capHit')}</Th>
+            <Th>{t('roster.through')}</Th>
+            <Th>{t('trade.stat')}</Th>
           </tr>
         </thead>
         <tbody>
@@ -210,7 +210,7 @@ function Side({
                 onClick={() => onToggle(p.id)}
                 className={`cursor-pointer border-b border-line/50 text-right hover:bg-panel-2 ${picked.includes(p.id) ? 'bg-panel-2 text-accent' : ''}`}
               >
-                <td className="px-2 py-1 text-left">
+                <Td left>
                   <input
                     type="checkbox"
                     readOnly
@@ -218,10 +218,10 @@ function Side({
                     className="mr-2"
                   />
                   {p.firstName} {p.lastName}
-                </td>
-                <td className="px-2 py-1 text-left">{p.position}</td>
-                <td className="px-2 py-1">{p.age}</td>
-                <td className="px-2 py-1">
+                </Td>
+                <Td left>{p.position}</Td>
+                <Td>{p.age}</Td>
+                <Td>
                   {p.contract ? money(p.contract.capHit) : ''}
                   {onRetain && picked.includes(p.id) && (
                     <select
@@ -238,11 +238,9 @@ function Side({
                       ))}
                     </select>
                   )}
-                </td>
-                <td className="px-2 py-1">{p.contract?.expiresAfterSeason ?? ''}</td>
-                <td className="px-2 py-1">
-                  {p.stats[key] === undefined ? '' : statValue(key, p.stats[key])}
-                </td>
+                </Td>
+                <Td>{p.contract?.expiresAfterSeason ?? ''}</Td>
+                <Td>{p.stats[key] === undefined ? '' : statValue(key, p.stats[key])}</Td>
               </tr>
             );
           })}

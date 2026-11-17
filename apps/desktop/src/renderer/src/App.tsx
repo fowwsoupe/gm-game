@@ -29,6 +29,7 @@ const NAV: { id: Screen; label: MessageKey }[] = [
   { id: 'home', label: 'nav.home' },
   { id: 'standings', label: 'nav.standings' },
   { id: 'roster', label: 'nav.roster' },
+  { id: 'freeAgency', label: 'nav.freeAgency' },
   { id: 'lines', label: 'nav.lines' },
   { id: 'trades', label: 'nav.trades' },
   { id: 'draft', label: 'nav.draft' },
@@ -217,6 +218,7 @@ export function App() {
         {screen === 'leaders' && <Leaders />}
         {screen === 'history' && <History />}
         {screen === 'roster' && <Roster />}
+        {screen === 'freeAgency' && <Roster freeAgents />}
         {screen === 'lines' && <Lines />}
         {screen === 'trades' && <Trades />}
         {screen === 'draft' && <Draft />}

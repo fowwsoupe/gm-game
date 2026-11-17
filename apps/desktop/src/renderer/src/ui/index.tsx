@@ -1,4 +1,4 @@
-import type { ReactNode } from 'react';
+import type { ReactNode, ThHTMLAttributes, TdHTMLAttributes } from 'react';
 import { useUi } from '@/stores/ui';
 
 export { Face } from './Face';
@@ -162,5 +162,51 @@ export function TeamLink({ teamId, children }: { teamId: string; children: React
     <button onClick={() => openTeam(teamId)} className="hover:underline">
       {children}
     </button>
+  );
+}
+
+/**
+ * Table cells with the shared padding. Numbers right-align (the row sets `text-right`);
+ * pass `left` for text columns.
+ */
+export function Th({
+  left,
+  className = '',
+  ...rest
+}: { left?: boolean } & ThHTMLAttributes<HTMLTableCellElement>) {
+  return (
+    <th {...rest} className={`px-2 py-1.5 font-medium ${left ? 'text-left' : ''} ${className}`} />
+  );
+}
+
+export function Td({
+  left,
+  className = '',
+  ...rest
+}: { left?: boolean } & TdHTMLAttributes<HTMLTableCellElement>) {
+  return <td {...rest} className={`px-2 py-1.5 ${left ? 'text-left' : ''} ${className}`} />;
+}
+
+/** A small heading inside a card or screen. */
+export function SectionHeader({ children }: { children: ReactNode }) {
+  return <h3 className="mb-2 text-sm font-semibold">{children}</h3>;
+}
+
+/** One headline number: a small label over a big value, with an optional note. */
+export function StatRow({
+  label,
+  value,
+  note,
+}: {
+  label: ReactNode;
+  value: ReactNode;
+  note?: ReactNode;
+}) {
+  return (
+    <div>
+      <div className="text-xs uppercase tracking-wider text-muted">{label}</div>
+      <div className="tabular text-lg font-semibold">{value}</div>
+      {note && <div className="tabular text-xs text-muted">{note}</div>}
+    </div>
   );
 }

@@ -2,7 +2,7 @@ import { useState } from 'react';
 import type { CapIssue, CapSheet, ResignOffer, RosterPlayer, TeamId } from '@gm/shared';
 import { useCapSheet, useDispatch, useResignOffers, useRoster, useTeams } from '@/lib/queries';
 import { useT } from '@/i18n';
-import { Button, Card } from '@/ui';
+import { Button, Card, Td, Th } from '@/ui';
 import { money } from '@/lib/format';
 const issueAmount = (i: CapIssue) => ('over' in i ? i.over : i.short);
 const years = (n: number) => Array.from({ length: n }, (_, i) => i + 1);
@@ -76,23 +76,23 @@ export function Summary({ sheet }: { sheet: CapSheet }) {
       <table className="tabular w-full text-sm">
         <thead>
           <tr className="border-b border-line text-right text-muted">
-            <th className="px-3 py-2 text-left font-medium">{t('cap.season')}</th>
-            <th className="px-3 py-2 font-medium">{t('cap.committed')}</th>
-            <th className="px-3 py-2 font-medium">{t('cap.deadCap')}</th>
-            <th className="px-3 py-2 font-medium">{t('cap.total')}</th>
-            <th className="px-3 py-2 font-medium">{t('cap.limit')}</th>
-            <th className="px-3 py-2 font-medium">{t('cap.space')}</th>
+            <Th left>{t('cap.season')}</Th>
+            <Th>{t('cap.committed')}</Th>
+            <Th>{t('cap.deadCap')}</Th>
+            <Th>{t('cap.total')}</Th>
+            <Th>{t('cap.limit')}</Th>
+            <Th>{t('cap.space')}</Th>
           </tr>
         </thead>
         <tbody>
           {sheet.seasons.map((s) => (
             <tr key={s.season} className="border-b border-line/50 text-right">
-              <td className="px-3 py-1.5 text-left">{s.season}</td>
-              <td className="px-3 py-1.5">{money(s.committed)}</td>
-              <td className="px-3 py-1.5">{money(s.deadCap)}</td>
-              <td className="px-3 py-1.5">{money(s.total)}</td>
-              <td className="px-3 py-1.5">{money(s.upperLimit)}</td>
-              <td className={`px-3 py-1.5 ${s.space < 0 ? 'text-bad' : ''}`}>{money(s.space)}</td>
+              <Td left>{s.season}</Td>
+              <Td>{money(s.committed)}</Td>
+              <Td>{money(s.deadCap)}</Td>
+              <Td>{money(s.total)}</Td>
+              <Td>{money(s.upperLimit)}</Td>
+              <Td className={s.space < 0 ? 'text-bad' : ''}>{money(s.space)}</Td>
             </tr>
           ))}
         </tbody>
@@ -114,25 +114,19 @@ function Contracts({ sheet, roster }: { sheet: CapSheet; roster: RosterPlayer[] 
       <table className="tabular w-full text-sm">
         <thead>
           <tr className="border-b border-line text-right text-muted">
-            <th className="px-3 py-2 text-left font-medium">{t('cap.player')}</th>
+            <Th left>{t('cap.player')}</Th>
             {sheet.seasons.map((s) => (
-              <th key={s.season} className="px-3 py-2 font-medium">
-                {s.season}
-              </th>
+              <Th key={s.season}>{s.season}</Th>
             ))}
           </tr>
         </thead>
         <tbody>
           {ids.map((id) => (
             <tr key={id} className="border-b border-line/50 text-right">
-              <td className="px-3 py-1.5 text-left">{nameOf(byId.get(id), id)}</td>
+              <Td left>{nameOf(byId.get(id), id)}</Td>
               {sheet.seasons.map((s) => {
                 const c = s.contracts.find((x) => x.playerId === id);
-                return (
-                  <td key={s.season} className="px-3 py-1.5">
-                    {c ? money(c.capHit) : ''}
-                  </td>
-                );
+                return <Td key={s.season}>{c ? money(c.capHit) : ''}</Td>;
               })}
             </tr>
           ))}
@@ -171,18 +165,18 @@ function Resign({
               .flatMap((list, i) => list.map((x) => text(sheet.seasons[i]!.season, x)));
             return (
               <tr key={o.playerId} className="border-b border-line/50 align-top">
-                <td className="px-3 py-1.5">
+                <Td>
                   {nameOf(byId.get(o.playerId), o.playerId)}
                   {warns.length > 0 && (
                     <p className="text-xs text-bad">
                       {t('resign.warn', { issues: warns.join('; ') })}
                     </p>
                   )}
-                </td>
-                <td className="px-3 py-1.5 text-right">
+                </Td>
+                <Td>
                   {t('resign.ask')} {money(o.ask)}
-                </td>
-                <td className="px-3 py-1.5 text-right">
+                </Td>
+                <Td>
                   <select
                     aria-label={t('resign.years')}
                     value={n}
@@ -195,8 +189,8 @@ function Resign({
                       </option>
                     ))}
                   </select>
-                </td>
-                <td className="px-3 py-1.5 text-right">
+                </Td>
+                <Td>
                   <Button
                     disabled={dispatch.isPending}
                     onClick={() =>
@@ -211,7 +205,7 @@ function Resign({
                   >
                     {t('resign.action')}
                   </Button>
-                </td>
+                </Td>
               </tr>
             );
           })}

@@ -10,13 +10,13 @@ import {
   useTeams,
 } from '@/lib/queries';
 import { useT, type MessageKey } from '@/i18n';
-import { Button, Card, Face, PercentileBar, PlayerCard } from '@/ui';
+import { Button, Card, Face, PercentileBar, PlayerCard, Td, Th } from '@/ui';
 import { money, statValue } from '@/lib/format';
 
 const FREE_AGENTS = 'fa';
 
 /** A team's players (or the free agents) with stats; pick one to see his card. */
-export function Roster() {
+export function Roster({ freeAgents = false }: { freeAgents?: boolean }) {
   const t = useT();
   const { data: teams = [] } = useTeams();
   const focus = useUi((s) => s.focus);
@@ -27,7 +27,10 @@ export function Roster() {
     setPicked(focus.teamId);
     setSelected(focus.playerId);
   }, [focus]);
-  const value = picked ?? (teams.find((x) => x.userControlled) ?? teams[0])?.id;
+  const value = freeAgents
+    ? FREE_AGENTS
+    : ((picked && picked !== FREE_AGENTS ? picked : undefined) ??
+      (teams.find((x) => x.userControlled) ?? teams[0])?.id);
   const teamId = value === FREE_AGENTS ? null : (value as TeamId | undefined);
   const { data: players = [] } = usePlayers(value === undefined ? undefined : teamId);
   if (value === undefined) return <p className="text-muted">{t('roster.empty')}</p>;
@@ -42,24 +45,26 @@ export function Roster() {
 
   return (
     <div className="flex max-w-6xl flex-col gap-4">
-      <label className="flex items-center gap-2 text-sm text-muted">
-        {t('roster.team')}
-        <select
-          value={value}
-          onChange={(e) => {
-            setPicked(e.target.value);
-            setSelected(undefined);
-          }}
-          className="rounded border border-line bg-panel px-2 py-1 text-ink"
-        >
-          {teams.map((x) => (
-            <option key={x.id} value={x.id}>
-              {x.city} {x.name}
-            </option>
-          ))}
-          <option value={FREE_AGENTS}>{t('roster.freeAgents')}</option>
-        </select>
-      </label>
+      {freeAgents && <h1 className="text-lg font-semibold">{t('roster.freeAgents')}</h1>}
+      {!freeAgents && (
+        <label className="flex items-center gap-2 text-sm text-muted">
+          {t('roster.team')}
+          <select
+            value={value}
+            onChange={(e) => {
+              setPicked(e.target.value);
+              setSelected(undefined);
+            }}
+            className="rounded border border-line bg-panel px-2 py-1 text-ink"
+          >
+            {teams.map((x) => (
+              <option key={x.id} value={x.id}>
+                {x.city} {x.name}
+              </option>
+            ))}
+          </select>
+        </label>
+      )}
       <div className="grid gap-4 lg:grid-cols-[1fr_20rem]">
         <div className="space-y-4">
           {players.length === 0 && <p className="text-sm text-muted">{t('roster.none')}</p>}
@@ -94,15 +99,13 @@ function PlayerTable({
       <table className="tabular w-full text-sm">
         <thead>
           <tr className="border-b border-line text-right text-muted">
-            <th className="px-2 py-2 text-left font-medium">{t('roster.player')}</th>
-            <th className="px-2 py-2 text-left font-medium">{t('roster.pos')}</th>
-            <th className="px-2 py-2 font-medium">{t('roster.age')}</th>
-            <th className="px-2 py-2 font-medium">{t('roster.capHit')}</th>
-            <th className="px-2 py-2 font-medium">{t('roster.through')}</th>
+            <Th left>{t('roster.player')}</Th>
+            <Th left>{t('roster.pos')}</Th>
+            <Th>{t('roster.age')}</Th>
+            <Th>{t('roster.capHit')}</Th>
+            <Th>{t('roster.through')}</Th>
             {statKeys.map((k) => (
-              <th key={k} className="px-2 py-2 font-medium">
-                {t(`stat.${k}` as MessageKey)}
-              </th>
+              <Th key={k}>{t(`stat.${k}` as MessageKey)}</Th>
             ))}
           </tr>
         </thead>
@@ -113,20 +116,18 @@ function PlayerTable({
               onClick={() => onSelect(p.id)}
               className={`cursor-pointer border-b border-line/50 text-right hover:bg-panel-2 ${p.id === selected ? 'bg-panel-2' : ''}`}
             >
-              <td className="px-2 py-1.5 text-left">
+              <Td left>
                 {p.firstName} {p.lastName}
                 {p.injuredUntil !== undefined && (
                   <span className="ml-2 text-xs text-bad">{t('roster.injuredShort')}</span>
                 )}
-              </td>
-              <td className="px-2 py-1.5 text-left">{p.position}</td>
-              <td className="px-2 py-1.5">{p.age}</td>
-              <td className="px-2 py-1.5">{p.contract ? money(p.contract.capHit) : ''}</td>
-              <td className="px-2 py-1.5">{p.contract?.expiresAfterSeason ?? ''}</td>
+              </Td>
+              <Td left>{p.position}</Td>
+              <Td>{p.age}</Td>
+              <Td>{p.contract ? money(p.contract.capHit) : ''}</Td>
+              <Td>{p.contract?.expiresAfterSeason ?? ''}</Td>
               {statKeys.map((k) => (
-                <td key={k} className="px-2 py-1.5">
-                  {p.stats[k] === undefined ? '' : statValue(k, p.stats[k])}
-                </td>
+                <Td key={k}>{p.stats[k] === undefined ? '' : statValue(k, p.stats[k])}</Td>
               ))}
             </tr>
           ))}
@@ -297,24 +298,20 @@ function Career({ player }: { player: PlayerProfile }) {
       <table className="tabular w-full text-xs">
         <thead>
           <tr className="border-b border-line text-right text-muted">
-            <th className="py-1 text-left font-medium">{t('career.season')}</th>
-            <th className="py-1 text-left font-medium">{t('roster.team')}</th>
+            <Th left>{t('career.season')}</Th>
+            <Th left>{t('roster.team')}</Th>
             {keys.map((k) => (
-              <th key={k} className="py-1 font-medium">
-                {t(`stat.${k}` as MessageKey)}
-              </th>
+              <Th key={k}>{t(`stat.${k}` as MessageKey)}</Th>
             ))}
           </tr>
         </thead>
         <tbody>
           {rows.map((r) => (
             <tr key={r.label} className="border-b border-line/50 text-right">
-              <td className="py-1 text-left">{r.label}</td>
-              <td className="py-1 text-left">{abbr(r.teamId)}</td>
+              <Td left>{r.label}</Td>
+              <Td left>{abbr(r.teamId)}</Td>
               {keys.map((k) => (
-                <td key={k} className="py-1">
-                  {r.stats[k] === undefined ? '' : statValue(k, r.stats[k])}
-                </td>
+                <Td key={k}>{r.stats[k] === undefined ? '' : statValue(k, r.stats[k])}</Td>
               ))}
             </tr>
           ))}

@@ -13,7 +13,7 @@ import {
 import { useUi } from '@/stores/ui';
 import { money } from '@/lib/format';
 import { useT, type MessageKey } from '@/i18n';
-import { Card } from '@/ui';
+import { Card, StatRow } from '@/ui';
 
 export function Home({
   hasLeague,
@@ -123,11 +123,7 @@ function TeamStrip({ teamId }: { teamId: TeamId }) {
     <Card className="md:col-span-2">
       <div className="grid grid-cols-5 gap-4">
         {stats.map((s) => (
-          <div key={s.label}>
-            <div className="text-xs uppercase tracking-wider text-muted">{s.label}</div>
-            <div className="tabular text-lg font-semibold">{s.value}</div>
-            {s.note && <div className="tabular text-xs text-muted">{s.note}</div>}
-          </div>
+          <StatRow key={s.label} label={s.label} value={s.value} note={s.note} />
         ))}
       </div>
     </Card>

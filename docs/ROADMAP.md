@@ -13,10 +13,7 @@ Status: `[ ]` not started · `[~]` in progress · `[x]` done
 
 Ready jobs, each one PR. Pick from the top. Update this list in the PR that finishes a job.
 
-1. **UI foundation.** Shared components in `ui/` (table, card, stat row, section header) and
-   the same tokens on all 11 screens; free agency gets its own screen (today it lives inside
-   Roster). Done when every screen uses the shared components and `pnpm check` passes.
-2. Then alternate: a sim feature with its screen, then a UI-only item.
+1. Alternate: a sim feature with its screen, then a UI-only item.
    1. RFA / UFA rules (Contracts & cap), with qualifying offers and offer sheets on screen.
    2. Home: sim-to-date bar.
    3. Morale (People), shown on the player card.
@@ -25,7 +22,7 @@ Ready jobs, each one PR. Pick from the top. Update this list in the PR that fini
    6. Lines: drag-and-drop, PP/PK units, goalie rotation rules.
    7. Draft: scout reports.
    8. Trades: trade block, conditional picks.
-3. **A lasting team edge** (long-run flattening). Needs a design first:
+2. **A lasting team edge** (long-run flattening). Needs a design first:
    [research/2026-11-long-run-spread.md](research/2026-11-long-run-spread.md) is the brief.
 
 Not ready yet: minor / junior leagues (needs a design), camp and a trade deadline that matters.
