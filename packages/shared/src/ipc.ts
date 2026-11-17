@@ -85,7 +85,7 @@ export interface GmApi {
       /** Power-play and penalty-kill units (pp1, pp2, pk1, pk2) as games use them. */
       special: Record<string, { playerIds: string[]; custom: boolean }>;
       /** Team chemistry 0–1 and the average seasons together it comes from. */
-      chemistry: { value: number; seasons: number };
+      chemistry: { value: number; seasons: number; leaders: number };
       /** How the team's goalies share starts. */
       rotation: GoalieRotation;
     }>;

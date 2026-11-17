@@ -3,6 +3,7 @@ import type { Actor, GameId, PlayerId, TeamId } from '@gm/shared';
 import {
   autoLineup,
   chemistry,
+  personalityOf,
   createLeague,
   defaultContext,
   handleCommand,
@@ -130,19 +131,40 @@ describe('chemistry', () => {
     const teams = Object.values(state.teams);
     const mine = teams.find((t) => t.userControlled)!.id;
     const roster = () => Object.values(state.players).filter((p) => p.teamId === mine);
-    expect(chemistry(roster(), state.date.season).value).toBe(1); // a settled, original roster
+    const settledTeam = chemistry(roster(), state.date.season);
+    expect(settledTeam.seasons).toBe(3); // a settled, original roster
     // A new face joins this season: the team's chemistry dips.
     const partner = teams.find((t) => !t.userControlled)!.id;
     const theirs = Object.values(state.players).find((p) => p.teamId === partner)!;
     state.players[theirs.id]!.teamId = mine;
     state.players[theirs.id]!.joined = state.date.season;
     const after = chemistry(roster(), state.date.season);
-    expect(after.value).toBeLessThan(1);
-    expect(chemistry(roster(), state.date.season + 3).value).toBe(1);
+    expect(after.value).toBeLessThan(settledTeam.value);
+    expect(chemistry(roster(), state.date.season + 3).value).toBeGreaterThan(after.value);
     // Capped effect: a settled team vs a brand-new one differ by 2 rating points at most.
     const settled = teamStrength(roster(), [], 1);
     const fresh = teamStrength(roster(), [], 0);
     expect(settled.offense - fresh.offense).toBeCloseTo(2, 5);
+  });
+
+  it('leaders in the room lift it, and a room full of them is no better than two', () => {
+    const state = createLeague(75, ctx);
+    const mine = Object.values(state.teams)[0]!.id;
+    const players = Object.values(state.players).filter((p) => p.teamId === mine);
+    const byLeadership = [...players].sort(
+      (a, b) => personalityOf(b.id).leadership - personalityOf(a.id).leadership,
+    );
+    const none = players.filter((p) => personalityOf(p.id).leadership < 0.75);
+    const withTwo = [...none, ...byLeadership.slice(0, 2)];
+    const withAll = [...none, ...byLeadership.slice(0, 5)];
+    expect(chemistry(withTwo, state.date.season).leaders).toBeGreaterThanOrEqual(2);
+    expect(chemistry(withTwo, state.date.season).value).toBeGreaterThan(
+      chemistry(none, state.date.season).value,
+    );
+    expect(chemistry(withAll, state.date.season).value).toBeCloseTo(
+      chemistry(withTwo, state.date.season).value,
+      5,
+    );
   });
 
   it('a traded player joins his new team this season', () => {

@@ -389,7 +389,8 @@ export const en = {
   'standings.view.division': 'Division',
   'history.hallOfFame': 'Hall of Fame',
   'history.hofLine': '{stat} · {seasons} seasons · retired {retired}',
-  'lines.chemistry': 'Team chemistry {value}/100 ({seasons} seasons together on average)',
+  'lines.chemistry':
+    'Team chemistry {value}/100 ({seasons} seasons together on average, {leaders} leader(s))',
   'trade.offersTitle': 'Offers for you',
   'trade.offerLine': 'The {team} offer {give} for {get} (open until day {day})',
   'trade.accept': 'Accept',
