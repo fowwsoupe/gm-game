@@ -265,6 +265,26 @@ export function handleCommand(
       return { ok: true, events: [ev] };
     }
 
+    case 'trade.block': {
+      const team = state.teams[command.teamId];
+      const player = state.players[command.playerId];
+      if (!team || !player) {
+        return { ok: false, error: { code: 'invalid', message: 'unknown player or team' } };
+      }
+      if (!controls(actor, team)) return notYours;
+      if (player.teamId !== team.id) {
+        return { ok: false, error: { code: 'invalid', message: 'only your own players' } };
+      }
+      const ev = makeEvent(state, 'minor', [team.id], {
+        kind: 'trade.blockSet',
+        teamId: team.id,
+        playerId: player.id,
+        onBlock: command.onBlock,
+      });
+      applyEvent(state, ev);
+      return { ok: true, events: [ev] };
+    }
+
     case 'goalies.setRotation': {
       const team = state.teams[command.teamId];
       if (!team) return { ok: false, error: { code: 'invalid', message: 'unknown team' } };

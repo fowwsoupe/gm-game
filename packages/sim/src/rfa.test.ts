@@ -172,3 +172,36 @@ describe('scout reports', () => {
     }
   });
 });
+
+describe('trade block', () => {
+  it('lists only your own players, and a trade clears the listing', () => {
+    const state = createLeague(5, ctx);
+    const mine = Object.values(state.teams).find((t) => t.userControlled)!.id;
+    const own = Object.values(state.players).find((p) => p.teamId === mine)!;
+    const theirs = Object.values(state.players).find((p) => p.teamId !== mine && p.teamId)!;
+    expect(
+      handleCommand(
+        state,
+        { kind: 'trade.block', teamId: mine, playerId: theirs.id, onBlock: true },
+        local,
+        ctx,
+      ).ok,
+    ).toBe(false);
+    run(state, { kind: 'trade.block', teamId: mine, playerId: own.id, onBlock: true });
+    expect(state.tradeBlock).toEqual([own.id]);
+    run(state, { kind: 'trade.block', teamId: mine, playerId: own.id, onBlock: false });
+    expect(state.tradeBlock).toEqual([]);
+  });
+
+  it('AI offers ask for the listed player', () => {
+    const state = createLeague(5, ctx);
+    run(state, { kind: 'sim.advance', days: 3 });
+    const mine = Object.values(state.teams).find((t) => t.userControlled)!.id;
+    const own = Object.values(state.players).filter((p) => p.teamId === mine);
+    run(state, { kind: 'trade.block', teamId: mine, playerId: own[7]!.id, onBlock: true });
+    run(state, { kind: 'sim.advance', days: 120 });
+    const asked = state.tradeOffers.flatMap((o) => o.proposal.get);
+    // Every open offer to a team with a listed player that is still its own is for him.
+    for (const id of asked) expect(id).toBe(own[7]!.id);
+  });
+});

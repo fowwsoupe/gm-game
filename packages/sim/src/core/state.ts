@@ -59,6 +59,8 @@ export interface LeagueState {
   tradeOffers: TradeOffer[];
   /** Open offers to free agents (AI teams' and yours); a free agent picks one the next day. */
   faOffers: FreeAgentOffer[];
+  /** Players human teams listed as available: AI GMs make offers for them more often. */
+  tradeBlock: PlayerId[];
   /** Teams that changed how their goalies share starts; absent = back-to-backs only. */
   goalieRotation: Record<TeamId, GoalieRotation>;
   /** Unsigned free agents whose contract just ran out: the team he left (loyalty may bring him back). */
@@ -199,6 +201,10 @@ export function applyEvent(state: LeagueState, event: LeagueEvent): void {
     case 'lines.set':
       state.depthCharts[event.teamId] = [...event.order];
       return;
+    case 'trade.blockSet':
+      state.tradeBlock = state.tradeBlock.filter((id) => id !== event.playerId);
+      if (event.onBlock) state.tradeBlock.push(event.playerId);
+      return;
     case 'goalies.rotationSet':
       state.goalieRotation[event.teamId] = event.rotation;
       return;
@@ -270,6 +276,8 @@ export function applyEvent(state: LeagueState, event: LeagueEvent): void {
       state.teamStatus[event.teamId] = event.to;
       return;
     case 'trade.completed': {
+      const gone = new Set([...event.give, ...event.get]);
+      state.tradeBlock = state.tradeBlock.filter((id) => !gone.has(id));
       const move = (ids: readonly string[], to: TeamId) => {
         for (const id of ids) {
           const p = state.players[id];

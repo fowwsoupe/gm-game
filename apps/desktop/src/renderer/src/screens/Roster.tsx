@@ -1,6 +1,6 @@
 import { useEffect, useState } from 'react';
 import { useUi } from '@/stores/ui';
-import type { PlayerProfile, TeamId } from '@gm/shared';
+import type { PlayerId, PlayerProfile, TeamId } from '@gm/shared';
 import {
   useCareer,
   useHistory,
@@ -200,6 +200,7 @@ function Profile({ player: p, signFor }: { player: PlayerProfile; signFor: TeamI
         )}
       </Card>
       <Career player={p} />
+      {p.teamId !== null && p.teamId === signFor && <BlockToggle player={p} teamId={signFor} />}
       {p.teamId === null && signFor && <Offer key={p.id} player={p} teamId={signFor} />}
     </div>
   );
@@ -428,6 +429,32 @@ function Sheets({ teamId }: { teamId: TeamId | undefined }) {
           </div>
         );
       })}
+    </Card>
+  );
+}
+
+/** List a player as available: AI GMs then call about him more often. */
+function BlockToggle({ player, teamId }: { player: PlayerProfile; teamId: TeamId }) {
+  const t = useT();
+  const dispatch = useDispatch();
+  return (
+    <Card>
+      <div className="flex items-center gap-3">
+        <Button
+          disabled={dispatch.isPending}
+          onClick={() =>
+            dispatch.mutate({
+              kind: 'trade.block',
+              teamId,
+              playerId: player.id as PlayerId,
+              onBlock: !player.onBlock,
+            })
+          }
+        >
+          {t(player.onBlock ? 'block.remove' : 'block.add')}
+        </Button>
+        <span className="text-xs text-muted">{t('block.note')}</span>
+      </div>
     </Card>
   );
 }

@@ -143,6 +143,8 @@ export function aiTrades(state: LeagueState, ctx: SimContext, rng: Rng, emit: Em
 
 /** Chance an AI GM calls a human team in a given week. */
 const WEEKLY_OFFER_CHANCE = 0.35;
+/** With a player on the trade block, a team calls this much more often (and asks for him). */
+const BLOCK_OFFER_CHANCE = 0.7;
 /** Days an offer stays open. */
 const OFFER_DAYS = 7;
 
@@ -172,10 +174,13 @@ export function aiOffers(state: LeagueState, ctx: SimContext, rng: Rng, emit: Em
       .sort((a, b) => a.id.localeCompare(b.id));
   for (const human of teams.filter((t) => t.userControlled).map((t) => t.id)) {
     if (state.tradeOffers.some((o) => o.proposal.toTeamId === human)) continue;
-    if (!rng.chance(WEEKLY_OFFER_CHANCE)) continue;
+    const listed = roster(human).filter((p) => state.tradeBlock.includes(p.id));
+    if (!rng.chance(listed.length ? BLOCK_OFFER_CHANCE : WEEKLY_OFFER_CHANCE)) continue;
     const caller = rng.pick(ai);
     const gap = (p: Player, to: TeamId, from: TeamId) => value(p, to) - value(p, from);
-    const target = roster(human).sort((a, b) => gap(b, caller, human) - gap(a, caller, human))[0];
+    const target = (listed.length ? listed : roster(human)).sort(
+      (a, b) => gap(b, caller, human) - gap(a, caller, human),
+    )[0];
     if (!target) continue;
     const offer = roster(caller)
       .filter((p) => value(p, human) >= value(target, human))

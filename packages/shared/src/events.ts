@@ -119,6 +119,8 @@ export type LeagueEvent =
   | (EventBase & { kind: 'lines.set'; teamId: TeamId; order: PlayerId[] })
   /** A team's power-play or penalty-kill unit changed (empty = auto). */
   | (EventBase & { kind: 'units.set'; teamId: TeamId; unit: SpecialUnit; playerIds: PlayerId[] })
+  /** A human team listed a player as available (or took him off the block). */
+  | (EventBase & { kind: 'trade.blockSet'; teamId: TeamId; playerId: PlayerId; onBlock: boolean })
   /** A team changed how its goalies share starts. */
   | (EventBase & { kind: 'goalies.rotationSet'; teamId: TeamId; rotation: GoalieRotation })
   /** A team made a free agent an offer (replaces its earlier one); he answers next day. */
