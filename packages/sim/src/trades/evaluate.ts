@@ -69,7 +69,10 @@ export function planRetention(
     if (!p || !contract || !proposal.give.includes(p.id) || contract.expiresAfterSeason < season) {
       return fail;
     }
-    if (!Number.isInteger(share) || share <= 0) return fail;
+    // Listing a player twice would retain past the max share.
+    if (!Number.isInteger(share) || share <= 0 || retained.some((r) => r.playerId === p.id)) {
+      return fail;
+    }
     const before = state.capCharges.some((c) => c.kind === 'retained' && c.playerId === p.id);
     const issues = retentionIssues(ctx.ruleset, {
       retainPct: share,
@@ -112,12 +115,6 @@ export function teamContext(state: LeagueState, ctx: SimContext, teamId: TeamId)
 }
 
 /**
- * Whether `toTeamId` accepts the trade. Legal first (window, ownership, cap ceiling, the other
- * team keeping its position minimums), then value: the players it receives, best first and
- * discounted for depth, minus the ones it sends, must beat a small margin. A user-controlled
- * partner accepts any legal trade (the same person runs both teams).
- */
-/**
  * Work that stays the same while the league does not change, shared by many evaluations (one
  * week of AI trade talks). Start a new one after any trade.
  */
@@ -142,6 +139,12 @@ export function cachedContext(
   return team;
 }
 
+/**
+ * Whether `toTeamId` accepts the trade. Legal first (window, ownership, cap ceiling, the other
+ * team keeping its position minimums), then value: the players it receives, best first and
+ * discounted for depth, minus the ones it sends, must beat a small margin. A user-controlled
+ * partner accepts any legal trade (`trade.propose` lets only its own GM propose one).
+ */
 export function evaluateTrade(
   state: LeagueState,
   ctx: SimContext,
@@ -238,8 +241,13 @@ export function evaluateTrade(
     return { p, ...ctx.models.valuation.value(seenBy(state.teams[to]!, p), team, ruleset) };
   };
   // A pick in the next draft lands where its original team finishes (worst first, from today's
-  // standings); later drafts are guessed at the middle of the round.
+  // standings), trusted more as the season is played: an empty table is all ties broken by team
+  // id. Later drafts are guessed at the middle of the round.
   const teamCount = Object.keys(state.teams).length;
+  const middle = Math.ceil(teamCount / 2);
+  const played = state.championTeamId
+    ? 1
+    : Math.min(1, Math.max(0, state.date.day / ruleset.season.calendar.regularSeasonDays));
   // Only needed to value picks, and costly (every result this season): computed on first use.
   const slotOf = (teamId: TeamId) => {
     const order = (cache ?? {}) as { worstFirst?: TeamId[] };
@@ -255,7 +263,10 @@ export function evaluateTrade(
   const next = nextDraftSeason(state);
   const pickOf = (id: string) => {
     const pick = picks.get(id)!;
-    const slot = pick.season === next ? slotOf(pick.originalTeamId) : Math.ceil(teamCount / 2);
+    const slot =
+      pick.season === next && played > 0
+        ? Math.round(middle + (slotOf(pick.originalTeamId) - middle) * played)
+        : middle;
     return {
       p: undefined,
       label: label(id),
