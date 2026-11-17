@@ -449,6 +449,7 @@ function completeTrade(
     ...(retained.length > 0 && { retained }),
     ...(proposal.givePicks?.length && { givePicks: [...proposal.givePicks] }),
     ...(proposal.getPicks?.length && { getPicks: [...proposal.getPicks] }),
+    ...(proposal.protectTop && proposal.givePicks?.length && { protectTop: proposal.protectTop }),
   });
   applyEvent(state, ev);
   const picks = (ids: readonly string[] = []) =>

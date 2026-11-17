@@ -90,7 +90,13 @@ export function runDraft(
   for (let i = 0; pool.length > 0 && i < order.length * ctx.ruleset.draft.rounds; i++) {
     const round = Math.floor(i / order.length) + 1;
     const slotTeam = (i < order.length ? firstRound : order)[i % order.length]!;
-    const teamId = pickOwner(state, pickId(season, round, slotTeam), slotTeam);
+    const id = pickId(season, round, slotTeam);
+    const protection = state.pickProtection[id];
+    // A protected pick that lands high stays with the team that traded it.
+    const teamId =
+      round === 1 && protection && i + 1 <= protection.top
+        ? protection.keeper
+        : pickOwner(state, id, slotTeam);
     const board = state.draftBoards[teamId] ?? [];
     const team = state.teams[teamId]!;
     const wanted =

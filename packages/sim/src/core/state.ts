@@ -59,6 +59,8 @@ export interface LeagueState {
   tradeOffers: TradeOffer[];
   /** Open offers to free agents (AI teams' and yours); a free agent picks one the next day. */
   faOffers: FreeAgentOffer[];
+  /** First-round picks traded with top-N protection: if the pick lands in the top `top`, `keeper` keeps it. */
+  pickProtection: Record<string, { top: number; keeper: TeamId }>;
   /** Players human teams listed as available: AI GMs make offers for them more often. */
   tradeBlock: PlayerId[];
   /** Teams that changed how their goalies share starts; absent = back-to-backs only. */
@@ -266,7 +268,10 @@ export function applyEvent(state: LeagueState, event: LeagueEvent): void {
       state.rfaSheets = [];
       // This season's draft is done: only later drafts' picks still matter.
       for (const id of Object.keys(state.pickOwners)) {
-        if (Number(id.split('-')[0]) <= event.season) delete state.pickOwners[id];
+        if (Number(id.split('-')[0]) <= event.season) {
+          delete state.pickOwners[id];
+          delete state.pickProtection[id];
+        }
       }
       return;
     case 'freeAgency.opened':
@@ -294,7 +299,12 @@ export function applyEvent(state: LeagueState, event: LeagueEvent): void {
           !(event.give as string[]).includes(r.playerId) &&
           !(event.get as string[]).includes(r.playerId),
       );
-      for (const id of event.givePicks ?? []) state.pickOwners[id] = event.toTeamId;
+      for (const id of event.givePicks ?? []) {
+        state.pickOwners[id] = event.toTeamId;
+        if (event.protectTop && id.split('-')[1] === '1') {
+          state.pickProtection[id] = { top: event.protectTop, keeper: event.fromTeamId };
+        }
+      }
       for (const id of event.getPicks ?? []) state.pickOwners[id] = event.fromTeamId;
       for (const r of event.retained ?? []) {
         const p = state.players[r.playerId]!;
