@@ -388,7 +388,8 @@ export const fr: Record<MessageKey, string> = {
   'standings.view.division': 'Section',
   'history.hallOfFame': 'Temple de la renommée',
   'history.hofLine': '{stat} · {seasons} saisons · retraité en {retired}',
-  'lines.chemistry': 'Chimie d’équipe {value}/100 ({seasons} saisons ensemble en moyenne)',
+  'lines.chemistry':
+    'Chimie d’équipe {value}/100 ({seasons} saisons ensemble en moyenne, {leaders} meneur(s))',
   'trade.offersTitle': 'Offres reçues',
   'trade.offerLine': 'Les {team} offrent {give} contre {get} (jusqu’au jour {day})',
   'trade.accept': 'Accepter',

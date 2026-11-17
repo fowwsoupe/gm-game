@@ -130,6 +130,7 @@ export function Lines() {
             {t('lines.chemistry', {
               value: Math.round(data.chemistry.value * 100),
               seasons: data.chemistry.seasons.toFixed(1),
+              leaders: data.chemistry.leaders,
             })}
           </span>
         )}
