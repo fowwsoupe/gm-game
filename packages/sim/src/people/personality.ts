@@ -49,6 +49,10 @@ export function hash(text: string): number {
 export const personalityOf = (playerId: string): Personality =>
   randomPersonality(new Rng(hash(`personality:${playerId}`)));
 
+/** The team of his hometown: stable from his id and the team list, like his personality. */
+export const hometownOf = (playerId: string, teamIds: readonly string[]): string | undefined =>
+  [...teamIds].sort()[hash(`home:${playerId}`) % Math.max(1, teamIds.length)];
+
 /** Traits strong (or, for temperament, weak) enough to mention, strongest first, at most two. */
 export function notableTraits(p: Personality): string[] {
   const out: [string, number][] = [];

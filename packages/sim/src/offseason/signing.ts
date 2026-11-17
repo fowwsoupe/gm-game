@@ -2,7 +2,7 @@ import type { Contract, Player, SigningInterest, TeamId, TeamStatus } from '@gm/
 import { phaseOf, type LeagueState } from '../core';
 import { capYearIssues, capYearOf, teamCapTotal, validateContract } from '../cba';
 import { overall } from '../players';
-import { personalityOf } from '../people';
+import { hometownOf, personalityOf } from '../people';
 import type { SimContext } from '../context';
 
 /**
@@ -50,6 +50,10 @@ function priorities(age: number, playerId: string) {
   };
 }
 
+/** Most of his weight a pull to the team he left (scaled by loyalty) or to his hometown can take. */
+const LOYALTY_PULL = 0.2;
+const HOME_PULL = 0.1;
+
 /** Years he would like (more years is never worse for him). */
 const wantedYears = (age: number) => (age < 28 ? 5 : age < 32 ? 3 : 2);
 
@@ -77,20 +81,42 @@ export function signingInterest(
     role: clamp(1 - better / depth, 0.2, 1),
     term: clamp(offer.years / wantedYears(age), 0, 1),
   };
-  const weights = priorities(age, player.id);
+  // Playing for his old team or his hometown is worth something on top: a full-score factor that
+  // takes its weight from the others, so the same money goes further there (a "discount").
+  const pulls: { key: 'loyalty' | 'home'; weight: number }[] = [];
+  if (state.formerTeams[player.id] === teamId) {
+    pulls.push({
+      key: 'loyalty',
+      weight: LOYALTY_PULL * (0.25 + 0.75 * personalityOf(player.id).loyalty),
+    });
+  }
+  if (hometownOf(player.id, Object.keys(state.teams)) === teamId) {
+    pulls.push({ key: 'home', weight: HOME_PULL });
+  }
+  const pull = pulls.reduce((sum, x) => sum + x.weight, 0);
+  const base = priorities(age, player.id);
+  const weights = {
+    money: base.money * (1 - pull),
+    winning: base.winning * (1 - pull),
+    role: base.role * (1 - pull),
+    term: base.term * (1 - pull),
+  };
   const keys = ['money', 'winning', 'role', 'term'] as const;
-  const interest = keys.reduce((sum, k) => sum + scores[k] * weights[k], 0);
+  const interest = keys.reduce((sum, k) => sum + scores[k] * weights[k], 0) + pull; // pulls score 1
   return {
     playerId: player.id,
     ask,
     maxYears: ruleset.contracts.maxYearsNewTeam,
     interest: Math.round(clamp(interest, 0, 1) * 100),
     threshold: THRESHOLD,
-    factors: keys.map((key) => ({
-      key,
-      score: Math.round(clamp(scores[key], 0, 1) * 100),
-      weight: weights[key],
-    })),
+    factors: [
+      ...keys.map((key) => ({
+        key,
+        score: Math.round(clamp(scores[key], 0, 1) * 100),
+        weight: weights[key],
+      })),
+      ...pulls.map((x) => ({ key: x.key, score: 100, weight: x.weight })),
+    ],
   };
 }
 

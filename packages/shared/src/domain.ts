@@ -367,7 +367,11 @@ export interface SigningInterest {
   maxYears: number;
   interest: number;
   threshold: number;
-  factors: { key: 'money' | 'winning' | 'role' | 'term'; score: number; weight: number }[];
+  factors: {
+    key: 'money' | 'winning' | 'role' | 'term' | 'loyalty' | 'home';
+    score: number;
+    weight: number;
+  }[];
 }
 
 /**

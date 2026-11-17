@@ -55,6 +55,7 @@ export function createLeague(
     tradeRequests: [],
     faOffers: [],
     rfaRights: {},
+    formerTeams: {},
     rfaSheets: [],
     eventSeq: 0,
   };
