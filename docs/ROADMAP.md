@@ -24,7 +24,7 @@ Builds the engines everything else depends on.
 - [x] NHL-only held-out study done ([report](M1_PROTOTYPE_REPORT.md)); rating list v2 in code ([RATINGS.md](RATINGS.md)); `faceoffs` effect measured and calibrated (`ml/src/faceoffs.py`); M1 signed off on the NHL-only prototype
 - [x] Hidden ratings (list v2) + stats-to-ratings model v1 (`ratingsFromStats`, fitted on the sim by `pnpm ratings:fit`, with uncertainty); roster import does not use it yet (M4)
 - [x] Line-by-line game sim (`sports/hockey/game.ts`) + "result only" mode; trained shot model (Azmi) plugs into `GoalModel` as a `gm-xg-table`
-- [x] Balance lab: league-health report (`pnpm lab`) with multi-year checks (talent drift, dynasties, cap, playoff turnover, goalie save % repeatability, faceoff effect, goals vs expected); green apart from the long-run known gaps it lists
+- [x] Balance lab: league-health report (`pnpm lab`) with multi-year checks (talent drift, dynasties, cap, playoff turnover, goalie save % repeatability, faceoff effect, goals vs expected, points % spread and repeatability against real NHL seasons); green apart from the long-run known gaps it lists ([why](research/2026-11-long-run-spread.md))
 - [x] Speed test in CI: day, season and year-20 budgets, plus year-20 screen data (standings, leaders, cap sheet)
 - [x] Design system: tokens, team theming, Card, Button, PercentileBar, PlayerCard, BroadcastCaption
 - [x] Command layer + event log + single reducer (multiplayer-ready)
@@ -38,7 +38,7 @@ Build order, owners and "done when" for each step: **[V0.1_PLAN.md](V0.1_PLAN.md
 
 - [~] Players (`sim/players`): percentiles, builds and role tags (rules), injuries done; traits, clustered builds, injury history to do
 - [x] Value (`sim/value`): per-team surplus value (can be negative), market value, pick value curve (rules-based; calibrated curve is Azmi's)
-- [~] People (`sim/people`): personalities (from the player id) and free-agent priorities by age and personality done; morale, AI GM styles to do
+- [~] People (`sim/people`): personalities (from the player id), free-agent priorities by age and personality, AI GM styles and skill, team plans done; morale to do
 - [ ] League & events (`sim/league`): calendar, team status (league pulse), event engine, news
 - [ ] Minor / junior / European leagues: light stats-only sim for prospects
 

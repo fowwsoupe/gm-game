@@ -225,11 +225,16 @@ const goalieSvPairs: [number, number][] = [];
  * that its teams are built by the AI GMs, not by league generation.
  */
 const LONG_RUN_FROM = Math.min(10, Math.floor(years / 2));
+/** Why the long-run checks fall short (see the doc it names). */
+const KNOWN_SPREAD = 'no lasting team edge';
 let longRunFavouriteWins = 0;
 let longRunDecided = 0;
 /** Spread (SD) of team strength at the start of a season, year 0 and from LONG_RUN_FROM on. */
 const spreadYear0: number[] = [];
 const spreadLongRun: number[] = [];
+/** From LONG_RUN_FROM on: each season's SD of team points %, and [last season, this season] pairs. */
+const pointsPctSd: number[] = [];
+const pointsPctPairs: [number, number][] = [];
 /** One number per team that strengthEdge is linear in: the edge between two teams is the difference. */
 const netStrength = (t: ReturnType<typeof teamStrength>) =>
   HOCKEY_TUNING.ratingSensitivity * (t.offense + t.defense) +
@@ -253,6 +258,7 @@ for (let l = 0; l < leagues; l++) {
   const titles = new Map<TeamId, number>();
   let lastPlayoffTeams: Set<string> | null = null;
   let lastSv = new Map<string, number>();
+  let lastPct: Map<string, number> | null = null;
   for (let y = 0; y < years; y++) {
     const longRun = y >= LONG_RUN_FROM;
     if (y === 0 || longRun) {
@@ -268,6 +274,19 @@ for (let l = 0; l < leagues; l++) {
       ctx,
     );
     if (!played.ok) throw new Error(played.error.message);
+    const pct = new Map(
+      computeStandings(
+        Object.keys(state.teams) as TeamId[],
+        Object.values(state.results).filter((g) => !g.playoffSeriesId),
+        ctx.ruleset.season.points,
+      ).map((row) => [row.teamId as string, row.pts / (2 * row.gp)]),
+    );
+    if (longRun) {
+      pointsPctSd.push(sd([...pct.values()]));
+      for (const [id, now] of pct)
+        if (lastPct?.has(id)) pointsPctPairs.push([lastPct.get(id)!, now]);
+    }
+    lastPct = pct;
     if (longRun) {
       measureSeries(state, series.longRun);
       const strength = new Map(
@@ -451,7 +470,7 @@ const checks: Check[] = [
   { name: 'Teams over the playoff cap', value: teamsOverPlayoffCap, min: 0, max: 0 },
   { name: 'Teams below roster minimum', value: teamsUnderMinimum, min: 0, max: 0 },
   {
-    // NHL 2007-2026 (research report): 5.2 of 16 playoff teams new a year on average (32.5%),
+    // NHL 2007-2026 (docs/research/2026-11-long-run-spread.md): 5.2 of 16 playoff teams new a year on average (32.5%),
     // 3 to 7 in a single season. The range is that average +-2 standard errors of a 20-season
     // mean (1.6 points each), since this check averages hundreds of league-seasons.
     name: 'Playoff teams new each year',
@@ -468,15 +487,32 @@ const checks: Check[] = [
     max: 0.3,
   },
   { name: 'Free-agent pool, largest (unverified)', value: maxPool, min: 0, max: 150 },
-  // Long run (multi-year leagues, LONG_RUN_FROM on): identical AI GMs spread talent evenly, so
-  // teams converge and games drift toward coin flips. Fix: AI GM styles and skill (ROADMAP, People).
+  // Long run (multi-year leagues, LONG_RUN_FROM on): teams converge and games drift toward coin
+  // flips, because nothing gives a team a lasting edge (docs/research/2026-11-long-run-spread.md).
+  {
+    // NHL 2014-15 to 2025-26 (docs/research/2026-11-long-run-spread.md): a team's points % repeats at r 0.51 a season on;
+    // the range is +-2 standard errors of that 11-season mean.
+    name: `Points % year-to-year r, years ${LONG_RUN_FROM}+`,
+    value: pearson(pointsPctPairs),
+    min: 0.4,
+    max: 0.62,
+  },
+  {
+    // Same seasons, 82 games: team points % has an SD of 0.095 (0.077-0.122 in a season); the
+    // range is +-2 standard errors of that 10-season mean. The real benchmark for the spread.
+    name: `Points % spread (SD), years ${LONG_RUN_FROM}+`,
+    value: avg(pointsPctSd),
+    min: 0.085,
+    max: 0.105,
+    known: KNOWN_SPREAD,
+  },
   {
     name: `Favourite wins a single game, years ${LONG_RUN_FROM}+`,
     value: (100 * longRunFavouriteWins) / longRunDecided,
     min: 57,
     max: 60,
     unit: '%',
-    known: 'AI GM styles and skill',
+    known: KNOWN_SPREAD,
   },
   {
     name: `Better team wins best-of-7, years ${LONG_RUN_FROM}+`,
@@ -484,7 +520,7 @@ const checks: Check[] = [
     min: 60,
     max: 65,
     unit: '%',
-    known: 'AI GM styles and skill',
+    known: KNOWN_SPREAD,
   },
   {
     // Team strength SD from LONG_RUN_FROM on over year 0's: the spread should stay flat.
@@ -492,7 +528,7 @@ const checks: Check[] = [
     value: avg(spreadLongRun) / avg(spreadYear0),
     min: 0.85,
     max: 1.15,
-    known: 'AI GM styles and skill',
+    known: KNOWN_SPREAD,
   },
 ];
 
