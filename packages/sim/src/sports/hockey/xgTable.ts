@@ -1,4 +1,4 @@
-import { HOCKEY_TUNING, type GoalModel } from './game';
+import { HOCKEY_TUNING, type GoalModel } from './tuning';
 
 /**
  * A shot-quality model as plain data, so the sim stays pure (no ONNX runtime, no files) and a

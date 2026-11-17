@@ -3,19 +3,13 @@ import type {
   GameResult,
   HockeyBoxScore,
   HockeyGameStats,
-  HockeyGoalieLine,
   HockeyPenalty,
   HockeyShot,
-  HockeySkaterLine,
-  Player,
   PlayerId,
   TeamId,
 } from '@gm/shared';
 import type { Rng } from '../../core';
 import {
-  attack,
-  defence,
-  faceoffs,
   FACEOFF_WEIGHT,
   goalieScore,
   ICE_TIME,
@@ -23,93 +17,8 @@ import {
   UNIT_WEIGHT,
   type TeamStrength,
 } from './strength';
-
-/** Knobs to tune the game sim. Kept in one place so balance changes are easy to find. */
-export const HOCKEY_TUNING = {
-  /** Shots on goal per team per 60 minutes between two average units at even strength. */
-  shotsPer60: 26.0,
-  /** How strongly a rating gap between the attacking and defending unit moves the shot rate. */
-  ratingSensitivity: 0.0085,
-  /**
-   * The average starting goalie's rating, and how strongly a gap moves his goal chance per shot.
-   * Set so a starter's save % repeats year to year at r 0.12-0.30 as in the NHL (balance lab);
-   * at 0.011 it repeated at 0.6, so goalies were far more predictable than real ones.
-   */
-  leagueAvgGoaltending: 67,
-  goalieSensitivity: 0.005,
-  /**
-   * Goalie form: each game, a goalie's goal chance against is multiplied by exp(N(0, sd)), with
-   * sd = goalieFormSd x (1.5 - consistency / 100). Calibrated so a team game's goals vary around
-   * expected goals as much as in the NHL (balance lab "Goals vs expected" check; ml/src/form.py).
-   */
-  goalieFormSd: 0.14,
-  homeIceBoost: 1.07,
-  /** Shot rate changes by this (log) per skater of man advantage: 5v4 is about 1.7 times even strength. */
-  manAdvantageStep: 0.55,
-  /** Shot rate in 3v3 overtime relative to five-on-five. */
-  overtimePace: 2.4,
-  /** Minor penalties a team takes per game, and how long each lasts (seconds). */
-  penaltiesPerTeam: 3,
-  penaltySeconds: 120,
-  /** A team on the power play shoots from chances this much better. */
-  powerPlayQuality: 1.5,
-  /** Scales every shot's goal chance (the GoalModel's output) so the league saves about 90%. */
-  xgScale: 1.02,
-  /** A trailing team pulls its goalie this many seconds before the end: down one, down two. */
-  pullSeconds: [150, 90],
-  /** A team with its goalie pulled attacks this much harder than the extra skater alone explains. */
-  pulledPace: 2,
-  /** Score effects: a team shoots more (log, per goal down, up to two) when trailing and less when leading. */
-  scoreEffect: 0.12,
-  /** Chance a shot at an empty net goes in. */
-  emptyNetGoal: 0.7,
-  /** Shift length (seconds) between line changes. */
-  shiftSeconds: 45,
-  /** A goalie who has let in four before the late second period is pulled this often. */
-  pulledAfterFour: 0.6,
-  overtimeSeconds: 300,
-  shootoutGoal: 0.33,
-} as const;
-
-/** What a goal model sees of a shot. */
-export interface ShotInfo {
-  /** Feet from the goal line toward the dots, and from the middle of the ice (net at 0, 0). */
-  x: number;
-  y: number;
-  /** The shooter's shooting rating. */
-  shooting: number;
-  /** The shooting team has a man advantage from a penalty. */
-  power: boolean;
-}
-
-/**
- * Anything that can say how likely a shot is to be a goal against an average goalie (expected
- * goals). The default is rules-based; an ML shot-quality model (trained in /ml, shipped as
- * a `gm-xg-table`, see xgTable.ts) can implement the same interface. The engine adds the goalie's effect on top.
- */
-export interface GoalModel {
-  shotXg(shot: ShotInfo): number;
-}
-
-/** Scoring chance of a shot from where it is taken: close and in front is dangerous. */
-export const shotQuality = (x: number, y: number) =>
-  0.3 * Math.exp(-Math.hypot(x, y) / 22) * Math.max(0.2, x / Math.hypot(x, y));
-
-export const rulesGoalModel: GoalModel = {
-  shotXg: ({ x, y, shooting, power }) =>
-    HOCKEY_TUNING.xgScale *
-    shotQuality(x, y) *
-    (shooting / 65) ** 0.7 *
-    (power ? HOCKEY_TUNING.powerPlayQuality : 1),
-};
-
-/**
- * How much better team `a` is than team `b` at five-on-five, as the log of its goal ratio:
- * positive = `a` is better. For the balance lab and for odds; not used by the game itself.
- */
-export const strengthEdge = (a: TeamStrength, b: TeamStrength): number =>
-  HOCKEY_TUNING.ratingSensitivity * (a.offense - b.defense - (b.offense - a.defense)) +
-  HOCKEY_TUNING.goalieSensitivity * (a.goaltending - b.goaltending);
+import { HOCKEY_TUNING, rulesGoalModel, type GoalModel } from './tuning';
+import { makeSide, type Side } from './side';
 
 // ---------- the play-by-play engine ----------
 
@@ -142,108 +51,6 @@ function pick(weights: readonly number[], rng: Rng): number {
   let roll = rng.next() * weights.reduce((a, b) => a + b, 0);
   const i = weights.findIndex((w) => (roll -= w) < 0);
   return i < 0 ? weights.length - 1 : i;
-}
-
-interface Side {
-  players: Player[];
-  skaters: HockeySkaterLine[];
-  /** Skater indexes of each forward line and defence pair. */
-  lines: number[][];
-  pairs: number[][];
-  /** Penalty killers, two forwards per unit. */
-  killers: number[][];
-  /** The GM's saved power-play / penalty-kill units by unit number: skater indexes, forwards then defence. */
-  saved: {
-    pp: ({ f: number[]; d: number[] } | undefined)[];
-    pk: ({ f: number[]; d: number[] } | undefined)[];
-  };
-  isD: boolean[];
-  /** Per-skater skills, by index. */
-  atk: number[];
-  def: number[];
-  draw: number[];
-  shoot: number[];
-  pass: number[];
-  phys: number[];
-  /** The goalie who started and the one who can come in, and who is in now (-1 = nobody). */
-  goalies: Player[];
-  current: number;
-  goalieLines: HockeyGoalieLine[];
-  /** Goals the current goalie has let in. */
-  against: number;
-  /** Skaters who left the game hurt. */
-  out: Set<number>;
-  onIce: number[];
-  /** Penalties running, soonest to end first: [end second, skater index]. */
-  penalties: [number, number][];
-  pulled: boolean;
-  /** Team skills of the units on ice. */
-  uAtk: number;
-  uDef: number;
-  /** Chemistry bonus added to every unit (rating points). */
-  chem: number;
-}
-
-function makeSide(strength: TeamStrength, backup: boolean): Side {
-  const { forwards, defense, goalies } = strength.lineup;
-  const players: Player[] = [];
-  const index = (unit: Player[]) => unit.map((p) => players.push(p) - 1);
-  const lines = forwards.map(index);
-  const pairs = defense.map(index);
-  const killers = lines
-    .flat()
-    .sort((a, b) => rating(players[b]!, 'defense') - rating(players[a]!, 'defense') || a - b)
-    .slice(0, 4);
-  const at = new Map(players.map((p, k) => [p.id, k]));
-  const unit = (name: 'pp1' | 'pp2' | 'pk1' | 'pk2') => {
-    const ks = strength.lineup.special?.[name]?.map((p) => at.get(p.id)!);
-    return (
-      ks && {
-        f: ks.filter((k) => !pairs.flat().includes(k)),
-        d: ks.filter((k) => pairs.flat().includes(k)),
-      }
-    );
-  };
-  const start = backup && goalies.length > 1 ? 1 : 0;
-  const order = goalies[start] ? [goalies[start]!, ...goalies.filter((_, i) => i !== start)] : [];
-  const starter = order[0];
-  return {
-    players,
-    lines,
-    pairs,
-    killers: [killers.slice(0, 2), killers.slice(2)],
-    saved: { pp: [unit('pp1'), unit('pp2')], pk: [unit('pk1'), unit('pk2')] },
-    isD: players.map((_, k) => pairs.some((pr) => pr.includes(k))),
-    atk: players.map(attack),
-    def: players.map(defence),
-    draw: players.map(faceoffs),
-    shoot: players.map((p) => rating(p, 'shooting')),
-    pass: players.map((p) => rating(p, 'passing')),
-    phys: players.map((p) => rating(p, 'physical')),
-    goalies: order.slice(0, 2),
-    current: starter ? 0 : -1,
-    goalieLines: starter ? [{ id: starter.id, toi: 0, shotsAgainst: 0, saves: 0 }] : [],
-    against: 0,
-    out: new Set(),
-    onIce: [],
-    penalties: [],
-    pulled: false,
-    uAtk: 50,
-    uDef: 50,
-    chem: strength.chemistry ?? 0,
-    skaters: players.map((p) => ({
-      id: p.id,
-      toi: 0,
-      ppToi: 0,
-      pkToi: 0,
-      shots: 0,
-      goals: 0,
-      ppGoals: 0,
-      assists: 0,
-      plusMinus: 0,
-      pim: 0,
-    })),
-  };
 }
 
 const mean = (xs: number[]) => (xs.length ? xs.reduce((a, b) => a + b, 0) / xs.length : 50);

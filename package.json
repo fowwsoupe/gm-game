@@ -11,6 +11,7 @@
     "build": "pnpm -r build",
     "typecheck": "pnpm -r typecheck",
     "test": "pnpm native:node && pnpm -r test",
+    "test:slow": "pnpm native:node && GM_SLOW=1 pnpm --filter @gm/sim test",
     "native:node": "pnpm --filter @gm/data rebuild better-sqlite3",
     "ml:test": "python3 -m unittest discover -s ml/tests -v",
     "lint": "eslint .",

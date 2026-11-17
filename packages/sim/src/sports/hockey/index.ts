@@ -6,7 +6,8 @@ import {
   type SpecialUnit,
 } from '@gm/shared';
 import type { SportModule } from '../sport';
-import { simGame, rulesGoalModel, type GoalModel } from './game';
+import { simGame } from './game';
+import { rulesGoalModel, type GoalModel } from './tuning';
 import { lineupUnits, specialUnitsView, teamStrength, unitOk, type TeamStrength } from './strength';
 import { generateFictionalLeague, generateProspect } from './generate';
 import { NHL_2026 } from './ruleset-nhl-2026';
@@ -47,15 +48,14 @@ export function hockeySport(goalModel: GoalModel = rulesGoalModel): SportModule<
 
 export { NHL_2026, FICTIONAL_2026 } from './ruleset-nhl-2026';
 export {
-  simGame,
   rulesGoalModel,
   strengthEdge,
   shotQuality,
   HOCKEY_TUNING,
   type GoalModel,
   type ShotInfo,
-  type MatchupInput,
-} from './game';
+} from './tuning';
+export { simGame, type MatchupInput } from './game';
 export { parseXgTable, xgTableFromModel, type XgTable, type XgTableResult } from './xgTable';
 export {
   teamStrength,

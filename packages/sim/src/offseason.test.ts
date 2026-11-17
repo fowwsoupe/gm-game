@@ -20,6 +20,8 @@ import {
 
 const local: Actor = { id: 'local', controls: [] };
 const ctx = defaultContext();
+// Default: 4 seasons so `pnpm test` stays fast. `pnpm test:slow` (nightly CI) plays the full 20.
+const YEARS = process.env.GM_SLOW ? 20 : 4;
 const { ruleset } = ctx;
 const calendar = ruleset.season.calendar;
 
@@ -91,11 +93,11 @@ describe('offseason rollover', () => {
     expect(Object.keys(state.results).length).toBeGreaterThan(0);
   });
 
-  it('plays 20 seasons: no crash, rosters legal every year, replay ends identical', async () => {
+  it('plays several seasons (20 with GM_SLOW): no crash, rosters legal every year, replay ends identical', async () => {
     const live = createLeague(31, ctx);
     const replica: LeagueState = structuredClone(live);
     const titles = new Map<string, number>();
-    for (let year = 0; year < 20; year++) {
+    for (let year = 0; year < YEARS; year++) {
       const { champion, events } = playSeasonAndRollOver(live);
       for (const e of events) applyEvent(replica, e);
       titles.set(champion!, (titles.get(champion!) ?? 0) + 1);
@@ -104,11 +106,11 @@ describe('offseason rollover', () => {
       // block (over a minute on CI) made its progress messages time out and failed the run.
       await new Promise((resolve) => setTimeout(resolve, 0));
     }
-    expect(live.date.season).toBe(2027 + 20);
+    expect(live.date.season).toBe(2027 + YEARS);
     expect(replica).toEqual(live);
     // A single league's top title count is noisy (2-10 seen over 120 leagues, average 4.6), so this
     // only catches a runaway: one team taking over half the titles. The balance lab checks the average.
-    expect(Math.max(...titles.values())).toBeLessThanOrEqual(10);
+    if (YEARS === 20) expect(Math.max(...titles.values())).toBeLessThanOrEqual(10);
     // Retired players leave the league and the free-agent pool stays small.
     const pool = Object.values(live.players).filter((p) => p.teamId === null);
     expect(pool.length).toBeLessThan(150);
