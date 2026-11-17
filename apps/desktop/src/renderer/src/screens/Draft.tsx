@@ -2,7 +2,7 @@ import { useState } from 'react';
 import type { PlayerId } from '@gm/shared';
 import { useDispatch, useDraftClass, useTeams } from '@/lib/queries';
 import { useT, type MessageKey } from '@/i18n';
-import { Button, Card, RangeBar, Td, Th } from '@/ui';
+import { Button, Card, Face, RangeBar, Td, Th } from '@/ui';
 
 /**
  * Draft board: the class as the scouts see it (a potential range, not the truth) and your
@@ -55,6 +55,7 @@ export function Draft() {
               <tr key={p.id} className="border-b border-line/50">
                 <Td className="text-muted">{i + 1}</Td>
                 <Td>
+                  <Face seed={p.id} age={p.age} size={22} />
                   {p.firstName} {p.lastName}
                 </Td>
                 <Td>{p.position}</Td>

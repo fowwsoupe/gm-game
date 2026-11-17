@@ -10,7 +10,7 @@ import {
   useTradeRequests,
 } from '@/lib/queries';
 import { useT, type MessageKey } from '@/i18n';
-import { Button, Card, TeamLink, Td, Th } from '@/ui';
+import { Button, Card, Face, TeamLink, Td, Th } from '@/ui';
 import { money, statValue } from '@/lib/format';
 
 /** Build a trade with another team; its GM answers live, with reasons, before you send it. */
@@ -236,6 +236,7 @@ function Side({
                     checked={picked.includes(p.id)}
                     className="mr-2"
                   />
+                  <Face seed={p.id} age={p.age} size={22} />
                   {p.firstName} {p.lastName}
                 </Td>
                 <Td left>{p.position}</Td>
