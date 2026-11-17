@@ -105,8 +105,12 @@ export type LeagueEvent =
       teamId: TeamId;
       playerId?: PlayerId;
     })
-  /** The playoffs are over: next draft's class, with scouted ranges. */
-  | (EventBase & { kind: 'draft.classAnnounced'; prospects: DraftProspect[] })
+  /** The playoffs are over: next draft's class, with scouted ranges, and the lottery's round-one order. */
+  | (EventBase & {
+      kind: 'draft.classAnnounced';
+      prospects: DraftProspect[];
+      firstRound?: TeamId[];
+    })
   /** A team ranked the prospects it wants; its picks follow this order. */
   | (EventBase & { kind: 'draft.boardSet'; teamId: TeamId; order: PlayerId[] })
   /** End of a regular season: every player's stat line, kept for career stats (sport-defined keys). */

@@ -10,7 +10,7 @@ import {
 } from './core';
 import { classifyTeams, computeStandings, nextRound, seedPlayoffs } from './league';
 import { giveSeasonAwards } from './awards';
-import { announceDraftClass } from './offseason';
+import { announceDraftClass, worstFirst } from './offseason';
 import { aiOffers, aiTrades } from './trades';
 import { chemistry, tradeRequests } from './people';
 import { overall } from './players';
@@ -278,7 +278,13 @@ export function advance(
             }),
           );
           giveSeasonAwards(state, ctx, emitter(state, events));
-          announceDraftClass(state, ctx, rng.fork('draftClass'), emitter(state, events));
+          announceDraftClass(
+            state,
+            ctx,
+            rng.fork('draftClass'),
+            emitter(state, events),
+            worstFirst(state, ctx),
+          );
         } else {
           for (const series of nextRound(current)) {
             emit(

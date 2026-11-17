@@ -47,6 +47,8 @@ export interface LeagueState {
   freeAgencyOpen: boolean;
   /** Next draft's class, announced when the champion is crowned; drafted players leave it. */
   draftClass: DraftProspect[];
+  /** Round-one order (first pick first), drawn when the class is announced; empty before. */
+  draftOrder: TeamId[];
   /** Each team's ranked wish list for the draft. */
   draftBoards: Record<string, string[]>;
   /** Each human team's depth order for its lines, best first (absent = by rating). */
@@ -194,6 +196,7 @@ export function applyEvent(state: LeagueState, event: LeagueEvent): void {
       return;
     case 'draft.classAnnounced':
       state.draftClass = structuredClone(event.prospects);
+      state.draftOrder = [...(event.firstRound ?? [])];
       return;
     case 'draft.boardSet':
       state.draftBoards[event.teamId] = [...event.order];
@@ -270,6 +273,7 @@ export function applyEvent(state: LeagueState, event: LeagueEvent): void {
       state.capCharges = state.capCharges.filter((c) => c.season >= event.season);
       state.freeAgencyOpen = false;
       state.draftClass = [];
+      state.draftOrder = [];
       state.draftBoards = {};
       state.tradeOffers = [];
       state.faOffers = [];
