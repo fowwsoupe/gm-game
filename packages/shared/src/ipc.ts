@@ -21,6 +21,7 @@ import type {
   SigningInterest,
   TeamId,
   TradeEvaluation,
+  FreeAgentOffer,
   TradeOffer,
   TradeProposal,
 } from './domain';
@@ -90,6 +91,8 @@ export interface GmApi {
     picks(input: { teamId: TeamId }): Promise<DraftPick[]>;
     /** Players on a team who asked to be traded. */
     tradeRequests(input: { teamId: TeamId }): Promise<string[]>;
+    /** Offer sheets other teams gave this team's restricted free agents (match or decline). */
+    offerSheets(input: { teamId: TeamId }): Promise<FreeAgentOffer[]>;
     /** AI GMs' open offers to a team. */
     tradeOffers(input: { teamId: TeamId }): Promise<TradeOffer[]>;
     /** What the other team would say to a trade, without making it. */
@@ -150,6 +153,7 @@ export const IPC = {
   career: 'league:career',
   lines: 'league:lines',
   picks: 'league:picks',
+  offerSheets: 'league:offerSheets',
   tradeOffers: 'league:tradeOffers',
   tradeRequests: 'league:tradeRequests',
   evaluateTrade: 'league:evaluateTrade',

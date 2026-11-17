@@ -8,11 +8,12 @@ import type {
   TradeProposal,
 } from '@gm/shared';
 import { Rng, applyEvent, emitter, makeEvent, type LeagueState } from './core';
-import { buyoutCharges } from './cba';
+import { buyoutCharges, capYearIssues, capYearOf, teamCapTotal } from './cba';
 import { parsePick } from './league';
 import { talkedDown } from './people';
 import {
   isExpiring,
+  acceptSheet,
   marketDay,
   openFreeAgency,
   resignContract,
@@ -308,6 +309,38 @@ export function handleCommand(
       return { ok: true, events: [ev] };
     }
 
+    case 'freeAgency.matchSheet':
+    case 'freeAgency.declineSheet': {
+      const team = state.teams[command.teamId];
+      if (!team) return { ok: false, error: { code: 'invalid', message: 'unknown team' } };
+      if (!controls(actor, team)) return notYours;
+      const sheet = state.rfaSheets.find((o) => o.playerId === command.playerId);
+      const player = state.players[command.playerId];
+      if (!sheet || !player || state.rfaRights[player.id] !== team.id) {
+        return { ok: false, error: { code: 'invalid', message: 'no offer sheet for that player' } };
+      }
+      if (command.kind === 'freeAgency.declineSheet') {
+        const events: LeagueEvent[] = [];
+        acceptSheet(state, ctx, emitter(state, events), sheet);
+        return { ok: true, events };
+      }
+      // He signs on the sheet's terms, so only cap room can stop a match (no interest check).
+      const salary = sheet.salary;
+      const total = teamCapTotal(state, team.id) + salary;
+      if (capYearIssues(ctx.ruleset, state, total).length > 0) {
+        return { ok: false, error: { code: 'invalid', message: 'no cap room' } };
+      }
+      const ev = makeEvent(state, 'notable', [team.id, sheet.teamId], {
+        kind: 'player.signed',
+        playerId: player.id,
+        teamId: team.id,
+        contract: { capHit: salary, expiresAfterSeason: capYearOf(state) + sheet.years - 1 },
+        staying: true,
+      });
+      applyEvent(state, ev);
+      return { ok: true, events: [ev] };
+    }
+
     case 'contract.sign': {
       const player = state.players[command.playerId];
       const team = state.teams[command.teamId];
@@ -318,9 +351,11 @@ export function handleCommand(
       const deal = signFreeAgent(state, ctx, player, team.id, command);
       if ('error' in deal) return { ok: false, error: { code: 'invalid', message: deal.error } };
       // With AI offers on the table he weighs them all tomorrow; otherwise he decides now.
-      const contested = state.faOffers.some(
-        (o) => o.playerId === player.id && o.teamId !== team.id,
-      );
+      // A restricted free agent's own team gets to match first: an offer sheet is never instant.
+      const rights = state.rfaRights[player.id];
+      const contested =
+        (rights !== undefined && rights !== team.id) ||
+        state.faOffers.some((o) => o.playerId === player.id && o.teamId !== team.id);
       const ev = contested
         ? makeEvent(state, 'minor', [team.id], {
             kind: 'freeAgency.offered',

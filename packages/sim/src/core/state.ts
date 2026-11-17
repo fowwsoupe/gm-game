@@ -58,6 +58,10 @@ export interface LeagueState {
   tradeOffers: TradeOffer[];
   /** Open offers to free agents (AI teams' and yours); a free agent picks one the next day. */
   faOffers: FreeAgentOffer[];
+  /** Unsigned restricted free agents: the team that holds his rights (until he signs or the season starts). */
+  rfaRights: Record<PlayerId, TeamId>;
+  /** Offer sheets waiting for a human rights team's answer; no answer by the next day declines. */
+  rfaSheets: FreeAgentOffer[];
   /** Players on human teams who asked to be traded (cleared by a talk that works or a trade). */
   tradeRequests: { playerId: PlayerId; teamId: TeamId }[];
   /** Count of events applied so far; the next event's id is built from it. */
@@ -158,6 +162,7 @@ export function applyEvent(state: LeagueState, event: LeagueEvent): void {
       p.teamId = null;
       delete p.contract;
       delete p.extension;
+      if (event.rightsTeamId) state.rfaRights[p.id] = event.rightsTeamId;
       endRequest(state, p.id);
       return;
     }
@@ -200,9 +205,19 @@ export function applyEvent(state: LeagueState, event: LeagueEvent): void {
       p.teamId = event.teamId;
       p.contract = { ...event.contract };
       delete p.extension;
+      delete state.rfaRights[p.id];
+      state.rfaSheets = state.rfaSheets.filter((o) => o.playerId !== p.id);
       state.faOffers = state.faOffers.filter((o) => o.playerId !== event.playerId);
       return;
     }
+    case 'freeAgency.sheetReceived':
+      state.faOffers = state.faOffers.filter((o) => o.playerId !== event.offer.playerId);
+      state.rfaSheets = state.rfaSheets.filter((o) => o.playerId !== event.offer.playerId);
+      state.rfaSheets.push({ ...event.offer });
+      return;
+    case 'freeAgency.sheetDropped':
+      state.rfaSheets = state.rfaSheets.filter((o) => o.playerId !== event.playerId);
+      return;
     case 'freeAgency.offered':
       state.faOffers = state.faOffers.filter(
         (o) => o.playerId !== event.offer.playerId || o.teamId !== event.offer.teamId,
@@ -229,6 +244,8 @@ export function applyEvent(state: LeagueState, event: LeagueEvent): void {
       state.draftBoards = {};
       state.tradeOffers = [];
       state.faOffers = [];
+      state.rfaRights = {};
+      state.rfaSheets = [];
       // This season's draft is done: only later drafts' picks still matter.
       for (const id of Object.keys(state.pickOwners)) {
         if (Number(id.split('-')[0]) <= event.season) delete state.pickOwners[id];

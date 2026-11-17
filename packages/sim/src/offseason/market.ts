@@ -1,8 +1,8 @@
-import type { Player, TeamId } from '@gm/shared';
+import type { FreeAgentOffer, Player, TeamId } from '@gm/shared';
 import type { Emit, LeagueState, Rng } from '../core';
 import type { SimContext } from '../context';
 import { overall } from '../players';
-import { buyoutCharges, capYearOf, deadCap } from '../cba';
+import { buyoutCharges, capYearIssues, capYearOf, deadCap, teamCapTotal } from '../cba';
 import { GM_LEAN, gmOf, seenBy } from '../people';
 import { signFreeAgent, signingInterest } from './signing';
 import { capRoom, countAt, freeAgents, rosterOf, neededPosition } from './roster';
@@ -115,8 +115,52 @@ function letGo(state: LeagueState, ctx: SimContext, emit: Emit, teamId: TeamId, 
   }
 }
 
+/** An AI team matches an offer sheet for its restricted free agent when it is fair and it has room. */
+const MATCH_PREMIUM = 1.15;
+function aiMatches(state: LeagueState, ctx: SimContext, teamId: TeamId, p: Player, salary: number) {
+  if (salary > ctx.models.contractDemand.ask(ctx.ruleset, p) * MATCH_PREMIUM) return null;
+  const room = roomFor(state, ctx, teamId, p, salary);
+  if (!room) return null;
+  return capYearIssues(ctx.ruleset, state, teamCapTotal(state, teamId) + salary - room.freed)
+    .length === 0
+    ? room
+    : null;
+}
+
+/**
+ * A sheet that stands (declined, or nobody answered): he signs with the team that sent it, making
+ * room the way an offer does (`roomFor`), or the sheet is dropped if that no longer works.
+ */
+export function acceptSheet(
+  state: LeagueState,
+  ctx: SimContext,
+  emit: Emit,
+  sheet: FreeAgentOffer,
+) {
+  const player = state.players[sheet.playerId];
+  const room = player && roomFor(state, ctx, sheet.teamId, player, sheet.salary);
+  const deal = player && room && signFreeAgent(state, ctx, player, sheet.teamId, sheet, room.freed);
+  if (!player || !room || !deal || 'error' in deal) {
+    emit('minor', [sheet.teamId], { kind: 'freeAgency.sheetDropped', playerId: sheet.playerId });
+    return;
+  }
+  letGo(state, ctx, emit, sheet.teamId, room.letGo);
+  emit('minor', [sheet.teamId], {
+    kind: 'player.signed',
+    playerId: player.id,
+    teamId: sheet.teamId,
+    contract: deal.contract,
+  });
+}
+
+/** Sheets nobody answered stand. */
+function settleSheets(state: LeagueState, ctx: SimContext, emit: Emit): void {
+  for (const sheet of [...state.rfaSheets]) acceptSheet(state, ctx, emit, sheet);
+}
+
 /** Each free agent with offers signs the best one that still works; the teams that lose are told. */
 export function decideOffers(state: LeagueState, ctx: SimContext, emit: Emit): void {
+  settleSheets(state, ctx, emit);
   const byPlayer = new Map<string, typeof state.faOffers>();
   for (const o of state.faOffers)
     byPlayer.set(o.playerId, [...(byPlayer.get(o.playerId) ?? []), o]);
@@ -132,6 +176,26 @@ export function decideOffers(state: LeagueState, ctx: SimContext, emit: Emit): v
       if (!room) continue;
       const deal = signFreeAgent(state, ctx, player, o.teamId, o, room.freed);
       if ('error' in deal) continue;
+      // An offer sheet to a restricted free agent: his own team may match it.
+      const rights = state.rfaRights[player.id];
+      if (rights && rights !== o.teamId) {
+        if (state.teams[rights]?.userControlled) {
+          emit('notable', [rights, o.teamId], { kind: 'freeAgency.sheetReceived', offer: o });
+          break;
+        }
+        const matchRoom = aiMatches(state, ctx, rights, player, o.salary);
+        if (matchRoom) {
+          letGo(state, ctx, emit, rights, matchRoom.letGo);
+          emit('minor', [rights, o.teamId], {
+            kind: 'player.signed',
+            playerId: player.id,
+            teamId: rights,
+            contract: deal.contract,
+            staying: true,
+          });
+          break;
+        }
+      }
       letGo(state, ctx, emit, o.teamId, room.letGo);
       const losers = offers.map((x) => x.o.teamId).filter((t) => t !== o.teamId);
       emit('minor', [o.teamId, ...losers], {

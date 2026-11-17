@@ -39,6 +39,10 @@ export type Command =
   | { kind: 'draft.setBoard'; teamId: TeamId; order: PlayerId[] }
   /** One day of free agency: free agents answer the offers they have, then AI teams make new ones. */
   | { kind: 'freeAgency.advanceDay' }
+  /** Match the offer sheet another team gave your restricted free agent: he signs with you on its terms. */
+  | { kind: 'freeAgency.matchSheet'; playerId: PlayerId; teamId: TeamId }
+  /** Let the offer sheet stand: he signs with the other team. */
+  | { kind: 'freeAgency.declineSheet'; playerId: PlayerId; teamId: TeamId }
   /**
    * Offer a free agent `salary` a year for `years`. He signs now if interested and no AI team has
    * an offer to him; otherwise your offer joins theirs and he picks the best next day.

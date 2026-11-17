@@ -4,6 +4,7 @@ import type { PlayerProfile, TeamId } from '@gm/shared';
 import {
   useCareer,
   useDispatch,
+  useOfferSheets,
   usePlayers,
   useSigningInterest,
   useStatus,
@@ -77,6 +78,7 @@ export function Roster({ freeAgents = false }: { freeAgents?: boolean }) {
             />
           ))}
         </div>
+        {freeAgents && <Sheets teamId={teams.find((x) => x.userControlled)?.id} />}
         {card && <Profile player={card} signFor={teams.find((x) => x.userControlled)?.id} />}
       </div>
     </div>
@@ -195,6 +197,7 @@ function Profile({ player: p, signFor }: { player: PlayerProfile; signFor: TeamI
 /** Offer a free agent a contract; his interest meter answers before you send it. */
 function Offer({ player, teamId }: { player: PlayerProfile; teamId: TeamId }) {
   const t = useT();
+  const { data: teams = [] } = useTeams();
   // The box keeps what you type; the offer is that many millions, rounded to whole dollars.
   const [text, setText] = useState((player.ask / 1e6).toFixed(2));
   const salary = Math.round((Number(text) || 0) * 1e6);
@@ -205,6 +208,13 @@ function Offer({ player, teamId }: { player: PlayerProfile; teamId: TeamId }) {
   return (
     <Card title={t('sign.title')}>
       <p className="mb-2 text-sm text-muted">{t('sign.ask', { amount: money(player.ask) })}</p>
+      {player.rightsTeamId && (
+        <p className="mb-2 text-sm text-muted">
+          {t('sign.rights', {
+            team: teams.find((x) => x.id === player.rightsTeamId)?.abbreviation ?? '',
+          })}
+        </p>
+      )}
       {player.rivalOffers > 0 && (
         <p className="mb-2 text-sm text-bad">{t('sign.rivals', { n: player.rivalOffers })}</p>
       )}
@@ -317,6 +327,54 @@ function Career({ player }: { player: PlayerProfile }) {
           ))}
         </tbody>
       </table>
+    </Card>
+  );
+}
+
+/** Offer sheets other teams gave your restricted free agents: match them or let him go. */
+function Sheets({ teamId }: { teamId: TeamId | undefined }) {
+  const t = useT();
+  const { data: sheets = [] } = useOfferSheets(teamId);
+  const { data: teams = [] } = useTeams();
+  const { data: players = [] } = usePlayers(null);
+  const dispatch = useDispatch();
+  if (!teamId || sheets.length === 0) return null;
+  return (
+    <Card title={t('sheet.title')} className="lg:col-span-2">
+      <p className="mb-2 text-sm text-muted">{t('sheet.hint')}</p>
+      {sheets.map((o) => {
+        const p = players.find((x) => x.id === o.playerId);
+        const from = teams.find((x) => x.id === o.teamId);
+        return (
+          <div key={o.playerId} className="flex items-center gap-3 py-1 text-sm">
+            <span className="flex-1">
+              {t('sheet.line', {
+                team: from?.abbreviation ?? '',
+                player: p ? `${p.firstName} ${p.lastName}` : o.playerId,
+                amount: money(o.salary),
+                years: o.years,
+              })}
+            </span>
+            <Button
+              variant="primary"
+              disabled={dispatch.isPending}
+              onClick={() =>
+                dispatch.mutate({ kind: 'freeAgency.matchSheet', playerId: o.playerId, teamId })
+              }
+            >
+              {t('sheet.match')}
+            </Button>
+            <Button
+              disabled={dispatch.isPending}
+              onClick={() =>
+                dispatch.mutate({ kind: 'freeAgency.declineSheet', playerId: o.playerId, teamId })
+              }
+            >
+              {t('sheet.decline')}
+            </Button>
+          </div>
+        );
+      })}
     </Card>
   );
 }

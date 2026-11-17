@@ -17,7 +17,7 @@ import { changeGms, setPlans } from './gms';
 
 export { lotteryOrder, announceDraftClass } from './draft';
 export { signingInterest, signFreeAgent } from './signing';
-export { marketDay, roomFor } from './market';
+export { acceptSheet, marketDay, roomFor } from './market';
 export { resignOffers, resignContract, isExpiring, resignWindowOpen } from './resign';
 export { RFA_DISCOUNT, resignAsk } from './roster';
 export { stayChance } from './freeAgency';
@@ -63,7 +63,7 @@ export function openFreeAgency(state: LeagueState, ctx: SimContext, emit: Emit):
   developPlayers(state, ctx.models.development, rng.fork('development'), emit, season);
   retirePlayers(state, ctx.models.development, rng.fork('retirement'), emit, season);
   setPlans(state, emit, season);
-  const expiring = expireContracts(state, emit);
+  const expiring = expireContracts(state, ctx, emit);
   runDraft(state, ctx, rng.fork('draft'), emit, season, order);
   reSignPlayers(state, ctx, rng.fork('resign'), emit, season, expiring);
   emit('notable', [], { kind: 'freeAgency.opened' });

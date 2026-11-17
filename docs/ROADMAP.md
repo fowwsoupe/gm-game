@@ -14,14 +14,13 @@ Status: `[ ]` not started · `[~]` in progress · `[x]` done
 Ready jobs, each one PR. Pick from the top. Update this list in the PR that finishes a job.
 
 1. Alternate: a sim feature with its screen, then a UI-only item.
-   1. RFA / UFA rules (Contracts & cap), with qualifying offers and offer sheets on screen.
-   2. Home: sim-to-date bar.
-   3. Morale (People), shown on the player card.
-   4. Player profile: career stats and history.
-   5. Loyalty and hometown discounts (Free agency), as reasons on the interest meter.
-   6. Lines: drag-and-drop, PP/PK units, goalie rotation rules.
-   7. Draft: scout reports.
-   8. Trades: trade block, conditional picks.
+   1. Home: sim-to-date bar.
+   2. Morale (People), shown on the player card.
+   3. Player profile: career stats and history.
+   4. Loyalty and hometown discounts (Free agency), as reasons on the interest meter.
+   5. Lines: drag-and-drop, PP/PK units, goalie rotation rules.
+   6. Draft: scout reports.
+   7. Trades: trade block, conditional picks.
 2. **A lasting team edge** (long-run flattening). Needs a design first:
    [research/2026-11-long-run-spread.md](research/2026-11-long-run-spread.md) is the brief.
 
@@ -64,7 +63,7 @@ Build order, owners and "done when" for each step: **[V0.1_PLAN.md](V0.1_PLAN.md
 
 - [~] Full season calendar: 84 games (divisions, conferences, back-to-backs) → playoffs → awards → draft → re-sign → FA done; camp and a trade deadline that matters wait for trades (M6)
 - [~] Trades v1: surplus value per team (status, rentals, negative contracts), anti-quantity, cap and position checks, AI explains itself, trade screen, AI-to-AI trades (both GMs must accept), retained salary, draft picks (next three drafts, value curve by projected slot) done, AI GMs pay with picks; trade block, conditional picks to do
-- [~] Contracts & cap: CBA checks, buyouts, cap sheet screen, cap advisor, offseason re-signing and in-season extensions done; RFA / UFA, bonuses, trade protection to do
+- [~] Contracts & cap: CBA checks, buyouts, cap sheet screen, cap advisor, offseason re-signing and in-season extensions, RFA rights with offer sheets the rights team can match (no compensation picks yet) done; bonuses, trade protection to do
 - [~] Free agency v1: free-agency window in the summer, offers with an interest meter (money, winning, role, term weighted by age), signings any time outside the playoffs, personalities (greed, ambition), AI offers, and AI re-signing by loyalty and ambition done; loyalty and hometown discounts to do
 - [~] Draft v1: class announced after the playoffs with scouted potential ranges (AI sees the same ranges), your ranked list drives your picks; scout reports and draft-room trades to do
 - [x] Playoffs: bracket, NHL-style wild cards, honest momentum (per-game goalie form, calibrated), Playoff MVP, playoff cap; the cup is "Champion" until it is named

@@ -79,7 +79,8 @@ export type LeagueEvent =
       contract: Contract;
     })
   /** Contract ran out: the player becomes a free agent. */
-  | (EventBase & { kind: 'contract.expired'; playerId: PlayerId })
+  /** `rightsTeamId`: a restricted free agent; that team may match another team's offer sheet. */
+  | (EventBase & { kind: 'contract.expired'; playerId: PlayerId; rightsTeamId?: TeamId })
   /**
    * A new player enters the league through the draft (the event carries the whole player).
    * `round` and `pick` are 0 for an undrafted free agent signed to fill a roster.
@@ -120,6 +121,10 @@ export type LeagueEvent =
   | (EventBase & { kind: 'units.set'; teamId: TeamId; unit: SpecialUnit; playerIds: PlayerId[] })
   /** A team made a free agent an offer (replaces its earlier one); he answers next day. */
   | (EventBase & { kind: 'freeAgency.offered'; offer: FreeAgentOffer })
+  /** An offer sheet to a restricted free agent: the team holding his rights may match it or not. */
+  | (EventBase & { kind: 'freeAgency.sheetReceived'; offer: FreeAgentOffer })
+  /** A sheet that cannot be signed any more (cap room moved): it is gone. */
+  | (EventBase & { kind: 'freeAgency.sheetDropped'; playerId: PlayerId })
   /** The offseason's free-agency window opened (closes when the next season starts). */
   | (EventBase & { kind: 'freeAgency.opened' })
   /** A new season: fresh schedule, clock back to opening night, results cleared. */
