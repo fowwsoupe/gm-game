@@ -1,4 +1,11 @@
-import type { HockeyGoalieLine, HockeySkaterLine, Player } from '@gm/shared';
+import type {
+  HockeyBoxScore,
+  HockeyGoalieLine,
+  HockeyPenalty,
+  HockeyShot,
+  HockeySkaterLine,
+  Player,
+} from '@gm/shared';
 import { attack, defence, faceoffs, rating, type TeamStrength } from './strength';
 
 export interface Side {
@@ -100,5 +107,36 @@ export function makeSide(strength: TeamStrength, backup: boolean): Side {
       plusMinus: 0,
       pim: 0,
     })),
+  };
+}
+
+const minutes = (sec: number) => Math.round((sec / 60) * 10) / 10;
+
+/** The box score once the game is over: ice times in minutes, goalies, shots and penalties. */
+export function finishBox(
+  S: readonly [Side, Side],
+  shots: HockeyShot[],
+  penalties: HockeyPenalty[],
+  emptyNet: [number, number],
+): HockeyBoxScore {
+  for (const s of S) {
+    for (const line of s.skaters) {
+      line.toi = minutes(line.toi);
+      line.ppToi = minutes(line.ppToi);
+      line.pkToi = minutes(line.pkToi);
+    }
+    for (const line of s.goalieLines) line.toi = minutes(line.toi);
+  }
+  const side = (s: Side) => ({
+    skaters: s.skaters,
+    goalie: s.goalieLines[0] ?? { id: '', toi: 0, shotsAgainst: 0, saves: 0 },
+    ...(s.goalieLines[1] ? { relief: s.goalieLines[1] } : {}),
+  });
+  return {
+    home: side(S[0]),
+    away: side(S[1]),
+    shots,
+    penalties,
+    ...(emptyNet[0] + emptyNet[1] > 0 ? { emptyNet } : {}),
   };
 }
