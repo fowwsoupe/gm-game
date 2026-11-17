@@ -14,12 +14,11 @@ Status: `[ ]` not started · `[~]` in progress · `[x]` done
 Ready jobs, each one PR. Pick from the top. Update this list in the PR that finishes a job.
 
 1. Alternate: a sim feature with its screen, then a UI-only item.
-   1. Morale (People), shown on the player card.
-   2. Player profile: career stats and history.
-   3. Loyalty and hometown discounts (Free agency), as reasons on the interest meter.
-   4. Lines: drag-and-drop, PP/PK units, goalie rotation rules.
-   5. Draft: scout reports.
-   6. Trades: trade block, conditional picks.
+   1. Player profile: career stats and history.
+   2. Loyalty and hometown discounts (Free agency), as reasons on the interest meter.
+   3. Lines: drag-and-drop, PP/PK units, goalie rotation rules.
+   4. Draft: scout reports.
+   5. Trades: trade block, conditional picks.
 2. **A lasting team edge** (long-run flattening). Needs a design first:
    [research/2026-11-long-run-spread.md](research/2026-11-long-run-spread.md) is the brief.
 
@@ -54,7 +53,7 @@ Build order, owners and "done when" for each step: **[V0.1_PLAN.md](V0.1_PLAN.md
 
 - [~] Players (`sim/players`): percentiles, builds and role tags (rules), injuries done; traits, clustered builds, injury history to do
 - [x] Value (`sim/value`): per-team surplus value (can be negative), market value, pick value curve (rules-based; calibrated curve is Azmi's)
-- [~] People (`sim/people`): personalities (from the player id), free-agent priorities by age and personality, AI GM styles and skill, team plans done; morale to do
+- [x] People (`sim/people`): personalities (from the player id), free-agent priorities by age and personality, AI GM styles and skill, team plans, morale (shown on the player card; no effects yet) done
 - [ ] League & events (`sim/league`): calendar, team status (league pulse), event engine, news
 - [ ] Minor / junior / European leagues: light stats-only sim for prospects
 

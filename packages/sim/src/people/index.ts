@@ -4,7 +4,8 @@
  * Personalities come from the player's id (`personalityOf`); free agency and re-signing weigh them.
  * AI GMs (`gmOf`) have a style and a skill; AI decisions look at players as their GM sees them (`seenBy`).
  * Chemistry v1 is time together (`chemistry`), worth at most a rating point in the game.
- * TODO(feature): morale; chemistry from linemates, builds and leaders.
+ * Morale v1 (`morale`) is a display of how happy a player is.
+ * TODO(feature): morale effects; chemistry from linemates, builds and leaders.
  */
 export {
   randomPersonality,
@@ -17,6 +18,7 @@ export {
   type Priorities,
   type Priority,
 } from './personality';
+export { morale, type MoraleInput } from './morale';
 export { chemistry, CHEMISTRY_FULL_SEASONS } from './chemistry';
 export { talkedDown, tradeRequests } from './requests';
 export {

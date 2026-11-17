@@ -148,10 +148,13 @@ function Profile({ player: p, signFor }: { player: PlayerProfile; signFor: TeamI
         name={`${p.firstName} ${p.lastName}`}
         face={<Face seed={p.id} age={p.age} />}
         subtitle={`${t('roster.subtitle', { position: p.position, age: p.age })} · ${t(`build.${p.build}` as MessageKey)}`}
-        bars={p.percentiles.map((x) => ({
-          label: t(`rating.${x.key}` as MessageKey),
-          value: x.value,
-        }))}
+        bars={[
+          ...p.percentiles.map((x) => ({
+            label: t(`rating.${x.key}` as MessageKey),
+            value: x.value,
+          })),
+          ...(p.morale ? [{ label: t('morale.label'), value: p.morale.value }] : []),
+        ]}
       />
       <Card>
         <p className="text-sm">
@@ -182,6 +185,13 @@ function Profile({ player: p, signFor }: { player: PlayerProfile; signFor: TeamI
                 {t(`trait.${trait}` as MessageKey)}
               </span>
             ))}
+          </p>
+        )}
+        {p.morale && (
+          <p className="mt-1 text-xs text-muted">
+            {p.morale.factors
+              .map((f) => `${t(`morale.${f.key}` as MessageKey)} ${f.score}`)
+              .join(' · ')}
           </p>
         )}
         {p.injuredUntil !== undefined && (
