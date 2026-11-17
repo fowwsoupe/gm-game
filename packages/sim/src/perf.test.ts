@@ -8,6 +8,8 @@ import type { TeamId } from '@gm/shared';
  * Screen data (standings, leaders, cap sheet) is timed here too: the app screens only render these.
  */
 const ctx = defaultContext();
+// Default: 4 seasons so `pnpm test` stays fast. `pnpm test:slow` (nightly CI) plays the full 20.
+const YEARS = process.env.GM_SLOW ? 20 : 4;
 
 describe('speed budget', () => {
   it('sims a full regular season well under 20 s', () => {
@@ -47,7 +49,7 @@ describe('speed budget', () => {
     expect(performance.now() - t0).toBeLessThan(250);
   });
 
-  it('still sims a season and rolls over fast in year 20', async () => {
+  it('still sims a season and rolls over fast in the last year', async () => {
     const state = createLeague(77, ctx);
     const local = { id: 'local', controls: [] };
     const { regularSeasonDays, playoffDays } = ctx.ruleset.season.calendar;
@@ -60,7 +62,7 @@ describe('speed budget', () => {
       );
       return handleCommand(state, { kind: 'season.rollover' }, local, ctx);
     };
-    for (let y = 0; y < 19; y++) {
+    for (let y = 0; y < YEARS - 1; y++) {
       expect(year().ok).toBe(true);
       // Let the test worker answer the runner between seasons (see offseason.test.ts).
       await new Promise((resolve) => setTimeout(resolve, 0));
@@ -70,7 +72,7 @@ describe('speed budget', () => {
     expect(performance.now() - t0).toBeLessThan(6_000);
     expect(Object.keys(state.players).length).toBeLessThan(2_000); // retired players do not pile up
 
-    // Screen data in year 20, with the most history: each must feel instant.
+    // Screen data in the last year, with the most history: each must feel instant.
     const teamIds = Object.keys(state.teams) as TeamId[];
     const results = Object.values(state.results);
     const time = (fn: () => unknown) => {
@@ -93,5 +95,5 @@ describe('speed budget', () => {
         }),
       ),
     ).toBeLessThan(250);
-  }, 120_000); // 20 seasons take ~30 s on CI; the time budget is for the last one
+  }, 120_000); // 20 seasons (GM_SLOW) take ~30 s on CI; the time budget is for the last one
 });
