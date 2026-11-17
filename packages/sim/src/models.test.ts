@@ -102,3 +102,19 @@ describe('contract demand model', () => {
     }
   });
 });
+
+describe('re-injury risk', () => {
+  it('is 1 for a healthy skater, more after injuries, and capped', async () => {
+    const { injuryRisk } = await import('./sports/hockey/game');
+    const base = createLeague(1, defaultContext());
+    const p = Object.values(base.players)[0]!;
+    delete p.injuredUntil;
+    delete p.injuryHistory;
+    expect(injuryRisk(p)).toBe(1);
+    p.injuredUntil = 10;
+    p.injuryHistory = { count: 1, days: 10 };
+    expect(injuryRisk(p)).toBeCloseTo(1.33);
+    p.injuryHistory = { count: 100, days: 1000 };
+    expect(injuryRisk(p)).toBe(2);
+  });
+});

@@ -6,6 +6,7 @@ import type {
   HockeyGameStats,
   HockeyPenalty,
   HockeyShot,
+  Player,
   PlayerId,
   TeamId,
 } from '@gm/shared';
@@ -37,6 +38,20 @@ const INJURY_DAYS = [
   { weight: 30, days: [15, 60] },
   { weight: 10, days: [61, 180] },
 ] as const;
+/**
+ * Re-injury risk: a skater already hurt this season is hurt more easily again (a tweak that
+ * comes back), and a long injury record adds a little more. Capped at double.
+ */
+const RE_INJURY = 0.3;
+const PER_PAST_INJURY = 0.03;
+const MAX_INJURY_RISK = 2;
+export const injuryRisk = (p: Player): number =>
+  Math.min(
+    MAX_INJURY_RISK,
+    1 +
+      (p.injuredUntil !== undefined ? RE_INJURY : 0) +
+      PER_PAST_INJURY * (p.injuryHistory?.count ?? 0),
+  );
 const REGULATION = 3600;
 const PLAYOFF_OVERTIME = 1200;
 
@@ -197,7 +212,12 @@ function playGame(
     for (const n of [0, 1] as const) {
       const s = S[n];
       for (const k of s.onIce) {
-        if (!rng.chance((INJURY_PER_GAME * T.shiftSeconds) / (AVG_TOI * 60))) continue;
+        if (
+          !rng.chance(
+            (INJURY_PER_GAME * injuryRisk(s.players[k]!) * T.shiftSeconds) / (AVG_TOI * 60),
+          )
+        )
+          continue;
         s.out.add(k);
         injuries.push({ playerId: s.players[k]!.id, days: pickInjuryDays() });
       }
