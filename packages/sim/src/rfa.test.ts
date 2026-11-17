@@ -225,3 +225,27 @@ describe('protected picks', () => {
     expect(state.pickProtection[id]).toBeUndefined();
   });
 });
+
+describe('stale listings', () => {
+  it('a player who leaves his team (expiry, buyout, retirement) leaves the trade block and the maps', () => {
+    const state = createLeague(5, ctx);
+    const mine = Object.values(state.teams).find((t) => t.userControlled)!.id;
+    const own = Object.values(state.players).filter((p) => p.teamId === mine);
+    for (const p of own.slice(0, 3)) {
+      run(state, { kind: 'trade.block', teamId: mine, playerId: p.id, onBlock: true });
+    }
+    run(state, { kind: 'sim.advance', days: 300 });
+    run(state, { kind: 'contract.buyout', playerId: own[0]!.id });
+    expect(state.tradeBlock).not.toContain(own[0]!.id);
+    run(state, { kind: 'season.rollover' });
+    const live = new Set(Object.keys(state.players));
+    for (const id of [
+      ...state.tradeBlock,
+      ...Object.keys(state.rfaRights),
+      ...Object.keys(state.formerTeams),
+    ]) {
+      expect(live.has(id)).toBe(true);
+    }
+    expect(state.tradeBlock.every((id) => state.players[id]!.teamId === mine)).toBe(true);
+  });
+});

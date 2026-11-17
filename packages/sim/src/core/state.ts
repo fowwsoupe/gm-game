@@ -156,12 +156,17 @@ export function applyEvent(state: LeagueState, event: LeagueEvent): void {
       delete p.contract;
       delete p.extension;
       delete p.joined;
+      state.tradeBlock = state.tradeBlock.filter((id) => id !== p.id);
       state.capCharges.push(...event.charges.map((c) => ({ ...c })));
       endRequest(state, p.id);
       return;
     }
     case 'player.retired':
       delete state.players[event.playerId];
+      delete state.rfaRights[event.playerId];
+      delete state.formerTeams[event.playerId];
+      state.rfaSheets = state.rfaSheets.filter((o) => o.playerId !== event.playerId);
+      state.tradeBlock = state.tradeBlock.filter((id) => id !== event.playerId);
       endRequest(state, event.playerId);
       return;
     case 'contract.expired': {
@@ -174,6 +179,7 @@ export function applyEvent(state: LeagueState, event: LeagueEvent): void {
       delete p.extension;
       if (event.rightsTeamId) state.rfaRights[p.id] = event.rightsTeamId;
       if (formerTeam) state.formerTeams[p.id] = formerTeam;
+      state.tradeBlock = state.tradeBlock.filter((id) => id !== p.id);
       endRequest(state, p.id);
       return;
     }
