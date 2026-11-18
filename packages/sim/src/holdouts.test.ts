@@ -78,17 +78,24 @@ describe('holdouts', () => {
   });
 
   it('an AI GM pays a holdout in his last season if he plays to win; a builder waits him out', () => {
-    for (const style of ['winNow', 'builder'] as const) {
+    const cases = [
+      { style: 'winNow', skill: 1, yearsLeft: 0, pays: true },
+      { style: 'winNow', skill: 1, yearsLeft: 1, pays: false }, // not his last season yet
+      { style: 'balanced', skill: 0.6, yearsLeft: 0, pays: true },
+      { style: 'balanced', skill: 0.4, yearsLeft: 0, pays: false },
+      { style: 'builder', skill: 1, yearsLeft: 0, pays: false },
+    ] as const;
+    for (const { style, skill, yearsLeft, pays } of cases) {
       const found = (() => {
         for (let seed = 1; seed < 40; seed++) {
           const state = createLeague(seed, ctx);
           const ai = Object.values(state.teams).find((t) => !t.userControlled)!;
-          ai.gm = { style, skill: 1 };
+          ai.gm = { style, skill };
           for (const p of Object.values(state.players)) {
             if (p.teamId !== ai.id || !p.contract) continue;
             p.contract = {
               capHit: ctx.ruleset.cap.minSalary,
-              expiresAfterSeason: state.date.season,
+              expiresAfterSeason: state.date.season + yearsLeft,
             };
           }
           run(state, { kind: 'sim.advance', days: 1 });
@@ -99,9 +106,8 @@ describe('holdouts', () => {
       })();
       const { state, playerId } = found;
       run(state, { kind: 'sim.advance', days: 6 }); // to the first weekly check
-      expect(state.players[playerId]!.extension !== undefined).toBe(style === 'winNow');
-      if (style === 'winNow')
-        expect(state.holdouts.some((h) => h.playerId === playerId)).toBe(false);
+      expect(state.players[playerId]!.extension !== undefined).toBe(pays);
+      if (pays) expect(state.holdouts.some((h) => h.playerId === playerId)).toBe(false);
     }
   });
 });

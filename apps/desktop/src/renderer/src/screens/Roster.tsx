@@ -208,7 +208,7 @@ export function Profile({
         {p.injuredUntil !== undefined && (
           <p className="mt-1 text-sm text-bad">{t('roster.injured', { day: p.injuredUntil })}</p>
         )}
-        {p.holdout && <HoldoutLine playerId={p.id} />}
+        {p.holdout && <HoldoutLine playerId={p.id} canTalk={p.teamId === signFor} />}
         {p.injuryHistory && (
           <p className="mt-1 text-xs text-muted">
             {t('roster.injuryHistory', {
@@ -524,34 +524,36 @@ function BlockToggle({ player, teamId }: { player: PlayerProfile; teamId: TeamId
   );
 }
 
-/** He refuses to report: a talk may bring him back, a new contract will. */
-function HoldoutLine({ playerId }: { playerId: PlayerId }) {
+/** He refuses to report: a talk (his own GM only) may bring him back, a new contract will. */
+function HoldoutLine({ playerId, canTalk }: { playerId: PlayerId; canTalk: boolean }) {
   const t = useT();
   const dispatch = useDispatch();
   const [message, setMessage] = useState<string | null>(null);
   return (
     <p className="mt-1 flex items-center gap-2 text-sm text-bad">
       {message ?? t('roster.holdout')}
-      <Button
-        disabled={dispatch.isPending}
-        onClick={() =>
-          dispatch.mutate(
-            { kind: 'holdout.talk', playerId },
-            {
-              onSuccess: (res) =>
-                setMessage(
-                  !res.ok
-                    ? res.error.message
-                    : res.events.some((e) => e.kind === 'player.holdoutEnded')
-                      ? t('roster.holdoutTalkWorked')
-                      : t('roster.holdoutTalkFailed'),
-                ),
-            },
-          )
-        }
-      >
-        {t('trade.talk')}
-      </Button>
+      {canTalk && (
+        <Button
+          disabled={dispatch.isPending}
+          onClick={() =>
+            dispatch.mutate(
+              { kind: 'holdout.talk', playerId },
+              {
+                onSuccess: (res) =>
+                  setMessage(
+                    !res.ok
+                      ? res.error.message
+                      : res.events.some((e) => e.kind === 'player.holdoutEnded')
+                        ? t('roster.holdoutTalkWorked')
+                        : t('roster.holdoutTalkFailed'),
+                  ),
+              },
+            )
+          }
+        >
+          {t('trade.talk')}
+        </Button>
+      )}
     </p>
   );
 }
