@@ -8,53 +8,9 @@ import {
   type TeamId,
 } from '@gm/shared';
 import { payroll, type Ruleset } from '../../cba';
-import { pct, type Rng } from '../../core';
+import { FIRST, LAST, pct, type Rng } from '../../core';
 import { clampRating } from '../../players';
 
-const FIRST = [
-  'Alex',
-  'Ben',
-  'Carter',
-  'Dylan',
-  'Ethan',
-  'Felix',
-  'Gabe',
-  'Henri',
-  'Isaac',
-  'Jonas',
-  'Kai',
-  'Liam',
-  'Marc',
-  'Noah',
-  'Owen',
-  'Pierre',
-  'Quinn',
-  'Ryan',
-  'Sami',
-  'Theo',
-];
-const LAST = [
-  'Anders',
-  'Bouchard',
-  'Carlsson',
-  'Dumont',
-  'Eriksen',
-  'Fischer',
-  'Gagnon',
-  'Hall',
-  'Ivanov',
-  'Jensen',
-  'Korhonen',
-  'Lindqvist',
-  'Moreau',
-  'Novak',
-  'Olsen',
-  'Pelletier',
-  'Roy',
-  'Sato',
-  'Tremblay',
-  'Virtanen',
-];
 const CITIES = [
   'Aurora',
   'Bayview',

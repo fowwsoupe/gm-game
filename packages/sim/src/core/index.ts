@@ -3,6 +3,7 @@
  */
 export { Rng } from './rng';
 export { teamName, playerName } from './names';
+export { FIRST, LAST } from './namePools';
 export { dollars, pct, type Dollars } from './money';
 export { phaseOf, type CalendarConfig } from './calendar';
 export { applyEvent, capYearOf, linemateKey, type LeagueState, type ScheduledGame } from './state';

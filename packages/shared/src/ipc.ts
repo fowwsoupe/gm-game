@@ -18,6 +18,7 @@ import type {
   StandingsRow,
   Team,
   LeagueStatus,
+  OwnerProfile,
   SigningInterest,
   TeamId,
   TradeEvaluation,
@@ -98,6 +99,8 @@ export interface GmApi {
     picks(input: { teamId: TeamId }): Promise<DraftPick[]>;
     /** Players on a team who asked to be traded. */
     tradeRequests(input: { teamId: TeamId }): Promise<string[]>;
+    /** A team's owner and its market size (0.65-1.75). */
+    owner(input: { teamId: TeamId }): Promise<{ owner: OwnerProfile; market: number }>;
     /** Offer sheets other teams gave this team's restricted free agents (match or decline). */
     offerSheets(input: { teamId: TeamId }): Promise<FreeAgentOffer[]>;
     /** AI GMs' open offers to a team. */
@@ -166,6 +169,7 @@ export const IPC = {
   history: 'league:history',
   tradeOffers: 'league:tradeOffers',
   tradeRequests: 'league:tradeRequests',
+  owner: 'league:owner',
   evaluateTrade: 'league:evaluateTrade',
   status: 'league:status',
   pulse: 'league:pulse',
