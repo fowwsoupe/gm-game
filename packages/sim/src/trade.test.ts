@@ -229,6 +229,17 @@ describe('surplus value', () => {
       'rental',
     );
   });
+
+  it('counts an extension he signed: not a rental, and the new cap hit is what he costs', () => {
+    const contract = { capHit: 3 * M, expiresAfterSeason: 2027 };
+    const rental = player({ birthYear: 2027 - 30, ratings: { a: 72, b: 72 }, contract });
+    const cheap = { ...rental, extension: { capHit: 3 * M, expiresAfterSeason: 2030 } };
+    const dear = { ...rental, extension: { capHit: 11 * M, expiresAfterSeason: 2030 } };
+    const v = (p: Player) => surplusValuator.value(p, team('contender', 0.5), rules);
+    expect(v(cheap).reasons).not.toContain('rental');
+    expect(v(cheap).surplus).toBeGreaterThan(v(rental).surplus);
+    expect(v(dear).surplus).toBeLessThan(v(cheap).surplus);
+  });
 });
 
 describe('AI-to-AI trades', () => {
