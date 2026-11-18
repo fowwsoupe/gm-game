@@ -15,7 +15,7 @@ import { classifyTeams, leagueStandings, nextRound, seedPlayoffs, worstFirst } f
 import { giveSeasonAwards } from './awards';
 import { aiHoldouts, announceDraftClass } from './offseason';
 import { aiOffers, aiTrades } from './trades';
-import { holdoutsWeek, startHoldouts, tradeRequests } from './people';
+import { holdoutsWeek, staffOf, startHoldouts, tradeRequests } from './people';
 import { sitsOut, strengthFor } from './tonight';
 import { byOverall } from './players';
 import { payBonuses } from './cba';
@@ -53,6 +53,23 @@ export function advance(
     stopOn === 'major' ? STOP_CATEGORIES : stopOn === 'never' ? [] : stopOn,
   );
   const cal = ctx.ruleset.season.calendar;
+  // Medical staff: injury days x (1 + medical.days x (league average - quality)). Staff only
+  // change in the summer, so once per call is enough.
+  const fo = ctx.ruleset.frontOffice;
+  const medical = new Map(
+    Object.values(state.teams).map((t) => [
+      t.id,
+      staffOf(t, 'medical', fo.salary, state.date.season).quality,
+    ]),
+  );
+  const avgMedical = [...medical.values()].reduce((a, b) => a + b, 0) / Math.max(1, medical.size);
+  const healed = (teamId: TeamId | null | undefined, days: number) =>
+    Math.max(
+      1,
+      Math.round(
+        days * (1 + fo.medical.days * (avgMedical - (medical.get(teamId!) ?? avgMedical))),
+      ),
+    );
 
   // Rosters once per call; a team's strength is rebuilt only when its set of injured players changes.
   const sport = ctx.sport;
@@ -169,8 +186,10 @@ export function advance(
         }
       }
     }
-    for (const { playerId, days } of injuries) {
+    for (const injury of injuries) {
+      const { playerId } = injury;
       const teamId = state.players[playerId]?.teamId;
+      const days = healed(teamId, injury.days);
       emit(
         makeEvent(state, 'notable', teamId ? [teamId] : [], {
           kind: 'player.injured',

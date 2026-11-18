@@ -300,6 +300,11 @@ function FeedCard() {
             ...e.params,
             award: t(`award.${e.params?.award}` as MessageKey),
           });
+        if (e.headline === 'event.staffLeft' || e.headline === 'event.staffPoached')
+          return t(e.headline, {
+            ...e.params,
+            dept: t(`team.staff.${e.params?.dept}` as MessageKey),
+          });
         return isMessageKey(e.headline) ? t(e.headline, e.params) : e.headline;
       default:
         return null;

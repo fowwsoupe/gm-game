@@ -20,6 +20,7 @@ export type Screen =
   | 'history'
   | 'team'
   | 'owner'
+  | 'frontOffice'
   | 'player';
 
 interface UiState {
