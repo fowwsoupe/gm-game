@@ -24,14 +24,14 @@ Ready now (code can start):
 5. Re-injury risk: done (hurt earlier this season +30%, +3% per past injury, capped at 2x; injuries per team-season 7.9-8.1 to 8.2-8.5).
 6. Player profile screen of its own and more face variety: done (open it from Leaders or the roster card).
 
+Front office (also the lasting-team-edge fix): the jobs in
+[research/2026-11-front-office.md](research/2026-11-front-office.md), in order. League & events:
+the jobs in [research/2026-11-league-events.md](research/2026-11-league-events.md), in order.
+
 Needs a design first (a short brief in `docs/research/`, then jobs):
 
-- **A lasting team edge** (long-run flattening): [research/2026-11-long-run-spread.md](research/2026-11-long-run-spread.md) is the brief.
 - Minor / junior leagues; camp and a trade deadline that matters; player traits and clustered builds.
-- Every other Phase 2 headline below. Owner and finance is done (all eight jobs of
-  [research/2026-11-owner-finance.md](research/2026-11-owner-finance.md)): the event engine's
-  hot-seat and frustrated-owner team events, and the front office (staff budgets, the coach's
-  effect on games), can now attach to an owner and a coach.
+- Every other Phase 2 headline below.
 
 ---
 
