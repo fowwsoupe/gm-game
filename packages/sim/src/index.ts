@@ -46,3 +46,4 @@ export { createLeague, START_SEASON } from './create';
 export { handleCommand } from './commands';
 export { playerProfiles } from './profiles';
 export { dashboard } from './dashboard';
+export { available, sitsOut, strengthFor } from './tonight';

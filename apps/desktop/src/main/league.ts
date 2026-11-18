@@ -5,6 +5,7 @@ import { app } from 'electron';
 import { openSave, type SaveFile } from '@gm/data';
 import {
   applyEvent,
+  available,
   capSheet,
   computeStandings,
   createLeague,
@@ -30,6 +31,7 @@ import {
   Rng,
   teamRecords,
   type LeagueState,
+  strengthFor,
 } from '@gm/sim';
 import type {
   Actor,
@@ -273,15 +275,7 @@ export class LeagueService {
     }
     const ctx = this.context(state.rulesetId);
     const strength = (id: TeamId) =>
-      ctx.sport.teamStrength(
-        Object.values(state.players).filter(
-          (p) => p.teamId === id && (p.injuredUntil ?? 0) <= state.date.day,
-        ),
-        state.depthCharts[id],
-        undefined,
-        state.specialUnits[id],
-        state.linemates[id],
-      );
+      strengthFor(state, ctx, id, available(state, id, state.date.day));
     const result = ctx.sport.simGame(
       {
         id: `x${seed}` as GameId,
@@ -382,9 +376,7 @@ export class LeagueService {
 
   lines(teamId: TeamId) {
     const { state } = this.open();
-    const healthy = Object.values(state.players).filter(
-      (p) => p.teamId === teamId && (p.injuredUntil ?? 0) <= state.date.day,
-    );
+    const healthy = available(state, teamId, state.date.day);
     return {
       units: defaultContext(state.rulesetId).sport.lineup(healthy, state.depthCharts[teamId]),
       special: defaultContext(state.rulesetId).sport.specialUnits(

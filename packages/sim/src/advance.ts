@@ -12,7 +12,8 @@ import { classifyTeams, computeStandings, nextRound, seedPlayoffs } from './leag
 import { giveSeasonAwards } from './awards';
 import { announceDraftClass, worstFirst } from './offseason';
 import { aiOffers, aiTrades } from './trades';
-import { chemistry, holdoutsWeek, startHoldouts, tradeRequests } from './people';
+import { holdoutsWeek, startHoldouts, tradeRequests } from './people';
+import { sitsOut, strengthFor } from './tonight';
 import { overall } from './players';
 import { payBonuses } from './cba';
 import type { SimContext } from './context';
@@ -53,23 +54,12 @@ export function advance(
   loadRosters();
   const strengthOf = (team: TeamId, day: number) => {
     const roster = rosters.get(team) ?? [];
-    const away = new Set(state.holdouts.map((h) => h.playerId));
-    const hurt = roster.filter((p) => (p.injuredUntil ?? 0) > day || away.has(p.id));
+    const hurt = roster.filter((p) => sitsOut(state, p, day));
     const out = hurt.map((p) => p.id).join();
     let cached = strengths.get(team);
     if (!cached || cached.out !== out) {
       const healthy = hurt.length ? roster.filter((p) => !hurt.includes(p)) : roster;
-      const chem = chemistry(healthy, state.date.season).value;
-      cached = {
-        out,
-        strength: sport.teamStrength(
-          healthy,
-          state.depthCharts[team],
-          chem,
-          state.specialUnits[team],
-          state.linemates[team],
-        ),
-      };
+      cached = { out, strength: strengthFor(state, ctx, team, healthy) };
       strengths.set(team, cached);
     }
     return cached.strength;
