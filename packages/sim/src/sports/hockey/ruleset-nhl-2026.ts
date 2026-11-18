@@ -109,7 +109,7 @@ export const NHL_2026: Ruleset = {
     development: { points: 3 }, // was ORG_DEVELOPMENT 2, from GM skill
     scouting: { best: 2, worst: 6 }, // the GM misread on prospects was 1-6
     medical: { days: 0.4 },
-    coaching: { points: 2 },
+    coaching: { points: 1.5 }, // at 2 a coach's defence made goalie save % too repeatable
     leave: 0.3,
     poach: 0.6,
     spend: 0.6,
