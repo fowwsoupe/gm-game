@@ -1,6 +1,6 @@
 import type { Player, TeamStatus } from '@gm/shared';
 import type { Dollars } from '../core';
-import type { Ruleset } from '../cba';
+import { contractIn, type Ruleset } from '../cba';
 import { overall } from '../players';
 import { salaryForOverall } from './market';
 
@@ -97,16 +97,16 @@ export const surplusValuator: PlayerValuator = {
     const now = h.now * (1 + LEAN_NOW * lean);
     const later = Math.min(0.99, h.later * (1 - LEAN_LATER * lean));
     const weight = (y: number) => (y === 0 ? now * team.seasonLeft : later ** y);
-    const cost = player.contract?.capHit ?? 0;
-    const years = player.contract
-      ? Math.max(0, player.contract.expiresAfterSeason - team.season + 1)
-      : 0;
+    // An extension signed but not started yet counts: it is his deal for those seasons.
+    const deal = player.extension ?? player.contract;
+    const years = deal ? Math.max(0, deal.expiresAfterSeason - team.season + 1) : 0;
+    const cost = (y: number) => contractIn(player, team.season + y)?.capHit ?? 0;
     const worth = (y: number) =>
       salaryForOverall(rules, projectedOverall(player, age, y)) *
       (team.needs.includes(player.position) ? 1 + NEED_BONUS : 1);
 
     let surplus = 0;
-    for (let y = 0; y < years; y++) surplus += weight(y) * (worth(y) - CAP_DOLLAR_COST * cost);
+    for (let y = 0; y < years; y++) surplus += weight(y) * (worth(y) - CAP_DOLLAR_COST * cost(y));
     const control = Math.max(
       0,
       Math.min(MAX_CONTROL_YEARS, rules.contracts.ufaAge - (age + years)),
