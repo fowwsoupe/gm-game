@@ -8,6 +8,7 @@ import type {
   GameResult,
   Importance,
   LeagueEvent,
+  OwnerReport,
   Player,
   PlayerId,
   PlayoffSeries,
@@ -670,6 +671,35 @@ export class SaveFile {
       teamId: r.team_id,
       stats: JSON.parse(r.stats_json) as Record<string, number>,
     }));
+  }
+
+  /**
+   * A team's settlements (each one's revenue and costs) and owner meetings, oldest first: the
+   * Owner screen's money flow and history.
+   */
+  ownerHistory(teamId: TeamId): {
+    money: { season: number; day: number; revenue: number; costs: number }[];
+    meetings: OwnerReport['meetings'];
+  } {
+    const rows = this.db
+      .prepare(
+        `SELECT payload_json FROM events
+         WHERE kind IN ('finance.settled', 'owner.meeting') AND team_ids = ? ORDER BY seq`,
+      )
+      .all(JSON.stringify([teamId])) as { payload_json: string }[];
+    const sum = (lines: Record<string, number>) => Object.values(lines).reduce((a, b) => a + b, 0);
+    const money: { season: number; day: number; revenue: number; costs: number }[] = [];
+    const meetings: OwnerReport['meetings'] = [];
+    for (const r of rows) {
+      const e = JSON.parse(r.payload_json) as LeagueEvent;
+      if (e.kind === 'finance.settled') {
+        money.push({ ...e.date, revenue: sum(e.revenue), costs: sum(e.costs) });
+      } else if (e.kind === 'owner.meeting') {
+        const { season, objectives, confidence } = e.owner;
+        meetings.push({ season, meeting: e.meeting, objectives, confidence });
+      }
+    }
+    return { money, meetings };
   }
 
   /** A player's awards and the contract / team moves recorded in the event log, oldest first. */

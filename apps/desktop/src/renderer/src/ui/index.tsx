@@ -225,6 +225,53 @@ export function SectionHeader({ children }: { children: ReactNode }) {
   return <h3 className="mb-2 text-sm font-semibold">{children}</h3>;
 }
 
+/**
+ * Bars (each one's sign coloured good or bad) with a line over them, on one scale, oldest left.
+ * `labels` mark the start of each group (a season) along the bottom.
+ */
+export function BarLineChart({
+  bars,
+  line,
+  labels,
+}: {
+  bars: number[];
+  line: number[];
+  labels: { at: number; text: string }[];
+}) {
+  const w = 600;
+  const h = 160;
+  const top = Math.max(0, ...bars, ...line);
+  const bottom = Math.min(0, ...bars, ...line);
+  const y = (v: number) => (top === bottom ? h / 2 : ((top - v) / (top - bottom)) * h);
+  const step = w / Math.max(1, bars.length);
+  return (
+    <svg viewBox={`0 0 ${w} ${h + 14}`} className="w-full" role="img">
+      <line x1={0} x2={w} y1={y(0)} y2={y(0)} className="stroke-line" />
+      {bars.map((v, i) => (
+        <rect
+          key={i}
+          x={i * step + step * 0.15}
+          width={step * 0.7}
+          y={Math.min(y(v), y(0))}
+          height={Math.abs(y(v) - y(0))}
+          className={v >= 0 ? 'fill-good' : 'fill-bad'}
+        />
+      ))}
+      <polyline
+        points={line.map((v, i) => `${i * step + step / 2},${y(v)}`).join(' ')}
+        fill="none"
+        className="stroke-accent"
+        strokeWidth={2}
+      />
+      {labels.map((l) => (
+        <text key={l.at} x={l.at * step} y={h + 12} className="fill-muted text-[10px]">
+          {l.text}
+        </text>
+      ))}
+    </svg>
+  );
+}
+
 /** One headline number: a small label over a big value, with an optional note. */
 export function StatRow({
   label,

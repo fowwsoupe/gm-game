@@ -159,4 +159,8 @@ export const migrations: readonly string[] = [
   ALTER TABLE players ADD COLUMN injury_count INTEGER NOT NULL DEFAULT 0;
   ALTER TABLE players ADD COLUMN injury_days INTEGER NOT NULL DEFAULT 0;
   `,
+  // 17: events by kind (the Owner screen reads a team's settlements and meetings).
+  `
+  CREATE INDEX IF NOT EXISTS events_kind ON events(kind, seq);
+  `,
 ];

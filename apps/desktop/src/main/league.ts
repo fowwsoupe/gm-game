@@ -23,6 +23,7 @@ import {
   fansOf,
   marketOf,
   ownerOf,
+  ownerStanding,
   ticketPctOf,
   dashboard,
   raceNight,
@@ -51,6 +52,7 @@ import type {
   HallOfFamer,
   Importance,
   LeagueStatus,
+  OwnerReport,
   PulseRow,
   RosterPlayer,
   TeamId,
@@ -376,6 +378,30 @@ export class LeagueService {
       capacity: capacityOf(team, defaultContext(state.rulesetId).ruleset.finance.capacity),
       fans: fansOf(state, teamId),
       ticketPct: ticketPctOf(team, state.ticketPrices),
+    };
+  }
+
+  ownerReport(teamId: TeamId): OwnerReport {
+    const { save, state } = this.open();
+    const team = state.teams[teamId];
+    if (!team) throw new Error(`No team ${teamId}`);
+    const { money, meetings } = save.ownerHistory(teamId);
+    // Cash after each settlement, counted back from today's (so card payments land in it too).
+    let cash = state.cash[teamId] ?? 0;
+    const flow = money
+      .reverse()
+      .map((m) => {
+        const point = { ...m, cash };
+        cash -= m.revenue - m.costs;
+        return point;
+      })
+      .reverse();
+    return {
+      owner: ownerOf(team),
+      standing: ownerStanding(state, defaultContext(state.rulesetId), teamId),
+      cash: state.cash[teamId] ?? 0,
+      money: flow,
+      meetings,
     };
   }
 

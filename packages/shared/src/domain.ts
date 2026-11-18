@@ -282,6 +282,21 @@ export interface OwnerStanding {
   lastPct?: number;
 }
 
+/** The Owner screen: the owner, his view of you, the money's flow and every meeting, oldest first. */
+export interface OwnerReport {
+  owner: OwnerProfile;
+  standing: OwnerStanding;
+  cash: number;
+  /** Each settlement: its revenue and costs, and cash after it. */
+  money: { season: number; day: number; revenue: number; costs: number; cash: number }[];
+  meetings: {
+    season: number;
+    meeting: 'preseason' | 'deadline' | 'review';
+    objectives: OwnerObjective[];
+    confidence: number;
+  }[];
+}
+
 /** What answering a card changes: amounts are added; `ticketPct` sets the price step. */
 export interface CardEffects {
   cash?: number;

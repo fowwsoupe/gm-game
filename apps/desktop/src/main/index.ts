@@ -77,6 +77,9 @@ function registerIpc() {
     league.tradeRequests(input.teamId),
   );
   ipcMain.handle(IPC.owner, (_e, input: In<'owner'>) => league.owner(input.teamId));
+  ipcMain.handle(IPC.ownerReport, (_e, input: In<'ownerReport'>) =>
+    league.ownerReport(input.teamId),
+  );
   ipcMain.handle(IPC.offerSheets, (_e, input: In<'offerSheets'>) =>
     league.offerSheets(input.teamId),
   );

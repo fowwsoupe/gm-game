@@ -19,6 +19,7 @@ import type {
   Team,
   LeagueStatus,
   OwnerProfile,
+  OwnerReport,
   TeamFans,
   SigningInterest,
   TeamId,
@@ -108,6 +109,8 @@ export interface GmApi {
       fans: TeamFans;
       ticketPct: number;
     }>;
+    /** The Owner screen for a team (money flow and meetings come from the event log). */
+    ownerReport(input: { teamId: TeamId }): Promise<OwnerReport>;
     /** Offer sheets other teams gave this team's restricted free agents (match or decline). */
     offerSheets(input: { teamId: TeamId }): Promise<FreeAgentOffer[]>;
     /** AI GMs' open offers to a team. */
@@ -177,6 +180,7 @@ export const IPC = {
   tradeOffers: 'league:tradeOffers',
   tradeRequests: 'league:tradeRequests',
   owner: 'league:owner',
+  ownerReport: 'league:ownerReport',
   evaluateTrade: 'league:evaluateTrade',
   status: 'league:status',
   pulse: 'league:pulse',
