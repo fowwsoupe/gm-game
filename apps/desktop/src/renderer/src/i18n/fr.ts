@@ -135,6 +135,7 @@ export const fr: Record<MessageKey, string> = {
   'event.lotteryWon': '{team} a remporté la loterie du repêchage',
   'event.gmFired': '{team} congédie son directeur général',
   'event.gmLeft': 'Le directeur général de {team} passe à autre chose',
+  'event.fireSale': '{team} liquide : {n} joueurs en fin de contrat sont sur le marché',
   'event.coachFired': '{team} congédie l’entraîneur-chef {coach}; {next} prend la relève',
   'event.planRebuild': '{team} annonce une reconstruction',
   'event.planContend': '{team} mise tout sur la saison',

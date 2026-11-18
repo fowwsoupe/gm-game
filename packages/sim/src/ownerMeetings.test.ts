@@ -230,3 +230,25 @@ describe('owner meetings', () => {
     expect(state.projects).toHaveLength(state.projects.filter((p) => p.teamId !== teamId).length);
   });
 });
+
+describe('AI fire sales', () => {
+  it('an AI GM told to sell lists his best players on expiring deals, and the league hears of it', () => {
+    const state = createLeague(5, ctx);
+    run(state, { kind: 'sim.advance', days: 1 }); // the preseason meeting
+    // Every owner is losing money, so every selling team's owner orders a fire sale.
+    for (const id of Object.keys(state.teams) as TeamId[]) state.cash[id] = -1e10;
+    const events = run(state, { kind: 'sim.advance', days: cal.tradeDeadlineDay });
+    const sales = events.filter((e) => e.kind === 'news.posted' && e.headline === 'event.fireSale');
+    expect(sales.length).toBeGreaterThan(0);
+    for (const e of sales) {
+      const teamId = e.teamIds[0]!;
+      expect(state.teams[teamId]!.userControlled).toBe(false);
+      const listed = Object.values(state.players).filter(
+        (p) => p.teamId === teamId && state.tradeBlock.includes(p.id),
+      );
+      expect(listed.length).toBeGreaterThan(0);
+      for (const p of listed)
+        expect(p.contract!.expiresAfterSeason).toBeLessThanOrEqual(state.date.season);
+    }
+  });
+});
