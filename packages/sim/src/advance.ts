@@ -67,6 +67,7 @@ export function advance(
           state.depthCharts[team],
           chem,
           state.specialUnits[team],
+          state.linemates[team],
         ),
       };
       strengths.set(team, cached);
@@ -98,6 +99,10 @@ export function advance(
   /** Records a finished game and the injuries it caused (the injuries are not kept on the result). */
   const finishGame = (result: GameResult, day: number) => {
     const { injuries = [], ...game } = result;
+    // Time together (linemates) grew: both teams' strength is rebuilt before their next game, so
+    // it never depends on how many days one call sims.
+    strengths.delete(game.homeTeamId);
+    strengths.delete(game.awayTeamId);
     emit(
       makeEvent(state, 'minor', [game.homeTeamId, game.awayTeamId], {
         kind: 'game.final',

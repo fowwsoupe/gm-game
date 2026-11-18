@@ -77,6 +77,11 @@ export interface LeagueState {
   tradeRequests: { playerId: PlayerId; teamId: TeamId }[];
   /** Players on human teams holding out: they sit out until paid, talked round or traded. */
   holdouts: { playerId: PlayerId; teamId: TeamId }[];
+  /**
+   * Games each pair of teammates has played in the same unit (a line or a pair), by team and
+   * `linemateKey`, capped at `LINEMATE_GAMES_CAP`. A pair goes when either player leaves the team.
+   */
+  linemates: Record<TeamId, Record<string, number>>;
   /** Count of events applied so far; the next event's id is built from it. */
   eventSeq: number;
 }
@@ -93,6 +98,30 @@ const endRequest = (state: LeagueState, playerId: string) => {
   state.tradeRequests = state.tradeRequests.filter((r) => r.playerId !== playerId);
   state.holdouts = state.holdouts.filter((r) => r.playerId !== playerId);
 };
+
+/** Games together past which a pair stops counting (more would not change anything). */
+export const LINEMATE_GAMES_CAP = 100;
+/** The key of two teammates in `linemates`, the same whichever comes first. */
+export const linemateKey = (a: string, b: string) => (a < b ? `${a}|${b}` : `${b}|${a}`);
+
+/** One more game together for every pair in each unit; pairs with a player gone are dropped. */
+function countLinemates(state: LeagueState, teamId: TeamId, units: readonly PlayerId[][]) {
+  const games = (state.linemates[teamId] ??= {});
+  for (const key of Object.keys(games)) {
+    const [a, b] = key.split('|');
+    if (state.players[a!]?.teamId !== teamId || state.players[b!]?.teamId !== teamId) {
+      delete games[key];
+    }
+  }
+  for (const unit of units) {
+    for (let i = 0; i < unit.length; i++) {
+      for (let j = i + 1; j < unit.length; j++) {
+        const key = linemateKey(unit[i]!, unit[j]!);
+        games[key] = Math.min(LINEMATE_GAMES_CAP, (games[key] ?? 0) + 1);
+      }
+    }
+  }
+}
 
 export function applyEvent(state: LeagueState, event: LeagueEvent): void {
   // Every applied event advances the sequence, in every copy of the state, so ids stay in sync.
@@ -117,8 +146,13 @@ export function applyEvent(state: LeagueState, event: LeagueEvent): void {
       if (team) team.userControlled = event.userControlled;
       return;
     }
-    case 'game.final':
-      state.results[event.result.id] = event.result;
+    case 'game.final': {
+      const { units, ...result } = event.result;
+      state.results[result.id] = result;
+      if (units) {
+        countLinemates(state, result.homeTeamId, units.home);
+        countLinemates(state, result.awayTeamId, units.away);
+      }
       if (event.result.playoffSeriesId) {
         const series = state.playoffSeries[event.result.playoffSeriesId];
         if (!series) throw new Error(`unknown playoff series ${event.result.playoffSeriesId}`);
@@ -131,6 +165,7 @@ export function applyEvent(state: LeagueState, event: LeagueEvent): void {
         else throw new Error('playoff winner not in series');
       }
       return;
+    }
     case 'series.started':
       state.playoffSeries[event.series.id] = { ...event.series };
       return;

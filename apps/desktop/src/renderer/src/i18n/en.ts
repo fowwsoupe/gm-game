@@ -396,6 +396,7 @@ export const en = {
   'history.hallOfFame': 'Hall of Fame',
   'history.hofLine': '{stat} · {seasons} seasons · retired {retired}',
   'lines.fit': 'Builds fit: forwards {forwards}/100, defence {defense}/100',
+  'lines.together': 'Played together: forwards {forwards}/100, defence {defense}/100',
   'lines.chemistry':
     'Team chemistry {value}/100 ({seasons} seasons together on average, {leaders} leader(s))',
   'trade.offersTitle': 'Offers for you',

@@ -134,6 +134,14 @@ export function Lines() {
           </span>
         )}
         {data && (
+          <span className="text-sm text-muted">
+            {t('lines.together', {
+              forwards: Math.round(data.together.forwards * 100),
+              defense: Math.round(data.together.defense * 100),
+            })}
+          </span>
+        )}
+        {data && (
           <span className="text-sm">
             {t('lines.chemistry', {
               value: Math.round(data.chemistry.value * 100),

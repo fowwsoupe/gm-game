@@ -8,6 +8,9 @@ import {
   createLeague,
   defaultContext,
   handleCommand,
+  lineupTogether,
+  linemateKey,
+  LINEMATES_FULL_GAMES,
   Rng,
   teamStrength,
 } from './index';
@@ -307,4 +310,51 @@ describe('chemistry in games', () => {
     }
     expect(diff / games).toBeGreaterThan(0.05);
   }, 30_000);
+});
+
+describe('linemates', () => {
+  it('counts games together by unit, and forgets a pair once a player leaves', () => {
+    const state = createLeague(76, ctx);
+    const res = handleCommand(state, { kind: 'sim.advance', days: 30 }, local, ctx);
+    if (!res.ok) throw new Error(res.error.message);
+    const team = Object.keys(state.teams)[0] as TeamId;
+    const roster = Object.values(state.players).filter((p) => p.teamId === team);
+    const line = autoLineup(roster).forwards[0]!;
+    const games = Object.values(state.results).filter(
+      (g) => g.homeTeamId === team || g.awayTeamId === team,
+    ).length;
+    // Nobody is kept on the result, only counted.
+    expect(Object.values(state.results).every((g) => g.units === undefined)).toBe(true);
+    // The top line has mostly played together (injuries break it up now and then).
+    const together = state.linemates[team]![linemateKey(line[0]!.id, line[1]!.id)] ?? 0;
+    expect(together).toBeGreaterThan(games / 2);
+    expect(together).toBeLessThanOrEqual(games);
+    // He leaves: his pairs go with the next game his old team plays.
+    state.players[line[0]!.id]!.teamId = null;
+    const more = handleCommand(state, { kind: 'sim.advance', days: 4 }, local, ctx);
+    if (!more.ok) throw new Error(more.error.message);
+    expect(
+      Object.keys(state.linemates[team]!).some((k) => k.split('|').includes(line[0]!.id)),
+    ).toBe(false);
+  }, 30_000);
+
+  it('a line that has played together is stronger, by a little', () => {
+    const state = createLeague(77, ctx);
+    const team = Object.keys(state.teams)[0]!;
+    const roster = Object.values(state.players).filter((p) => p.teamId === team);
+    const lineup = autoLineup(roster);
+    const games: Record<string, number> = {};
+    for (const u of [...lineup.forwards, ...lineup.defense]) {
+      for (const a of u)
+        for (const b of u) if (a.id < b.id) games[linemateKey(a.id, b.id)] = LINEMATES_FULL_GAMES;
+    }
+    expect(lineupTogether(lineup, games).forwards).toBeCloseTo(1, 9);
+    expect(lineupTogether(lineup, games).defense).toBeCloseTo(1, 9);
+    expect(lineupTogether(lineup, {})).toEqual({ forwards: 0, defense: 0 });
+    const gelled = teamStrength(roster, [], 0.5, {}, games);
+    const strangers = teamStrength(roster, [], 0.5, {}, {});
+    // A line and a pair: half a point each way, both ways around the middle.
+    expect(gelled.offense - strangers.offense).toBeCloseTo(2, 5);
+    expect(gelled.defense - strangers.defense).toBeCloseTo(2, 5);
+  });
 });

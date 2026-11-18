@@ -6,6 +6,7 @@ import {
   handleCommand,
   hometownOf,
   nextDraftSeason,
+  roomFor,
   scoutReport,
   sheetCompensation,
   signFreeAgent,
@@ -31,9 +32,11 @@ function withSheet(seed: number) {
   const ai = Object.keys(state.teams).filter((id) => id !== mine) as TeamId[];
   for (const player of Object.values(state.players).filter((p) => p.teamId === null)) {
     for (const teamId of ai) {
+      // Skip the pairs he would turn down anyway (a full day per try is slow).
+      const ask = ctx.models.contractDemand.ask(ctx.ruleset, player);
+      if (!roomFor(state, ctx, teamId, player, ask * 2)) continue;
       const trial = structuredClone(state);
       trial.rfaRights[player.id] = mine;
-      const ask = ctx.models.contractDemand.ask(ctx.ruleset, player);
       trial.faOffers = [{ playerId: player.id, teamId, salary: ask * 2, years: 2 }];
       trial.teamStatus[teamId] = 'contender';
       run(trial, { kind: 'freeAgency.advanceDay' });

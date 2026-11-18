@@ -480,6 +480,10 @@ export function simGame(
     model,
   );
   const shootout = played.shootoutWinner;
+  const units = (s: TeamStrength) =>
+    [...s.lineup.forwards, ...s.lineup.defense]
+      .map((u) => u.map((p) => p.id))
+      .filter((u) => u.length > 1);
   const stats: HockeyGameStats = {
     homeShots: played.shots[0],
     awayShots: played.shots[1],
@@ -495,5 +499,6 @@ export function simGame(
     stats,
     ...(played.box ? { box: played.box } : {}),
     ...(played.injuries.length ? { injuries: played.injuries } : {}),
+    ...(input.resultOnly ? {} : { units: { home: units(input.home), away: units(input.away) } }),
   };
 }
