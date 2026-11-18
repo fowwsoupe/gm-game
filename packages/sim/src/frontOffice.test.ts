@@ -41,9 +41,10 @@ describe('development staff', () => {
       const ps = young(team);
       return ps.reduce((s, p) => s + eliteA.get(p.id)! - eliteB.get(p.id)!, 0) / ps.length;
     };
-    // Elite (+2 at most) against poor (-2 at most): about 4 points a year apart.
-    expect(gain(a)).toBeGreaterThan(3);
-    expect(gain(b)).toBeLessThan(-3);
+    // Elite against poor: about twice `development.points` apart a year for young players.
+    const apart = 2 * ctx.ruleset.frontOffice.development.points;
+    expect(gain(a)).toBeGreaterThan(apart * 0.75);
+    expect(gain(b)).toBeLessThan(-apart * 0.75);
   });
 });
 
@@ -56,9 +57,10 @@ describe('the staff market', () => {
       changeStaff(state, ctx, new Rng(season), emit, 2027 + season);
     }
     const hires = log.flatMap((e) => (e.kind === 'staff.hired' ? [e] : []));
-    // About 12% of 48 heads a summer, plus poaching.
-    expect(hires.length).toBeGreaterThan(30 * 48 * 0.1);
-    expect(hires.length).toBeLessThan(30 * 48 * 0.25);
+    // `leave` of 48 heads a summer (no games played, so no poaching).
+    const expected = 30 * 48 * ctx.ruleset.frontOffice.leave;
+    expect(hires.length).toBeGreaterThan(expected * 0.8);
+    expect(hires.length).toBeLessThan(expected * 1.2);
     const last = hires.at(-1)!;
     expect(state.teams[last.teamId]!.staff?.[last.department]).toEqual(last.head);
     const byBudget = (rich: boolean) => {

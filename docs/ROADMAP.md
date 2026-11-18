@@ -24,8 +24,9 @@ Ready now (code can start):
 5. Re-injury risk: done (hurt earlier this season +30%, +3% per past injury, capped at 2x; injuries per team-season 7.9-8.1 to 8.2-8.5).
 6. Player profile screen of its own and more face variety: done (open it from Leaders or the roster card).
 
-Front office (also the lasting-team-edge fix): the jobs in
-[research/2026-11-front-office.md](research/2026-11-front-office.md), in order. League & events:
+Front office (also the lasting-team-edge fix): all jobs in
+[research/2026-11-front-office.md](research/2026-11-front-office.md) done; the points % spread
+gap narrowed (0.077-0.080 to 0.079-0.082) but is still open. League & events:
 the jobs in [research/2026-11-league-events.md](research/2026-11-league-events.md), in order.
 
 Needs a design first (a short brief in `docs/research/`, then jobs):
@@ -99,7 +100,7 @@ Build order, owners and "done when" for each step: **[V0.1_PLAN.md](V0.1_PLAN.md
 ## Phase 2 — Part of the first release (one headline each)
 
 - [x] Owner & finance: decision cards, pricing policy, fans, projects, owner meetings; owners and markets, the money ledger, fans and ticket pricing, confidence, meetings and cards, the Owner screen, projects and more cards, the head coach (salary, heat, AI firings in-season and at the review, the fire-or-keep card), and your job on the line (hot-seat warning, fired at a review, job offers, a "can be fired" option, AI GMs fired on confidence) (all 8 jobs in [the brief](research/2026-11-owner-finance.md))
-- [ ] Front office: scouting, analytics, medical, coaching, development staff
+- [~] Front office: scouting, analytics, medical, coaching, development staff. Department heads with a quality and a salary, coach quality in games, development staff (replacing GM skill), per-team draft reads, medical injury days, the staff market (leave, poaching, owner budgets), the Front Office screen with three candidates a season, tuned against the long-run benchmarks (all jobs of [the brief](research/2026-11-front-office.md); the price curve was tried and dropped) done; analytics, an assistant GM and department returns to do
 - [ ] Live draft trade room
 - [ ] Free-agency live bidding war + full contract negotiation
 - [ ] Media & press conferences (text)

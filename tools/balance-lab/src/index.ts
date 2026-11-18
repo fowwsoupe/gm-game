@@ -575,17 +575,18 @@ const checks: Check[] = [
   },
   {
     // docs/research/2026-11-front-office.md: no public benchmark; report only.
+    // No public number; NHL head coaches average 2.83 seasons (owner & finance brief).
     name: 'Department head tenure, seasons (unverified)',
     value: (coaches.teamSeasons * DEPARTMENTS.length) / Math.max(1, staff.changed),
-    min: 3,
-    max: 10,
+    min: 2,
+    max: 8,
   },
   {
     // Owners who spend (budget over 0.5) keep a better front office than frugal ones.
     name: 'Staff quality, rich owners - frugal (unverified)',
     value: mean(staff.rich) - mean(staff.frugal),
-    min: 0.05,
-    max: 0.3,
+    min: 0.1,
+    max: 0.45,
   },
   {
     // Report only: no sourced benchmark yet (the brief lists it as unverified).
