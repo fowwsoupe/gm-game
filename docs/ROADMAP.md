@@ -30,6 +30,8 @@ Needs a design first (a short brief in `docs/research/`, then jobs):
 - Minor / junior leagues; camp and a trade deadline that matters; player traits and clustered builds.
 - Every Phase 2 headline below. Owner and finance comes first among them: hot seat, and
   frustrated-owner events, need an owner and a coach to attach to.
+  [research/2026-11-owner-finance.md](research/2026-11-owner-finance.md) is its brief, with
+  eight jobs in order (owners and markets first).
 
 ---
 
