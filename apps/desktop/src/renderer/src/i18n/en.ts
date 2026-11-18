@@ -467,6 +467,7 @@ export const en = {
   'trait.hotHeaded': 'Hot-headed',
   'home.raceNight': 'next game: win {win} · lose {lose}',
   'event.slump': '{player} ({team}) has gone {n} games without a point',
+  'event.breakout': '{player} ({team}) breaks out: up {n} over the summer',
   'event.winStreak': 'The {team} have won {n} in a row',
   'event.losingStreak': 'The {team} have lost {n} straight',
   'event.hatTrick': 'Hat trick for {player} ({team})',
