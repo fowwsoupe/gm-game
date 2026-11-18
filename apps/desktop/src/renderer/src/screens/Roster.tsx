@@ -120,6 +120,7 @@ function PlayerTable({
               className={`cursor-pointer border-b border-line/50 text-right hover:bg-panel-2 ${p.id === selected ? 'bg-panel-2' : ''}`}
             >
               <Td left>
+                <Face seed={p.id} age={p.age} size={22} />
                 {p.firstName} {p.lastName}
                 {p.injuredUntil !== undefined && (
                   <span className="ml-2 text-xs text-bad">{t('roster.injuredShort')}</span>

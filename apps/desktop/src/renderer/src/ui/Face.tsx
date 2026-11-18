@@ -32,7 +32,13 @@ export function Face({ seed, age, size = 64 }: { seed: string; age: number; size
   const lines = age >= 30;
 
   return (
-    <svg width={size} height={size} viewBox="0 0 100 100" aria-hidden="true">
+    <svg
+      width={size}
+      height={size}
+      viewBox="0 0 100 100"
+      aria-hidden="true"
+      className={size < 32 ? 'mr-2 inline-block align-middle' : undefined}
+    >
       <rect width="100" height="100" rx="12" fill="var(--color-panel-2)" />
       {/* neck and shoulders, in the team colour */}
       <path d="M20 100 Q50 78 80 100 Z" fill="var(--team-primary)" />
