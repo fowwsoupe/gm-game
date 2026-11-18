@@ -191,6 +191,18 @@ function FeedCard() {
           team: teamName(e.teamIds[0] ?? ''),
           days: e.days,
         });
+      case 'bonuses.paid': {
+        const mine = e.paid.filter((x) => yours([x.teamId]));
+        if (!mine.length) return null;
+        const teamId = mine[0]!.teamId;
+        return t('event.bonusesPaid', {
+          team: teamName(teamId),
+          amount: money(mine.reduce((s, x) => s + x.amount, 0)),
+          over: money(
+            e.charges.filter((c) => c.teamId === teamId).reduce((s, c) => s + c.amount, 0),
+          ),
+        });
+      }
       case 'player.signed':
         return t('event.signed', {
           player: names[e.playerId] ?? '',

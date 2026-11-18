@@ -101,6 +101,8 @@ export const en = {
   'event.gmLeft': "{team}'s general manager moves on",
   'event.planRebuild': '{team} announce a rebuild',
   'event.planContend': '{team} go all in',
+  'event.bonusesPaid':
+    '{team} pay {amount} in performance bonuses; {over} of it goes over the cap and counts on next season’s',
   'event.madeRoom': '{team} buy out {player} to make room for a free agent',
   'event.championCrowned': '{team} won the championship',
   'event.awardWon': '{player} ({team}) won {award}',

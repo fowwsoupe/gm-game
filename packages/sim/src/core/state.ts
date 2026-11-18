@@ -345,6 +345,9 @@ export function applyEvent(state: LeagueState, event: LeagueEvent): void {
       }
       return;
     }
+    case 'bonuses.paid':
+      state.capCharges.push(...event.charges.map((c) => ({ ...c })));
+      return;
     case 'award.given':
     case 'stats.archived':
     case 'season.phaseChanged':

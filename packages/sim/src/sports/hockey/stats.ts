@@ -171,3 +171,34 @@ export function hockeyHallOfFame(input: {
   }
   return { inducted: (totals.points ?? 0) >= 1000 || won('mvp') >= 2, totals };
 }
+
+/**
+ * Performance-bonus targets, like the NHL's entry-level "Schedule A": each one met earns an equal
+ * share. Counts are per 82 games and scale with the season. Skaters: games, goals, assists,
+ * points. Goalies: games, and a save % over a fair number of games.
+ */
+const BONUS_TARGETS = {
+  skater: { gpShare: 0.5, goals: 20, assists: 35, points: 60 },
+  goalie: { gpShare: 0.4, savePct: 0.915 },
+};
+
+export function hockeyBonusEarned(
+  line: Readonly<Record<string, number>>,
+  seasonGames: number,
+): number {
+  const gp = line.gp ?? 0;
+  const per = (n: number) => (n * seasonGames) / 82;
+  if (line.points !== undefined) {
+    const t = BONUS_TARGETS.skater;
+    const met = [
+      gp >= t.gpShare * seasonGames,
+      (line.goals ?? 0) >= per(t.goals),
+      (line.assists ?? 0) >= per(t.assists),
+      line.points >= per(t.points),
+    ];
+    return met.filter(Boolean).length / met.length;
+  }
+  const t = BONUS_TARGETS.goalie;
+  const played = gp >= t.gpShare * seasonGames;
+  return ((played ? 1 : 0) + (played && (line.savePct ?? 0) >= t.savePct ? 1 : 0)) / 2;
+}

@@ -14,6 +14,7 @@ import { announceDraftClass, worstFirst } from './offseason';
 import { aiOffers, aiTrades } from './trades';
 import { chemistry, holdoutsWeek, startHoldouts, tradeRequests } from './people';
 import { overall } from './players';
+import { payBonuses } from './cba';
 import type { SimContext } from './context';
 
 /**
@@ -268,6 +269,8 @@ export function advance(
       if (current.length && current.every((s) => s.winnerTeamId)) {
         if (current.length === 1) {
           const championTeamId = current[0]!.winnerTeamId!;
+          // Still this season's cap year: bonuses over the cap go to next season's.
+          payBonuses(state, ctx, emitter(state, events));
           emit(
             makeEvent(state, 'major', [championTeamId], {
               kind: 'champion.crowned',

@@ -97,6 +97,16 @@ export type LeagueEvent =
       contract: Contract;
       staying?: true;
     })
+  /**
+   * End of the playoffs: performance bonuses earned this season, and the part of each team's
+   * that went over the cap, charged to next season's cap.
+   */
+  | (EventBase & {
+      kind: 'bonuses.paid';
+      season: number;
+      paid: { playerId: PlayerId; teamId: TeamId; amount: number }[];
+      charges: CapCharge[];
+    })
   /** End of season: who won an award. `playerId` is absent for team awards (champion). */
   | (EventBase & {
       kind: 'award.given';

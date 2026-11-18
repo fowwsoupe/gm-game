@@ -22,16 +22,22 @@ export interface Contract {
   noTrade?: true;
   /** Whole dollars of each year's cap hit paid as a signing bonus: cash up front, never bought out. */
   bonus?: number;
+  /**
+   * Whole dollars a year he can earn in performance bonuses (entry-level deals). Not in the cap
+   * hit: paid at season end by how his season went; what takes the team over the cap is
+   * charged to next season's (`bonusOverage`).
+   */
+  perfBonus?: number;
 }
 
 /**
- * Cap money a team owes that is not a current player's contract: buyouts (dead cap), and salary
- * it kept when trading a player (retained).
+ * Cap money a team owes that is not a current player's contract: buyouts (dead cap), salary
+ * it kept when trading a player (retained), and performance bonuses that went over the cap.
  */
 export interface CapCharge {
   teamId: TeamId;
   playerId: PlayerId;
-  kind: 'buyout' | 'retained';
+  kind: 'buyout' | 'retained' | 'bonusOverage';
   season: number;
   /** Whole dollars counted against that season's cap. */
   amount: number;

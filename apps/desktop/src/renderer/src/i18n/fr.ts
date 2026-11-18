@@ -99,6 +99,8 @@ export const fr: Record<MessageKey, string> = {
   'event.gmLeft': 'Le directeur général de {team} passe à autre chose',
   'event.planRebuild': '{team} annonce une reconstruction',
   'event.planContend': '{team} mise tout sur la saison',
+  'event.bonusesPaid':
+    'Les {team} versent {amount} en primes de rendement; {over} dépassent le plafond et comptent sur celui de la saison prochaine',
   'event.madeRoom':
     '{team} rachète le contrat de {player} pour faire de la place à un joueur autonome',
   'event.championCrowned': '{team} a remporté le championnat',

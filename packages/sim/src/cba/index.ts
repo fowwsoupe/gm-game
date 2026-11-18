@@ -25,3 +25,4 @@ export {
   retentionIssues,
   type RetentionIssue,
 } from './cap';
+export { payBonuses } from './bonuses';
