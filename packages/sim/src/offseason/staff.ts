@@ -47,7 +47,8 @@ export function changeStaff(
       const head: StaffProfile = {
         name: `${r.pick(FIRST)} ${r.pick(LAST)}`,
         quality,
-        hired: season,
+        // The season just played: a summer replacement never uses up the GM's own hire.
+        hired: state.date.season,
         salary: staffSalary(quality, fo.salary),
       };
       const yours = team.userControlled;

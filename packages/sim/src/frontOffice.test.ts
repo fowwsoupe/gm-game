@@ -159,6 +159,11 @@ describe('hiring through commands', () => {
     expect(state.teams[mine]!.staff?.development).toEqual(pick);
     expect(hire(mine, 0).ok).toBe(false); // already hired this season
     expect(hire(theirs, 0).ok).toBe(false); // not yours
+    // Once the champion is crowned, a hire counts for the season ahead: a new one is allowed.
+    state.championTeamId = theirs;
+    expect(hire(mine, 1).ok).toBe(true);
+    expect(state.teams[mine]!.staff?.development?.hired).toBe(state.date.season + 1);
+    expect(hire(mine, 0).ok).toBe(false);
     const [cheap, , dear] = staffCandidates(state.teams[theirs]!, 'medical', ctx, 2030);
     expect(cheap!.quality).toBeLessThanOrEqual(dear!.quality);
   });
