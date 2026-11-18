@@ -10,7 +10,7 @@ import {
 } from './core';
 import { classifyTeams, computeStandings, nextRound, seedPlayoffs } from './league';
 import { giveSeasonAwards } from './awards';
-import { announceDraftClass, worstFirst } from './offseason';
+import { aiHoldouts, announceDraftClass, worstFirst } from './offseason';
 import { aiOffers, aiTrades } from './trades';
 import { holdoutsWeek, startHoldouts, tradeRequests } from './people';
 import { sitsOut, strengthFor } from './tonight';
@@ -322,6 +322,7 @@ export function advance(
       aiTrades(state, ctx, rng.fork(`trades${today.day}`), emitter(state, events));
       aiOffers(state, ctx, rng.fork(`offers${today.day}`), emitter(state, events));
       tradeRequests(state, rng.fork(`requests${today.day}`), emitter(state, events));
+      aiHoldouts(state, ctx, rng.fork(`aiHoldouts${today.day}`), emitter(state, events));
       holdoutsWeek(state, rng.fork(`holdouts${today.day}`), emitter(state, events));
       if (events.length > before) loadRosters();
     }
