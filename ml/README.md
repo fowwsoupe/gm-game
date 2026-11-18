@@ -17,7 +17,7 @@ The M1 pipeline reads **local CSVs only**. Check a source's current terms and re
 the rights status before staging it in `data/raw/`. Do not commit raw or processed
 real-player data. The pipeline never downloads from a website. The current MoneyPuck
 internal prototype has not been cleared for commercial models. Source review is in
-[`docs/M1_DATA_ACCESS.md`](../docs/M1_DATA_ACCESS.md).
+[`docs/DATA_RIGHTS.md`](../docs/DATA_RIGHTS.md).
 
 Put these seven files in `ml/data/raw/` (UTF-8, header row; IDs are stable opaque strings):
 
@@ -91,27 +91,31 @@ expected" check measures the same ratio in the sim.
 The adapter filters playoffs, normalizes shot coordinates and positions, preserves
 shootout winners, and records source inconsistencies. Its drafts and contracts files
 are header-only because MoneyPuck does not supply them. It also cannot supply junior
-or European player seasons. The [prototype results](../docs/M1_PROTOTYPE_REPORT.md)
+or European player seasons. The [prototype results](../docs/research/2026-11-m1-moneypuck-study.md)
 include the season-held-out study. Raw and processed files remain git-ignored;
 **commercial ML and shipped-model rights are still pending**.
 
-## Later model workflow
+## What this folder is for
 
-Build features from fields available to the game. If a model needs something the game
-doesn't track, it can't be used in-game. Train with scikit-learn / XGBoost / PyTorch,
-then export the model as a data table in `models/` (the sim has no ONNX runtime; ONNX is
-fine as a training-side step before sampling the table). Formats are in
-[`docs/MODEL_CONTRACTS.md`](../docs/MODEL_CONTRACTS.md). Compare against the rules-based
-fallback with fixed seeds before switching.
+Engine first ([ADR 0005](../docs/adr/0005-engine-first-ml-for-calibration.md)): the
+rules-based engines are the game. This folder measures real NHL data and turns it into
+numbers the engine and the balance lab use, the way `faceoffs.py` and `form.py` already do.
 
-## Good first models
+Calibration jobs (current list in [`docs/PLAN.md`](../docs/PLAN.md#next-up)):
 
-- Expected goals per shot (shot quality)
-- Player development / aging curves
-- Player value for AI trade and contract logic
+- Career shapes (peak age, decline speed, bust and late-bloomer rates) → development lab ranges
+- Pick value and contract levels from real trades and signings → `pickValue`, `marketSalary`
+- Long-run spread (team quality that lasts) → lab targets
 
-Keep the rules-based sim as the fallback, and compare every model against it with a
-fixed seed before switching.
+Each study writes a short dated report in `docs/research/` and links it from the number it
+changed.
+
+## Optional model tables
+
+A trained model can still ship as a data table behind a `Models` interface (the sim has no
+ONNX runtime). Formats are in [`docs/MODEL_CONTRACTS.md`](../docs/MODEL_CONTRACTS.md). Build
+features only from fields the game tracks, and adopt a table only if it beats the engine in
+the lab with fixed seeds and the AI can still explain its decisions.
 
 ## Setup
 

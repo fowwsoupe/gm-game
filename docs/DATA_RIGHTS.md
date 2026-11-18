@@ -1,10 +1,14 @@
-# M1 data access
+# Data rights
 
 Status: **commercial rights not yet reviewed** (2026-11-14). A MoneyPuck internal
-prototype is staged locally and summarized in [the M1 report](M1_PROTOTYPE_REPORT.md).
+prototype is staged locally and summarized in [the M1 report](research/2026-11-m1-moneypuck-study.md).
 The team chose to do the internal M1 analysis now and review commercial model and
 shipping rights before using the results in a released game.
 The local import and analysis workflow is in [`ml/README.md`](../ml/README.md).
+
+Since [ADR 0005](adr/0005-engine-first-ml-for-calibration.md) (engine first), the plan is to
+ship derived numbers (tuning values, lab ranges) rather than trained model weights. Ask for
+that use first; shipped-model rights only matter if a model table is ever adopted.
 
 ## Coverage and rights to obtain
 

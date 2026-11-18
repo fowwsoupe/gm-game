@@ -4,7 +4,7 @@ Status: **v0.1 list in code (roster format v2).** The list is code in
 `packages/shared/src/sports/hockey.ts` (`SKATER_RATINGS`, `GOALIE_RATINGS`). The roster
 schema, player generation and roster export are all built from those two lists, so this file
 explains them and the code defines them. M1 is signed off on the NHL-only prototype (scope
-decision in [V0.1_PLAN.md](V0.1_PLAN.md); junior/European, draft and contract data come later).
+decision in [PLAN.md](PLAN.md); junior/European, draft and contract data come later).
 
 Rules (from the feature spec):
 
@@ -41,7 +41,7 @@ Changing the list means: edit the constant, bump `ROSTER_FORMAT_VERSION`, upgrad
 
 ## Evidence (M1 study)
 
-From the NHL-only [M1 prototype study](M1_PROTOTYPE_REPORT.md) (four MoneyPuck seasons,
+From the NHL-only [M1 prototype study](research/2026-11-m1-moneypuck-study.md) (four MoneyPuck seasons,
 453,000 shots; player pairs are the same player in consecutive seasons, minimum 600 skater or
 1,000 goalie minutes). Regenerate the numbers locally with the commands in
 [`ml/README.md`](../ml/README.md); they land in `ml/data/processed/rating_evidence.json` and

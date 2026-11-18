@@ -52,7 +52,7 @@ It includes sample counts, all measured correlations, and shot-type rates.
 
 ## Season-held-out study
 
-The [reproducible study](../ml/src/study.py) fits fixed, standardized ridge models
+The [reproducible study](../../ml/src/study.py) fits fixed, standardized ridge models
 for team and player outcomes using only earlier seasons, then evaluates on the next
 season. Shot models use smoothed frequency bins. It does not randomly split games
 or players across train and test. Root mean squared error (RMSE) is smaller when
@@ -97,7 +97,7 @@ direct power measure. The weak goalie year-to-year result argues against treatin
 observed save percentage as a precise `consistency` estimate. Skating speed,
 controlled entries, injury risk and development are absent.
 
-The [rating list](RATINGS.md) is now v2 in code: the existing keys plus `faceoffs`, kept provisional until its effect on team results is tested.
+The [rating list](../RATINGS.md) is now v2 in code: the existing keys plus `faceoffs`, kept provisional until its effect on team results is tested.
 Junior/European seasons, drafts and contracts remain missing from the original M1
 data scope. The team may decide to move them later, but that scope change has not
 been agreed. This study does not infer real-player ratings or justify shipping

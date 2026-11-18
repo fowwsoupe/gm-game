@@ -25,8 +25,8 @@ Three ideas carry everything:
    feed, Home "To do", history and multiplayer sync all read events.
 3. **Sport, rules and models are plug-ins.** The sport is a `SportModule` (hockey today);
    league rules live in a `Ruleset`; swappable brains (development, valuation, the sport's
-   game model) are interfaces with rules-based defaults. All reach the sim through
-   `SimContext`, never globals.
+   game model) are interfaces whose rules-based engines are the shipping game. All reach the
+   sim through `SimContext`, never globals.
 
 Because the sim is seeded and state only changes through events, **any copy of the state
 that applies the same events ends up identical.** Tests check this. It is what makes
@@ -61,7 +61,7 @@ would need the same thing, it belongs in a shared engine.
 | `packages/data`     | SQLite saves: migrations, load/save state, persist events, queries      | `@gm/shared`, `@gm/sim` (types + API), `better-sqlite3` |
 | `apps/desktop`      | Electron: main (LeagueService, worker, Steam), preload, React UI        | everything, but `@gm/sim` only from its root            |
 | `tools/balance-lab` | Headless league-health report (`pnpm lab`)                              | `@gm/sim`, `@gm/shared`                                 |
-| `ml/`               | Python training → model tables (JSON) in `ml/models/`                   | n/a                                                     |
+| `ml/`               | Python calibration: real NHL studies → lab targets and tuning numbers   | n/a                                                     |
 
 ## Inside `packages/sim`: engines
 
@@ -106,9 +106,11 @@ through their `index.ts`** (`'../cba'`, never `'../cba/ruleset'`). Apps import o
    in `handleCommand`. Validate the actor: in multiplayer, players may only command their teams.
 4. **Everything is data.** Cap numbers, contract limits, season length, points, award names,
    team colours: data, never hard-coded. Read rules from `ctx.ruleset`.
-5. **Models behind interfaces.** ML models implement the same interface as the rules-based
-   default (`GoalModel`, `DevelopmentModel`, `PlayerValuator`) and are swapped in `Models`.
-   Check a new model in the balance lab against the default with fixed seeds first.
+5. **Engine first, models optional** ([ADR 0005](adr/0005-engine-first-ml-for-calibration.md)).
+   The rules-based engines behind `GoalModel`, `DevelopmentModel`, `PlayerValuator` and
+   `ContractDemandModel` are the game, not stand-ins. ML calibrates them: real-data numbers
+   go into tuning values, the ruleset and lab ranges. A trained table may replace a default
+   only if it beats it in the balance lab with fixed seeds and the AI can still explain itself.
 6. **SQL only in `packages/data`.** Never edit a migration after the first public build; add a new one.
 7. **Money is integer dollars** (`dollars(5.5)` → 5_500_000). Never floats.
 8. **Community roster files are untrusted.** Always through `parseRosterFile()`.

@@ -3,7 +3,7 @@
 Community roster files provide players and hidden ratings. They do **not** need real
 player statistics. The game will produce its own stats from simulated events. Historical
 data and published research inform the formulas and calibration, but are not shipped
-as player records. The [M1 NHL study](M1_PROTOTYPE_REPORT.md) is one calibration input.
+as player records. The [M1 NHL study](research/2026-11-m1-moneypuck-study.md) is one calibration input.
 
 ## Shared shape, sport-specific measures
 

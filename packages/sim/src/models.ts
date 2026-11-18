@@ -8,9 +8,9 @@ import {
 } from './value';
 
 /**
- * Swappable "brains" shared by every sport. Rules-based defaults today; ML models trained
- * in /ml ship as data tables (docs/MODEL_CONTRACTS.md), implement the same interfaces and are
- * injected here by the app.
+ * Swappable "brains" shared by every sport. The rules-based defaults are the shipping engine
+ * (ADR 0005); /ml calibrates their numbers. An optional trained table (docs/MODEL_CONTRACTS.md)
+ * implements the same interface and is injected here by the app.
  * Sport-specific models (e.g. hockey's GoalModel) are passed to the sport module instead.
  * Compare a new model against the default with a fixed seed in the balance lab before switching.
  */

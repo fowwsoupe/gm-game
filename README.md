@@ -22,18 +22,26 @@ apps/desktop      Electron app: main process, preload, React UI, Steam
 packages/shared   types, roster file schema, UI↔main contract
 packages/sim      the game engine (pure TypeScript, seeded, tested)
 packages/data     SQLite save files
-ml/               Python model training → model tables (JSON) in ml/models/
+ml/               Python calibration: real NHL studies → engine numbers and lab targets
 tools/balance-lab league-health report (pnpm lab)
 docs/             architecture and decisions
 ```
 
-Read [docs/V0.1_PLAN.md](docs/V0.1_PLAN.md), [docs/ROADMAP.md](docs/ROADMAP.md) and [docs/ARCHITECTURE.md](docs/ARCHITECTURE.md) first, then [CONTRIBUTING.md](CONTRIBUTING.md). Full feature spec: [docs/FEATURE_SPEC.md](docs/FEATURE_SPEC.md).
+Start here:
+
+- [docs/ROADMAP.md](docs/ROADMAP.md): what the game will have and the status of each part
+- [docs/PLAN.md](docs/PLAN.md): who owns what, the job queue ("Next up") and each milestone's "done when"
+- [docs/ARCHITECTURE.md](docs/ARCHITECTURE.md), then [CONTRIBUTING.md](CONTRIBUTING.md)
+
+Reference: [feature spec](docs/FEATURE_SPEC.md), [decisions](docs/adr/), [research](docs/research/),
+[ratings](docs/RATINGS.md), [data rights](docs/DATA_RIGHTS.md).
 
 ## Stack
 
 React 19 + TypeScript, Vite (electron-vite), Tailwind 4, TanStack Table / Virtual / Query,
-Zustand, ECharts, PixiJS, Electron, better-sqlite3, steamworks.js. ML models ship as data
-(JSON tables), not as an ONNX runtime: see [docs/MODEL_CONTRACTS.md](docs/MODEL_CONTRACTS.md).
+Zustand, ECharts, PixiJS, Electron, better-sqlite3, steamworks.js. No ML runtime ships: the engine is
+rules-based and calibrated from `ml/` studies; optional model tables are JSON
+([docs/MODEL_CONTRACTS.md](docs/MODEL_CONTRACTS.md)).
 shadcn/ui components get added as needed with `pnpm dlx shadcn@latest add <component>`.
 
 ## Troubleshooting

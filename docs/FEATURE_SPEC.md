@@ -9,7 +9,7 @@ A sports GM game for Steam where the league feels alive, every decision has a vi
 1. **A living league.** You always know who is contending, who is in trouble and who just made a move. Trade requests, disputes, injuries and slumps happen to every team, not only yours.
 2. **Smart, honest AI.** AI GMs value players per team, understand bad contracts, and explain their decisions. Harder difficulty means smarter AI, never cheating.
 3. **Decisions, not spreadsheets.** Cards, choices and clear visuals instead of tables and sliders. Every dollar and every hire shows a measurable effect.
-4. **Realism you can feel.** Real CBA rules, non-linear careers, realistic upset rates. Calibrated against real NHL data with machine learning.
+4. **Realism you can feel.** Real CBA rules, non-linear careers, realistic upset rates. A rules-based engine, calibrated against real NHL data (machine learning measures, the engine plays).
 5. **Fast forever.** Sim a day under 0.5 s and any screen under 200 ms, even 20 years into a save.
 6. **Yours to shape.** Everything is data: rules, teams, awards, rosters. Sandbox leagues and community roster files.
 
@@ -52,12 +52,12 @@ Seven shared engines live in `packages/sim`; every feature is a thin layer on to
 - **Everything is data.** Rules, teams, colours, awards, schedule and playoff format live in data, never hard-coded.
 - **Every action is a command.** Trades, signings and line changes go through one command layer (`GmApi`). This makes multiplayer possible later.
 - **SQL only in `packages/data`.** One save = one SQLite file. Never edit a shipped migration.
-- **ML behind interfaces.** Trained in Python, shipped as data tables the pure sim loads (see MODEL_CONTRACTS.md), plugged into the Sim, Players and Value engines. A rules-based fallback always exists.
+- **Engine first, ML calibrates** ([ADR 0005](adr/0005-engine-first-ml-for-calibration.md)). The rules-based Sim, Players and Value engines ship. Python studies of real data set their numbers and the balance lab's targets. Interfaces stay open for an optional model table (see MODEL_CONTRACTS.md) that beats the engine in the lab.
 - **Seeded everything.** Same seed, same season: reproducible bugs, replayable games, fair multiplayer.
 
-## Foundation: data and machine learning
+## Foundation: data and calibration
 
-Python trains on public historical data; the game ships only trained models, never player data.
+Python studies public historical data to calibrate the engine; the game ships tuned numbers (and, optionally, a model table), never player data.
 
 1. **Data pipeline.** Play-by-play with shot locations, player stats, drafts, contracts, junior and European seasons (collect junior/European when suitable rights exist). Community roster files supply players in the shipped game; historical data supports research and model calibration.
 2. **What drives winning.** Which advanced stats predict goals and wins. Decides which ratings the game needs.
@@ -65,9 +65,9 @@ Python trains on public historical data; the game ships only trained models, nev
 4. **Growth and potential.** Career-shape distributions (peak age, length, decline speed), skill-specific aging, junior/European translation, potential as a floor/ceiling range.
 5. **Value.** Player surplus value, draft-pick value curve, contract demands, calibrated on real past trades and signings.
 
-Models in the game: shot / expected-goals, ratings-to-stats calibration, injury risk (Sim); development curves, build clustering (Players); player value, contract demands, team strategy, trade acceptance (AI GMs).
+Engines this calibrates: shot quality, stats-to-ratings, injury risk (Sim); development curves, builds (Players); player value, contract demands, team strategy, trade acceptance (AI GMs). Each is rules-based code tuned to real targets.
 
-Rules: seeded; every AI decision shows a readable reason; each model is compared against the rules-based version with a fixed seed before switching; check each data source's terms of use.
+Rules: seeded; every AI decision shows a readable reason; a model table replaces an engine only if it beats it in the lab with a fixed seed; check each data source's terms of use.
 
 ## Living league
 

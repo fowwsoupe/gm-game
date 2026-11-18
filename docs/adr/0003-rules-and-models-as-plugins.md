@@ -1,6 +1,7 @@
 # 0003: Rules as data, models as plug-ins
 
-Status: accepted
+Status: accepted; the role of ML models is narrowed by [0005](0005-engine-first-ml-for-calibration.md)
+(rules-based engines ship, models are optional).
 
 ## Context
 

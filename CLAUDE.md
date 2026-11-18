@@ -1,7 +1,9 @@
 # Notes for Claude and other coding agents
 
 Read `docs/ARCHITECTURE.md` before changing code (it ends with an "add a feature" checklist).
-Feature intent lives in `docs/FEATURE_SPEC.md`; priorities in `docs/ROADMAP.md`.
+Feature intent lives in `docs/FEATURE_SPEC.md`; status in `docs/ROADMAP.md`; the job queue
+and owners in `docs/PLAN.md`. Engine first: rules-based engines ship, ML only calibrates
+them (`docs/adr/0005-engine-first-ml-for-calibration.md`).
 
 - pnpm monorepo. Run `pnpm check` before calling a task done; it must pass.
 - Commands in, events out: the UI only calls `window.gm.commands.dispatch`; state changes

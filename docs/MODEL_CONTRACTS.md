@@ -1,12 +1,17 @@
-# Model contracts (for the ML track)
+# Model contracts (optional model tables)
 
-Each model below replaces a rules-based default behind a small interface in `packages/sim`.
+Engine first ([ADR 0005](adr/0005-engine-first-ml-for-calibration.md)): the rules-based
+default behind each interface below **is the shipping engine**. The ML track's main job is
+calibrating those defaults from real data (tuning values, ruleset numbers, lab ranges). This
+file is the contract for the optional case where a trained table replaces a default.
+
 The sim stays pure TypeScript: no ONNX runtime, no files. A model ships as **data the sim can
 load** (a JSON table, or coefficients), or as a TypeScript implementation of the interface.
 
 How to check a model: run `pnpm lab` (default), then the same with the candidate, same seed,
-and paste both reports in the PR. A model is acceptable when every lab check stays in range
-and it beats the default on its own held-out metric (AUC, log loss, error).
+and paste both reports in the PR. A model is acceptable when every lab check stays in range,
+it beats the default on its own held-out metric (AUC, log loss, error), and the AI decisions
+it drives still come with a readable reason.
 
 ## 1. Shot quality (xG): `GoalModel.shotXg` (hockey)
 
