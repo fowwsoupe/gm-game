@@ -1,5 +1,11 @@
 import { useState } from 'react';
-import type { CardEffects, Career, LeagueEvent, TeamId } from '@gm/shared';
+import {
+  STOP_CATEGORIES,
+  type CardEffects,
+  type Career,
+  type LeagueEvent,
+  type TeamId,
+} from '@gm/shared';
 import {
   useCapSheet,
   useDashboard,
@@ -276,6 +282,12 @@ function FeedCard() {
           player: names[e.playerId] ?? '',
           team: team(e.teamId),
         });
+      case 'player.disputeStarted':
+        return t('event.disputeStarted', { player: names[e.playerId] ?? '' });
+      case 'player.disputeEnded':
+        return e.outcome === 'kept' || e.outcome === 'settled'
+          ? t('event.disputeSettled', { player: names[e.playerId] ?? '' })
+          : null;
       case 'player.holdoutEnded':
         return t('event.holdoutEnded', { player: names[e.playerId] ?? '' });
       case 'player.tradeRequestEnded':
@@ -293,6 +305,11 @@ function FeedCard() {
           return t(e.headline, {
             ...e.params,
             award: t(`award.${e.params?.award}` as MessageKey),
+          });
+        if (e.headline === 'event.staffLeft' || e.headline === 'event.staffPoached')
+          return t(e.headline, {
+            ...e.params,
+            dept: t(`team.staff.${e.params?.dept}` as MessageKey),
           });
         return isMessageKey(e.headline) ? t(e.headline, e.params) : e.headline;
       default:
@@ -363,6 +380,7 @@ function PlayoffCard() {
 function SimBar() {
   const t = useT();
   const { data: status } = useStatus();
+  const { stopOn, toggleStop } = useUi();
   const dispatch = useDispatch();
   const [picked, setPicked] = useState<number | null>(null);
   if (!status || status.championTeamId || status.day >= status.playoffsEndDay) return null;
@@ -404,12 +422,21 @@ function SimBar() {
           variant="primary"
           disabled={dispatch.isPending}
           onClick={() => {
-            dispatch.mutate({ kind: 'sim.advance', days: target - status.day, stopOn: 'major' });
+            dispatch.mutate({ kind: 'sim.advance', days: target - status.day, stopOn });
             setPicked(null);
           }}
         >
           {t('home.simBarGo', { day: target })}
         </Button>
+      </div>
+      <div className="mt-3 flex flex-wrap items-center gap-3 text-xs text-muted">
+        <span>{t('home.stopOn')}</span>
+        {STOP_CATEGORIES.map((c) => (
+          <label key={c} className="flex items-center gap-1">
+            <input type="checkbox" checked={stopOn.includes(c)} onChange={() => toggleStop(c)} />
+            {t(`home.stopOn.${c}`)}
+          </label>
+        ))}
       </div>
     </Card>
   );

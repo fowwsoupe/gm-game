@@ -10,6 +10,7 @@ import type { CardEffects, OwnerCard, OwnerObjective, OwnerStanding, TeamId } fr
 import type { Emit, LeagueState, Rng } from '../core';
 import { pct, teamName, type Dollars } from '../core';
 import { teamCapTotal } from '../cba';
+import { byOverall } from '../players';
 import {
   coachOf,
   coachSeasonsLeft,
@@ -336,6 +337,36 @@ function proposeProject(state: LeagueState, ctx: SimContext, emit: Emit, teamId:
 export const checksInOn = (day: number, ctx: SimContext) =>
   day === ctx.ruleset.season.calendar.tradeDeadlineDay - DEADLINE_NOTICE;
 
+/** Players an AI GM lists when his owner orders a fire sale: his best on expiring deals. */
+const FIRE_SALE_PLAYERS = 3;
+
+/**
+ * An AI GM's fire sale: his best players on deals that end this season go on the trade block
+ * (where other teams, yours included, see them), and the league hears about it.
+ */
+function fireSale(state: LeagueState, emit: Emit, teamId: TeamId) {
+  const season = state.date.season;
+  const listed = Object.values(state.players)
+    .filter(
+      (p) =>
+        p.teamId === teamId &&
+        (p.contract?.expiresAfterSeason ?? Infinity) <= season &&
+        !p.extension &&
+        !state.tradeBlock.includes(p.id),
+    )
+    .sort(byOverall)
+    .slice(0, FIRE_SALE_PLAYERS);
+  if (!listed.length) return;
+  for (const p of listed) {
+    emit('minor', [teamId], { kind: 'trade.blockSet', teamId, playerId: p.id, onBlock: true });
+  }
+  emit('minor', [teamId], {
+    kind: 'news.posted',
+    headline: 'event.fireSale',
+    params: { team: teamName(state.teams[teamId]!), n: listed.length },
+  });
+}
+
 /**
  * The deadline check-in: an owner of a bubble team pushes his GM to buy (winning first; he adds
  * to the payroll budget) or to sell (profit first). AI GMs go along.
@@ -387,6 +418,7 @@ export function deadlineCheckIn(state: LeagueState, ctx: SimContext, emit: Emit)
         },
         'agree',
       );
+      if (!team.userControlled) fireSale(state, emit, teamId);
       continue;
     }
     if (status !== 'bubble') continue;
@@ -506,10 +538,20 @@ export function ownerMonth(state: LeagueState, ctx: SimContext, emit: Emit): voi
     const patience = ownerOf(state.teams[teamId]!).patience;
     const delta = MONTHLY_RESULTS * ((points.get(teamId) ?? 0.5) - standing.expected);
     const confidence = moved(standing, delta, patience, state.date.season);
-    if (Math.round(confidence) !== Math.round(standing.confidence)) {
+    const was = standing.confidence;
+    if (Math.round(confidence) !== Math.round(was)) {
       emit('minor', [teamId], { kind: 'owner.confidenceMoved', teamId, confidence });
     }
     warnIfHot(state, emit, teamId, confidence);
+    // An AI owner losing faith makes the league's news as he crosses the line he fires a GM below.
+    const team = state.teams[teamId]!;
+    if (!team.userControlled && was >= AI_FIRED_BELOW && confidence < AI_FIRED_BELOW) {
+      emit('minor', [teamId], {
+        kind: 'news.posted',
+        headline: 'event.ownerFrustrated',
+        params: { team: teamName(team) },
+      });
+    }
   }
 }
 

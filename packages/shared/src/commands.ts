@@ -1,5 +1,5 @@
 import type { LeagueEvent } from './events';
-import type { PlayerId, TeamId, TradeProposal } from './domain';
+import type { Department, PlayerId, TeamId, TradeProposal } from './domain';
 import type { GoalieRotation, SpecialUnit } from './sports/hockey';
 
 /**
@@ -11,8 +11,17 @@ import type { GoalieRotation, SpecialUnit } from './sports/hockey';
  * Commands are plain, serializable data. Add new kinds here, then a handler in
  * `packages/sim/src/commands.ts`.
  */
+/**
+ * What stops "sim until it matters": league-wide moments (phase change, champion), your team's
+ * big moments (its series, its trades), offers waiting on you, and long injuries to your players.
+ * Being fired always stops it.
+ */
+export const STOP_CATEGORIES = ['league', 'yours', 'offers', 'injuries'] as const;
+export type StopCategory = (typeof STOP_CATEGORIES)[number];
+
 export type Command =
-  | { kind: 'sim.advance'; days: number; stopOn?: 'never' | 'major' }
+  /** `stopOn`: 'major' stops on every category, a list on just those (`STOP_CATEGORIES`). */
+  | { kind: 'sim.advance'; days: number; stopOn?: 'never' | 'major' | readonly StopCategory[] }
   | { kind: 'team.setUserControlled'; teamId: TeamId; userControlled: boolean }
   /** After the champion is crowned: age, retire, draft, re-sign and sign, then start next season. */
   | { kind: 'season.rollover' }
@@ -28,6 +37,8 @@ export type Command =
   | { kind: 'tradeRequest.talk'; playerId: PlayerId }
   /** Meet a player who is holding out; whether he reports is down to who he is. */
   | { kind: 'holdout.talk'; playerId: PlayerId }
+  /** Answer a player's complaint about his role: promise him one, ask for patience, or list him. */
+  | { kind: 'dispute.talk'; playerId: PlayerId; answer: 'promise' | 'patience' | 'block' }
   /**
    * After the season: age and develop players, retire, expire contracts, hold the draft and let AI
    * teams re-sign, then open free agency for the human GM. `season.rollover` finishes the summer.
@@ -47,6 +58,8 @@ export type Command =
   | { kind: 'owner.answerCard'; cardId: string; option: string }
   /** Your ticket price policy, `pct` one of `TICKET_STEPS` around the league's reference price. */
   | { kind: 'finance.setTicketPrice'; teamId: TeamId; pct: number }
+  /** Replace a department head with one of this season's candidates (`staffCandidates`, by index). */
+  | { kind: 'staff.hire'; teamId: TeamId; department: Department; candidate: number }
   /** How your goalies share starts (see `GoalieRotation`). */
   | { kind: 'goalies.setRotation'; teamId: TeamId; rotation: GoalieRotation }
   /** Rank the draft class for your picks (best first). Players missing from it go by the scouts' order. */

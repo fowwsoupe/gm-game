@@ -22,14 +22,18 @@ export {
 export { morale, type MoraleInput } from './morale';
 export { chemistry } from './chemistry';
 export { talkedDown, tradeRequests } from './requests';
+export { disputesWeek, PROMISE_DAYS, roleGap } from './disputes';
 export { startHoldouts, holdoutsWeek, talkedRound } from './holdouts';
 export {
   capacityOf,
   coachOf,
   coachSeasonsLeft,
+  DEPARTMENTS,
   marketOf,
   newCoach,
   ownerOf,
+  staffOf,
+  staffSalary,
   ticketPctOf,
 } from './owner';
 export { GM_LEAN, choosePlan, gmOf, misread, planStatus, randomGm, seenBy } from './gm';

@@ -127,6 +127,28 @@ export interface Ruleset {
     coach: { salary: Dollars; years: number };
   };
 
+  /** Front-office staff (docs/research/2026-11-front-office.md). */
+  frontOffice: {
+    /** A department head's salary, the worst (quality 0) to the best (1), rising with quality squared. */
+    salary: { min: Dollars; max: Dollars };
+    /** Rating points a year the best development staff adds to a young player, the worst takes away. */
+    development: { points: number };
+    /** A team's read of a prospect's potential (SD, rating points), the best scouting to the worst; the public range is 4. */
+    scouting: { best: number; worst: number };
+    /** Injury days x (1 + days x (league average - quality)): the best medical staff shortens them. */
+    medical: { days: number };
+    /** Rating points the best head coach adds to every player in games, the worst takes away. */
+    coaching: { points: number };
+    /** Yearly chance a department head leaves, however the team did. */
+    leave: number;
+    /** Extra chance a good head is hired away: x his quality x the team's points % above average, in SDs. */
+    poach: number;
+    /** How far the owner's budget (0-1) tilts the quality of a new hire around average (0.5). */
+    spend: number;
+    /** Spread (SD) of a new hire's quality. */
+    hireSd: number;
+  };
+
   roster: {
     maxActive: number;
     minActive: number;
