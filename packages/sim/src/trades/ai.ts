@@ -1,5 +1,5 @@
 import type { Player, TeamId, TeamStatus } from '@gm/shared';
-import type { Emit, LeagueState, Rng } from '../core';
+import { playerName, teamName, type Emit, type LeagueState, type Rng } from '../core';
 import type { SimContext } from '../context';
 import {
   cachedContext,
@@ -63,8 +63,6 @@ export function aiTrades(state: LeagueState, ctx: SimContext, rng: Rng, emit: Em
   const buyers = ai.filter(buys);
   const sellers = ai.filter(sells);
   if (!buyers.length || !sellers.length) return;
-
-  const name = (p: Player) => `${p.firstName} ${p.lastName}`;
   const roster = (id: TeamId) =>
     Object.values(state.players)
       .filter((p) => p.teamId === id)
@@ -84,7 +82,7 @@ export function aiTrades(state: LeagueState, ctx: SimContext, rng: Rng, emit: Em
         .filter((p) => gap(p, seller, buyer) > 0)
         .sort((a, b) => gap(b, seller, buyer) - gap(a, seller, buyer))
         .slice(0, OFFERS_TRIED)
-        .map((p) => ({ give: [p.id], givePicks: [], label: name(p) })),
+        .map((p) => ({ give: [p.id], givePicks: [], label: playerName(p) })),
       ...draftPicks(state, ctx.ruleset.draft.rounds, buyer)
         .sort((a, b) => b.season - a.season || b.round - a.round) // cheapest first
         .slice(0, OFFERS_TRIED)
@@ -130,11 +128,15 @@ export function aiTrades(state: LeagueState, ctx: SimContext, rng: Rng, emit: Em
         get,
         ...(offer.givePicks.length && { givePicks: offer.givePicks }),
       });
-      const team = (id: TeamId) => `${state.teams[id]!.city} ${state.teams[id]!.name}`;
       emit('notable', [buyer, seller], {
         kind: 'news.posted',
         headline: 'event.trade',
-        params: { from: team(buyer), to: team(seller), give: offer.label, get: name(target) },
+        params: {
+          from: teamName(state.teams[buyer]!),
+          to: teamName(state.teams[seller]!),
+          give: offer.label,
+          get: playerName(target),
+        },
       });
       return;
     }

@@ -6,7 +6,7 @@ import type {
   HockeySkaterLine,
   Player,
 } from '@gm/shared';
-import { attack, defence, faceoffs, rating, type TeamStrength } from './strength';
+import { attack, autoKillers, defence, faceoffs, rating, type TeamStrength } from './strength';
 
 export interface Side {
   players: Player[];
@@ -57,11 +57,8 @@ export function makeSide(strength: TeamStrength, backup: boolean): Side {
   const index = (unit: Player[]) => unit.map((p) => players.push(p) - 1);
   const lines = forwards.map(index);
   const pairs = defense.map(index);
-  const killers = lines
-    .flat()
-    .sort((a, b) => rating(players[b]!, 'defense') - rating(players[a]!, 'defense') || a - b)
-    .slice(0, 4);
   const at = new Map(players.map((p, k) => [p.id, k]));
+  const killers = autoKillers(strength.lineup).map((p) => at.get(p.id)!);
   const unit = (name: 'pp1' | 'pp2' | 'pk1' | 'pk2') => {
     const ks = strength.lineup.special?.[name]?.map((p) => at.get(p.id)!);
     return (

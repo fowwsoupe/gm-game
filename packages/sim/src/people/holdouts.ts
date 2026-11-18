@@ -1,9 +1,8 @@
 import type { Emit, LeagueState, Rng } from '../core';
 import type { SimContext } from '../context';
-import { overall } from '../players';
 import { personalityOf } from './personality';
+import { corePlayers } from './requests';
 
-const CORE_PLAYERS = 6;
 /** Paid under this share of his ask, with a greedy streak, he may refuse to report. */
 const UNDERPAID = 0.75;
 const GREEDY = 0.6;
@@ -24,11 +23,7 @@ const TALKED_ROUND = 1.2;
 export function startHoldouts(state: LeagueState, ctx: SimContext, rng: Rng, emit: Emit): void {
   for (const team of Object.values(state.teams).sort((a, b) => a.id.localeCompare(b.id))) {
     if (state.holdouts.some((h) => h.teamId === team.id)) continue;
-    const core = Object.values(state.players)
-      .filter((p) => p.teamId === team.id)
-      .sort((a, b) => overall(b) - overall(a) || a.id.localeCompare(b.id))
-      .slice(0, CORE_PLAYERS);
-    for (const p of core) {
+    for (const p of corePlayers(state, team.id)) {
       const ask = ctx.models.contractDemand.ask(ctx.ruleset, p);
       if (!p.contract || p.extension || p.contract.capHit >= ask * UNDERPAID) continue;
       if (

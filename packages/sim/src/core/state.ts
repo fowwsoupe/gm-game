@@ -87,11 +87,10 @@ export interface LeagueState {
 }
 
 /**
- * The single reducer: how each event changes state. Pure and synchronous.
- * Replaying the same events on the same starting state gives the same league.
+ * The cap year signings and trades are judged for, and the season a move counts for: next season
+ * once the champion is crowned (expiring deals are then off the books), else the current one.
  */
-/** The season a move counts for: next season once the champion is crowned. */
-const moveSeason = (state: LeagueState) => state.date.season + (state.championTeamId ? 1 : 0);
+export const capYearOf = (state: LeagueState) => state.date.season + (state.championTeamId ? 1 : 0);
 
 /** His trade request is settled: withdrawn, or he left the team (it would block new ones). */
 const endRequest = (state: LeagueState, playerId: string) => {
@@ -123,6 +122,10 @@ function countLinemates(state: LeagueState, teamId: TeamId, units: readonly Play
   }
 }
 
+/**
+ * The single reducer: how each event changes state. Pure and synchronous.
+ * Replaying the same events on the same starting state gives the same league.
+ */
 export function applyEvent(state: LeagueState, event: LeagueEvent): void {
   // Every applied event advances the sequence, in every copy of the state, so ids stay in sync.
   state.eventSeq++;
@@ -229,7 +232,7 @@ export function applyEvent(state: LeagueState, event: LeagueEvent): void {
     }
     case 'player.drafted':
       state.players[event.player.id] = structuredClone(event.player);
-      if (event.player.teamId) state.players[event.player.id]!.joined = moveSeason(state);
+      if (event.player.teamId) state.players[event.player.id]!.joined = capYearOf(state);
       state.draftClass = state.draftClass.filter((d) => d.player.id !== event.player.id);
       return;
     case 'draft.classAnnounced':
@@ -276,7 +279,7 @@ export function applyEvent(state: LeagueState, event: LeagueEvent): void {
     case 'player.signed': {
       const p = state.players[event.playerId];
       if (!p) throw new Error(`unknown player ${event.playerId}`);
-      if (p.teamId !== event.teamId && !event.staying) p.joined = moveSeason(state);
+      if (p.teamId !== event.teamId && !event.staying) p.joined = capYearOf(state);
       p.teamId = event.teamId;
       p.contract = { ...event.contract };
       delete p.extension;
@@ -353,23 +356,13 @@ export function applyEvent(state: LeagueState, event: LeagueEvent): void {
           const p = state.players[id];
           if (!p) throw new Error(`unknown player ${id}`);
           p.teamId = to;
-          p.joined = moveSeason(state);
+          p.joined = capYearOf(state);
         }
       };
       move(event.give, event.toTeamId);
       move(event.get, event.fromTeamId);
-      // A traded player got his wish.
-      state.tradeRequests = state.tradeRequests.filter(
-        (r) =>
-          !(event.give as string[]).includes(r.playerId) &&
-          !(event.get as string[]).includes(r.playerId),
-      );
-      // A traded holdout is somebody else's problem (and must not sit out for his new team).
-      state.holdouts = state.holdouts.filter(
-        (h) =>
-          !(event.give as string[]).includes(h.playerId) &&
-          !(event.get as string[]).includes(h.playerId),
-      );
+      // A traded player got his wish; a traded holdout is somebody else's problem.
+      for (const id of gone) endRequest(state, id);
       for (const id of event.givePicks ?? []) {
         state.pickOwners[id] = event.toTeamId;
         if (event.protectTop && id.split('-')[1] === '1') {

@@ -2,7 +2,7 @@
  * Awards engine (shared by all sports): end-of-season awards, given as `award.given` events
  * plus a news line each. The sport module picks the player winners; the champion is shared.
  */
-import type { Emit, LeagueState } from '../core';
+import { playerName, type Emit, type LeagueState } from '../core';
 import type { SimContext } from '../context';
 
 export function giveSeasonAwards(state: LeagueState, ctx: SimContext, emit: Emit): void {
@@ -27,7 +27,7 @@ export function giveSeasonAwards(state: LeagueState, ctx: SimContext, emit: Emit
     emit('notable', [team.id], {
       kind: 'news.posted',
       headline: 'event.awardWon',
-      params: { award, player: `${player.firstName} ${player.lastName}`, team: team.name },
+      params: { award, player: playerName(player), team: team.name },
     });
   }
 }

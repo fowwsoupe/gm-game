@@ -4,17 +4,19 @@ import {
   emitter,
   makeEvent,
   phaseOf,
+  playerName,
   Rng,
+  teamName,
   type LeagueState,
   type ScheduledGame,
 } from './core';
-import { classifyTeams, computeStandings, nextRound, seedPlayoffs } from './league';
+import { classifyTeams, leagueStandings, nextRound, seedPlayoffs, worstFirst } from './league';
 import { giveSeasonAwards } from './awards';
-import { aiHoldouts, announceDraftClass, worstFirst } from './offseason';
+import { aiHoldouts, announceDraftClass } from './offseason';
 import { aiOffers, aiTrades } from './trades';
 import { holdoutsWeek, startHoldouts, tradeRequests } from './people';
 import { sitsOut, strengthFor } from './tonight';
-import { overall } from './players';
+import { byOverall } from './players';
 import { payBonuses } from './cba';
 import type { SimContext } from './context';
 
@@ -66,16 +68,18 @@ export function advance(
   };
   // Each team's current run (wins > 0, losses < 0), from this season's games so far.
   const streaks = new Map<TeamId, number>();
+  /** Adds a result to a team's run and returns the new run. */
+  const bump = (id: TeamId, won: boolean) => {
+    const run = streaks.get(id) ?? 0;
+    const next = won ? Math.max(0, run) + 1 : Math.min(0, run) - 1;
+    streaks.set(id, next);
+    return next;
+  };
   for (const g of Object.values(state.results)) {
     if (g.playoffSeriesId) continue;
     const homeWon = g.homeScore > g.awayScore;
-    for (const [id, won] of [
-      [g.homeTeamId, homeWon],
-      [g.awayTeamId, !homeWon],
-    ] as const) {
-      const run = streaks.get(id) ?? 0;
-      streaks.set(id, won ? Math.max(0, run) + 1 : Math.min(0, run) - 1);
-    }
+    bump(g.homeTeamId, homeWon);
+    bump(g.awayTeamId, !homeWon);
   }
   // Games in a row each skater has played without a point (a goalie has no points, so never here).
   const droughts = new Map<string, number>();
@@ -99,7 +103,6 @@ export function advance(
         result: game,
       }),
     );
-    const team = (id: TeamId) => `${state.teams[id]!.city} ${state.teams[id]!.name}`;
     for (const h of sport.highlights(game)) {
       const p = state.players[h.playerId];
       if (!p) continue;
@@ -109,7 +112,7 @@ export function advance(
         makeEvent(state, importance, [h.teamId], {
           kind: 'news.posted',
           headline: `event.${h.key}`,
-          params: { player: `${p.firstName} ${p.lastName}`, team: team(h.teamId) },
+          params: { player: playerName(p), team: teamName(state.teams[h.teamId]!) },
         }),
       );
     }
@@ -119,7 +122,7 @@ export function advance(
       for (const teamId of [game.homeTeamId, game.awayTeamId]) {
         const stars = Object.values(state.players)
           .filter((p) => p.teamId === teamId && droughts.has(p.id))
-          .sort((a, b) => overall(b) - overall(a) || a.id.localeCompare(b.id))
+          .sort(byOverall)
           .slice(0, SLUMP_STARS);
         for (const p of stars) {
           if (droughts.get(p.id) !== SLUMP_GAMES) continue;
@@ -128,8 +131,8 @@ export function advance(
               kind: 'news.posted',
               headline: 'event.slump',
               params: {
-                player: `${p.firstName} ${p.lastName}`,
-                team: team(teamId),
+                player: playerName(p),
+                team: teamName(state.teams[teamId]!),
                 n: SLUMP_GAMES,
               },
             }),
@@ -141,15 +144,13 @@ export function advance(
         [game.homeTeamId, homeWon],
         [game.awayTeamId, !homeWon],
       ] as const) {
-        const run = streaks.get(id) ?? 0;
-        const next = won ? Math.max(0, run) + 1 : Math.min(0, run) - 1;
-        streaks.set(id, next);
+        const next = bump(id, won);
         if (STREAK_MILESTONES.includes(Math.abs(next))) {
           emit(
             makeEvent(state, 'notable', [id], {
               kind: 'news.posted',
               headline: next > 0 ? 'event.winStreak' : 'event.losingStreak',
-              params: { team: team(id), n: Math.abs(next) },
+              params: { team: teamName(state.teams[id]!), n: Math.abs(next) },
             }),
           );
         }
@@ -258,7 +259,7 @@ export function advance(
             makeEvent(state, 'notable', [winnerTeamId], {
               kind: 'news.posted',
               headline: 'event.seriesWon',
-              params: { team: `${winner.city} ${winner.name}`, round: series.round },
+              params: { team: teamName(winner), round: series.round },
             }),
           );
         }
@@ -280,7 +281,7 @@ export function advance(
             makeEvent(state, 'major', [championTeamId], {
               kind: 'news.posted',
               headline: 'event.championCrowned',
-              params: { team: `${champion.city} ${champion.name}` },
+              params: { team: teamName(champion) },
             }),
           );
           giveSeasonAwards(state, ctx, emitter(state, events));
@@ -289,7 +290,7 @@ export function advance(
             ctx,
             rng.fork('draftClass'),
             emitter(state, events),
-            worstFirst(state, ctx),
+            worstFirst(state, ctx.ruleset),
           );
         } else {
           for (const series of nextRound(current)) {
@@ -306,11 +307,7 @@ export function advance(
 
     // League pulse once a week.
     if (phaseOf(cal, today) === 'regular' && today.day % 7 === 6) {
-      const rows = computeStandings(
-        Object.keys(state.teams) as TeamId[],
-        Object.values(state.results),
-        ctx.ruleset.season.points,
-      );
+      const rows = leagueStandings(state, ctx.ruleset);
       const next = classifyTeams(rows);
       for (const [teamId, to] of Object.entries(next) as [TeamId, (typeof next)[TeamId]][]) {
         const from = state.teamStatus[teamId];
@@ -342,11 +339,7 @@ export function advance(
         }),
       );
       if (toPhase === 'playoffs') {
-        const rows = computeStandings(
-          Object.keys(state.teams) as TeamId[],
-          Object.values(state.results),
-          ctx.ruleset.season.points,
-        );
+        const rows = leagueStandings(state, ctx.ruleset);
         for (const series of seedPlayoffs(
           rows,
           ctx.ruleset,

@@ -5,6 +5,7 @@
  */
 export {
   surplusValuator,
+  RFA_DISCOUNT,
   type PlayerValuator,
   type Valuation,
   type ValueReason,

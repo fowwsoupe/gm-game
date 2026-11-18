@@ -8,6 +8,7 @@ import {
 } from '@gm/shared';
 import { payroll, type Ruleset } from '../cba';
 import { overall } from '../players';
+import { byStanding } from './standings';
 
 /** A fixed bracket: adjacent slots meet, so the top two seeds cannot meet early. */
 export function bracketSeeds(teamCount: number): number[] {
@@ -39,10 +40,7 @@ export function seedPlayoffs(
 ): PlayoffSeries[] {
   const count = ruleset.playoffs.teamsQualifying;
   if (rows.length < count) throw new Error('invalid playoff field');
-  const ranked = [...rows].sort(
-    (a, b) =>
-      b.pts - a.pts || b.w - a.w || b.gf - b.ga - (a.gf - a.ga) || a.teamId.localeCompare(b.teamId),
-  );
+  const ranked = [...rows].sort(byStanding);
   const rank = new Map(ranked.map((r, i) => [r.teamId, i + 1]));
   const conferenceOf = new Map(teams.map((t) => [t.id, t.conference]));
   const conferences = [...new Set(ranked.map((r) => conferenceOf.get(r.teamId)))];

@@ -29,7 +29,6 @@ export {
   finishRollover,
   lotteryOrder,
   resignOffers,
-  RFA_DISCOUNT,
   roomFor,
   scoutReport,
   sheetCompensation,

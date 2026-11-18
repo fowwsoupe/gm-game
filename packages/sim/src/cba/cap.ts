@@ -7,7 +7,7 @@ import type {
   SeasonPhase,
   TeamId,
 } from '@gm/shared';
-import { pct, type Dollars, type LeagueState } from '../core';
+import { capYearOf, pct, type Dollars, type LeagueState } from '../core';
 import { contractIn } from './contracts';
 import type { Ruleset } from './ruleset';
 
@@ -154,12 +154,6 @@ export function retentionIssues(
   }
   return issues;
 }
-
-/**
- * The cap year signings and trades are judged for: next season once the champion is crowned
- * (expiring deals are then off the books), else the current one.
- */
-export const capYearOf = (state: LeagueState) => state.date.season + (state.championTeamId ? 1 : 0);
 
 /** What a team's cap counts in the cap year: contracts that run through it, plus dead cap. */
 export function teamCapTotal(

@@ -1,4 +1,5 @@
 import { isGoalie } from '@gm/shared';
+import { clampRating } from '../../players';
 import type { GoalieTotals, SkaterTotals } from './stats';
 
 /**
@@ -105,7 +106,7 @@ export function ratingsFromStats(
     const full = fit.coef.reduce((s, c, i) => s + c * (i === 0 ? 1 : features[i - 1]!), 0);
     const value = fit.mean + w * (full - fit.mean);
     out[key] = {
-      value: Math.max(1, Math.min(99, Math.round(value))),
+      value: clampRating(value),
       sd: Math.round(10 * Math.sqrt(w * fit.residualSd ** 2 + (1 - w) * fit.priorSd ** 2)) / 10,
     };
   }

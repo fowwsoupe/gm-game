@@ -54,6 +54,7 @@ describe('season sim', () => {
     const rows = computeStandings(
       Object.keys(state.teams) as TeamId[],
       Object.values(state.results),
+      ctx.ruleset.season.points,
     );
     for (const r of rows) expect(r.gp).toBe(NHL_2026.season.gamesPerTeam);
   });
@@ -101,6 +102,7 @@ describe('playoffs', () => {
     const rows = computeStandings(
       Object.keys(state.teams) as TeamId[],
       Object.values(state.results),
+      ctx.ruleset.season.points,
     );
     expect(bracketSeeds(ctx.ruleset.playoffs.teamsQualifying)).toEqual([1, 8, 4, 5, 2, 7, 3, 6]);
     expect(bracketSeeds(16)).toHaveLength(16);

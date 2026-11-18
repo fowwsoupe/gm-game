@@ -1,10 +1,11 @@
 import type { Contract, Player, SigningInterest, TeamId, TeamStatus } from '@gm/shared';
-import { phaseOf, type LeagueState } from '../core';
+import type { LeagueState } from '../core';
 import { capYearIssues, capYearOf, teamCapTotal, validateContract, type Ruleset } from '../cba';
 import { nextDraftSeason, pickId, pickOwner } from '../league';
 import { overall } from '../players';
 import { hometownOf, personalityOf } from '../people';
 import type { SimContext } from '../context';
+import { resignWindowOpen } from './resign';
 
 /**
  * Free agency v1: a free agent weighs an offer on money, winning, his role and the term, with
@@ -56,7 +57,7 @@ const LOYALTY_PULL = 0.2;
 const HOME_PULL = 0.1;
 
 /** Years he would like (more years is never worse for him). */
-const wantedYears = (age: number) => (age < 28 ? 5 : age < 32 ? 3 : 2);
+export const wantedYears = (age: number) => (age < 28 ? 5 : age < 32 ? 3 : 2);
 
 const clamp = (n: number, lo: number, hi: number) => Math.max(lo, Math.min(hi, n));
 
@@ -182,8 +183,7 @@ export function signFreeAgent(
 ): { contract: Contract } | { error: string } {
   const { ruleset } = ctx;
   if (player.teamId !== null) return { error: 'not a free agent' };
-  const inPlayoffs = phaseOf(ruleset.season.calendar, state.date) === 'playoffs';
-  if (inPlayoffs && !state.championTeamId) return { error: 'signings are closed in the playoffs' };
+  if (!resignWindowOpen(state, ctx)) return { error: 'signings are closed in the playoffs' };
   const salary = Math.round(offer.salary);
   if (!Number.isInteger(offer.years)) return { error: 'illegal term' };
   // NaN would slip past every comparison below.

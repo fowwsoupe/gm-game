@@ -3,6 +3,7 @@ import type { Emit, LeagueState, Rng } from '../core';
 import type { DevelopmentModel } from '../players';
 import { ageIn, allPlayers } from './roster';
 import { gmOf } from '../people';
+import { clampRating } from '../players';
 
 const sameRatings = (a: Player, b: Player) =>
   a.potential === b.potential && Object.keys(a.ratings).every((k) => a.ratings[k] === b.ratings[k]);
@@ -44,8 +45,7 @@ export function developPlayers(
         Math.floor(effect) + (orgRng.fork(p.id).chance(effect - Math.floor(effect)) ? 1 : 0);
       if (whole !== 0) {
         const ratings: Record<string, number> = {};
-        for (const [k, v] of Object.entries(next.ratings))
-          ratings[k] = Math.max(1, Math.min(99, v + whole));
+        for (const [k, v] of Object.entries(next.ratings)) ratings[k] = clampRating(v + whole);
         next = { ...next, ratings };
       }
     }

@@ -1,9 +1,10 @@
 import type { DraftProspect, Player, Team, TeamId } from '@gm/shared';
-import type { Emit, LeagueState, Rng } from '../core';
+import { teamName, type Emit, type LeagueState, type Rng } from '../core';
 import type { SimContext } from '../context';
 import { deadCap } from '../cba';
 import { pickId, pickOwner } from '../league';
 import { seenBy } from '../people';
+import { clampRating } from '../players';
 import { entryContract, rosterOf } from './roster';
 
 /** How far a scout's read of a prospect's potential is off, on average (rating points). */
@@ -11,7 +12,6 @@ const SCOUT_SD = 4;
 /** Half the width of the scouted range. */
 const SCOUT_HALF_RANGE = 5;
 
-const clampRating = (n: number) => Math.max(1, Math.min(99, Math.round(n)));
 const scouted = (d: DraftProspect) => (d.low + d.high) / 2;
 
 /**
@@ -84,7 +84,7 @@ function drawLottery(
     emit('notable', [team.id], {
       kind: 'news.posted',
       headline: 'event.lotteryWon',
-      params: { team: `${team.city} ${team.name}` },
+      params: { team: teamName(team) },
     });
   }
   return firstRound;

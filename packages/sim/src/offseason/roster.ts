@@ -2,6 +2,7 @@ import type { Contract, Player, TeamId } from '@gm/shared';
 import type { LeagueState } from '../core';
 import type { SimContext } from '../context';
 import { elcYears, maxPlayerCapHit, payroll, validateContract, type Ruleset } from '../cba';
+import { RFA_DISCOUNT } from '../value';
 
 /** Players in a stable order (by id), so every step is reproducible whatever the key order. */
 export const allPlayers = (state: LeagueState): Player[] =>
@@ -50,12 +51,6 @@ export function capRoom(
 
 /** Age in the season being prepared (`season` = the new season). */
 export const ageIn = (player: Player, season: number) => season - player.birthYear;
-
-/**
- * A restricted player (younger than the UFA age) re-signs this far below his market ask: his
- * team holds his rights. This is where cheap young cores come from.
- */
-export const RFA_DISCOUNT = 0.75;
 
 /** What `player` asks to re-sign with his team for a deal starting in `season`. */
 export function resignAsk(ctx: SimContext, player: Player, season: number): number {

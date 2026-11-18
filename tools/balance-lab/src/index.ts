@@ -16,7 +16,7 @@ import { readFileSync } from 'node:fs';
 import { resolve } from 'node:path';
 import type { Actor, GameResult, HockeyBoxScore, Player, TeamId } from '@gm/shared';
 import {
-  computeStandings,
+  leagueStandings,
   createLeague,
   defaultContext,
   handleCommand,
@@ -187,11 +187,7 @@ for (let i = 0; i < seasons; i++) {
   topScorer.push(top('points'));
   topGoals.push(top('goals'));
   topSavePct.push(top('savePct'));
-  const rows = computeStandings(
-    Object.keys(state.teams) as TeamId[],
-    results,
-    ctx.ruleset.season.points,
-  );
+  const rows = leagueStandings(state, ctx.ruleset);
   pointSpreads.push(rows[0]!.pts - rows[rows.length - 1]!.pts);
   // Goal diff per game, in the same order the teams were pushed above.
   const diff = new Map(rows.map((r) => [r.teamId as string, (r.gf - r.ga) / r.gp]));
@@ -275,11 +271,10 @@ for (let l = 0; l < leagues; l++) {
     );
     if (!played.ok) throw new Error(played.error.message);
     const pct = new Map(
-      computeStandings(
-        Object.keys(state.teams) as TeamId[],
-        Object.values(state.results).filter((g) => !g.playoffSeriesId),
-        ctx.ruleset.season.points,
-      ).map((row) => [row.teamId as string, row.pts / (2 * row.gp)]),
+      leagueStandings(state, ctx.ruleset).map((row) => [
+        row.teamId as string,
+        row.pts / (2 * row.gp),
+      ]),
     );
     if (longRun) {
       pointsPctSd.push(sd([...pct.values()]));

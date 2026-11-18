@@ -6,6 +6,8 @@
 export { percentileRank } from './percentile';
 export {
   overall,
+  byOverall,
+  clampRating,
   rulesDevelopment,
   type AgingCurve,
   type DevelopmentModel,

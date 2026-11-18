@@ -1,4 +1,5 @@
 import type { GameResult, HockeyBoxScore, Leaderboard, Player, PlayerId, TeamId } from '@gm/shared';
+import { playerName } from '../../core';
 
 export interface SkaterTotals {
   gp: number;
@@ -99,9 +100,7 @@ export function hockeyLeaders(
       .slice(0, limit)
       .flatMap(([id, gp, value]) => {
         const p = byId.get(id);
-        return p
-          ? [{ playerId: p.id, name: `${p.firstName} ${p.lastName}`, teamId: p.teamId, gp, value }]
-          : [];
+        return p ? [{ playerId: p.id, name: playerName(p), teamId: p.teamId, gp, value }] : [];
       }),
   });
   const skater = (value: (t: SkaterTotals) => number) =>
