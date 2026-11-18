@@ -181,7 +181,6 @@ describe('surplus value', () => {
     status,
     season: 2027,
     seasonLeft,
-    capSpace: 0,
     needs: [],
   });
   const player = (over: Partial<Player>): Player => ({

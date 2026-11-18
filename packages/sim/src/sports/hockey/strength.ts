@@ -7,9 +7,8 @@ const avg = (xs: number[]) => (xs.length ? xs.reduce((a, b) => a + b, 0) / xs.le
 export interface TeamStrength {
   offense: number;
   defense: number;
-  /** The starting goalie's rating, and the backup's (who plays the second night of a back-to-back). */
+  /** The starting goalie's rating. */
   goaltending: number;
-  backupGoaltending: number;
   /** Chemistry's bonus to every unit's attack and defence, in rating points (±CHEMISTRY_POINTS). */
   chemistry: number;
   /**
@@ -302,7 +301,6 @@ export function teamStrength(
     offense: mix(UNIT_WEIGHT.offense, attack) + draws + chem + byIce('offense'),
     defense: mix(UNIT_WEIGHT.defense, defence) + draws + chem + byIce('defense'),
     goaltending: goalies[0] ? goalieScore(goalies[0]) : 40,
-    backupGoaltending: goalies[1] ? goalieScore(goalies[1]) : 40,
     chemistry: chem,
     unitBonus,
     lineup,

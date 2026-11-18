@@ -33,10 +33,6 @@ export const HOCKEY_TUNING = {
   xgScale: 1.02,
   /** A trailing team pulls its goalie this many seconds before the end: down one, down two. */
   pullSeconds: [150, 90],
-  /** A team with its goalie pulled attacks this much harder than the extra skater alone explains. */
-  pulledPace: 2,
-  /** Score effects: a team shoots more (log, per goal down, up to two) when trailing and less when leading. */
-  scoreEffect: 0.12,
   /** Chance a shot at an empty net goes in. */
   emptyNetGoal: 0.7,
   /** Shift length (seconds) between line changes. */
@@ -68,7 +64,7 @@ export interface GoalModel {
 }
 
 /** Scoring chance of a shot from where it is taken: close and in front is dangerous. */
-export const shotQuality = (x: number, y: number) =>
+const shotQuality = (x: number, y: number) =>
   0.3 * Math.exp(-Math.hypot(x, y) / 22) * Math.max(0.2, x / Math.hypot(x, y));
 
 export const rulesGoalModel: GoalModel = {

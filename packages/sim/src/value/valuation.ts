@@ -14,7 +14,6 @@ export interface TeamContext {
   season: number;
   /** Share of that season still to play, 0–1 (1 before it starts): rentals lose value as it runs out. */
   seasonLeft: number;
-  capSpace: Dollars;
   /** Positions the team is short of, e.g. ['D']. */
   needs: string[];
   /** The GM's lean, -1 (builder: the future) to 1 (win now). Absent or 0: the situation alone. */
@@ -69,7 +68,7 @@ const NEED_BONUS = 0.1;
  * Expected overall `years` from now. A rough sport-neutral curve (young players close on their
  * potential, players past 30 fade); the development model owns the real one.
  */
-export function projectedOverall(player: Player, age: number, years: number): number {
+function projectedOverall(player: Player, age: number, years: number): number {
   let rating = overall(player);
   for (let y = 1; y <= years; y++) {
     const a = age + y;

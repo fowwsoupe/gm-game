@@ -41,7 +41,7 @@ export { giveSeasonAwards } from './awards';
 export * from './trades';
 export * from './sports';
 export { defaultModels, type Models } from './models';
-export { defaultContext, RULESETS, SPORTS, type ModelOverrides, type SimContext } from './context';
+export { defaultContext, type ModelOverrides, type SimContext } from './context';
 export { createLeague, START_SEASON } from './create';
 export { handleCommand } from './commands';
 export { playerProfiles } from './profiles';

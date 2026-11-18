@@ -108,7 +108,7 @@ export function makeSide(strength: TeamStrength, backup: boolean): Side {
     pulled: false,
     uAtk: 50,
     uDef: 50,
-    chem: strength.chemistry ?? 0,
+    chem: strength.chemistry,
     unitAtk,
     unitDef,
     skaters: players.map((p) => ({

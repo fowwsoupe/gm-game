@@ -10,7 +10,6 @@ import { simGame } from './game';
 import { rulesGoalModel, type GoalModel } from './tuning';
 import { lineupUnits, specialUnitsView, teamStrength, unitOk, type TeamStrength } from './strength';
 import { generateFictionalLeague, generateProspect } from './generate';
-import { NHL_2026 } from './ruleset-nhl-2026';
 import { pickAwards } from './awards';
 import { importHockeyRoster } from './roster';
 import {
@@ -30,11 +29,9 @@ import { hockeyRole } from './builds';
 export function hockeySport(goalModel: GoalModel = rulesGoalModel): SportModule<TeamStrength> {
   return {
     id: 'nhl',
-    name: 'Hockey',
     positions: HOCKEY_POSITIONS,
     ratingKeys: (position) => (isGoalie(position) ? GOALIE_RATINGS : SKATER_RATINGS),
     pythagoreanExponent: 2,
-    defaultRuleset: NHL_2026,
     generateLeague: generateFictionalLeague,
     generateProspect,
     pickAwards,
@@ -57,7 +54,6 @@ export { NHL_2026, FICTIONAL_2026 } from './ruleset-nhl-2026';
 export {
   rulesGoalModel,
   strengthEdge,
-  shotQuality,
   HOCKEY_TUNING,
   type GoalModel,
   type ShotInfo,
@@ -67,7 +63,6 @@ export { parseXgTable, xgTableFromModel, type XgTable, type XgTableResult } from
 export {
   teamStrength,
   autoLineup,
-  lineupUnits,
   lineupFit,
   lineupTogether,
   LINEMATES_FULL_GAMES,
@@ -77,7 +72,7 @@ export {
   type Lineup,
 } from './strength';
 export { importHockeyRoster, exportHockeyRoster } from './roster';
-export { hockeyLeaders, hockeySeasonStats, type SkaterTotals, type GoalieTotals } from './stats';
+export { hockeySeasonStats, type SkaterTotals, type GoalieTotals } from './stats';
 export {
   ratingsFromStats,
   statFeatures,

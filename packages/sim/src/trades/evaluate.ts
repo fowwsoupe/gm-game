@@ -99,7 +99,7 @@ export function planRetention(
 }
 
 /** What `teamId` knows about itself when it values players (see the value engine). */
-export function teamContext(state: LeagueState, ctx: SimContext, teamId: TeamId): TeamContext {
+function teamContext(state: LeagueState, ctx: SimContext, teamId: TeamId): TeamContext {
   const { ruleset } = ctx;
   const players = Object.values(state.players).filter((p) => p.teamId === teamId);
   const days = ruleset.season.calendar.regularSeasonDays;
@@ -108,7 +108,6 @@ export function teamContext(state: LeagueState, ctx: SimContext, teamId: TeamId)
     status: planStatus(state.teams[teamId]!, state.teamStatus[teamId] ?? 'bubble'),
     season: capYearOf(state),
     seasonLeft: inSeason ? Math.max(0, 1 - state.date.day / days) : 1,
-    capSpace: ruleset.cap.upperLimit - teamCapTotal(state, teamId, players),
     needs: Object.entries(ruleset.roster.positionMin)
       .filter(([position, min]) => count(players, teamId, position) < min)
       .map(([position]) => position),

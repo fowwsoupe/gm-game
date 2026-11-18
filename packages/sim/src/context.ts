@@ -22,12 +22,12 @@ export interface ModelOverrides {
   models?: Partial<Models>;
 }
 
-export const SPORTS: Partial<Record<Sport, (o: ModelOverrides) => SportModule>> = {
+const SPORTS: Partial<Record<Sport, (o: ModelOverrides) => SportModule>> = {
   nhl: (o) => hockeySport(o.goalModel),
 };
 
 /** Every shipped ruleset, by id. */
-export const RULESETS: Record<string, Ruleset> = {
+const RULESETS: Record<string, Ruleset> = {
   [NHL_2026.id]: NHL_2026,
   [FICTIONAL_2026.id]: FICTIONAL_2026,
 };
