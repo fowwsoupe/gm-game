@@ -2,10 +2,13 @@ import type { GoalieRotation, SpecialUnit } from './sports/hockey';
 import type {
   CapCharge,
   Contract,
+  CardEffects,
   DraftProspect,
   FinanceLines,
   GameResult,
   GmProfile,
+  OwnerCard,
+  OwnerStanding,
   Player,
   TeamPlan,
   PlayerId,
@@ -122,6 +125,26 @@ export type LeagueEvent =
         homeDates: number;
         fans: TeamFans;
       } & FinanceLines))
+  /** An owner meeting (preseason objectives, deadline check-in, season-end review): his standing after it. */
+  | (EventBase & {
+      kind: 'owner.meeting';
+      teamId: TeamId;
+      meeting: 'preseason' | 'deadline' | 'review';
+      owner: OwnerStanding;
+    })
+  /** A month of results moved the owner's confidence in the GM. */
+  | (EventBase & { kind: 'owner.confidenceMoved'; teamId: TeamId; confidence: number })
+  /** The owner puts a decision to a human GM. */
+  | (EventBase & { kind: 'owner.cardOpened'; card: OwnerCard })
+  /** A card was answered (by an AI GM, a human, or by default at the next meeting): `effects` apply. */
+  | (EventBase & {
+      kind: 'owner.cardAnswered';
+      teamId: TeamId;
+      cardId: string;
+      cardKind: OwnerCard['kind'];
+      option: OwnerCard['options'][number]['key'];
+      effects: CardEffects;
+    })
   /** A team's ticket price policy changed (see `TICKET_STEPS`); the next settlement uses it. */
   | (EventBase & { kind: 'finance.ticketPriceSet'; teamId: TeamId; pct: number })
   /** End of season: who won an award. `playerId` is absent for team awards (champion). */

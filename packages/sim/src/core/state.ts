@@ -1,3 +1,4 @@
+import { NEW_FANS } from '@gm/shared';
 import type {
   CapCharge,
   DraftProspect,
@@ -6,6 +7,8 @@ import type {
   GoalieRotation,
   GameResult,
   LeagueEvent,
+  OwnerCard,
+  OwnerStanding,
   PlayoffSeries,
   Player,
   PlayerId,
@@ -89,6 +92,10 @@ export interface LeagueState {
   fans: Record<TeamId, TeamFans>;
   /** Ticket price steps teams' GMs set (absent = the owner's policy). */
   ticketPrices: Record<TeamId, number>;
+  /** Each owner's view of his GM and this season's plan (absent until the first meeting). */
+  owners: Record<TeamId, OwnerStanding>;
+  /** Owner cards waiting on a human GM's answer. */
+  ownerCards: OwnerCard[];
   /** Count of events applied so far; the next event's id is built from it. */
   eventSeq: number;
 }
@@ -398,6 +405,35 @@ export function applyEvent(state: LeagueState, event: LeagueEvent): void {
     case 'finance.ticketPriceSet':
       state.ticketPrices[event.teamId] = event.pct;
       return;
+    case 'owner.meeting':
+      state.owners[event.teamId] = structuredClone(event.owner);
+      return;
+    case 'owner.confidenceMoved': {
+      const owner = state.owners[event.teamId];
+      if (owner) owner.confidence = event.confidence;
+      return;
+    }
+    case 'owner.cardOpened':
+      state.ownerCards.push(structuredClone(event.card));
+      return;
+    case 'owner.cardAnswered': {
+      const id = event.teamId;
+      const fx = event.effects;
+      state.ownerCards = state.ownerCards.filter((c) => c.id !== event.cardId);
+      if (fx.cash) state.cash[id] = (state.cash[id] ?? 0) + fx.cash;
+      if (fx.fanInterest) {
+        const fans = state.fans[id] ?? NEW_FANS;
+        const interest = Math.min(100, Math.max(0, fans.interest + fx.fanInterest));
+        state.fans[id] = { ...fans, interest };
+      }
+      if (fx.ticketPct !== undefined) state.ticketPrices[id] = fx.ticketPct;
+      const owner = state.owners[id];
+      if (owner && fx.confidence) {
+        owner.confidence = Math.min(100, Math.max(0, owner.confidence + fx.confidence));
+      }
+      if (owner && fx.payrollBudget) owner.payrollBudget += fx.payrollBudget;
+      return;
+    }
     case 'award.given':
     case 'stats.archived':
     case 'season.phaseChanged':

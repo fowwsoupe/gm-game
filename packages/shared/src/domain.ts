@@ -73,6 +73,9 @@ export interface TeamFans {
   attendance: number;
 }
 
+/** Fans of a new league, or of an old save that has none yet. */
+export const NEW_FANS: TeamFans = { interest: 50, sponsorDeal: 50, mediaDeal: 50, attendance: 0 };
+
 /** Ticket price policy: whole percent around the league's reference price. */
 export const TICKET_STEPS = [-20, -10, 0, 10, 20] as const;
 
@@ -245,6 +248,57 @@ export interface OwnerProfile {
   priority: number;
   /** 0-1: how long he waits on a bad season. */
   patience: number;
+  /** 0-1: how far from the cap floor toward the cap he lets payroll go. */
+  budget: number;
+}
+
+/** What an owner asks of a season; `met` is set at the season-end review. */
+export interface OwnerObjective {
+  /**
+   * playoffs: make them. series: win `target` playoff series. pointsPct: finish at `target` or
+   * better. profit: earn `target` dollars or more over the season.
+   */
+  kind: 'playoffs' | 'series' | 'pointsPct' | 'profit';
+  target: number;
+  met?: boolean;
+}
+
+/** An owner's view of his GM, and this season's plan. Moved only by owner events. */
+export interface OwnerStanding {
+  /** 0-100: what the owner thinks of the GM. */
+  confidence: number;
+  /** The GM's first season under this owner: his honeymoon counts from here. */
+  since: number;
+  /** The season the objectives are for. */
+  season: number;
+  objectives: OwnerObjective[];
+  /** Points % the owner expects this season. */
+  expected: number;
+  /** Most the owner wants on the cap (payroll and dead cap) this season. */
+  payrollBudget: number;
+  /** Cash when the season opened: the review's profit is cash then less this. */
+  cashAtStart: number;
+  /** Points % at the last review (next season's expectation starts from it). */
+  lastPct?: number;
+}
+
+/** What answering a card changes: amounts are added; `ticketPct` sets the price step. */
+export interface CardEffects {
+  cash?: number;
+  fanInterest?: number;
+  confidence?: number;
+  payrollBudget?: number;
+  ticketPct?: number;
+}
+
+/** A decision the owner puts to a human GM (`owner.answerCard`). AI GMs answer without one. */
+export interface OwnerCard {
+  id: string;
+  teamId: TeamId;
+  kind: 'ticketPrice' | 'deadlineBuy' | 'deadlineSell' | 'budget';
+  /** Text params: `amount` in dollars, `pct` in whole percent. */
+  params: Record<string, number>;
+  options: { key: 'agree' | 'refuse' | 'more'; effects: CardEffects }[];
 }
 
 /** Generic standings row. `otl` stays 0 in sports without overtime-loss points. */
@@ -519,6 +573,8 @@ export interface TodoItem {
 /** What the Home screen needs for a team beyond standings: the to-do list and the next game. */
 export interface Dashboard {
   todo: TodoItem[];
+  /** The owner's open cards: each waits on an answer. */
+  ownerCards: OwnerCard[];
   nextGame: { opponentId: TeamId; home: boolean; day: number } | null;
   /** Playoff odds if the next regular-season game is won or lost (absent outside the season). */
   raceNight?: { ifWin: number; ifLose: number };

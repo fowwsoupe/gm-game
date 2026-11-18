@@ -4,9 +4,9 @@
  * with one more settlement for the playoffs; the reducer adds the difference to `state.cash` and
  * keeps the fans the event carries. Fan interest sets the crowd (with the arena's capacity, the
  * market and the ticket price) and prices the sponsorship and local media deals.
- * Later: budgets, projects, owner objectives.
+ * Later: budgets and projects (owner objectives live in `sim/owner`).
  */
-import type { FinanceLines, PlayerId, TeamFans, TeamId } from '@gm/shared';
+import { NEW_FANS, type FinanceLines, type PlayerId, type TeamFans, type TeamId } from '@gm/shared';
 import type { Emit, LeagueState } from '../core';
 import { contractIn, type Ruleset } from '../cba';
 import { capacityOf, marketOf, ticketPctOf } from '../people';
@@ -34,8 +34,6 @@ const DEMAND_MARKET = 0.2;
 const ELASTICITY = 1.5;
 /** Seasons between local media deals (sponsorship is renewed every summer). */
 const MEDIA_TERM = 3;
-
-const NEW_FANS: TeamFans = { interest: 50, sponsorDeal: 50, mediaDeal: 50, attendance: 0 };
 
 /** A team's fans (an old save, or a new league: 50 across the board). */
 export const fansOf = (state: LeagueState, teamId: TeamId): TeamFans =>

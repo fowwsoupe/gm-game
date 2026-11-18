@@ -19,6 +19,7 @@ import { sitsOut, strengthFor } from './tonight';
 import { byOverall } from './players';
 import { payBonuses } from './cba';
 import { settleMonth, settlePlayoffs, settlesOn } from './finance';
+import { checksInOn, deadlineCheckIn, ownerMonth, preseasonMeeting, seasonReview } from './owner';
 import type { SimContext } from './context';
 
 /**
@@ -201,8 +202,12 @@ export function advance(
       startHoldouts(state, ctx, rng.fork('holdouts'), emitter(state, events));
     }
     if (settlesOn(today.day, cal.regularSeasonDays)) {
+      // The owner meets his GM before day 0 settles, so the season's profit counts its bonuses.
+      if (today.day === 0) preseasonMeeting(state, ctx, emitter(state, events));
       settleMonth(state, ctx, emitter(state, events), today.day);
+      if (today.day > 0) ownerMonth(state, ctx, emitter(state, events));
     }
+    if (checksInOn(today.day, ctx)) deadlineCheckIn(state, ctx, emitter(state, events));
     const dayStart = events.length;
 
     for (const g of byDay.get(today.day) ?? []) {
@@ -275,6 +280,7 @@ export function advance(
           // Still this season's cap year: bonuses over the cap go to next season's.
           const paid = payBonuses(state, ctx, emitter(state, events));
           settlePlayoffs(state, ctx, emitter(state, events), paid);
+          seasonReview(state, ctx, emitter(state, events));
           emit(
             makeEvent(state, 'major', [championTeamId], {
               kind: 'champion.crowned',

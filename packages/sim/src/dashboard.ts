@@ -81,6 +81,7 @@ export function dashboard(state: LeagueState, ctx: SimContext, teamId: TeamId): 
     .sort((a, b) => a.date.day - b.date.day)[0];
   return {
     todo,
+    ownerCards: state.ownerCards.filter((c) => c.teamId === teamId),
     nextGame: next
       ? {
           opponentId: next.homeTeamId === teamId ? next.awayTeamId : next.homeTeamId,

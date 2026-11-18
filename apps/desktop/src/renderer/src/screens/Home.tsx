@@ -1,5 +1,5 @@
 import { useState } from 'react';
-import type { LeagueEvent, TeamId } from '@gm/shared';
+import type { CardEffects, LeagueEvent, TeamId } from '@gm/shared';
 import {
   useCapSheet,
   useDashboard,
@@ -130,10 +130,30 @@ function TodoCard({ teamId }: { teamId: TeamId }) {
   const t = useT();
   const setScreen = useUi((s) => s.setScreen);
   const { data: home } = useDashboard(teamId);
+  const dispatch = useDispatch();
   const items = home?.todo ?? [];
+  const cards = home?.ownerCards ?? [];
   return (
     <Card title={t('home.todoTitle')}>
-      {items.length === 0 ? (
+      {cards.map((card) => (
+        <div key={card.id} className="mb-3 space-y-2 text-sm">
+          <p>{t(`owner.card.${card.kind}` as MessageKey, moneyParams(card.params))}</p>
+          <div className="flex flex-wrap gap-2">
+            {card.options.map((o) => (
+              <Button
+                key={o.key}
+                onClick={() =>
+                  dispatch.mutate({ kind: 'owner.answerCard', cardId: card.id, option: o.key })
+                }
+              >
+                {t(`owner.option.${o.key}` as MessageKey)}
+                {effectsText(t, o.effects)}
+              </Button>
+            ))}
+          </div>
+        </div>
+      ))}
+      {items.length === 0 && cards.length === 0 ? (
         <p className="text-sm text-good">{t('home.todoClear')}</p>
       ) : (
         <ul className="space-y-1 text-sm">
@@ -364,4 +384,18 @@ function SimBar() {
       </div>
     </Card>
   );
+}
+
+const signed = (n: number) => (n > 0 ? `+${n}` : `${n}`);
+
+/** What an option does, in brackets after its label: " (confidence +3, budget +$5.2M)". */
+function effectsText(t: ReturnType<typeof useT>, fx: CardEffects): string {
+  const parts = [
+    fx.confidence && t('owner.effect.confidence', { n: signed(fx.confidence) }),
+    fx.payrollBudget && t('owner.effect.payrollBudget', { amount: `+${money(fx.payrollBudget)}` }),
+    fx.cash && t('owner.effect.cash', { amount: money(fx.cash) }),
+    fx.fanInterest && t('owner.effect.fanInterest', { n: signed(fx.fanInterest) }),
+    fx.ticketPct !== undefined && t('owner.effect.ticketPct', { pct: signed(fx.ticketPct) }),
+  ].filter(Boolean);
+  return parts.length ? ` (${parts.join(', ')})` : '';
 }

@@ -60,6 +60,8 @@ export function createLeague(
     cash: {},
     fans: {},
     ticketPrices: {},
+    owners: {},
+    ownerCards: [],
     faOffers: [],
     rfaRights: {},
     formerTeams: {},
