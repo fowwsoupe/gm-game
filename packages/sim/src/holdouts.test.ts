@@ -86,8 +86,11 @@ describe('holdouts', () => {
       { style: 'balanced', skill: 0.6, yearsLeft: 0, pays: true },
       { style: 'balanced', skill: 0.4, yearsLeft: 0, pays: false },
       { style: 'builder', skill: 1, yearsLeft: 0, pays: false },
+      // No room left to fill next season's roster at the minimum once he is paid.
+      { style: 'winNow', skill: 1, yearsLeft: 0, pays: false, squeezed: true },
     ] as const;
-    for (const { style, skill, yearsLeft, pays } of cases) {
+    for (const c of cases) {
+      const { style, skill, yearsLeft, pays } = c;
       const found = (() => {
         for (let seed = 1; seed < 40; seed++) {
           const state = createLeague(seed, ctx);
@@ -107,6 +110,19 @@ describe('holdouts', () => {
         throw new Error('no AI holdout in 40 seeds');
       })();
       const { state, playerId } = found;
+      if ('squeezed' in c) {
+        const teamId = state.players[playerId]!.teamId!;
+        const { upperLimit, minSalary } = ctx.ruleset.cap;
+        // Dead cap next season: everything but the minimum for a full roster, less one dollar.
+        const amount = upperLimit - ctx.ruleset.roster.minActive * minSalary - 1;
+        state.capCharges.push({
+          teamId,
+          playerId: playerId, // any id: the charge only takes cap room
+          kind: 'buyout',
+          season: state.date.season + 1,
+          amount,
+        });
+      }
       run(state, { kind: 'sim.advance', days: 6 }); // to the first weekly check
       expect(state.players[playerId]!.extension !== undefined).toBe(pays);
       if (pays) expect(state.holdouts.some((h) => h.playerId === playerId)).toBe(false);

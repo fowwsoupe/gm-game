@@ -34,11 +34,12 @@ const HONEYMOON_FLOOR = 40;
  */
 const HOT_SEAT = { warn: 30, fire: 15 };
 /**
- * An AI GM is fired in the summer when his owner's confidence is below this, past the honeymoon.
- * Higher than a human's line: AI GMs go along with every card, which keeps confidence up. Tuned
- * in the lab to near the old bottom-quarter rule (0.06 fired a team-season, from 0.09), so turnover holds.
+ * An AI GM is fired in the summer when his owner's confidence is below this. Higher than a
+ * human's line, and with no honeymoon rule beyond the floor (40): AI GMs go along with every
+ * card, which keeps confidence up. Tuned in the lab to the old bottom-quarter rule's turnover
+ * (AI GM tenure about 4.4 seasons), so the league's long-run checks hold.
  */
-const AI_FIRED_BELOW = 50;
+const AI_FIRED_BELOW = 48;
 /** A month: confidence per point of points % above (or below) expectation. */
 const MONTHLY_RESULTS = 20;
 /** The review: confidence for each objective met, and lost for each missed. */
@@ -109,15 +110,8 @@ function moved(standing: OwnerStanding, delta: number, patience: number, season:
 }
 
 /** Whether an AI GM's owner has lost confidence in him (asked in the summer, after the review). */
-export function aiGmFired(state: LeagueState, teamId: TeamId): boolean {
-  const standing = state.owners[teamId];
-  if (!standing) return false;
-  const patience = ownerOf(state.teams[teamId]!).patience;
-  return (
-    standing.confidence < AI_FIRED_BELOW &&
-    state.date.season >= standing.since + honeymoon(patience)
-  );
-}
+export const aiGmFired = (state: LeagueState, teamId: TeamId): boolean =>
+  (state.owners[teamId]?.confidence ?? START_CONFIDENCE) < AI_FIRED_BELOW;
 
 /** The owner's baseline payroll budget: from the floor toward the cap by his budget trait. */
 function baseBudget(ctx: SimContext, budget: number): Dollars {
