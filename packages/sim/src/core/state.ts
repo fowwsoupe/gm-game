@@ -1,6 +1,7 @@
 import { NEW_FANS } from '@gm/shared';
 import type {
   CapCharge,
+  Career,
   DraftProspect,
   GameDate,
   FreeAgentOffer,
@@ -101,6 +102,10 @@ export interface LeagueState {
   projects: OwnerProject[];
   /** Arenas a project has changed: seats now (absent: the arena the team was built with). */
   arenas: Record<TeamId, number>;
+  /** A human GM fired and out of work (null: none). */
+  career: Career | null;
+  /** Save option: owners may fire a human GM. */
+  canBeFired: boolean;
   /** Count of events applied so far; the next event's id is built from it. */
   eventSeq: number;
 }
@@ -161,8 +166,30 @@ export function applyEvent(state: LeagueState, event: LeagueEvent): void {
     case 'team.gmChanged': {
       const team = state.teams[event.teamId];
       if (team) team.gm = event.gm;
+      // A new GM starts fresh with the owner, honeymoon and all.
+      delete state.owners[event.teamId];
       return;
     }
+    case 'career.fired': {
+      const team = state.teams[event.teamId]!;
+      team.userControlled = false;
+      team.gm = event.gm;
+      delete state.owners[event.teamId];
+      state.ownerCards = state.ownerCards.filter((c) => c.teamId !== event.teamId);
+      state.career = { firedFrom: event.teamId, season: event.date.season, offers: [] };
+      return;
+    }
+    case 'career.offers':
+      if (state.career) state.career.offers = [...event.offers];
+      return;
+    case 'career.hired':
+      state.teams[event.teamId]!.userControlled = true;
+      delete state.owners[event.teamId];
+      state.career = null;
+      return;
+    case 'league.optionSet':
+      state.canBeFired = event.canBeFired;
+      return;
     case 'team.controlChanged': {
       const team = state.teams[event.teamId];
       if (team) team.userControlled = event.userControlled;
@@ -422,6 +449,7 @@ export function applyEvent(state: LeagueState, event: LeagueEvent): void {
       state.ownerCards.push(structuredClone(event.card));
       const owner = state.owners[event.card.teamId];
       if (owner && event.card.kind === 'fireCoach') owner.coachAsked = event.date.season;
+      if (owner && event.card.kind === 'hotSeat') owner.warned = event.date.season;
       return;
     }
     case 'owner.cardAnswered': {

@@ -39,6 +39,10 @@ export type Command =
   | { kind: 'units.set'; teamId: TeamId; unit: SpecialUnit; playerIds: PlayerId[] }
   /** Put a player on your trade block (AI GMs call about him more) or take him off. */
   | { kind: 'trade.block'; teamId: TeamId; playerId: PlayerId; onBlock: boolean }
+  /** Out of work: take the job a team with a vacancy offered (see `Career`). */
+  | { kind: 'career.takeJob'; teamId: TeamId }
+  /** The save option: whether owners may fire you. */
+  | { kind: 'league.setCanBeFired'; on: boolean }
   /** Answer one of your owner's cards with one of its options. */
   | { kind: 'owner.answerCard'; cardId: string; option: string }
   /** Your ticket price policy, `pct` one of `TICKET_STEPS` around the league's reference price. */

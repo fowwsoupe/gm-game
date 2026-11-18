@@ -405,6 +405,7 @@ const LONG_INJURY_DAYS = 14;
  */
 function matters(state: LeagueState, e: LeagueEvent): boolean {
   const yours = e.teamIds.some((id) => state.teams[id]?.userControlled);
+  if (e.kind === 'career.fired') return true; // it was yours a moment ago
   if (e.importance === 'major') return e.teamIds.length === 0 || yours;
   if (e.kind === 'trade.offered') return yours; // an offer waits on you
   return e.kind === 'player.injured' && yours && e.days >= LONG_INJURY_DAYS;

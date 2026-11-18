@@ -1,5 +1,5 @@
 import { useState } from 'react';
-import type { CardEffects, LeagueEvent, TeamId } from '@gm/shared';
+import type { CardEffects, Career, LeagueEvent, TeamId } from '@gm/shared';
 import {
   useCapSheet,
   useDashboard,
@@ -27,11 +27,12 @@ export function Home({
 }) {
   const t = useT();
   const { data: teams = [] } = useTeams();
+  const { data: status } = useStatus();
   const mine = teams.find((x) => x.userControlled);
   if (!hasLeague) return <p className="text-muted">{t('home.empty')}</p>;
   return (
     <div className="grid max-w-5xl gap-4 md:grid-cols-2">
-      <TeamPicker />
+      {status?.career ? <CareerCard career={status.career} /> : <TeamPicker />}
       {mine ? <TeamStrip teamId={mine.id} /> : null}
       <SimBar />
       <Card>
@@ -42,6 +43,34 @@ export function Home({
       <FeedCard />
       <PlayoffCard />
     </div>
+  );
+}
+
+/** Out of work: teams with a vacancy offer you the job, or you keep watching the league. */
+function CareerCard({ career }: { career: Career }) {
+  const t = useT();
+  const { data: teams = [] } = useTeams();
+  const dispatch = useDispatch();
+  return (
+    <Card title={t('job.title')} className="md:col-span-2">
+      <p className="text-sm">
+        {t('job.fired', { team: teamName(teams, career.firedFrom), season: career.season })}
+      </p>
+      {career.offers.length === 0 ? (
+        <p className="mt-2 text-sm text-muted">{t('job.none')}</p>
+      ) : (
+        <ul className="mt-2 space-y-2 text-sm">
+          {career.offers.map((id) => (
+            <li key={id} className="flex items-center justify-between gap-4">
+              <span>{teamName(teams, id)}</span>
+              <Button onClick={() => dispatch.mutate({ kind: 'career.takeJob', teamId: id })}>
+                {t('job.take')}
+              </Button>
+            </li>
+          ))}
+        </ul>
+      )}
+    </Card>
   );
 }
 

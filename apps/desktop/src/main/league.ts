@@ -360,6 +360,8 @@ export class LeagueService {
       playoffsStartDay: cal.regularSeasonDays,
       playoffsEndDay: cal.regularSeasonDays + cal.playoffDays,
       tradesOpen: tradeWindowOpen(state, ctx),
+      career: state.career,
+      canBeFired: state.canBeFired,
     };
   }
 

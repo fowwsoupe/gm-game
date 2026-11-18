@@ -67,6 +67,8 @@ export function handleCommand(
     case 'team.setUserControlled': {
       if (!state.teams[command.teamId]) return invalid('unknown team');
       if (actor.id !== 'local' && !actor.controls.includes(command.teamId)) return notYours;
+      // Fired: the way back in is an offer (`career.takeJob`), not picking a team.
+      if (state.career && command.userControlled) return invalid('out of work: take an offer');
       const ev = makeEvent(state, 'minor', [command.teamId], {
         kind: 'team.controlChanged',
         teamId: command.teamId,
@@ -276,6 +278,25 @@ export function handleCommand(
       });
       return applied(state, ev);
     }
+
+    case 'career.takeJob': {
+      if (actor.id !== 'local') return notYours;
+      if (!state.career?.offers.includes(command.teamId)) return invalid('no such offer');
+      return applied(
+        state,
+        makeEvent(state, 'major', [command.teamId], {
+          kind: 'career.hired',
+          teamId: command.teamId,
+        }),
+      );
+    }
+
+    case 'league.setCanBeFired':
+      if (actor.id !== 'local') return notYours;
+      return applied(
+        state,
+        makeEvent(state, 'minor', [], { kind: 'league.optionSet', canBeFired: command.on }),
+      );
 
     case 'owner.answerCard': {
       const card = state.ownerCards.find((c) => c.id === command.cardId);

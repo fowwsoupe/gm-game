@@ -35,6 +35,14 @@ export const en = {
   'owner.meeting.preseason': 'Preseason',
   'owner.meeting.deadline': 'Trade deadline',
   'owner.meeting.review': 'Season review',
+  'owner.canBeFired': 'The owner can fire you',
+  'owner.canBeFired.on': 'On',
+  'owner.canBeFired.off': 'Off',
+  'job.title': 'Out of work',
+  'job.fired': "{team}'s owner fired you at the {season} season review.",
+  'job.none':
+    'No offers yet. Teams that lose their GM in the summer will call; until then, watch the league.',
+  'job.take': 'Take the job',
   'team.back': 'Back to standings',
   'team.view': 'View team page',
   'team.roster': 'Roster',
@@ -351,6 +359,9 @@ export const en = {
   'owner.card.fireCoach':
     'Results keep falling short: the owner wants the head coach gone. Firing him pays the {amount} left on his deal.',
   'owner.effect.coach': '{name} takes over',
+  'owner.card.hotSeat':
+    "Your job is on the line: the owner's confidence is down to {n}. Below {fire} at a season review, he fires you.",
+  'owner.option.noted': 'Understood',
   'owner.option.agree': 'Agree',
   'owner.option.refuse': 'Refuse',
   'owner.option.more': 'Ask for more',

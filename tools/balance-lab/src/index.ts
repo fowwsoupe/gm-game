@@ -222,8 +222,8 @@ const goalieSvPairs: [number, number][] = [];
 const money = { revenue: [] as number[], gate: 0, profit: [] as number[], spread: [] as number[] };
 /** Regular-season home dates: fans in and seats there were. */
 const crowds = { fans: 0, seats: 0 };
-/** Head coaches fired (all, and in the regular season), over team-seasons played. */
-const coaches = { changed: 0, inSeason: 0, teamSeasons: 0 };
+/** Head coaches fired (all, and in the regular season) and AI GMs replaced, over team-seasons played. */
+const coaches = { changed: 0, inSeason: 0, gms: 0, teamSeasons: 0 };
 /**
  * Long-run parity: from this season on a multi-year league has gone through enough offseasons
  * that its teams are built by the AI GMs, not by league generation.
@@ -347,6 +347,7 @@ for (let l = 0; l < leagues; l++) {
     lastSv = sv;
     const rolled = handleCommand(state, { kind: 'season.rollover' }, actor, ctx);
     if (!rolled.ok) throw new Error(rolled.error.message);
+    for (const e of rolled.events) if (e.kind === 'team.gmChanged') coaches.gms++;
     teamsOverPlayoffCap += playoffCapBreaches(Object.values(state.players), ctx.ruleset).length;
     maxDrift = Math.max(maxDrift, Math.abs(meanOverall(state) - startRating));
     for (const id of Object.keys(state.teams) as TeamId[]) {
@@ -555,6 +556,13 @@ const checks: Check[] = [
     value: coaches.inSeason / coaches.teamSeasons,
     min: 0.1,
     max: 0.2,
+  },
+  {
+    // Report only: no sourced benchmark yet (the brief lists it as unverified).
+    name: 'AI GM tenure, seasons (unverified)',
+    value: coaches.teamSeasons / Math.max(1, coaches.gms),
+    min: 3,
+    max: 10,
   },
   // Long run (multi-year leagues, LONG_RUN_FROM on): teams converge and games drift toward coin
   // flips, because nothing gives a team a lasting edge (docs/research/2026-11-long-run-spread.md).
