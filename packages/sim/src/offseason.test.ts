@@ -119,13 +119,12 @@ describe('offseason rollover', () => {
     );
   }, 60_000);
 
-  it('is deterministic: the same seed gives the same 2 seasons, across the rollover', () => {
+  it('is deterministic: the same seed gives the same season and rollover', () => {
     const a = createLeague(5, ctx);
     const b = createLeague(5, ctx);
-    for (let i = 0; i < 2; i++) {
-      expect(playSeasonAndRollOver(a).events).toEqual(playSeasonAndRollOver(b).events);
-    }
-  }, 30_000); // four seasons with the shift-by-shift game: ~1.5 s here, more on a slow CI runner
+    expect(playSeasonAndRollOver(a).events).toEqual(playSeasonAndRollOver(b).events);
+    expect(a).toEqual(b);
+  }, 30_000); // two seasons with the shift-by-shift game: ~1 s here, more on a slow CI runner
 });
 
 describe('awards', () => {
