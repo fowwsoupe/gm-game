@@ -194,7 +194,18 @@ export class LeagueService {
   leaders() {
     const { state } = this.open();
     const results = Object.values(state.results).filter((g) => !g.playoffSeriesId);
-    return defaultContext(state.rulesetId).sport.leaders(results, Object.values(state.players), 10);
+    const boards = defaultContext(state.rulesetId).sport.leaders(
+      results,
+      Object.values(state.players),
+      10,
+    );
+    return boards.map((b) => ({
+      ...b,
+      rows: b.rows.map((r) => ({
+        ...r,
+        age: state.date.season - state.players[r.playerId]!.birthYear,
+      })),
+    }));
   }
 
   records() {
@@ -492,19 +503,25 @@ export class LeagueService {
       if (e.kind === 'player.drafted') ids.add(e.player.id);
     }
     const names: Record<string, string> = {};
+    const ages: Record<string, number> = {};
     const missing: string[] = [];
     for (const id of ids) {
       const p = state.players[id];
-      if (p) names[id] = `${p.firstName} ${p.lastName}`;
-      else missing.push(id);
+      if (p) {
+        names[id] = `${p.firstName} ${p.lastName}`;
+        ages[id] = state.date.season - p.birthYear;
+      } else missing.push(id);
     }
     // Retired since: look them up in the save (rare, so only when needed).
     if (missing.length) {
       for (const p of save.listPlayers(true)) {
-        if (missing.includes(p.id)) names[p.id] = `${p.firstName} ${p.lastName}`;
+        if (missing.includes(p.id)) {
+          names[p.id] = `${p.firstName} ${p.lastName}`;
+          ages[p.id] = state.date.season - p.birthYear;
+        }
       }
     }
-    return { events, names };
+    return { events, names, ages };
   }
 
   dispatch(command: Command): Promise<CommandResult> {

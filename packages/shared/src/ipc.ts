@@ -8,7 +8,7 @@ import type {
   GameDetail,
   GameSummary,
   HallOfFamer,
-  Leaderboard,
+  LeaderboardView,
   PlayerProfile,
   PlayoffSeries,
   PulseRow,
@@ -55,7 +55,7 @@ export interface GmApi {
     /** Every award given so far, newest season first. */
     awards(): Promise<AwardEntry[]>;
     /** Stat leaders of the season so far. */
-    leaders(): Promise<Leaderboard[]>;
+    leaders(): Promise<LeaderboardView[]>;
     /** Team records over all finished seasons. */
     records(): Promise<RecordEntry[]>;
     /** A team's cap sheet: the cap year in play, then future seasons. */
@@ -128,11 +128,12 @@ export interface GmApi {
     }): Promise<SigningInterest | null>;
   };
   feed: {
-    /** Newest first, with the names of the players they mention (retired ones included). */
-    list(input: {
-      limit: number;
-      minImportance?: Importance;
-    }): Promise<{ events: LeagueEvent[]; names: Record<string, string> }>;
+    /** Newest first, with the names and ages of the players they mention (retired ones included). */
+    list(input: { limit: number; minImportance?: Importance }): Promise<{
+      events: LeagueEvent[];
+      names: Record<string, string>;
+      ages: Record<string, number>;
+    }>;
   };
   commands: {
     /** The only way to change game state. */

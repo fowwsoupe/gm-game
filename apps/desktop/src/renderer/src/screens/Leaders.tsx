@@ -1,7 +1,7 @@
 import { useLeaders, useTeams } from '@/lib/queries';
 import { useT, type MessageKey } from '@/i18n';
 import { useUi } from '@/stores/ui';
-import { Card } from '@/ui';
+import { Card, Face } from '@/ui';
 
 /** Stat leaders of the season so far. */
 export function Leaders() {
@@ -22,6 +22,7 @@ export function Leaders() {
               <li key={r.playerId} className="flex justify-between gap-4">
                 <span>
                   <span className="mr-2 text-muted">{i + 1}</span>
+                  <Face seed={r.playerId} age={r.age} size={22} />
                   <button
                     className="hover:underline"
                     onClick={() => openPlayer(r.teamId, r.playerId)}

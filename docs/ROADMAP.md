@@ -83,7 +83,7 @@ Build order, owners and "done when" for each step: **[V0.1_PLAN.md](V0.1_PLAN.md
 - [~] Home hub: top strip (record, place, playoff odds, cap space, next game), To do that clears to zero, news, playoffs done (with a sim-to-date bar)
 - [~] Roster & lines: roster screen with stats and player cards, Lines screen (your depth order sets lines, pairs and the starting goalie, used every game), drag-and-drop, PP/PK units and a goalie rotation rule (backup on back-to-backs, starter always but tired, or split) done
 - [~] Player profile, stats & leaders, standings, team pages, game center: percentile player card, leaders, standings, game center done; career stats with totals, awards and moves history on the card, and a profile screen of its own, done
-- [~] Generated faces: deterministic SVG face per player that greys and lines with age, on the player card; more variety (hair, facial hair, eyes, ears, scars) done; also on the roster, trade and draft tables; leaders and news to do
+- [~] Generated faces: deterministic SVG face per player that greys and lines with age, on the player card; more variety (hair, facial hair, eyes, ears, scars) done; also on the roster, trade, draft, leaders and news-feed rows
 
 **Rosters**
 
