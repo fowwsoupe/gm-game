@@ -237,10 +237,11 @@ Each summer the teams whose AI GM left or was fired become offers (`career.offer
 left out); `career.takeJob` takes one, with a fresh owner standing and honeymoon. "Can be fired"
 is a save option (`league.setCanBeFired`, on the Owner screen, default on); off, there is no
 warning and no firing. AI GMs are now fired in the summer when their owner's confidence is below
-48, in place of the bottom-quarter rule; the voluntary 15% stays. That line is higher than a
+52, in place of the bottom-quarter rule; the voluntary 15% stays. That line is higher than a
 human's because AI GMs agree to every card, and it was tuned to the old rule's turnover (AI GM
-tenure about 4.4 seasons): at 50 with a honeymoon rule tenure rose to 5.2 and the top team's
-titles moved with it. A new GM (AI or human) starts with a fresh owner standing. The lab also
+tenure about 4.2 seasons). Less turnover steadies rosters, and the lab shows it: at 48, tenure
+4.5-4.65, goalie save % repeated at r 0.31 on average over seeds 1/101/201/301 (cap 0.30, main
+0.28); at 52 it is back to 0.286. A new GM (AI or human) starts with a fresh owner standing. The lab also
 caught an old gap: a win-now GM could pay a holdout so much that next season's roster could not
 be filled; the raise must now leave room for a full roster at the minimum, as a signing must.
 

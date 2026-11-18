@@ -37,9 +37,10 @@ const HOT_SEAT = { warn: 30, fire: 15 };
  * An AI GM is fired in the summer when his owner's confidence is below this. Higher than a
  * human's line, and with no honeymoon rule beyond the floor (40): AI GMs go along with every
  * card, which keeps confidence up. Tuned in the lab to the old bottom-quarter rule's turnover
- * (AI GM tenure about 4.4 seasons), so the league's long-run checks hold.
+ * (AI GM tenure about 4.2 seasons): less turnover steadies rosters, and goalie save % starts to
+ * repeat more than the real league's.
  */
-const AI_FIRED_BELOW = 48;
+const AI_FIRED_BELOW = 52;
 /** A month: confidence per point of points % above (or below) expectation. */
 const MONTHLY_RESULTS = 20;
 /** The review: confidence for each objective met, and lost for each missed. */
