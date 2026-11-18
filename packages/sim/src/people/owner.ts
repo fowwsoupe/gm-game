@@ -1,4 +1,4 @@
-import type { CoachProfile, OwnerProfile, Team } from '@gm/shared';
+import type { CoachProfile, Department, OwnerProfile, StaffProfile, Team } from '@gm/shared';
 import { FIRST, LAST, Rng } from '../core';
 import { hash } from './personality';
 
@@ -17,9 +17,42 @@ export const newCoach = (rng: Rng, hired: number, terms: CoachTerms): CoachProfi
  * deal sits at the same point every season until he is replaced).
  */
 export function coachOf(team: Team, terms: CoachTerms, season: number): CoachProfile {
-  if (team.coach) return team.coach;
   const rng = new Rng(hash(`coach:${team.id}`));
-  return newCoach(rng, season - Math.floor(rng.next() * terms.years), terms);
+  const coach = team.coach ?? newCoach(rng, season - Math.floor(rng.next() * terms.years), terms);
+  return coach.quality === undefined ? { ...coach, quality: qualityOf(coach) } : coach;
+}
+
+/** A coach's quality when none is stored: from his name and first season, no league draw. */
+const qualityOf = (c: CoachProfile) =>
+  round2(new Rng(hash(`coachQuality:${c.name}:${c.hired}`)).next());
+
+export const DEPARTMENTS: readonly Department[] = ['scouting', 'development', 'medical'];
+
+/** A department head's salary: rises with quality squared, to the nearest $10K. */
+export const staffSalary = (quality: number, range: { min: number; max: number }) =>
+  Math.round((range.min + quality ** 2 * (range.max - range.min)) / 10_000) * 10_000;
+
+/**
+ * A team's department head; one not stored is derived from the team id (`season` is today's, so
+ * he has been in the job the same number of seasons until he is replaced).
+ */
+export function staffOf(
+  team: Team,
+  dept: Department,
+  salary: { min: number; max: number },
+  season: number,
+): StaffProfile {
+  const stored = team.staff?.[dept];
+  if (stored) return stored;
+  const rng = new Rng(hash(`staff:${dept}:${team.id}`));
+  const name = `${rng.pick(FIRST)} ${rng.pick(LAST)}`;
+  const quality = round2(rng.next());
+  return {
+    name,
+    quality,
+    hired: season - Math.floor(rng.next() * 5),
+    salary: staffSalary(quality, salary),
+  };
 }
 
 /** Seasons left on a coach's current deal, this one included (deals renew while he keeps the job). */

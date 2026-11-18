@@ -65,6 +65,28 @@ export function TeamPage() {
         </Card>
       )}
       {owned && (
+        <Card title={t('team.staff')}>
+          <div className="grid gap-4 text-sm md:grid-cols-4">
+            {(
+              [
+                ['team.coach', owned.coach],
+                ['team.staff.scouting', owned.staff.scouting],
+                ['team.staff.development', owned.staff.development],
+                ['team.staff.medical', owned.staff.medical],
+              ] as const
+            ).map(([key, head]) => (
+              <div key={key}>
+                <div className="text-muted">{t(key)}</div>
+                <div className="font-semibold">{head.name}</div>
+                <div className="tabular">
+                  {t(qualityKey(head.quality ?? 0.5))} · {money(head.salary)}
+                </div>
+              </div>
+            ))}
+          </div>
+        </Card>
+      )}
+      {owned && (
         <Card title={t('team.arena')}>
           <div className="grid gap-4 text-sm md:grid-cols-4">
             {(
@@ -151,3 +173,13 @@ export function TeamPage() {
 }
 
 const signedPct = (pct: number) => `${pct > 0 ? '+' : ''}${pct}%`;
+
+/** Staff quality as a word: the number stays hidden, like player ratings. */
+const qualityKey = (q: number): MessageKey =>
+  q < 0.25
+    ? 'staff.quality.poor'
+    : q < 0.6
+      ? 'staff.quality.average'
+      : q < 0.85
+        ? 'staff.quality.good'
+        : 'staff.quality.elite';

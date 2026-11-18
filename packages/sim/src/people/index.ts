@@ -27,9 +27,12 @@ export {
   capacityOf,
   coachOf,
   coachSeasonsLeft,
+  DEPARTMENTS,
   marketOf,
   newCoach,
   ownerOf,
+  staffOf,
+  staffSalary,
   ticketPctOf,
 } from './owner';
 export { GM_LEAN, choosePlan, gmOf, misread, planStatus, randomGm, seenBy } from './gm';
