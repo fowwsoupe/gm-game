@@ -167,4 +167,8 @@ export const migrations: readonly string[] = [
   `
   ALTER TABLE teams ADD COLUMN coach_json TEXT;
   `,
+  // 19: each team's front-office department heads. NULL = all derived from the team id.
+  `
+  ALTER TABLE teams ADD COLUMN staff_json TEXT;
+  `,
 ];

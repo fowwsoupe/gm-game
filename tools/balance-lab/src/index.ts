@@ -34,6 +34,9 @@ import {
   net,
   teamCapTotal,
   validateContract,
+  DEPARTMENTS,
+  ownerOf,
+  staffOf,
 } from '@gm/sim';
 import { fitLinear, mean, pearson, sd } from './stats';
 
@@ -224,6 +227,8 @@ const money = { revenue: [] as number[], gate: 0, profit: [] as number[], spread
 const crowds = { fans: 0, seats: 0 };
 /** Head coaches fired (all, and in the regular season) and AI GMs replaced, over team-seasons played. */
 const coaches = { changed: 0, inSeason: 0, gms: 0, teamSeasons: 0 };
+/** Front-office department heads: changes, and the quality of the last year's heads by owner budget. */
+const staff = { changed: 0, rich: [] as number[], frugal: [] as number[] };
 /**
  * Long-run parity: from this season on a multi-year league has gone through enough offseasons
  * that its teams are built by the AI GMs, not by league generation.
@@ -347,7 +352,18 @@ for (let l = 0; l < leagues; l++) {
     lastSv = sv;
     const rolled = handleCommand(state, { kind: 'season.rollover' }, actor, ctx);
     if (!rolled.ok) throw new Error(rolled.error.message);
-    for (const e of rolled.events) if (e.kind === 'team.gmChanged') coaches.gms++;
+    for (const e of rolled.events) {
+      if (e.kind === 'team.gmChanged') coaches.gms++;
+      if (e.kind === 'staff.hired') staff.changed++;
+    }
+    if (y === years - 1) {
+      for (const t of Object.values(state.teams)) {
+        for (const d of DEPARTMENTS) {
+          const q = staffOf(t, d, ctx.ruleset.frontOffice.salary, state.date.season).quality;
+          (ownerOf(t).budget > 0.5 ? staff.rich : staff.frugal).push(q);
+        }
+      }
+    }
     teamsOverPlayoffCap += playoffCapBreaches(Object.values(state.players), ctx.ruleset).length;
     maxDrift = Math.max(maxDrift, Math.abs(meanOverall(state) - startRating));
     for (const id of Object.keys(state.teams) as TeamId[]) {
@@ -556,6 +572,20 @@ const checks: Check[] = [
     value: coaches.inSeason / coaches.teamSeasons,
     min: 0.1,
     max: 0.2,
+  },
+  {
+    // docs/research/2026-11-front-office.md: no public benchmark; report only.
+    name: 'Department head tenure, seasons (unverified)',
+    value: (coaches.teamSeasons * DEPARTMENTS.length) / Math.max(1, staff.changed),
+    min: 3,
+    max: 10,
+  },
+  {
+    // Owners who spend (budget over 0.5) keep a better front office than frugal ones.
+    name: 'Staff quality, rich owners - frugal (unverified)',
+    value: mean(staff.rich) - mean(staff.frugal),
+    min: 0.05,
+    max: 0.3,
   },
   {
     // Report only: no sourced benchmark yet (the brief lists it as unverified).
