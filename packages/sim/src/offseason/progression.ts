@@ -3,7 +3,8 @@ import type { Emit, LeagueState, Rng } from '../core';
 import type { DevelopmentModel } from '../players';
 import { ageIn, allPlayers } from './roster';
 import { gmOf } from '../people';
-import { clampRating } from '../players';
+import { clampRating, overall } from '../players';
+import { playerName, teamName } from '../core';
 
 const sameRatings = (a: Player, b: Player) =>
   a.potential === b.potential && Object.keys(a.ratings).every((k) => a.ratings[k] === b.ratings[k]);
@@ -69,5 +70,33 @@ export function retirePlayers(
     if (rng.chance(model.retirementChance(p, ageIn(p, season)))) {
       emit('minor', p.teamId ? [p.teamId] : [], { kind: 'player.retired', playerId: p.id });
     }
+  }
+}
+
+/** A player this young or younger whose overall jumps this much in one summer has broken out. */
+const BREAKOUT_AGE = 23;
+const BREAKOUT_GAIN = 7;
+
+/**
+ * Step 1b: news for players on a team who broke out this summer (docs/research/2026-11-league-events.md).
+ * `before` is each player's overall before development. Yours make the feed; the league's stay in the log.
+ */
+export function breakoutNews(
+  state: LeagueState,
+  before: ReadonlyMap<string, number>,
+  emit: Emit,
+  season: number,
+) {
+  for (const p of allPlayers(state)) {
+    const was = before.get(p.id);
+    const team = p.teamId ? state.teams[p.teamId] : undefined;
+    if (!team || was === undefined || ageIn(p, season) > BREAKOUT_AGE) continue;
+    const gain = Math.round(overall(p) - was);
+    if (gain < BREAKOUT_GAIN) continue;
+    emit(team.userControlled ? 'notable' : 'minor', [team.id], {
+      kind: 'news.posted',
+      headline: 'event.breakout',
+      params: { player: playerName(p), team: teamName(team), n: gain },
+    });
   }
 }
