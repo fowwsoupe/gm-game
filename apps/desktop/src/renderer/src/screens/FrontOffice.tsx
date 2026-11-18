@@ -1,5 +1,5 @@
 import type { Department } from '@gm/shared';
-import { useDispatch, useOwner, useStaffCandidates, useStatus, useTeams } from '@/lib/queries';
+import { useDispatch, useOwner, useStaffCandidates, useTeams } from '@/lib/queries';
 import { money, qualityKey } from '@/lib/format';
 import { useT } from '@/i18n';
 import { Button, Card, Td, Th } from '@/ui';
@@ -10,13 +10,12 @@ const DEPARTMENTS: readonly Department[] = ['scouting', 'development', 'medical'
 export function FrontOffice() {
   const t = useT();
   const { data: teams = [] } = useTeams();
-  const { data: league } = useStatus();
   const mine = teams.find((x) => x.userControlled);
   const { data: owned } = useOwner(mine?.id);
   const { data: candidates } = useStaffCandidates(mine?.id);
   const dispatch = useDispatch();
   if (!mine) return <p className="text-muted">{t('frontOffice.empty')}</p>;
-  if (!owned || !candidates || !league) return null;
+  if (!owned || !candidates) return null;
 
   return (
     <div className="max-w-5xl space-y-4">
@@ -29,7 +28,7 @@ export function FrontOffice() {
       </Card>
       {DEPARTMENTS.map((d) => {
         const head = owned.staff[d];
-        const hiredNow = head.hired === league.season;
+        const hiredNow = candidates[d].locked;
         return (
           <Card key={d} title={t(`team.staff.${d}`)}>
             <div className="mb-3 text-sm">
@@ -46,7 +45,7 @@ export function FrontOffice() {
                 </tr>
               </thead>
               <tbody>
-                {candidates[d].map((c, i) => (
+                {candidates[d].candidates.map((c, i) => (
                   <tr key={c.name + i}>
                     <Td>{c.name}</Td>
                     <Td>{t(qualityKey(c.quality))}</Td>
