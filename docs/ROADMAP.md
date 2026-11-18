@@ -26,7 +26,7 @@ Ready now (code can start):
 
 Front office (also the lasting-team-edge fix): all jobs in
 [research/2026-11-front-office.md](research/2026-11-front-office.md) done; the points % spread
-gap narrowed (0.077-0.080 to 0.081-0.082) but is still open. League & events:
+gap narrowed (0.077-0.080 to 0.079-0.082) but is still open. League & events:
 jobs 2-5 of [research/2026-11-league-events.md](research/2026-11-league-events.md) done, job 1 in part (crisis; odds, age and cap in the pulse to do).
 
 Needs a design first (a short brief in `docs/research/`, then jobs):
