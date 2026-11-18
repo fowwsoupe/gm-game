@@ -114,6 +114,13 @@ export interface GmApi {
       fans: TeamFans;
       ticketPct: number;
     }>;
+    /**
+     * Who a team can hire for each department this season (`staff.hire` takes the index), and
+     * whether it already hired one (once a department a season).
+     */
+    staffCandidates(input: {
+      teamId: TeamId;
+    }): Promise<Record<Department, { candidates: StaffProfile[]; locked: boolean }>>;
     /** The Owner screen for a team (money flow and meetings come from the event log). */
     ownerReport(input: { teamId: TeamId }): Promise<OwnerReport>;
     /** Offer sheets other teams gave this team's restricted free agents (match or decline). */
@@ -185,6 +192,7 @@ export const IPC = {
   tradeOffers: 'league:tradeOffers',
   tradeRequests: 'league:tradeRequests',
   owner: 'league:owner',
+  staffCandidates: 'league:staffCandidates',
   ownerReport: 'league:ownerReport',
   evaluateTrade: 'league:evaluateTrade',
   status: 'league:status',

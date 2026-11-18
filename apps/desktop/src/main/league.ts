@@ -36,6 +36,8 @@ import {
   evaluateTrade,
   scoutReport,
   teamRange,
+  staffCandidates,
+  capYearOf,
   signingInterest,
   tradeWindowOpen,
   playerRecords,
@@ -395,6 +397,23 @@ export class LeagueService {
       fans: fansOf(state, teamId),
       ticketPct: ticketPctOf(team, state.ticketPrices),
     };
+  }
+
+  staffCandidates(teamId: TeamId) {
+    const { state } = this.open();
+    const team = state.teams[teamId];
+    if (!team) throw new Error(`No team ${teamId}`);
+    const ctx = defaultContext(state.rulesetId);
+    const season = capYearOf(state);
+    return Object.fromEntries(
+      DEPARTMENTS.map((d) => [
+        d,
+        {
+          candidates: staffCandidates(team, d, ctx, season),
+          locked: team.staff?.[d]?.hired === season,
+        },
+      ]),
+    ) as Record<Department, { candidates: StaffProfile[]; locked: boolean }>;
   }
 
   ownerReport(teamId: TeamId): OwnerReport {

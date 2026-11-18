@@ -1,5 +1,5 @@
 import type { LeagueEvent } from './events';
-import type { PlayerId, TeamId, TradeProposal } from './domain';
+import type { Department, PlayerId, TeamId, TradeProposal } from './domain';
 import type { GoalieRotation, SpecialUnit } from './sports/hockey';
 
 /**
@@ -47,6 +47,8 @@ export type Command =
   | { kind: 'owner.answerCard'; cardId: string; option: string }
   /** Your ticket price policy, `pct` one of `TICKET_STEPS` around the league's reference price. */
   | { kind: 'finance.setTicketPrice'; teamId: TeamId; pct: number }
+  /** Replace a department head with one of this season's candidates (`staffCandidates`, by index). */
+  | { kind: 'staff.hire'; teamId: TeamId; department: Department; candidate: number }
   /** How your goalies share starts (see `GoalieRotation`). */
   | { kind: 'goalies.setRotation'; teamId: TeamId; rotation: GoalieRotation }
   /** Rank the draft class for your picks (best first). Players missing from it go by the scouts' order. */

@@ -3,7 +3,7 @@ import { useCapSheet, useDispatch, useLines, useOwner, useRoster, useTeams } fro
 import { useUi } from '@/stores/ui';
 import { useT, type MessageKey } from '@/i18n';
 import { Button, Card, Td, Th } from '@/ui';
-import { fullName, money, teamName } from '@/lib/format';
+import { fullName, money, qualityKey, teamName } from '@/lib/format';
 import { Summary } from '@/screens/Cap';
 
 /** Any team's roster, cap sheet and depth chart, built from the existing queries. */
