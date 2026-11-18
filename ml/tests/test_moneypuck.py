@@ -1,5 +1,4 @@
 import csv
-import io
 import tempfile
 import unittest
 import zipfile
@@ -7,14 +6,35 @@ from pathlib import Path
 
 from ml.src.moneypuck import SHOT_COLUMNS, convert
 from ml.src.pipeline import DataError, build
+from ml.tests.csvfile import csv_text, write_csv
+
+SHOT = {"season": "2025", "game_id": "g1", "isPlayoffGame": "0",
+        "homeTeamCode": "A", "awayTeamCode": "B", "homeTeamWon": "1",
+        "xCordAdjusted": "80", "yCordAdjusted": "43", "xGoal": "0.2",
+        "id": "1", "teamCode": "A", "shooterPlayerId": "p1",
+        "goal": "1", "shotType": "WRIST"}
+SKATER = {"playerId": "p1", "season": "2025", "team": "A",
+          "position": "L", "situation": "all", "games_played": "1",
+          "icetime": "1200", "I_F_goals": "1.0",
+          "I_F_primaryAssists": "0.0", "I_F_secondaryAssists": "1.0",
+          "I_F_shotsOnGoal": "2.0", "I_F_xGoals": "0.2",
+          "I_F_hits": "1.0", "I_F_takeaways": "0.0",
+          "I_F_giveaways": "0.0", "faceoffsWon": "0.0",
+          "faceoffsLost": "0.0", "onIce_xGoalsPercentage": "0.55",
+          "offIce_xGoalsPercentage": "0.50"}
+GOALIE = {"playerId": "g1", "season": "2025", "team": "A",
+          "position": "G", "situation": "all", "games_played": "1",
+          "icetime": "3600", "xGoals": "2.0", "goals": "1.0",
+          "ongoal": "20.0"}
 
 
-def csv_text(fields, rows):
-    stream = io.StringIO()
-    writer = csv.DictWriter(stream, fieldnames=fields)
-    writer.writeheader()
-    writer.writerows(rows)
-    return stream.getvalue()
+def write_raw(raw: Path, shots: list[dict], skater: dict) -> None:
+    """A MoneyPuck download for 2025: zipped shots plus one skater and one goalie file."""
+    raw.mkdir()
+    with zipfile.ZipFile(raw / "shots_2025.zip", "w") as archive:
+        archive.writestr("shots_2025.csv", csv_text(shots, SHOT_COLUMNS))
+    write_csv(raw / "skaters_2025.csv", [skater])
+    write_csv(raw / "goalies_2025.csv", [GOALIE])
 
 
 class MoneyPuckTest(unittest.TestCase):
@@ -22,36 +42,8 @@ class MoneyPuckTest(unittest.TestCase):
         with tempfile.TemporaryDirectory() as temp:
             root = Path(temp)
             raw, staged, processed = root / "raw", root / "staged", root / "processed"
-            raw.mkdir()
-            common = {"season": "2025", "game_id": "g1", "isPlayoffGame": "0",
-                      "homeTeamCode": "A", "awayTeamCode": "B", "homeTeamWon": "1",
-                      "xCordAdjusted": "80", "yCordAdjusted": "43", "xGoal": "0.2"}
-            shots = [
-                {**common, "id": "1", "teamCode": "A", "shooterPlayerId": "p1",
-                 "goal": "1", "shotType": "WRIST"},
-                {**common, "id": "2", "teamCode": "B", "shooterPlayerId": "p2",
-                 "goal": "1", "shotType": ""},
-            ]
-            with zipfile.ZipFile(raw / "shots_2025.zip", "w") as archive:
-                archive.writestr("shots_2025.csv", csv_text(SHOT_COLUMNS, shots))
-            skater = {"playerId": "p1", "season": "2025", "team": "A",
-                      "position": "L", "situation": "all", "games_played": "1",
-                      "icetime": "1200", "I_F_goals": "1.0",
-                      "I_F_primaryAssists": "0.0", "I_F_secondaryAssists": "1.0",
-                      "I_F_shotsOnGoal": "2.0", "I_F_xGoals": "0.2",
-                      "I_F_hits": "1.0", "I_F_takeaways": "0.0",
-                      "I_F_giveaways": "0.0", "faceoffsWon": "0.0",
-                      "faceoffsLost": "0.0", "onIce_xGoalsPercentage": "0.55",
-                      "offIce_xGoalsPercentage": "0.50"}
-            (raw / "skaters_2025.csv").write_text(
-                csv_text(tuple(skater), [skater]), encoding="utf-8")
-            goalie = {"playerId": "g1", "season": "2025", "team": "A",
-                      "position": "G", "situation": "all", "games_played": "1",
-                      "icetime": "3600", "xGoals": "2.0", "goals": "1.0",
-                      "ongoal": "20.0"}
-            (raw / "goalies_2025.csv").write_text(
-                csv_text(tuple(goalie), [goalie]), encoding="utf-8")
-
+            write_raw(raw, [SHOT, {**SHOT, "id": "2", "teamCode": "B", "shooterPlayerId": "p2",
+                                   "shotType": ""}], SKATER)
             result = convert(raw, staged, [2025])
             self.assertEqual(result["games_decided_after_tied_goals"], 1)
             self.assertEqual(result["rounded_y_coordinates_clamped"], 2)
@@ -70,28 +62,9 @@ class MoneyPuckTest(unittest.TestCase):
         with tempfile.TemporaryDirectory() as temp:
             root = Path(temp)
             raw = root / "raw"
-            raw.mkdir()
-            common = {"season": "2025", "game_id": "g1", "isPlayoffGame": "0",
-                      "homeTeamCode": "A", "awayTeamCode": "B", "homeTeamWon": "1",
-                      "xCordAdjusted": "80", "yCordAdjusted": "10", "xGoal": "0.2",
-                      "id": "1", "teamCode": "A", "shooterPlayerId": "p1",
-                      "goal": "1", "shotType": "WRIST"}
-            with zipfile.ZipFile(raw / "shots_2025.zip", "w") as archive:
-                archive.writestr("shots_2025.csv", csv_text(SHOT_COLUMNS, [common]))
-            # A skater file without the faceoff columns the features table needs.
-            skater = {"playerId": "p1", "season": "2025", "team": "A",
-                      "position": "L", "situation": "all", "games_played": "1",
-                      "icetime": "1200", "I_F_goals": "1.0",
-                      "I_F_primaryAssists": "0.0", "I_F_secondaryAssists": "1.0",
-                      "I_F_shotsOnGoal": "2.0"}
-            (raw / "skaters_2025.csv").write_text(
-                csv_text(tuple(skater), [skater]), encoding="utf-8")
-            goalie = {"playerId": "g1", "season": "2025", "team": "A",
-                      "position": "G", "situation": "all", "games_played": "1",
-                      "icetime": "3600", "xGoals": "2.0", "goals": "1.0",
-                      "ongoal": "20.0"}
-            (raw / "goalies_2025.csv").write_text(
-                csv_text(tuple(goalie), [goalie]), encoding="utf-8")
+            # A skater file stopping before the feature columns (xG, hits, faceoffs...).
+            skater = {k: SKATER[k] for k in list(SKATER)[:11]}
+            write_raw(raw, [{**SHOT, "yCordAdjusted": "10"}], skater)
             with self.assertRaisesRegex(DataError, "missing columns.*faceoffsWon"):
                 convert(raw, root / "staged", [2025])
 

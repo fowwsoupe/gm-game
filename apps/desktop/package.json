@@ -9,7 +9,7 @@
     "dev": "pnpm native:electron && electron-vite dev",
     "build": "electron-vite build",
     "typecheck": "tsc -p tsconfig.node.json && tsc -p tsconfig.web.json",
-    "test": "vitest run --passWithNoTests",
+    "test": "vitest run",
     "dist": "pnpm native:electron && electron-vite build && electron-builder"
   },
   "dependencies": {

@@ -115,8 +115,5 @@ fixed seed before switching.
 
 ## Setup
 
-```bash
-cd ml
-python3 -m venv .venv && source .venv/bin/activate
-pip install -e .
-```
+None: everything here uses only the Python 3.11+ standard library. Run the commands above
+from the repo root.

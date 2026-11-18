@@ -6,13 +6,11 @@ from pathlib import Path
 
 from ml.src.analyze import analyze
 from ml.src.pipeline import DataError, TABLES, build
+from ml.tests.csvfile import write_csv
 
 
 def write_table(path, name, rows):
-    with (path / f"{name}.csv").open("w", newline="", encoding="utf-8") as stream:
-        writer = csv.DictWriter(stream, fieldnames=TABLES[name])
-        writer.writeheader()
-        writer.writerows(rows)
+    write_csv(path / f"{name}.csv", rows, TABLES[name])
 
 
 class PipelineTest(unittest.TestCase):

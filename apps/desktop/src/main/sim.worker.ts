@@ -1,6 +1,7 @@
 import { parentPort } from 'node:worker_threads';
-import { defaultContext, handleCommand, parseXgTable, type LeagueState } from '@gm/sim';
+import { handleCommand, type LeagueState } from '@gm/sim';
 import type { Actor, Command, CommandResult } from '@gm/shared';
+import { contextWithXg } from './simContext';
 
 /**
  * Runs every command off the main thread, so the UI never freezes.
@@ -16,8 +17,7 @@ export interface WorkerRequest {
 }
 
 parentPort?.on('message', (req: WorkerRequest) => {
-  const xg = req.xg === undefined ? undefined : parseXgTable(req.xg);
-  const ctx = defaultContext(req.state.rulesetId, xg?.ok ? { goalModel: xg.model } : {});
+  const ctx = contextWithXg(req.state.rulesetId, req.xg);
   // A throw would kill this thread and leave every later command waiting forever. The state here
   // is a throwaway copy, so reporting the error and carrying on is safe.
   let result: CommandResult;

@@ -49,8 +49,10 @@ import type {
   TeamId,
   TradeProposal,
 } from '@gm/shared';
+import type { GmApi } from '@gm/shared/ipc';
 import createSimWorker from './sim.worker?nodeWorker';
 import type { WorkerRequest } from './sim.worker';
+import { contextWithXg } from './simContext';
 
 /** Single-player: the local human. Multiplayer will pass real actors from the network. */
 const LOCAL: Actor = { id: 'local', controls: [] };
@@ -85,11 +87,6 @@ export class LeagueService {
     }
     return undefined;
   })();
-
-  private context(rulesetId: string) {
-    const xg = this.xg === undefined ? undefined : parseXgTable(this.xg);
-    return defaultContext(rulesetId, xg?.ok ? { goalModel: xg.model } : {});
-  }
 
   private savePath() {
     return join(app.getPath('userData'), 'saves', 'league-1.sqlite');
@@ -210,29 +207,24 @@ export class LeagueService {
 
   records() {
     const { save, state } = this.open();
-    const points = defaultContext(state.rulesetId).ruleset.season.points;
+    const { ruleset, sport } = defaultContext(state.rulesetId);
     const teamIds = Object.keys(state.teams) as TeamId[];
-    const seasons = save.finishedSeasons().map((season) => ({
+    const played = save.finishedSeasons().map((season) => ({
       season,
-      rows: computeStandings(
-        teamIds,
-        save.playedResults(season).filter((g) => !g.playoffSeriesId),
-        points,
-      ),
+      results: save.playedResults(season).filter((g) => !g.playoffSeriesId),
+    }));
+    const seasons = played.map(({ season, results }) => ({
+      season,
+      rows: computeStandings(teamIds, results, ruleset.season.points),
     }));
     const champions = save
       .listAwards()
       .filter((a) => a.award === 'champion')
       .map((a) => a.teamId);
     const everyone = save.listPlayers(true);
-    const sport = defaultContext(state.rulesetId).sport;
-    const boards = seasons.map(({ season }) => ({
+    const boards = played.map(({ season, results }) => ({
       season,
-      boards: sport.leaders(
-        save.playedResults(season).filter((g) => !g.playoffSeriesId),
-        everyone,
-        1,
-      ),
+      boards: sport.leaders(results, everyone, 1),
     }));
     return [...teamRecords(seasons, champions), ...playerRecords(boards)];
   }
@@ -269,7 +261,6 @@ export class LeagueService {
         awayScore: g.awayScore,
         overtime: g.overtime,
         shootout: g.stats.shootout === 1,
-        playoff: !!g.playoffSeriesId,
       }));
   }
 
@@ -284,7 +275,7 @@ export class LeagueService {
     if (!state.teams[homeTeamId] || !state.teams[awayTeamId] || homeTeamId === awayTeamId) {
       throw new Error('pick two different teams');
     }
-    const ctx = this.context(state.rulesetId);
+    const ctx = contextWithXg(state.rulesetId, this.xg);
     const strength = (id: TeamId) =>
       strengthFor(state, ctx, id, available(state, id, state.date.day));
     const result = ctx.sport.simGame(
@@ -323,11 +314,10 @@ export class LeagueService {
   roster(teamId: TeamId): RosterPlayer[] {
     return Object.values(this.open().state.players)
       .filter((p) => p.teamId === teamId)
-      .map(({ id, firstName, lastName, birthYear, position, contract }) => ({
+      .map(({ id, firstName, lastName, position, contract }) => ({
         id,
         firstName,
         lastName,
-        birthYear,
         position,
         ...(contract && { contract }),
       }));
@@ -387,20 +377,16 @@ export class LeagueService {
 
   lines(teamId: TeamId) {
     const { state } = this.open();
+    const { sport } = defaultContext(state.rulesetId);
     const healthy = available(state, teamId, state.date.day);
+    const depth = state.depthCharts[teamId];
+    const lineup = autoLineup(healthy, depth);
     return {
-      units: defaultContext(state.rulesetId).sport.lineup(healthy, state.depthCharts[teamId]),
-      special: defaultContext(state.rulesetId).sport.specialUnits(
-        healthy,
-        state.depthCharts[teamId],
-        state.specialUnits[teamId],
-      ),
+      units: sport.lineup(healthy, depth),
+      special: sport.specialUnits(healthy, depth, state.specialUnits[teamId]),
       chemistry: chemistry(healthy, state.date.season),
-      fit: lineupFit(autoLineup(healthy, state.depthCharts[teamId])),
-      together: lineupTogether(
-        autoLineup(healthy, state.depthCharts[teamId]),
-        state.linemates[teamId],
-      ),
+      fit: lineupFit(lineup),
+      together: lineupTogether(lineup, state.linemates[teamId]),
       rotation: state.goalieRotation[teamId] ?? 'backToBack',
     };
   }
@@ -486,7 +472,7 @@ export class LeagueService {
   signingInterest(
     playerId: string,
     teamId: TeamId,
-    offer: { salary: number; years: number; noTrade?: true; bonusPct?: number },
+    offer: Parameters<GmApi['league']['signingInterest']>[0],
   ) {
     const { state } = this.open();
     const player = state.players[playerId];

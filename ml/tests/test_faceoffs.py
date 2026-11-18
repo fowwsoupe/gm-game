@@ -1,16 +1,9 @@
-import csv
 import tempfile
 import unittest
 from pathlib import Path
 
 from ml.src.faceoffs import study
-
-
-def _write(path: Path, rows: list[dict]) -> None:
-    with path.open("w", newline="", encoding="utf-8") as stream:
-        writer = csv.DictWriter(stream, fieldnames=list(rows[0]))
-        writer.writeheader()
-        writer.writerows(rows)
+from ml.tests.csvfile import write_csv
 
 
 class FaceoffStudyTest(unittest.TestCase):
@@ -30,9 +23,9 @@ class FaceoffStudyTest(unittest.TestCase):
                               "goals_for": round(300 + 100 * diff), "goals_against": 300})
         with tempfile.TemporaryDirectory() as temp:
             root = Path(temp)
-            _write(root / "player_seasons.csv", players)
-            _write(root / "player_features.csv", features)
-            _write(root / "team_seasons.csv", teams)
+            write_csv(root / "player_seasons.csv", players)
+            write_csv(root / "player_features.csv", features)
+            write_csv(root / "team_seasons.csv", teams)
             report = study(root)
         expected = 10 * report["faceoff_pct_sd"]
         self.assertAlmostEqual(report["raw_upper_bound"]["goal_diff_per_game_per_sd"],
