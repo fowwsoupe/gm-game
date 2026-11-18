@@ -336,7 +336,8 @@ export function handleCommand(
       if (!team) return invalid('unknown team');
       if (!controls(actor, team)) return notYours;
       if (!DEPARTMENTS.includes(command.department)) return invalid('unknown department');
-      const season = state.date.season;
+      // Next season's once the champion is crowned, so a summer hire counts for the season ahead.
+      const season = capYearOf(state);
       const head = staffCandidates(team, command.department, ctx, season)[command.candidate];
       if (!head) return invalid('unknown candidate');
       if (team.staff?.[command.department]?.hired === season) {
