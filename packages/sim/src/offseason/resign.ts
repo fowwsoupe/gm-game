@@ -1,7 +1,9 @@
 import type { Contract, Player, ResignOffer, TeamId } from '@gm/shared';
-import { phaseOf, type LeagueState } from '../core';
+import { phaseOf, type Emit, type LeagueState, type Rng } from '../core';
 import { capIssues, capSheet, validateContract, type ContractIssue } from '../cba';
 import type { SimContext } from '../context';
+import { gmOf } from '../people';
+import { wantedYears } from './freeAgency';
 import { ageIn, resignAsk, rosterOf } from './roster';
 
 /**
@@ -71,3 +73,28 @@ export function resignContract(
 }
 
 export { expiring as isExpiring };
+
+/**
+ * An AI GM settles a holdout by paying him: the extension he asks for, once his deal is in its
+ * last season and the raise fits next season's cap. A win-now GM pays; a balanced one pays if he
+ * is good at the job; a builder (or anyone without the room) waits him out (`holdoutsWeek`).
+ */
+export function aiHoldouts(state: LeagueState, ctx: SimContext, rng: Rng, emit: Emit): void {
+  for (const h of [...state.holdouts].sort((a, b) => a.playerId.localeCompare(b.playerId))) {
+    const team = state.teams[h.teamId]!;
+    if (team.userControlled) continue;
+    const { style, skill } = gmOf(team);
+    if (style === 'builder' || (style === 'balanced' && skill < 0.5)) continue;
+    const offer = resignOffers(state, ctx, team.id).find((o) => o.playerId === h.playerId);
+    if (!offer || offer.issues[0]!.length > 0) continue;
+    const p = state.players[h.playerId]!;
+    const deal = resignContract(state, ctx, p, wantedYears(ageIn(p, state.date.season + 1), rng));
+    if ('issues' in deal) continue;
+    emit('notable', [team.id], {
+      kind: 'contract.extended',
+      playerId: p.id,
+      teamId: team.id,
+      contract: deal.contract,
+    });
+  }
+}

@@ -19,7 +19,7 @@ export { lotteryOrder, announceDraftClass } from './draft';
 export { scoutReport } from './scouting';
 export { signingInterest, signFreeAgent, sheetCompensation } from './signing';
 export { acceptSheet, marketDay, roomFor } from './market';
-export { resignOffers, resignContract, isExpiring, resignWindowOpen } from './resign';
+export { aiHoldouts, resignOffers, resignContract, isExpiring, resignWindowOpen } from './resign';
 export { RFA_DISCOUNT, resignAsk } from './roster';
 export { stayChance } from './freeAgency';
 import { expireContracts, fillRosters, meetCapFloor, reSignPlayers } from './freeAgency';
