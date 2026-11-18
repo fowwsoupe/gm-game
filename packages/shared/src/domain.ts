@@ -292,6 +292,11 @@ export interface Leaderboard {
   rows: { playerId: PlayerId; name: string; teamId: TeamId | null; gp: number; value: number }[];
 }
 
+/** What the Leaders screen gets: each row also carries the player's age, for his face. */
+export interface LeaderboardView extends Leaderboard {
+  rows: (Leaderboard['rows'][number] & { age: number })[];
+}
+
 /** One league record: best (or most) of something, by a team or player in one season, or all-time for titles. */
 export interface RecordEntry {
   key:

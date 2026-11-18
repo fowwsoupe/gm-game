@@ -14,7 +14,7 @@ import {
 import { useUi } from '@/stores/ui';
 import { money } from '@/lib/format';
 import { isMessageKey, useT, type MessageKey } from '@/i18n';
-import { Button, Card, StatRow } from '@/ui';
+import { Button, Card, Face, StatRow } from '@/ui';
 
 export function Home({
   hasLeague,
@@ -173,6 +173,7 @@ function FeedCard() {
   const { data } = useFeed(40);
   const events = data?.events ?? [];
   const names = data?.names ?? {};
+  const ages = data?.ages ?? {};
   const teamName = (id: string) => teams.find((x) => x.id === id)?.name ?? id;
   const yours = (ids: readonly string[]) =>
     ids.some((id) => teams.find((x) => x.id === id)?.userControlled);
@@ -259,7 +260,12 @@ function FeedCard() {
   };
 
   const lines = events
-    .map((e) => ({ id: e.id, text: describe(e) }))
+    .map((e) => ({
+      id: e.id,
+      text: describe(e),
+      // The one player a line is about (news.posted carries none, so those get no face).
+      player: e.kind === 'player.drafted' ? e.player.id : 'playerId' in e ? e.playerId : null,
+    }))
     .filter((l) => l.text)
     .slice(0, 10);
   return (
@@ -269,7 +275,12 @@ function FeedCard() {
       ) : (
         <ul className="space-y-1 text-sm">
           {lines.map((l) => (
-            <li key={l.id}>{l.text}</li>
+            <li key={l.id}>
+              {l.player && ages[l.player] !== undefined && (
+                <Face seed={l.player} age={ages[l.player]!} size={22} />
+              )}
+              {l.text}
+            </li>
           ))}
         </ul>
       )}
