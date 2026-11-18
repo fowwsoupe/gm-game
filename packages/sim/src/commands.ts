@@ -1,5 +1,5 @@
 import type { Actor, Command, CommandResult, LeagueEvent, Team, TradeProposal } from '@gm/shared';
-import { GOALIE_ROTATIONS } from '@gm/shared';
+import { GOALIE_ROTATIONS, TICKET_STEPS } from '@gm/shared';
 import {
   Rng,
   applyEvent,
@@ -273,6 +273,21 @@ export function handleCommand(
         teamId: team.id,
         playerId: player.id,
         onBlock: command.onBlock,
+      });
+      return applied(state, ev);
+    }
+
+    case 'finance.setTicketPrice': {
+      const team = state.teams[command.teamId];
+      if (!team) return invalid('unknown team');
+      if (!controls(actor, team)) return notYours;
+      if (!(TICKET_STEPS as readonly number[]).includes(command.pct)) {
+        return invalid('unknown ticket price step');
+      }
+      const ev = makeEvent(state, 'minor', [team.id], {
+        kind: 'finance.ticketPriceSet',
+        teamId: team.id,
+        pct: command.pct,
       });
       return applied(state, ev);
     }

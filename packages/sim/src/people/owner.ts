@@ -17,6 +17,14 @@ export function ownerOf(team: Team): OwnerProfile {
   };
 }
 
+/** A team's arena: seats between `range.min` and `range.max`, derived from the team id. */
+export const capacityOf = (team: Team, range: { min: number; max: number }): number =>
+  Math.round(range.min + new Rng(hash(`arena:${team.id}`)).next() * (range.max - range.min));
+
+/** A team's ticket price step: set by its GM, else the owner's (profit owners charge more). */
+export const ticketPctOf = (team: Team, set: Record<string, number>): number =>
+  set[team.id] ?? (ownerOf(team).priority < 1 / 3 ? 10 : ownerOf(team).priority > 2 / 3 ? -10 : 0);
+
 /**
  * A team's market size (0.65-1.75), derived from the team id. Squared, so most teams are small or
  * mid-market and a few are big cities (mean about 1): the balance lab's revenue spread and mean.

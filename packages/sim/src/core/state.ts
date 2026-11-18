@@ -13,6 +13,7 @@ import type {
   ScheduledGame,
   Sport,
   Team,
+  TeamFans,
   TeamId,
   TeamStatus,
   TradeOffer,
@@ -84,6 +85,10 @@ export interface LeagueState {
   linemates: Record<TeamId, Record<string, number>>;
   /** Each team's cash, whole dollars (absent = 0; may go negative). Moved only by `finance.settled`. */
   cash: Record<TeamId, number>;
+  /** Each team's fans, as the last `finance.settled` left them (absent = new fans, interest 50). */
+  fans: Record<TeamId, TeamFans>;
+  /** Ticket price steps teams' GMs set (absent = the owner's policy). */
+  ticketPrices: Record<TeamId, number>;
   /** Count of events applied so far; the next event's id is built from it. */
   eventSeq: number;
 }
@@ -387,8 +392,12 @@ export function applyEvent(state: LeagueState, event: LeagueEvent): void {
         Object.values(lines).reduce((a, b) => a + b, 0);
       state.cash[event.teamId] =
         (state.cash[event.teamId] ?? 0) + sum(event.revenue) - sum(event.costs);
+      state.fans[event.teamId] = { ...event.fans };
       return;
     }
+    case 'finance.ticketPriceSet':
+      state.ticketPrices[event.teamId] = event.pct;
+      return;
     case 'award.given':
     case 'stats.archived':
     case 'season.phaseChanged':

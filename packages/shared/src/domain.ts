@@ -63,6 +63,19 @@ export interface FinanceLines {
   };
 }
 
+/** A team's fans. `interest` is 0-100 (50 = an average market's average year). */
+export interface TeamFans {
+  interest: number;
+  /** The interest the sponsorship deal (each summer) and local media deal (every 3 seasons) were priced at. */
+  sponsorDeal: number;
+  mediaDeal: number;
+  /** Average crowd at the last month's home dates (0 before any). */
+  attendance: number;
+}
+
+/** Ticket price policy: whole percent around the league's reference price. */
+export const TICKET_STEPS = [-20, -10, 0, 10, 20] as const;
+
 /** Why a team's cap is not legal in a season. The cap advisor shows these; it never blocks. */
 export type CapIssue =
   | { code: 'over_cap'; over: number }
