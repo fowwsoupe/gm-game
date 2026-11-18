@@ -137,6 +137,8 @@ export interface Ruleset {
     scouting: { best: number; worst: number };
     /** Injury days x (1 + days x (league average - quality)): the best medical staff shortens them. */
     medical: { days: number };
+    /** Rating points the best head coach adds to every player in games, the worst takes away. */
+    coaching: { points: number };
     /** Yearly chance a department head leaves, however the team did. */
     leave: number;
     /** Extra chance a good head is hired away: x his quality x the team's points % above average, in SDs. */

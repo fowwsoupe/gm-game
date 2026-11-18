@@ -222,7 +222,7 @@ export interface Team {
   gm?: GmProfile;
   /** The AI GM's plan for the next seasons. Absent: none yet (follows the standings). */
   plan?: TeamPlan;
-  /** The head coach. Absent: derived from the id. No effect on games yet. */
+  /** The head coach. Absent: derived from the id. His quality moves the team's strength in games. */
   coach?: CoachProfile;
   /** Front-office department heads. A department absent: derived from the id. No effects yet. */
   staff?: Partial<Record<Department, StaffProfile>>;
