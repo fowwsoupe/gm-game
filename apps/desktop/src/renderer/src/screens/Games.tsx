@@ -1,6 +1,5 @@
 import { useEffect, useMemo, useState } from 'react';
 import type { GameDetail, HockeyBoxScore, HockeyBoxSide, Team, TeamId } from '@gm/shared';
-import { HOCKEY_TUNING } from '@gm/sim';
 import { useExhibition, useGames, useOpenGame, useTeams } from '@/lib/queries';
 import { statValue, teamName } from '@/lib/format';
 import { useT } from '@/i18n';
@@ -8,8 +7,7 @@ import { Button, Card, TeamLink, TeamSelect, SectionHeader, Td, Th } from '@/ui'
 
 const SPEEDS = [60, 180, 600] as const;
 /** Time left in the period; overtime is one 20:00 period at a time in the playoffs, shorter otherwise. */
-const clockText = (sec: number, playoff: boolean) => {
-  const ot = playoff ? 1200 : HOCKEY_TUNING.overtimeSeconds;
+const clockText = (sec: number, ot: number) => {
   const left = Math.max(0, sec < 3600 ? 1200 - (sec % 1200) : ot - ((sec - 3600) % ot));
   return `${String(Math.floor(left / 60)).padStart(2, '0')}:${String(Math.floor(left % 60)).padStart(2, '0')}`;
 };
@@ -127,7 +125,6 @@ function Replay({ detail, teams }: { detail: GameDetail; teams: Team[] }) {
   const finished = clock >= end;
   const score = finished ? [result.homeScore, result.awayScore] : goals;
   const period = clock < 3600 ? Math.min(3, Math.floor(clock / 1200) + 1) : 0;
-  const playoff = !!result.playoffSeriesId;
 
   // The feed: goals and penalties up to the clock, newest first.
   type Line = { at: number; text: string };
@@ -184,7 +181,7 @@ function Replay({ detail, teams }: { detail: GameDetail; teams: Team[] }) {
               </span>
             ) : (
               <>
-                <div className="text-lg text-ink">{clockText(clock, playoff)}</div>
+                <div className="text-lg text-ink">{clockText(clock, detail.overtimeSeconds)}</div>
                 {period > 0 ? t('games.period', { n: period }) : t('games.overtime')}
               </>
             )}
@@ -251,7 +248,7 @@ function Replay({ detail, teams }: { detail: GameDetail; teams: Team[] }) {
                     {l.at < 3600
                       ? t('games.periodShort', { n: Math.floor(l.at / 1200) + 1 })
                       : t('games.ot')}{' '}
-                    {l.at < 3600 || l.at < end ? clockText(l.at, playoff) : ''}
+                    {l.at < 3600 || l.at < end ? clockText(l.at, detail.overtimeSeconds) : ''}
                   </span>
                   <span>{l.text}</span>
                 </li>
