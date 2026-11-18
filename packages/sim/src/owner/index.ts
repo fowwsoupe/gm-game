@@ -96,7 +96,8 @@ const COACH = {
 
 const clamp = (n: number) => Math.round(Math.min(100, Math.max(0, n)) * 10) / 10;
 const round2 = (n: number) => Math.round(n * 100) / 100;
-const round3 = (n: number) => Math.round(n * 1000) / 1000;
+/** Rounded to 3 places, never -0 (a save stores JSON, which turns -0 into 0). */
+const round3 = (n: number) => Math.round(n * 1000) / 1000 || 0;
 
 /** Seasons a new GM's honeymoon lasts: one for the least patient owner, three for the most. */
 const honeymoon = (patience: number) => 1 + Math.round(2 * patience);
