@@ -145,6 +145,14 @@ export type LeagueEvent =
       option: OwnerCard['options'][number]['key'];
       effects: CardEffects;
     })
+  /** A project is done: the arena now seats `capacity`, and fan interest moves by `fanInterest`. */
+  | (EventBase & {
+      kind: 'project.finished';
+      teamId: TeamId;
+      projectId: string;
+      capacity: number;
+      fanInterest: number;
+    })
   /** A team's ticket price policy changed (see `TICKET_STEPS`); the next settlement uses it. */
   | (EventBase & { kind: 'finance.ticketPriceSet'; teamId: TeamId; pct: number })
   /** End of season: who won an award. `playerId` is absent for team awards (champion). */

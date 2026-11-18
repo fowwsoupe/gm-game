@@ -8,6 +8,7 @@ import type {
   GameResult,
   LeagueEvent,
   OwnerCard,
+  OwnerProject,
   OwnerStanding,
   PlayoffSeries,
   Player,
@@ -96,6 +97,10 @@ export interface LeagueState {
   owners: Record<TeamId, OwnerStanding>;
   /** Owner cards waiting on a human GM's answer. */
   ownerCards: OwnerCard[];
+  /** Projects under way (absent: none). */
+  projects: OwnerProject[];
+  /** Arenas a project has changed: seats now (absent: the arena the team was built with). */
+  arenas: Record<TeamId, number>;
   /** Count of events applied so far; the next event's id is built from it. */
   eventSeq: number;
 }
@@ -432,6 +437,26 @@ export function applyEvent(state: LeagueState, event: LeagueEvent): void {
         owner.confidence = Math.min(100, Math.max(0, owner.confidence + fx.confidence));
       }
       if (owner && fx.payrollBudget) owner.payrollBudget += fx.payrollBudget;
+      if (fx.project) {
+        const { seasons, ...project } = fx.project;
+        // Project cards open at the season-end review: building starts with next season.
+        const first = state.date.season + 1;
+        state.projects.push({
+          id: event.cardId,
+          teamId: id,
+          first,
+          ready: first + seasons,
+          ...project,
+        });
+      }
+      return;
+    }
+    case 'project.finished': {
+      state.projects = state.projects.filter((p) => p.id !== event.projectId);
+      state.arenas[event.teamId] = event.capacity;
+      const fans = state.fans[event.teamId] ?? NEW_FANS;
+      const interest = Math.min(100, Math.max(0, fans.interest + event.fanInterest));
+      state.fans[event.teamId] = { ...fans, interest };
       return;
     }
     case 'award.given':

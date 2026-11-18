@@ -7,6 +7,7 @@ import {
   handleCommand,
   ownerOf,
   ownerStanding,
+  seatsOf,
   ticketPctOf,
   type LeagueState,
 } from './index';
@@ -31,13 +32,15 @@ const snapshot = (state: LeagueState, teamId: TeamId) => ({
 });
 
 /** A league whose human team has a profit-first owner and cheap tickets, so he asks for them back. */
-function humanLeague() {
+function humanLeague(fits: (state: LeagueState, teamId: TeamId) => boolean = () => true) {
   const state = createLeague(5, ctx);
   for (const t of Object.values(state.teams)) {
     if (t.userControlled)
       run(state, { kind: 'team.setUserControlled', teamId: t.id, userControlled: false });
   }
-  const team = Object.values(state.teams).find((t) => ownerOf(t).priority < 1 / 3)!;
+  const team = Object.values(state.teams).find(
+    (t) => ownerOf(t).priority < 1 / 3 && fits(state, t.id),
+  )!;
   run(state, { kind: 'team.setUserControlled', teamId: team.id, userControlled: true });
   run(state, { kind: 'finance.setTicketPrice', teamId: team.id, pct: -20 });
   return { state, teamId: team.id };
@@ -132,5 +135,31 @@ describe('owner meetings', () => {
     expect(answer(card.id, 'maybe', local)).toBe(false);
     expect(answer(card.id, 'agree', { id: 'remote', controls: [] })).toBe(false);
     expect(answer(card.id, 'agree', local)).toBe(true);
+  });
+
+  it('a renovation raises capacity after its build seasons, and is paid for while it is built', () => {
+    // Cheap tickets sell the building out, so the owner proposes a renovation at the review.
+    const { min, max } = ctx.ruleset.finance.capacity;
+    const { state, teamId } = humanLeague((s, id) => seatsOf(s, id, ctx.ruleset) < (min + max) / 2);
+    const seats = seatsOf(state, teamId, ctx.ruleset);
+    const season = cal.regularSeasonDays + cal.playoffDays;
+    run(state, { kind: 'sim.advance', days: season });
+    const card = state.ownerCards.find((c) => c.kind === 'renovation')!;
+    const project = card.options[0]!.effects.project!;
+    run(state, { kind: 'owner.answerCard', cardId: card.id, option: 'agree' });
+    for (let year = 0; year < project.seasons; year++) {
+      run(state, { kind: 'season.rollover' });
+      const events = run(state, { kind: 'sim.advance', days: season });
+      expect(seatsOf(state, teamId, ctx.ruleset)).toBe(seats);
+      const paid = events.reduce(
+        (s, e) => s + (e.kind === 'finance.settled' && e.teamId === teamId ? e.costs.projects : 0),
+        0,
+      );
+      expect(paid).toBe(project.costPerSeason);
+    }
+    run(state, { kind: 'season.rollover' });
+    run(state, { kind: 'sim.advance', days: 1 });
+    expect(seatsOf(state, teamId, ctx.ruleset)).toBe(Math.min(max, seats + project.seats));
+    expect(state.projects).toHaveLength(state.projects.filter((p) => p.teamId !== teamId).length);
   });
 });

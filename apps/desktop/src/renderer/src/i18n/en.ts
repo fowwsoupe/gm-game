@@ -335,6 +335,15 @@ export const en = {
     'On the bubble at the deadline: the owner wants you to buy, and adds {amount} to the payroll budget if you do.',
   'owner.card.deadlineSell': 'On the bubble at the deadline: the owner wants you to sell.',
   'owner.card.budget': "The owner sets next season's payroll budget at {amount}.",
+  'owner.card.namingRights':
+    "Cash is below zero: the owner wants to sell the arena's naming rights for {amount}. The fans won't like it.",
+  'owner.card.spendToCap':
+    'The owner smells a run: he lifts the payroll budget to the cap ({amount}).',
+  'owner.card.fireSale': 'Out of the race and losing money: the owner wants a fire sale.',
+  'owner.card.renovation':
+    'The building sells out: the owner proposes a renovation, {amount} a season for {n} seasons, for {seats} more seats.',
+  'owner.card.festival': 'Interest is sagging: the owner proposes a fan festival for {amount}.',
+  'owner.effect.project': '{seats} more seats when built',
   'owner.option.agree': 'Agree',
   'owner.option.refuse': 'Refuse',
   'owner.option.more': 'Ask for more',

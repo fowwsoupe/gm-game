@@ -91,7 +91,7 @@ export const NHL_2026: Ruleset = {
     ticketPrice: 160, // blended a fan, premium seats in (44% ticket share over attendance)
     gameDaySpend: 48, // 12% game-day share
     sponsorship: dollars(59), // SponsorUnited, about $48M a team
-    localMedia: dollars(15), // no clean public number: the remainder, tuned in the lab
+    localMedia: dollars(10), // no clean public number: the remainder, tuned in the lab
     leagueShare: dollars(59), // national media, under $1.5B league-wide
     playoffs: { markupPct: 15, playersPct: 35, feePerDate: dollars(0.5) }, // LVSportsBiz
     operations: { yearly: dollars(50), perHomeDate: dollars(1.9) },

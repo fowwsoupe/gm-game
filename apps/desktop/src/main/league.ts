@@ -19,7 +19,7 @@ import {
   autoLineup,
   lineupFit,
   lineupTogether,
-  capacityOf,
+  seatsOf,
   fansOf,
   marketOf,
   ownerOf,
@@ -375,7 +375,7 @@ export class LeagueService {
     return {
       owner: ownerOf(team),
       market: marketOf(team),
-      capacity: capacityOf(team, defaultContext(state.rulesetId).ruleset.finance.capacity),
+      capacity: seatsOf(state, teamId, defaultContext(state.rulesetId).ruleset),
       fans: fansOf(state, teamId),
       ticketPct: ticketPctOf(team, state.ticketPrices),
     };

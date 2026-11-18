@@ -207,6 +207,16 @@ first three cards: ticket prices back to a profit owner's policy (preseason), bu
 bubble (deadline), and next season's budget (review). A card still open at the next meeting is
 refused for the GM (or agreed, if it has no refuse).
 
+Job 7: a renovation costs 25% of the cap a season for two seasons from next season, then adds
+1,000 seats (up to the largest arena) and 3 interest. The owner proposes one at the review only
+when a smaller-than-average arena sold out last month, so the league's arenas do not all grow to
+the top. A fan festival is a one-off card (4% of the cap now, +8 interest that carries 70% into
+next season), not a project. Naming rights (20% of the cap now, -5 interest) come up at
+preseason while cash is below zero; spend to the cap at the deadline for a contender with a
+winning-first owner; a fire sale for a seller losing money this season. The lab's operating
+profit leaves projects out (capital spending, as Forbes counts it). Local media came down to
+$10M to keep the revenue mean in range as arenas grow.
+
 ## What the balance lab should measure
 
 Per team-season, over the usual 20 leagues x 20 years, on seeds 1, 101 and 201:
