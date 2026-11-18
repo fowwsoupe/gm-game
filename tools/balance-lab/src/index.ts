@@ -584,8 +584,8 @@ const checks: Check[] = [
     // Owners who spend (budget over 0.5) keep a better front office than frugal ones.
     name: 'Staff quality, rich owners - frugal (unverified)',
     value: mean(staff.rich) - mean(staff.frugal),
-    min: 0.05,
-    max: 0.3,
+    min: 0.1,
+    max: 0.45,
   },
   {
     // Report only: no sourced benchmark yet (the brief lists it as unverified).

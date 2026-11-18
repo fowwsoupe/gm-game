@@ -102,12 +102,14 @@ export const NHL_2026: Ruleset = {
   // docs/research/2026-11-front-office.md: no public source; unverified, tuned in the lab.
   frontOffice: {
     salary: { min: dollars(0.5), max: dollars(3) },
-    development: { points: 2 }, // was ORG_DEVELOPMENT, from GM skill
+    // Tuned in the balance lab against the long-run brief's three NHL benchmarks (spread, year-to-year
+    // r, playoff turnover): a strong edge that moves on with its people.
+    development: { points: 5 }, // was ORG_DEVELOPMENT 2, from GM skill
     scouting: { best: 2, worst: 6 }, // the GM misread on prospects was 1-6
     medical: { days: 0.4 },
     coaching: { points: 1 }, // as much as chemistry (CHEMISTRY_POINTS)
-    leave: 0.12,
-    poach: 0.15,
+    leave: 0.3,
+    poach: 0.6,
     spend: 0.6,
     hireSd: 0.2,
   },
