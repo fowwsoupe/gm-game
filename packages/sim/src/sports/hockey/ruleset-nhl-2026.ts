@@ -104,10 +104,12 @@ export const NHL_2026: Ruleset = {
     salary: { min: dollars(0.5), max: dollars(3) },
     // Tuned in the balance lab against the long-run brief's three NHL benchmarks (spread, year-to-year
     // r, playoff turnover): a strong edge that moves on with its people.
-    development: { points: 5 }, // was ORG_DEVELOPMENT 2, from GM skill
+    // Development is the lever for spread; past 3 the edge lives on in its players and playoff
+    // turnover falls under the NHL's. The coach's edge moves on with him.
+    development: { points: 3 }, // was ORG_DEVELOPMENT 2, from GM skill
     scouting: { best: 2, worst: 6 }, // the GM misread on prospects was 1-6
     medical: { days: 0.4 },
-    coaching: { points: 1 }, // as much as chemistry (CHEMISTRY_POINTS)
+    coaching: { points: 2 },
     leave: 0.3,
     poach: 0.6,
     spend: 0.6,
