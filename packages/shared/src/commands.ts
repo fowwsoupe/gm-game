@@ -67,8 +67,6 @@ export type Command =
     };
 // Planned (not implemented yet): formations, line tactics ...
 
-export type CommandKind = Command['kind'];
-
 /** Who issued a command. Single-player is always 'local'; multiplayer adds real ids. */
 export interface Actor {
   id: string;

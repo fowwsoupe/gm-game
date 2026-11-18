@@ -41,8 +41,6 @@ export const SKATER_RATINGS = [
   'faceoffs',
 ] as const;
 export const GOALIE_RATINGS = ['reflexes', 'positioning', 'reboundControl', 'consistency'] as const;
-export type SkaterRating = (typeof SKATER_RATINGS)[number];
-export type GoalieRating = (typeof GOALIE_RATINGS)[number];
 
 /** Hockey's extra numbers stored in GameResult.stats. */
 export interface HockeyGameStats extends Record<string, number> {

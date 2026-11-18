@@ -27,7 +27,6 @@ export const PRIORITIES = [
   'term',
 ] as const;
 export type Priority = (typeof PRIORITIES)[number];
-export type Priorities = Record<Priority, number>;
 
 export function randomPersonality(rng: Rng): Personality {
   const p = {} as Personality;
