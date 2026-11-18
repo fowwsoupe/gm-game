@@ -18,6 +18,7 @@ import { holdoutsWeek, startHoldouts, tradeRequests } from './people';
 import { sitsOut, strengthFor } from './tonight';
 import { byOverall } from './players';
 import { payBonuses } from './cba';
+import { settleMonth, settlePlayoffs, settlesOn } from './finance';
 import type { SimContext } from './context';
 
 /**
@@ -199,6 +200,9 @@ export function advance(
     if (today.day === 0 && phaseOf(cal, today) === 'regular') {
       startHoldouts(state, ctx, rng.fork('holdouts'), emitter(state, events));
     }
+    if (settlesOn(today.day, cal.regularSeasonDays)) {
+      settleMonth(state, ctx, emitter(state, events), today.day);
+    }
     const dayStart = events.length;
 
     for (const g of byDay.get(today.day) ?? []) {
@@ -269,7 +273,8 @@ export function advance(
         if (current.length === 1) {
           const championTeamId = current[0]!.winnerTeamId!;
           // Still this season's cap year: bonuses over the cap go to next season's.
-          payBonuses(state, ctx, emitter(state, events));
+          const paid = payBonuses(state, ctx, emitter(state, events));
+          settlePlayoffs(state, ctx, emitter(state, events), paid);
           emit(
             makeEvent(state, 'major', [championTeamId], {
               kind: 'champion.crowned',

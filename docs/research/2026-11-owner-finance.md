@@ -187,6 +187,12 @@ Open for the first job: store dollars, or store fractions of `cap.upperLimit` so
 rescales the economy. Fractions keep "never hard-code a rule number" honest when the cap grows.
 Dollars read more easily. Either way the sim reads only `ctx.ruleset.finance`.
 
+Decided in job 2: dollars (the cap does not move inside a ruleset yet). Tuning in the lab also
+settled three things the table above leaves open. A fan's ticket and game-day spend, and each home
+date's operating cost, scale with market like sponsorship and media do. Market is drawn skewed
+(most teams small or mid-market, mean about 1). Operations are $50M a year plus $1.9M a home date
+at market 1.
+
 ## What the balance lab should measure
 
 Per team-season, over the usual 20 leagues x 20 years, on seeds 1, 101 and 201:

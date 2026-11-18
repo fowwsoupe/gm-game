@@ -84,6 +84,18 @@ export const NHL_2026: Ruleset = {
     shareOwedOtherwise: 2 / 3,
     termMultiplier: 2,
   },
+  // docs/research/2026-11-owner-finance.md ("The model"): 2024-25 numbers scaled by the cap ratio
+  // (104 / 88). Fans and prices from its benchmark table; operations tuned in the balance lab.
+  finance: {
+    fansPerDate: 17_540, // NHL 2024-25 average crowd
+    ticketPrice: 160, // blended a fan, premium seats in (44% ticket share over attendance)
+    gameDaySpend: 48, // 12% game-day share
+    sponsorship: dollars(59), // SponsorUnited, about $48M a team
+    localMedia: dollars(23), // no clean public number: the remainder
+    leagueShare: dollars(59), // national media, under $1.5B league-wide
+    playoffs: { markupPct: 15, playersPct: 35, feePerDate: dollars(0.5) }, // LVSportsBiz
+    operations: { yearly: dollars(50), perHomeDate: dollars(1.9) },
+  },
   roster: {
     maxActive: 23,
     minActive: 20,
