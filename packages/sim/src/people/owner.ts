@@ -1,6 +1,30 @@
-import type { OwnerProfile, Team } from '@gm/shared';
+import type { CoachProfile, OwnerProfile, Team } from '@gm/shared';
 import { FIRST, LAST, Rng } from '../core';
 import { hash } from './personality';
+
+/** A coach's deal, from the ruleset (`finance.coach`). */
+type CoachTerms = { salary: number; years: number };
+
+/** A new head coach: a fictional name, on the league's usual deal from `hired`. */
+export const newCoach = (rng: Rng, hired: number, terms: CoachTerms): CoachProfile => ({
+  name: `${rng.pick(FIRST)} ${rng.pick(LAST)}`,
+  hired,
+  ...terms,
+});
+
+/**
+ * A team's head coach; an old save's is derived from the team id (`season` is today's, so his
+ * deal sits at the same point every season until he is replaced).
+ */
+export function coachOf(team: Team, terms: CoachTerms, season: number): CoachProfile {
+  if (team.coach) return team.coach;
+  const rng = new Rng(hash(`coach:${team.id}`));
+  return newCoach(rng, season - Math.floor(rng.next() * terms.years), terms);
+}
+
+/** Seasons left on a coach's current deal, this one included (deals renew while he keeps the job). */
+export const coachSeasonsLeft = (coach: CoachProfile, season: number) =>
+  coach.years - ((((season - coach.hired) % coach.years) + coach.years) % coach.years);
 
 const round2 = (n: number) => Math.round(n * 100) / 100;
 

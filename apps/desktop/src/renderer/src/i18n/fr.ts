@@ -43,6 +43,9 @@ export const fr: Record<MessageKey, string> = {
   'team.owner.priority': 'Préfère gagner plutôt que faire du profit',
   'team.owner.patience': 'Patience',
   'team.owner.market': 'Taille du marché',
+  'team.coach': 'Entraîneur-chef',
+  'team.coach.since': 'En poste depuis',
+  'team.coach.salary': 'Salaire',
   'team.arena': 'Aréna et partisans',
   'team.arena.capacity': 'Places',
   'team.arena.attendance': 'Foule le mois dernier',
@@ -124,6 +127,7 @@ export const fr: Record<MessageKey, string> = {
   'event.lotteryWon': '{team} a remporté la loterie du repêchage',
   'event.gmFired': '{team} congédie son directeur général',
   'event.gmLeft': 'Le directeur général de {team} passe à autre chose',
+  'event.coachFired': '{team} congédie l’entraîneur-chef {coach}; {next} prend la relève',
   'event.planRebuild': '{team} annonce une reconstruction',
   'event.planContend': '{team} mise tout sur la saison',
   'event.bonusesPaid':
@@ -346,6 +350,9 @@ export const fr: Record<MessageKey, string> = {
   'owner.card.festival':
     "L'intérêt baisse : le propriétaire propose un festival des partisans pour {amount}.",
   'owner.effect.project': '{seats} places de plus une fois bâtie',
+  'owner.card.fireCoach':
+    'Les résultats ne suivent pas : le propriétaire veut le départ de l’entraîneur-chef. Le congédier coûte les {amount} qui restent à son contrat.',
+  'owner.effect.coach': '{name} prend la relève',
   'owner.option.agree': 'Accepter',
   'owner.option.refuse': 'Refuser',
   'owner.option.more': 'Demander plus',

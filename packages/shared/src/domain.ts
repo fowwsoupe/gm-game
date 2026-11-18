@@ -62,6 +62,8 @@ export interface FinanceLines {
     operations: number;
     /** Projects under way (a renovation). */
     projects: number;
+    /** The head coach's salary. Absent in settlements from before coaches. */
+    staff?: number;
   };
 }
 
@@ -220,6 +222,21 @@ export interface Team {
   gm?: GmProfile;
   /** The AI GM's plan for the next seasons. Absent: none yet (follows the standings). */
   plan?: TeamPlan;
+  /** The head coach. Absent: derived from the id. No effect on games yet. */
+  coach?: CoachProfile;
+}
+
+/**
+ * A head coach. His deal runs `years` seasons from `hired`, and renews on the same terms while
+ * he keeps the job; firing him pays what is left of the current deal.
+ */
+export interface CoachProfile {
+  name: string;
+  /** First season in the job. */
+  hired: number;
+  /** Whole dollars a season. */
+  salary: number;
+  years: number;
 }
 
 /** Go for it while the core is good, tune around the edges, or tear down and build up. */
@@ -282,6 +299,13 @@ export interface OwnerStanding {
   cashAtStart: number;
   /** Points % at the last review (next season's expectation starts from it). */
   lastPct?: number;
+  /**
+   * The coach's heat carried into this season: how far results have sat below expectation since
+   * he was hired, in points % x seasons (absent = 0). This season's games add to it as they go.
+   */
+  coachHeat?: number;
+  /** The season the owner last asked a human GM to fire the coach mid-season (once a season). */
+  coachAsked?: number;
 }
 
 /** The Owner screen: the owner, his view of you, the money's flow and every meeting, oldest first. */
@@ -314,6 +338,8 @@ export interface CardEffects {
     seats: number;
     fanInterest: number;
   };
+  /** Fires the coach and hires `hire`; his heat starts at `heat` (cancels this season's so far). */
+  coach?: { hire: CoachProfile; heat: number };
 }
 
 /**
@@ -344,7 +370,8 @@ export interface OwnerCard {
     | 'spendToCap'
     | 'fireSale'
     | 'renovation'
-    | 'festival';
+    | 'festival'
+    | 'fireCoach';
   /** Text params: `amount` in dollars, `pct` in whole percent. */
   params: Record<string, number>;
   options: { key: 'agree' | 'refuse' | 'more'; effects: CardEffects }[];

@@ -163,4 +163,8 @@ export const migrations: readonly string[] = [
   `
   CREATE INDEX IF NOT EXISTS events_kind ON events(kind, seq);
   `,
+  // 18: each team's head coach. NULL = derived from the team id.
+  `
+  ALTER TABLE teams ADD COLUMN coach_json TEXT;
+  `,
 ];

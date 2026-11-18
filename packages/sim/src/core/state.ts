@@ -418,9 +418,12 @@ export function applyEvent(state: LeagueState, event: LeagueEvent): void {
       if (owner) owner.confidence = event.confidence;
       return;
     }
-    case 'owner.cardOpened':
+    case 'owner.cardOpened': {
       state.ownerCards.push(structuredClone(event.card));
+      const owner = state.owners[event.card.teamId];
+      if (owner && event.card.kind === 'fireCoach') owner.coachAsked = event.date.season;
       return;
+    }
     case 'owner.cardAnswered': {
       const id = event.teamId;
       const fx = event.effects;
@@ -437,6 +440,10 @@ export function applyEvent(state: LeagueState, event: LeagueEvent): void {
         owner.confidence = Math.min(100, Math.max(0, owner.confidence + fx.confidence));
       }
       if (owner && fx.payrollBudget) owner.payrollBudget += fx.payrollBudget;
+      if (fx.coach) {
+        state.teams[id]!.coach = { ...fx.coach.hire };
+        if (owner) owner.coachHeat = fx.coach.heat;
+      }
       if (fx.project) {
         const { seasons, ...project } = fx.project;
         // Project cards open at the season-end review: building starts with next season.
