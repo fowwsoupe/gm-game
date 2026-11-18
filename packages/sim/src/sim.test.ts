@@ -204,6 +204,29 @@ describe('playoffs', () => {
   });
 });
 
+describe('the stop filter', () => {
+  it('stops only on the categories asked for', () => {
+    const state = createLeague(15, ctx);
+    const mine = Object.values(state.teams).find((t) => t.userControlled)!.id;
+    const res = handleCommand(
+      state,
+      { kind: 'sim.advance', days: 400, stopOn: ['injuries'] },
+      local,
+      ctx,
+    );
+    if (!res.ok) throw new Error();
+    // Ran past league moments (phase changes) and stopped on the day of your first long injury.
+    const longOnes = res.events.filter(
+      (e) => e.kind === 'player.injured' && e.days >= 14 && e.teamIds.includes(mine),
+    );
+    expect(longOnes).toHaveLength(1);
+    expect(res.events.at(-1)?.date.day).toBe(longOnes[0]!.date.day);
+    const none = handleCommand(state, { kind: 'sim.advance', days: 30, stopOn: [] }, local, ctx);
+    if (!none.ok) throw new Error();
+    expect(none.events.filter((e) => e.kind === 'clock.advanced')).toHaveLength(30);
+  });
+});
+
 describe('CBA rules', () => {
   it('validates contract length, minimum and maximum from the ruleset', () => {
     expect(

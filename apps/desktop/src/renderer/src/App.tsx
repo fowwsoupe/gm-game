@@ -10,6 +10,7 @@ import {
   useSteam,
   useTeams,
 } from '@/lib/queries';
+import type { StopCategory } from '@gm/shared';
 import { useUi, type Screen } from '@/stores/ui';
 import { useT, type MessageKey } from '@/i18n';
 import { Button } from '@/ui';
@@ -46,7 +47,7 @@ const NAV: { id: Screen; label: MessageKey }[] = [
 
 export function App() {
   const t = useT();
-  const { screen, setScreen, locale, setLocale } = useUi();
+  const { screen, setScreen, locale, setLocale, stopOn } = useUi();
   const { data: steam } = useSteam();
   const { data: teams = [], isError } = useTeams();
   const newLeague = useNewLeague();
@@ -74,7 +75,7 @@ export function App() {
     return () => window.removeEventListener('keydown', onKey);
   }, []);
 
-  const sim = (days: number, stopOn: 'never' | 'major' = 'never') =>
+  const sim = (days: number, stopOn: 'never' | readonly StopCategory[] = 'never') =>
     dispatch.mutate(
       { kind: 'sim.advance', days, stopOn },
       {
@@ -152,7 +153,7 @@ export function App() {
           <Button disabled={!hasLeague || dispatch.isPending} onClick={() => sim(7)}>
             {t('actions.simWeek')}
           </Button>
-          <Button disabled={!hasLeague || dispatch.isPending} onClick={() => sim(400, 'major')}>
+          <Button disabled={!hasLeague || dispatch.isPending} onClick={() => sim(400, stopOn)}>
             {t('actions.simToNext')}
           </Button>
           {status &&
