@@ -133,6 +133,10 @@ export interface Ruleset {
     salary: { min: Dollars; max: Dollars };
     /** Rating points a year the best development staff adds to a young player, the worst takes away. */
     development: { points: number };
+    /** A team's read of a prospect's potential (SD, rating points), the best scouting to the worst; the public range is 4. */
+    scouting: { best: number; worst: number };
+    /** Injury days x (1 + days x (league average - quality)): the best medical staff shortens them. */
+    medical: { days: number };
     /** Yearly chance a department head leaves, however the team did. */
     leave: number;
     /** Extra chance a good head is hired away: x his quality x the team's points % above average, in SDs. */

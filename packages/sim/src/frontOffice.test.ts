@@ -1,7 +1,14 @@
 import { describe, expect, it } from 'vitest';
 import type { LeagueEvent, Player, Team, TeamId } from '@gm/shared';
-import { createLeague, defaultContext, emitter, Rng, type LeagueState } from './index';
-import { changeStaff, developPlayers } from './offseason';
+import {
+  createLeague,
+  defaultContext,
+  emitter,
+  handleCommand,
+  Rng,
+  type LeagueState,
+} from './index';
+import { changeStaff, developPlayers, teamRange } from './offseason';
 import { ownerOf } from './people';
 import { overall } from './players';
 
@@ -60,5 +67,53 @@ describe('the staff market', () => {
       return q.reduce((a, b) => a + b, 0) / q.length;
     };
     expect(byBudget(true)).toBeGreaterThan(byBudget(false) + 0.1);
+  });
+});
+
+describe('scouting and medical staff', () => {
+  it("a good scouting department's range is narrower and closer to the truth", () => {
+    const state = createLeague(1, ctx);
+    const team = Object.values(state.teams)[0]!;
+    const good = { ...team, staff: { scouting: head(1) } };
+    const poor = { ...team, staff: { scouting: head(0) } };
+    const prospects = Array.from({ length: 200 }, (_, i) => ({
+      player: { ...Object.values(state.players)[0]!, id: `p${i}` as Player['id'], potential: 70 },
+      low: 65,
+      high: 75,
+    }));
+    const err = (t: Team) =>
+      prospects.reduce((s, d) => {
+        const r = teamRange(t, d, ctx, 2027);
+        return s + Math.abs((r.low + r.high) / 2 - 70);
+      }, 0) / prospects.length;
+    const width = (t: Team) => {
+      const r = teamRange(t, prospects[0]!, ctx, 2027);
+      return r.high - r.low;
+    };
+    expect(err(good)).toBeLessThan(err(poor) / 2);
+    expect(width(good)).toBeLessThan(width(poor));
+  });
+
+  it('the best medical staff shortens injuries, the worst lengthens them', () => {
+    const total = (quality: number) => {
+      const state = createLeague(1, ctx);
+      for (const t of Object.values(state.teams)) t.staff = { medical: head(0.5) };
+      const mine = Object.keys(state.teams).sort()[0] as TeamId;
+      state.teams[mine]!.staff = { medical: head(quality) };
+      const done = handleCommand(
+        state,
+        { kind: 'sim.advance', days: 120 },
+        { id: 'local', controls: [] },
+        ctx,
+      );
+      if (!done.ok) throw new Error(done.error.message);
+      const events = done.events;
+      return events.reduce(
+        (s, e) => (e.kind === 'player.injured' && e.teamIds.includes(mine) ? s + e.days : s),
+        0,
+      );
+    };
+    // Same games and draws either way: only the days change (x0.8 against x1.2).
+    expect(total(1)).toBeLessThan(total(0) * 0.75);
   });
 });

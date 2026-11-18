@@ -35,6 +35,7 @@ import {
   teamRatings,
   evaluateTrade,
   scoutReport,
+  teamRange,
   signingInterest,
   tradeWindowOpen,
   playerRecords,
@@ -507,7 +508,10 @@ export class LeagueService {
     const { state } = this.open();
     const ctx = defaultContext(state.rulesetId);
     return {
-      prospects: state.draftClass.map((d) => {
+      prospects: state.draftClass.map((pd) => {
+        // Your scouting department's read, not the public range.
+        const team = state.teams[teamId];
+        const d = team ? { ...pd, ...teamRange(team, pd, ctx, state.date.season) } : pd;
         const { player: p, low, high } = d;
         return {
           id: p.id,

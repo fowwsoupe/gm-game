@@ -35,6 +35,7 @@ export {
   signFreeAgent,
   signingInterest,
   stayChance,
+  teamRange,
 } from './offseason';
 export { giveSeasonAwards } from './awards';
 export { ownerStanding } from './owner';
