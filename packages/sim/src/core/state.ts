@@ -84,7 +84,7 @@ export interface LeagueState {
   /** Players on human teams holding out: they sit out until paid, talked round or traded. */
   holdouts: { playerId: PlayerId; teamId: TeamId }[];
   /** Players unhappy with their role on a human team; `until`: the day a promised role is due. */
-  disputes: { playerId: PlayerId; teamId: TeamId; until?: number }[];
+  disputes: { playerId: PlayerId; teamId: TeamId; until?: number; listed?: true }[];
   /**
    * Games each pair of teammates has played in the same unit (a line or a pair), by team and
    * `linemateKey`, capped at `LINEMATE_GAMES_CAP`. A pair goes when either player leaves the team.
@@ -305,6 +305,11 @@ export function applyEvent(state: LeagueState, event: LeagueEvent): void {
     case 'player.disputeStarted':
       state.disputes.push({ playerId: event.playerId, teamId: event.teamId });
       return;
+    case 'player.disputeListed': {
+      const d = state.disputes.find((x) => x.playerId === event.playerId);
+      if (d) d.listed = true;
+      return;
+    }
     case 'player.disputePromised': {
       const d = state.disputes.find((x) => x.playerId === event.playerId);
       if (d) d.until = event.until;

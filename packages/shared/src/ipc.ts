@@ -96,7 +96,7 @@ export interface GmApi {
       /** How the team's goalies share starts. */
       rotation: GoalieRotation;
       /** Players unhappy with their role; `until`: the day a promised role is due. */
-      disputes: { playerId: string; until?: number }[];
+      disputes: { playerId: string; until?: number; listed?: true }[];
     }>;
     /** A player's finished regular seasons, oldest first. */
     career(input: { playerId: string }): Promise<CareerLine[]>;

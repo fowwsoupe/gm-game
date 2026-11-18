@@ -404,6 +404,7 @@ export const en = {
   'lines.dispute.promise': 'Promise a role',
   'lines.dispute.patience': 'Ask for patience',
   'lines.dispute.block': 'Put him on the block',
+  'lines.disputeListed': '{player} is on the block (take him off and he asks for a trade)',
   'event.holdoutStarted': '{player} is holding out for a new deal with the {team}',
   'event.holdoutEnded': '{player} ended the holdout and reported',
   'event.holdoutStands': '{player} is still holding out after meeting the GM',

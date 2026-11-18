@@ -59,7 +59,10 @@ describe('disputes', () => {
       expect(talk(state, player, 'promise').ok).toBe(true);
       expect(talk(state, player, 'patience').ok).toBe(false); // promised already
       if (keep) state.depthCharts[teamId] = [player.id, ...state.depthCharts[teamId]!];
-      state.date.day += PROMISE_DAYS;
+      state.date.day = Math.min(
+        state.date.day + PROMISE_DAYS,
+        ctx.ruleset.season.calendar.regularSeasonDays - 1,
+      );
       const log: LeagueEvent[] = [];
       disputesWeek(state, new Rng(999), emitter(state, log));
       const ended = log.find((e) => e.kind === 'player.disputeEnded');
@@ -71,7 +74,7 @@ describe('disputes', () => {
     }
   });
 
-  it('patience is up to who he is; the block lists him; both end the dispute', () => {
+  it('patience is up to who he is; the block lists him until you take him off', () => {
     const a = benched();
     startDispute(a.state);
     expect(talk(a.state, a.player, 'patience').ok).toBe(true);
@@ -83,7 +86,20 @@ describe('disputes', () => {
     startDispute(b.state);
     expect(talk(b.state, b.player, 'block').ok).toBe(true);
     expect(b.state.tradeBlock).toContain(b.player.id);
+    // Listed, it waits; taken off the block, he asks for a trade.
+    disputesWeek(b.state, new Rng(1), emitter(b.state, [] as LeagueEvent[]));
+    expect(b.state.disputes).toHaveLength(1);
+    expect(talk(b.state, b.player, 'patience').ok).toBe(false);
+    const off = handleCommand(
+      b.state,
+      { kind: 'trade.block', teamId: b.teamId, playerId: b.player.id, onBlock: false },
+      local,
+      ctx,
+    );
+    expect(off.ok).toBe(true);
+    disputesWeek(b.state, new Rng(1), emitter(b.state, [] as LeagueEvent[]));
     expect(b.state.disputes).toEqual([]);
+    expect(b.state.tradeRequests.some((r) => r.playerId === b.player.id)).toBe(true);
   });
 
   it('nobody is short of a role on a team that never set its lines', () => {
