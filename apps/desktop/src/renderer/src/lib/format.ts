@@ -3,6 +3,16 @@ import { formatMoney, type Team } from '@gm/shared';
 /** Whole dollars as $X.XXM (-$0.50M when negative). */
 export const money = formatMoney;
 
+/** Staff quality (0-1) as a word: the number stays hidden, like player ratings. */
+export const qualityKey = (q: number) =>
+  q < 0.25
+    ? ('staff.quality.poor' as const)
+    : q < 0.6
+      ? ('staff.quality.average' as const)
+      : q < 0.85
+        ? ('staff.quality.good' as const)
+        : ('staff.quality.elite' as const);
+
 /** Message params with `amount` (whole dollars) formatted as money. */
 export const moneyParams = (params: Record<string, string | number> = {}) =>
   typeof params.amount === 'number' ? { ...params, amount: money(params.amount) } : params;

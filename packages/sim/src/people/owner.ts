@@ -50,7 +50,8 @@ export function staffOf(
   return {
     name,
     quality,
-    hired: season - Math.floor(rng.next() * 5),
+    // Never this season: a derived head was not just hired (a new hire is stored).
+    hired: season - 1 - Math.floor(rng.next() * 5),
     salary: staffSalary(quality, salary),
   };
 }

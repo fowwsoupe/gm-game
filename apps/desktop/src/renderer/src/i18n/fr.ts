@@ -10,6 +10,16 @@ export const fr: Record<MessageKey, string> = {
   'nav.history': 'Historique',
   'nav.freeAgency': 'Autonomes',
   'nav.owner': 'Propriétaire',
+  'nav.frontOffice': 'Personnel hockey',
+  'frontOffice.empty': 'Prenez les commandes d’une équipe pour diriger son personnel hockey.',
+  'frontOffice.intro':
+    'Le dépistage évalue les espoirs du repêchage, le développement fait progresser vos jeunes, le médical écourte les blessures. Les meilleurs coûtent plus cher; ils partent aussi, ou se font embaucher ailleurs quand vous gagnez.',
+  'frontOffice.since': 'depuis {season}',
+  'frontOffice.candidate': 'Disponibles cette saison',
+  'frontOffice.quality': 'Qualité',
+  'frontOffice.hire': 'Embaucher',
+  'frontOffice.hiredNow':
+    'Embauche faite cette saison : le prochain changement attend la saison prochaine.',
   'owner.empty': 'Choisissez votre équipe dans Accueil pour rencontrer son propriétaire.',
   'owner.confidence': 'Confiance en vous',
   'owner.cash': 'Encaisse',

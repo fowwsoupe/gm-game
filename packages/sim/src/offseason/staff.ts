@@ -1,7 +1,7 @@
-import type { StaffProfile, TeamId } from '@gm/shared';
-import { FIRST, LAST, teamName, type Emit, type LeagueState, type Rng } from '../core';
+import type { Department, StaffProfile, Team, TeamId } from '@gm/shared';
+import { FIRST, LAST, Rng, teamName, type Emit, type LeagueState } from '../core';
 import type { SimContext } from '../context';
-import { DEPARTMENTS, ownerOf, staffOf, staffSalary } from '../people';
+import { DEPARTMENTS, hash, ownerOf, staffOf, staffSalary } from '../people';
 import { leagueStandings } from '../league';
 
 /** A head this good or better makes league-wide news when he moves. */
@@ -67,4 +67,32 @@ export function changeStaff(
       }
     }
   }
+}
+
+/** How far apart the three candidates' qualities sit: a cheap one, the owner's usual, a dear one. */
+const CANDIDATE_STEP = 0.25;
+
+/**
+ * The three people a human GM can hire for a department this season, cheapest first. Centred
+ * on what the owner spends, like the AI's hires; the same all season, so nothing is stored.
+ */
+export function staffCandidates(
+  team: Team,
+  department: Department,
+  ctx: SimContext,
+  season: number,
+): StaffProfile[] {
+  const fo = ctx.ruleset.frontOffice;
+  const centre = 0.5 + fo.spend * (ownerOf(team).budget - 0.5);
+  const r = new Rng(hash(`candidates:${team.id}:${department}:${season}`));
+  return [-1, 0, 1].map((step) => {
+    const quality =
+      Math.round(clamp01(centre + step * CANDIDATE_STEP + r.normal(0, fo.hireSd / 2)) * 100) / 100;
+    return {
+      name: `${r.pick(FIRST)} ${r.pick(LAST)}`,
+      quality,
+      hired: season,
+      salary: staffSalary(quality, fo.salary),
+    };
+  });
 }

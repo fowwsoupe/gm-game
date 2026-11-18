@@ -3,7 +3,7 @@ import { useCapSheet, useDispatch, useLines, useOwner, useRoster, useTeams } fro
 import { useUi } from '@/stores/ui';
 import { useT, type MessageKey } from '@/i18n';
 import { Button, Card, Td, Th } from '@/ui';
-import { fullName, money, teamName } from '@/lib/format';
+import { fullName, money, qualityKey, teamName } from '@/lib/format';
 import { Summary } from '@/screens/Cap';
 
 /** Any team's roster, cap sheet and depth chart, built from the existing queries. */
@@ -173,13 +173,3 @@ export function TeamPage() {
 }
 
 const signedPct = (pct: number) => `${pct > 0 ? '+' : ''}${pct}%`;
-
-/** Staff quality as a word: the number stays hidden, like player ratings. */
-const qualityKey = (q: number): MessageKey =>
-  q < 0.25
-    ? 'staff.quality.poor'
-    : q < 0.6
-      ? 'staff.quality.average'
-      : q < 0.85
-        ? 'staff.quality.good'
-        : 'staff.quality.elite';

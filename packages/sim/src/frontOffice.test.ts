@@ -9,7 +9,7 @@ import {
   strengthFor,
   type LeagueState,
 } from './index';
-import { changeStaff, developPlayers, teamRange } from './offseason';
+import { changeStaff, developPlayers, staffCandidates, teamRange } from './offseason';
 import { ownerOf } from './people';
 import { overall } from './players';
 
@@ -136,5 +136,28 @@ describe('the head coach in games', () => {
     const points = 2 * ctx.ruleset.frontOffice.coaching.points;
     expect(great.offense - poor.offense).toBeCloseTo(points);
     expect(great.defense - poor.defense).toBeCloseTo(points);
+  });
+});
+
+describe('hiring through commands', () => {
+  it('hires a candidate, once a department a season, only for your own team', () => {
+    const state = createLeague(1, ctx);
+    const [mine, theirs] = Object.keys(state.teams).sort() as [TeamId, TeamId];
+    const you = { id: 'you', controls: [mine] };
+    const hire = (teamId: TeamId, candidate: number) =>
+      handleCommand(
+        state,
+        { kind: 'staff.hire', teamId, department: 'development', candidate },
+        you,
+        ctx,
+      );
+    const pick = staffCandidates(state.teams[mine]!, 'development', ctx, state.date.season)[2]!;
+    const done = hire(mine, 2);
+    expect(done.ok).toBe(true);
+    expect(state.teams[mine]!.staff?.development).toEqual(pick);
+    expect(hire(mine, 0).ok).toBe(false); // already hired this season
+    expect(hire(theirs, 0).ok).toBe(false); // not yours
+    const [cheap, , dear] = staffCandidates(state.teams[theirs]!, 'medical', ctx, 2030);
+    expect(cheap!.quality).toBeLessThanOrEqual(dear!.quality);
   });
 });
