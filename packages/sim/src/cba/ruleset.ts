@@ -131,6 +131,8 @@ export interface Ruleset {
   frontOffice: {
     /** A department head's salary, the worst (quality 0) to the best (1), rising with quality squared. */
     salary: { min: Dollars; max: Dollars };
+    /** Rating points a year the best development staff adds to a young player, the worst takes away. */
+    development: { points: number };
   };
 
   roster: {

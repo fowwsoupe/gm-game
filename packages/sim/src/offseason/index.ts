@@ -20,6 +20,7 @@ export { signingInterest, signFreeAgent, sheetCompensation } from './signing';
 export { acceptSheet, marketDay, roomFor } from './market';
 export { aiHoldouts, resignOffers, resignContract, isExpiring, resignWindowOpen } from './resign';
 export { stayChance } from './freeAgency';
+export { developPlayers } from './progression';
 import { expireContracts, fillRosters, meetCapFloor, reSignPlayers } from './freeAgency';
 import { MARKET_DAYS, decideOffers, marketDay } from './market';
 import { developPlayers, retirePlayers } from './progression';
@@ -51,7 +52,7 @@ export function openFreeAgency(state: LeagueState, ctx: SimContext, emit: Emit):
   const order = worstFirst(state, ctx.ruleset);
   changeGms(state, rng.fork('gms'), emit);
   archiveStats(state, ctx, emit);
-  developPlayers(state, ctx.models.development, rng.fork('development'), emit, season);
+  developPlayers(state, ctx, rng.fork('development'), emit, season);
   retirePlayers(state, ctx.models.development, rng.fork('retirement'), emit, season);
   setPlans(state, emit, season);
   const expiring = expireContracts(state, ctx, emit);

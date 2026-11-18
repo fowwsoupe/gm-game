@@ -100,7 +100,10 @@ export const NHL_2026: Ruleset = {
     coach: { salary: dollars(2.95), years: 3 }, // ESPN 2024: about $2.5M, usually three-year deals
   },
   // docs/research/2026-11-front-office.md: no public source; unverified, tuned in the lab.
-  frontOffice: { salary: { min: dollars(0.5), max: dollars(3) } },
+  frontOffice: {
+    salary: { min: dollars(0.5), max: dollars(3) },
+    development: { points: 2 }, // was ORG_DEVELOPMENT, from GM skill
+  },
   roster: {
     maxActive: 23,
     minActive: 20,
