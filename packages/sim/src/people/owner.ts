@@ -17,6 +17,9 @@ export function ownerOf(team: Team): OwnerProfile {
   };
 }
 
-/** A team's market size (0.65-1.75), derived from the team id. */
+/**
+ * A team's market size (0.65-1.75), derived from the team id. Squared, so most teams are small or
+ * mid-market and a few are big cities (mean about 1): the balance lab's revenue spread and mean.
+ */
 export const marketOf = (team: Team): number =>
-  round2(MARKET.min + new Rng(hash(`market:${team.id}`)).next() * (MARKET.max - MARKET.min));
+  round2(MARKET.min + new Rng(hash(`market:${team.id}`)).next() ** 2 * (MARKET.max - MARKET.min));

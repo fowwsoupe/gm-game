@@ -61,6 +61,7 @@ const JSON_META = {
   tradeRequests: '[]',
   holdouts: '[]',
   linemates: '{}',
+  cash: '{}',
   faOffers: '[]',
   rfaRights: '{}',
   formerTeams: '{}',
@@ -471,6 +472,7 @@ export class SaveFile {
           case 'player.holdoutStarted':
           case 'player.holdoutEnded':
           case 'trade.offerClosed':
+          case 'finance.settled':
             break; // stored with the clock below
           case 'freeAgency.opened':
             this.setMeta('freeAgencyOpen', '1');

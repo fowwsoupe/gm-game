@@ -107,6 +107,24 @@ export interface Ruleset {
     termMultiplier: number;
   };
 
+  /** League money: revenue and costs (docs/research/2026-11-owner-finance.md). */
+  finance: {
+    /** Fans a home date (until capacity and fan interest set attendance). */
+    fansPerDate: number;
+    /** A fan's ticket, and spend on the night (concessions, parking, merch), at a market-1 team. */
+    ticketPrice: Dollars;
+    gameDaySpend: Dollars;
+    /** Yearly at a market-1 team. */
+    sponsorship: Dollars;
+    localMedia: Dollars;
+    /** Yearly, the same for every team (national media, league business). */
+    leagueShare: Dollars;
+    /** A playoff home date: the gate's markup and the players' share (whole percent), and the league's fee. */
+    playoffs: { markupPct: number; playersPct: number; feePerDate: Dollars };
+    /** Arena and operations: a fixed yearly amount plus a cost per home date (x market). */
+    operations: { yearly: Dollars; perHomeDate: Dollars };
+  };
+
   roster: {
     maxActive: number;
     minActive: number;

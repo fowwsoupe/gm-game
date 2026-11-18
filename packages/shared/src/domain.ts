@@ -42,6 +42,27 @@ export interface CapCharge {
   amount: number;
 }
 
+/** A team's money over one settlement (a month, or the playoffs): whole dollars, all positive. */
+export interface FinanceLines {
+  revenue: {
+    gate: number;
+    gameDay: number;
+    sponsorship: number;
+    media: number;
+    leagueShare: number;
+    /** Playoff gate, net of the players' share and the league's fee. */
+    playoffs: number;
+  };
+  costs: {
+    salaries: number;
+    signingBonuses: number;
+    performanceBonuses: number;
+    /** Buyouts and retained salary paid to players no longer on the team. */
+    deadCap: number;
+    operations: number;
+  };
+}
+
 /** Why a team's cap is not legal in a season. The cap advisor shows these; it never blocks. */
 export type CapIssue =
   | { code: 'over_cap'; over: number }

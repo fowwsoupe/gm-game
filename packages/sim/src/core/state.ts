@@ -82,6 +82,8 @@ export interface LeagueState {
    * `linemateKey`, capped at `LINEMATE_GAMES_CAP`. A pair goes when either player leaves the team.
    */
   linemates: Record<TeamId, Record<string, number>>;
+  /** Each team's cash, whole dollars (absent = 0; may go negative). Moved only by `finance.settled`. */
+  cash: Record<TeamId, number>;
   /** Count of events applied so far; the next event's id is built from it. */
   eventSeq: number;
 }
@@ -380,6 +382,13 @@ export function applyEvent(state: LeagueState, event: LeagueEvent): void {
     case 'bonuses.paid':
       state.capCharges.push(...event.charges.map((c) => ({ ...c })));
       return;
+    case 'finance.settled': {
+      const sum = (lines: Record<string, number>) =>
+        Object.values(lines).reduce((a, b) => a + b, 0);
+      state.cash[event.teamId] =
+        (state.cash[event.teamId] ?? 0) + sum(event.revenue) - sum(event.costs);
+      return;
+    }
     case 'award.given':
     case 'stats.archived':
     case 'season.phaseChanged':

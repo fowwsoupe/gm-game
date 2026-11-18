@@ -3,6 +3,7 @@ import type {
   CapCharge,
   Contract,
   DraftProspect,
+  FinanceLines,
   GameResult,
   GmProfile,
   Player,
@@ -109,6 +110,8 @@ export type LeagueEvent =
       paid: { playerId: PlayerId; teamId: TeamId; amount: number }[];
       charges: CapCharge[];
     })
+  /** A team's cash for a month (or the playoffs) settles: revenue in, costs out. */
+  | (EventBase & ({ kind: 'finance.settled'; teamId: TeamId } & FinanceLines))
   /** End of season: who won an award. `playerId` is absent for team awards (champion). */
   | (EventBase & {
       kind: 'award.given';

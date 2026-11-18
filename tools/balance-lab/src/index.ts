@@ -30,6 +30,7 @@ import {
   strengthEdge,
   teamStrength,
   type LeagueState,
+  net,
   teamCapTotal,
   validateContract,
 } from '@gm/sim';
@@ -216,6 +217,8 @@ let maxPool = 0;
 let playoffTeamsNew = 0;
 let playoffSpotsCompared = 0;
 const goalieSvPairs: [number, number][] = [];
+/** Per team-season money ($): revenue, gate (regular and playoff), operating profit. */
+const money = { revenue: [] as number[], gate: 0, profit: [] as number[], spread: [] as number[] };
 /**
  * Long-run parity: from this season on a multi-year league has gone through enough offseasons
  * that its teams are built by the AI GMs, not by league generation.
@@ -270,6 +273,19 @@ for (let l = 0; l < leagues; l++) {
       ctx,
     );
     if (!played.ok) throw new Error(played.error.message);
+    const books = new Map<string, { revenue: number; profit: number }>();
+    for (const e of played.events) {
+      if (e.kind !== 'finance.settled') continue;
+      const b = books.get(e.teamId) ?? { revenue: 0, profit: 0 };
+      b.revenue += Object.values(e.revenue).reduce((a, x) => a + x, 0);
+      b.profit += net(e);
+      books.set(e.teamId, b);
+      money.gate += e.revenue.gate + e.revenue.playoffs;
+    }
+    const revenues = [...books.values()].map((b) => b.revenue);
+    money.revenue.push(...revenues);
+    money.profit.push(...[...books.values()].map((b) => b.profit));
+    money.spread.push(Math.max(...revenues) / Math.min(...revenues));
     const pct = new Map(
       leagueStandings(state, ctx.ruleset).map((row) => [
         row.teamId as string,
@@ -481,6 +497,30 @@ const checks: Check[] = [
     max: 0.3,
   },
   { name: 'Free-agent pool, largest (unverified)', value: maxPool, min: 0, max: 150 },
+  // Money, per team-season (docs/research/2026-11-owner-finance.md): Forbes 2024-25 x the cap ratio.
+  { name: 'Revenue a team, mean', value: mean(money.revenue) / 1e6, min: 265, max: 320, unit: 'M' },
+  { name: 'Revenue, top team / bottom team', value: mean(money.spread), min: 2, max: 3, unit: 'x' },
+  {
+    name: 'Operating profit, mean',
+    value: mean(money.profit) / 1e6,
+    min: 70,
+    max: 105,
+    unit: 'M',
+  },
+  {
+    name: 'Team-seasons losing money',
+    value: (100 * money.profit.filter((p) => p < 0).length) / money.profit.length,
+    min: 0,
+    max: 10,
+    unit: '%',
+  },
+  {
+    name: 'Gate share of revenue',
+    value: (100 * money.gate) / money.revenue.reduce((a, b) => a + b, 0),
+    min: 35,
+    max: 45,
+    unit: '%',
+  },
   // Long run (multi-year leagues, LONG_RUN_FROM on): teams converge and games drift toward coin
   // flips, because nothing gives a team a lasting edge (docs/research/2026-11-long-run-spread.md).
   {

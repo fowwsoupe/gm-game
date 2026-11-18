@@ -8,9 +8,13 @@ import { teamCapTotal } from './cap';
  * Pays this season's performance bonuses (call before the champion is crowned, while the cap
  * year is still this season). Each player with a `perfBonus` earns the share his regular season
  * met (`sport.bonusEarned`). A team whose cap total plus bonuses goes over the upper limit carries
- * the overage to next season's cap, charged to its biggest earners first.
+ * the overage to next season's cap, charged to its biggest earners first. Returns what was paid.
  */
-export function payBonuses(state: LeagueState, ctx: SimContext, emit: Emit): void {
+export function payBonuses(
+  state: LeagueState,
+  ctx: SimContext,
+  emit: Emit,
+): { playerId: PlayerId; teamId: TeamId; amount: number }[] {
   const season = state.date.season;
   const lines = ctx.sport.playerLines(
     Object.values(state.results).filter((g) => !g.playoffSeriesId),
@@ -24,7 +28,7 @@ export function payBonuses(state: LeagueState, ctx: SimContext, emit: Emit): voi
     const amount = Math.round(bonus * ctx.sport.bonusEarned(line, games));
     if (amount > 0) paid.push({ playerId: p.id, teamId: p.teamId, amount });
   }
-  if (!paid.length) return;
+  if (!paid.length) return paid;
   const charges: CapCharge[] = [];
   for (const teamId of [...new Set(paid.map((x) => x.teamId))].sort()) {
     const mine = paid.filter((x) => x.teamId === teamId).sort((a, b) => b.amount - a.amount);
@@ -50,4 +54,5 @@ export function payBonuses(state: LeagueState, ctx: SimContext, emit: Emit): voi
     paid,
     charges,
   });
+  return paid;
 }
