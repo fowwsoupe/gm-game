@@ -36,6 +36,10 @@ export function dashboard(state: LeagueState, ctx: SimContext, teamId: TeamId): 
       });
     }
   }
+  for (const d of state.disputes.filter((x) => x.teamId === teamId && x.until === undefined)) {
+    const p = state.players[d.playerId];
+    if (p) todo.push({ code: 'dispute', params: { player: playerName(p) }, screen: 'lines' });
+  }
   for (const h of state.holdouts.filter((x) => x.teamId === teamId)) {
     const p = state.players[h.playerId];
     if (p) {

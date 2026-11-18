@@ -276,6 +276,12 @@ function FeedCard() {
           player: names[e.playerId] ?? '',
           team: team(e.teamId),
         });
+      case 'player.disputeStarted':
+        return t('event.disputeStarted', { player: names[e.playerId] ?? '' });
+      case 'player.disputeEnded':
+        return e.outcome === 'kept' || e.outcome === 'settled'
+          ? t('event.disputeSettled', { player: names[e.playerId] ?? '' })
+          : null;
       case 'player.holdoutEnded':
         return t('event.holdoutEnded', { player: names[e.playerId] ?? '' });
       case 'player.tradeRequestEnded':

@@ -11,7 +11,7 @@ import {
 } from './core';
 import { buyoutCharges, capYearIssues, capYearOf, teamCapTotal } from './cba';
 import { parsePick } from './league';
-import { talkedDown, talkedRound } from './people';
+import { PROMISE_DAYS, talkedDown, talkedRound } from './people';
 import {
   isExpiring,
   acceptSheet,
@@ -200,6 +200,59 @@ export function handleCommand(
             params: { player: playerName(p) },
           });
       return applied(state, ev);
+    }
+
+    case 'dispute.talk': {
+      const dispute = state.disputes.find((d) => d.playerId === command.playerId);
+      if (!dispute) return invalid('no such dispute');
+      const team = state.teams[dispute.teamId]!;
+      if (!controls(actor, team)) return notYours;
+      if (dispute.until !== undefined) return invalid('you already promised him a role');
+      const p = state.players[command.playerId]!;
+      const ends = (outcome: 'settled' | 'request' | 'listed') =>
+        makeEvent(state, 'notable', [team.id], {
+          kind: 'player.disputeEnded',
+          playerId: p.id,
+          outcome,
+        });
+      const events: LeagueEvent[] = [];
+      const push = (ev: LeagueEvent) => {
+        applyEvent(state, ev);
+        events.push(ev);
+      };
+      if (command.answer === 'promise') {
+        push(
+          makeEvent(state, 'notable', [team.id], {
+            kind: 'player.disputePromised',
+            playerId: p.id,
+            until: state.date.day + PROMISE_DAYS,
+          }),
+        );
+      } else if (command.answer === 'block') {
+        push(
+          makeEvent(state, 'minor', [team.id], {
+            kind: 'trade.blockSet',
+            teamId: team.id,
+            playerId: p.id,
+            onBlock: true,
+          }),
+        );
+        push(ends('listed'));
+      } else if (talkedDown(p.id)) {
+        push(ends('settled'));
+      } else {
+        push(ends('request'));
+        if (!state.tradeRequests.some((r) => r.playerId === p.id)) {
+          push(
+            makeEvent(state, 'major', [team.id], {
+              kind: 'player.tradeRequested',
+              playerId: p.id,
+              teamId: team.id,
+            }),
+          );
+        }
+      }
+      return { ok: true, events };
     }
 
     case 'holdout.talk': {

@@ -176,6 +176,44 @@ export function Lines() {
         )}
         {error && <span className="text-sm text-bad">{error}</span>}
       </div>
+      {data && data.disputes.length > 0 && (
+        <Card title={t('lines.disputes')}>
+          <ul className="space-y-2 text-sm">
+            {data.disputes.map((d) => {
+              const p = byId.get(d.playerId);
+              const player = p ? fullName(p) : d.playerId;
+              return (
+                <li key={d.playerId} className="flex flex-wrap items-center justify-between gap-2">
+                  {d.until === undefined ? (
+                    <>
+                      <span>{t('lines.disputeLine', { player })}</span>
+                      <span className="flex gap-1">
+                        {(['promise', 'patience', 'block'] as const).map((answer) => (
+                          <Button
+                            key={answer}
+                            disabled={dispatch.isPending}
+                            onClick={() =>
+                              dispatch.mutate({
+                                kind: 'dispute.talk',
+                                playerId: d.playerId as PlayerId,
+                                answer,
+                              })
+                            }
+                          >
+                            {t(`lines.dispute.${answer}`)}
+                          </Button>
+                        ))}
+                      </span>
+                    </>
+                  ) : (
+                    <span>{t('lines.disputePromised', { player, day: d.until })}</span>
+                  )}
+                </li>
+              );
+            })}
+          </ul>
+        </Card>
+      )}
       <div className="grid gap-4 md:grid-cols-2 xl:grid-cols-4">
         {units.map((u) => (
           <Card
