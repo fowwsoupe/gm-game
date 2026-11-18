@@ -12,7 +12,7 @@ const ctx = defaultContext();
 const YEARS = process.env.GM_SLOW ? 20 : 4;
 
 describe('speed budget', () => {
-  it('sims a full regular season well under 20 s', () => {
+  it('sims a full regular season in under 5 s', () => {
     const state = createLeague(123, ctx);
     const t0 = performance.now();
     const res = handleCommand(
@@ -42,7 +42,7 @@ describe('speed budget', () => {
     expect(performance.now() - t0).toBeLessThan(1_000);
   });
 
-  it('sims one day well under 0.5 s', () => {
+  it('sims one day in under 0.25 s', () => {
     const state = createLeague(7, ctx);
     const t0 = performance.now();
     handleCommand(state, { kind: 'sim.advance', days: 1 }, { id: 'local', controls: [] }, ctx);

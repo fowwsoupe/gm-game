@@ -33,48 +33,50 @@ function atStart(seed: number) {
   return { state, mine, events, ours: () => state.holdouts.filter((h) => h.teamId === mine) };
 }
 
+/** The first seed where one of my players holds out (searched once), freshly played each call. */
+let holdoutSeed: number | undefined;
+function withHoldout() {
+  if (holdoutSeed === undefined) {
+    for (let seed = 1; seed < 40 && holdoutSeed === undefined; seed++) {
+      if (atStart(seed).ours().length > 0) holdoutSeed = seed;
+    }
+  }
+  if (holdoutSeed === undefined) throw new Error('no holdout in 40 seeds');
+  return atStart(holdoutSeed);
+}
+
 describe('holdouts', () => {
   it('an underpaid, greedy core player may refuse to report, and then sits out', () => {
-    for (let seed = 1; seed < 40; seed++) {
-      const { state, ours } = atStart(seed);
-      if (ours().length === 0) continue;
-      expect(ours()).toHaveLength(1);
-      const { playerId } = ours()[0]!;
-      expect(personalityOf(playerId).greed).toBeGreaterThanOrEqual(0.6);
-      // A talk works exactly when who he is says so; otherwise he gives up within the season.
-      run(state, { kind: 'holdout.talk', playerId });
-      expect(ours().length === 0).toBe(talkedRound(playerId));
-      run(state, { kind: 'sim.advance', days: 100 });
-      expect(ours()).toHaveLength(0);
-      return;
-    }
-    throw new Error('no holdout in 40 seeds');
+    const { state, ours } = withHoldout();
+    expect(ours()).toHaveLength(1);
+    const { playerId } = ours()[0]!;
+    expect(personalityOf(playerId).greed).toBeGreaterThanOrEqual(0.6);
+    // A talk works exactly when who he is says so; otherwise he gives up within the season.
+    run(state, { kind: 'holdout.talk', playerId });
+    expect(ours().length === 0).toBe(talkedRound(playerId));
+    run(state, { kind: 'sim.advance', days: 100 });
+    expect(ours()).toHaveLength(0);
   });
 
   it('a traded holdout is no longer holding out', () => {
-    for (let seed = 1; seed < 40; seed++) {
-      const { state, mine, ours } = atStart(seed);
-      if (ours().length === 0) continue;
-      const { playerId } = ours()[0]!;
-      const partner = Object.values(state.teams).find((t) => t.id !== mine)!.id;
-      const generous = defaultContext(ctx.ruleset.id, {
-        models: { valuation: { value: () => ({ surplus: 50_000_000, reasons: [] }) } },
-      });
-      const res = handleCommand(
-        state,
-        {
-          kind: 'trade.propose',
-          proposal: { fromTeamId: mine, toTeamId: partner, give: [playerId], get: [] },
-        },
-        local,
-        generous,
-      );
-      if (!res.ok) throw new Error(res.error.message);
-      expect(state.players[playerId]!.teamId).toBe(partner);
-      expect(state.holdouts.some((h) => h.playerId === playerId)).toBe(false);
-      return;
-    }
-    throw new Error('no holdout in 40 seeds');
+    const { state, mine, ours } = withHoldout();
+    const { playerId } = ours()[0]!;
+    const partner = Object.values(state.teams).find((t) => t.id !== mine)!.id;
+    const generous = defaultContext(ctx.ruleset.id, {
+      models: { valuation: { value: () => ({ surplus: 50_000_000, reasons: [] }) } },
+    });
+    const res = handleCommand(
+      state,
+      {
+        kind: 'trade.propose',
+        proposal: { fromTeamId: mine, toTeamId: partner, give: [playerId], get: [] },
+      },
+      local,
+      generous,
+    );
+    if (!res.ok) throw new Error(res.error.message);
+    expect(state.players[playerId]!.teamId).toBe(partner);
+    expect(state.holdouts.some((h) => h.playerId === playerId)).toBe(false);
   });
 
   it('an AI GM pays a holdout in his last season if he plays to win; a builder waits him out', () => {
