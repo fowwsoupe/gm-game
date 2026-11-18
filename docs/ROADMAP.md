@@ -24,14 +24,14 @@ Ready now (code can start):
 5. Re-injury risk: done (hurt earlier this season +30%, +3% per past injury, capped at 2x; injuries per team-season 7.9-8.1 to 8.2-8.5).
 6. Player profile screen of its own and more face variety: done (open it from Leaders or the roster card).
 
+Front office (also the lasting-team-edge fix): the jobs in
+[research/2026-11-front-office.md](research/2026-11-front-office.md), in order. League & events:
+the jobs in [research/2026-11-league-events.md](research/2026-11-league-events.md), in order.
+
 Needs a design first (a short brief in `docs/research/`, then jobs):
 
-- **A lasting team edge** (long-run flattening): [research/2026-11-long-run-spread.md](research/2026-11-long-run-spread.md) is the brief.
 - Minor / junior leagues; camp and a trade deadline that matters; player traits and clustered builds.
-- Every other Phase 2 headline below. Owner and finance is done (all eight jobs of
-  [research/2026-11-owner-finance.md](research/2026-11-owner-finance.md)): the event engine's
-  hot-seat and frustrated-owner team events, and the front office (staff budgets, the coach's
-  effect on games), can now attach to an owner and a coach.
+- Every other Phase 2 headline below.
 
 ---
 
@@ -75,7 +75,7 @@ Build order, owners and "done when" for each step: **[V0.1_PLAN.md](V0.1_PLAN.md
 - [~] Draft v1: class announced after the playoffs with scouted potential ranges (AI sees the same ranges), your ranked list drives your picks, scout reports (best and weakest skills, ready or raw) done; lottery drawn before the draft so picks trade at their real slot done; the live draft room is Phase 2
 - [x] Playoffs: bracket, NHL-style wild cards, honest momentum (per-game goalie form, calibrated), Playoff MVP, playoff cap; the cup is "Champion" until it is named
 - [x] Awards, records, history (own award names, Playoff MVP included)
-- [~] Living league: feed with names (trades, signings, extensions, long injuries, first pick), league pulse, playoff odds and power rating, sim until it matters (your team and league-wide moments only), race nights (odds if you win or lose the next game), streak news, trade requests with a talk (personality decides), slump news (a top-6 skater 10 games without a point), holdouts (underpaid, greedy core players; AI GMs extend or wait them out), the hot seat (coaches fired in-season and at the review; your owner warns you, then fires you at a review, and teams with a vacancy offer you a job), AI owners losing patience in the news done
+- [~] Living league: feed with names (trades, signings, extensions, long injuries, first pick), league pulse, playoff odds and power rating, sim until it matters (your team and league-wide moments only, with a stop filter on the sim bar), race nights (odds if you win or lose the next game), streak news, trade requests with a talk (personality decides), slump news (a top-6 skater 10 games without a point), breakout news (23 or younger, up 7+ overall in a summer), holdouts (underpaid, greedy core players; AI GMs extend or wait them out), the hot seat (coaches fired in-season and at the review; your owner warns you, then fires you at a review, and teams with a vacancy offer you a job), AI owners losing patience in the news done
 - [~] Chemistry: v1 from time together (visible on Lines, changes with every move, capped at ±1 rating point per unit) done; locker room (leaders and toxic personalities), builds fit and linemates done
 
 **Screens**

@@ -107,6 +107,8 @@ export interface SportModule<Strength = unknown> {
     chemistry?: number,
     units?: Partial<Record<string, readonly string[]>>,
     linemates?: Readonly<Record<string, number>>,
+    /** Rating points the head coach adds to every player (negative: takes away). */
+    coaching?: number,
   ): Strength;
 
   /** Power-play / penalty-kill units as the game uses them (`custom` = set by the GM, else auto). */
