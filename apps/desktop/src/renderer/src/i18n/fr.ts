@@ -336,6 +336,16 @@ export const fr: Record<MessageKey, string> = {
   'owner.card.deadlineSell':
     'Équipe sur la ligne à la date limite : le propriétaire veut que vous vendiez.',
   'owner.card.budget': 'Le propriétaire fixe le budget salarial de la saison prochaine à {amount}.',
+  'owner.card.namingRights':
+    "L'encaisse est sous zéro : le propriétaire veut vendre le nom de l'aréna pour {amount}. Les partisans n'aimeront pas ça.",
+  'owner.card.spendToCap':
+    'Le propriétaire sent une course : il monte le budget salarial au plafond ({amount}).',
+  'owner.card.fireSale': 'Hors course et en perte : le propriétaire veut une vente de feu.',
+  'owner.card.renovation':
+    "L'aréna est pleine : le propriétaire propose une rénovation, {amount} par saison pendant {n} saisons, pour {seats} places de plus.",
+  'owner.card.festival':
+    "L'intérêt baisse : le propriétaire propose un festival des partisans pour {amount}.",
+  'owner.effect.project': '{seats} places de plus une fois bâtie',
   'owner.option.agree': 'Accepter',
   'owner.option.refuse': 'Refuser',
   'owner.option.more': 'Demander plus',

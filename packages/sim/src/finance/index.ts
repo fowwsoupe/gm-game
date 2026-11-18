@@ -39,6 +39,10 @@ const MEDIA_TERM = 3;
 export const fansOf = (state: LeagueState, teamId: TeamId): TeamFans =>
   state.fans[teamId] ?? NEW_FANS;
 
+/** Seats in a team's arena: what a project made it, else what it was built with. */
+export const seatsOf = (state: LeagueState, teamId: TeamId, rules: Ruleset): number =>
+  state.arenas[teamId] ?? capacityOf(state.teams[teamId]!, rules.finance.capacity);
+
 /** Average crowd a home date: demand from interest, market and price, up to the arena's capacity. */
 export function crowd(capacity: number, interest: number, market: number, pct: number): number {
   const demand =
@@ -64,7 +68,14 @@ const slice = (amount: number, from: number, to: number, days: number) =>
 
 const empty = (): FinanceLines => ({
   revenue: { gate: 0, gameDay: 0, sponsorship: 0, media: 0, leagueShare: 0, playoffs: 0 },
-  costs: { salaries: 0, signingBonuses: 0, performanceBonuses: 0, deadCap: 0, operations: 0 },
+  costs: {
+    salaries: 0,
+    signingBonuses: 0,
+    performanceBonuses: 0,
+    deadCap: 0,
+    operations: 0,
+    projects: 0,
+  },
 });
 
 /** A home date's operating cost: like its ticket prices, higher in a bigger market. */
@@ -130,11 +141,15 @@ export function settleMonth(state: LeagueState, ctx: SimContext, emit: Emit, day
       if (lines) lines.costs.deadCap += yearly(c.amount);
     }
   }
+  for (const p of state.projects) {
+    const lines = p.first <= season && season < p.ready ? books.get(p.teamId) : undefined;
+    if (lines) lines.costs.projects += yearly(p.costPerSeason);
+  }
   const points = pointsPct(state, ctx);
   for (const [teamId, lines] of [...books].sort(([a], [b]) => a.localeCompare(b))) {
     const team = state.teams[teamId]!;
     const market = marketOf(team);
-    const capacity = capacityOf(team, f.capacity);
+    const capacity = seatsOf(state, teamId, ctx.ruleset);
     const pct = ticketPctOf(team, state.ticketPrices);
     const dates = homeDates.get(teamId) ?? 0;
     const fans = { ...fansOf(state, teamId) };
@@ -190,7 +205,7 @@ export function settlePlayoffs(
       (g) => g.playoffSeriesId && g.homeTeamId === teamId,
     ).length;
     const market = marketOf(team);
-    const seats = capacityOf(team, f.capacity);
+    const seats = seatsOf(state, teamId, ctx.ruleset);
     const price =
       f.ticketPrice *
       market *

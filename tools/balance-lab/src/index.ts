@@ -17,7 +17,7 @@ import { resolve } from 'node:path';
 import type { Actor, GameResult, HockeyBoxScore, Player, TeamId } from '@gm/shared';
 import {
   leagueStandings,
-  capacityOf,
+  seatsOf,
   createLeague,
   defaultContext,
   handleCommand,
@@ -281,13 +281,13 @@ for (let l = 0; l < leagues; l++) {
       if (e.kind !== 'finance.settled') continue;
       const b = books.get(e.teamId) ?? { revenue: 0, profit: 0 };
       b.revenue += Object.values(e.revenue).reduce((a, x) => a + x, 0);
-      b.profit += net(e);
+      // Operating profit, as Forbes counts it: building projects are capital spending.
+      b.profit += net(e) + e.costs.projects;
       books.set(e.teamId, b);
       money.gate += e.revenue.gate + e.revenue.playoffs;
       if (e.revenue.gate > 0) {
         crowds.fans += e.fans.attendance * e.homeDates;
-        crowds.seats +=
-          capacityOf(state.teams[e.teamId]!, ctx.ruleset.finance.capacity) * e.homeDates;
+        crowds.seats += seatsOf(state, e.teamId, ctx.ruleset) * e.homeDates;
       }
     }
     const revenues = [...books.values()].map((b) => b.revenue);

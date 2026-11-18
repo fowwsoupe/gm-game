@@ -396,6 +396,7 @@ function effectsText(t: ReturnType<typeof useT>, fx: CardEffects): string {
     fx.cash && t('owner.effect.cash', { amount: money(fx.cash) }),
     fx.fanInterest && t('owner.effect.fanInterest', { n: signed(fx.fanInterest) }),
     fx.ticketPct !== undefined && t('owner.effect.ticketPct', { pct: signed(fx.ticketPct) }),
+    fx.project && t('owner.effect.project', { seats: fx.project.seats }),
   ].filter(Boolean);
   return parts.length ? ` (${parts.join(', ')})` : '';
 }

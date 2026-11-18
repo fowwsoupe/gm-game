@@ -60,6 +60,8 @@ export interface FinanceLines {
     /** Buyouts and retained salary paid to players no longer on the team. */
     deadCap: number;
     operations: number;
+    /** Projects under way (a renovation). */
+    projects: number;
   };
 }
 
@@ -304,13 +306,45 @@ export interface CardEffects {
   confidence?: number;
   payrollBudget?: number;
   ticketPct?: number;
+  /** Starts a project: it costs `costPerSeason` for `seasons` seasons from next season, then pays off. */
+  project?: {
+    kind: 'renovation';
+    seasons: number;
+    costPerSeason: number;
+    seats: number;
+    fanInterest: number;
+  };
+}
+
+/**
+ * A project under way: it costs `costPerSeason` in each season from `first` until `ready`, and at
+ * the start of `ready` the arena gains `seats` and the fans `fanInterest`.
+ */
+export interface OwnerProject {
+  id: string;
+  teamId: TeamId;
+  kind: 'renovation';
+  first: number;
+  ready: number;
+  costPerSeason: number;
+  seats: number;
+  fanInterest: number;
 }
 
 /** A decision the owner puts to a human GM (`owner.answerCard`). AI GMs answer without one. */
 export interface OwnerCard {
   id: string;
   teamId: TeamId;
-  kind: 'ticketPrice' | 'deadlineBuy' | 'deadlineSell' | 'budget';
+  kind:
+    | 'ticketPrice'
+    | 'deadlineBuy'
+    | 'deadlineSell'
+    | 'budget'
+    | 'namingRights'
+    | 'spendToCap'
+    | 'fireSale'
+    | 'renovation'
+    | 'festival';
   /** Text params: `amount` in dollars, `pct` in whole percent. */
   params: Record<string, number>;
   options: { key: 'agree' | 'refuse' | 'more'; effects: CardEffects }[];
