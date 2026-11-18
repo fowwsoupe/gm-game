@@ -65,7 +65,9 @@ the economy if the amounts are stored as cap fractions; the first job decides wh
 `OwnerProfile` in `packages/shared`. `ownerOf(team)` in `sim/people` derives it from the team id
 when absent, like `gmOf`:
 
-- **name**, generated from the fictional name lists.
+- **name**, generated from the fictional name lists. Those (`FIRST`, `LAST`) are private to
+  `sports/hockey/generate.ts` today; `sim/people` is sport-neutral, so job 1 moves them to a
+  shared place (or passes names in) rather than importing hockey code.
 - **priority**, 0-1 from profit (0) to winning (1). It weights his objectives and how he reads
   a season.
 - **patience**, 0-1. It scales how far confidence drops on a miss, and the length of a new
@@ -91,9 +93,10 @@ when absent; tune it until the lab's revenue spread is 2-3x) and with fan intere
 
 At 17,540 fans a date, these starting values give a market-1 team about $295M, with gate at
 40% (the real mean of $248M x 1.18 is $293M). A playoff home date then nets about $2.5M
-($3.3M gross gate, less 35% and the fee, plus game-day spend), so a deep run of 10-14 home
-dates adds $25-35M. That is the "revenue follows winning" the spec asks for. It matters, but it
-does not flood a contender.
+($3.3M gross gate, less 35% and the fee, plus game-day spend). The default league's eight-team
+bracket is three rounds, so a run to the final is 6-12 home dates and adds $15-30M (the
+16-team `NHL_2026` bracket has a fourth round and up to 16). That is the "revenue follows
+winning" the spec asks for. It matters, but it does not flood a contender.
 
 ### Costs
 
@@ -174,8 +177,8 @@ are game feel, not league rules, and none of them is sourced.
 
 ## Ruleset data
 
-A new `Ruleset.finance` block in `sim/cba`, filled in `NHL_2026` and inherited by
-`FICTIONAL_2026`, each value commented with a link to this brief's table. The values are gate
+A new `Ruleset.finance` block (the type in `sim/cba/ruleset.ts`), filled in `NHL_2026` in
+`sports/hockey/ruleset-nhl-2026.ts` and inherited by `FICTIONAL_2026`, each value commented with a link to this brief's table. The values are gate
 and game-day spend a fan, the yearly sponsorship and local-media base, the league share,
 playoff markup, players' share and fee, arena fixed and per-date cost, the capacity range,
 coach salary and term, and the market range.
