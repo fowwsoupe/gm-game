@@ -6,6 +6,7 @@ import {
   emitter,
   handleCommand,
   Rng,
+  strengthFor,
   type LeagueState,
 } from './index';
 import { changeStaff, developPlayers, teamRange } from './offseason';
@@ -95,7 +96,8 @@ describe('scouting and medical staff', () => {
   });
 
   it('the best medical staff shortens injuries, the worst lengthens them', () => {
-    const total = (quality: number) => {
+    // The games are the same until the first injured player comes back, so compare that injury.
+    const first = (quality: number) => {
       const state = createLeague(1, ctx);
       for (const t of Object.values(state.teams)) t.staff = { medical: head(0.5) };
       const mine = Object.keys(state.teams).sort()[0] as TeamId;
@@ -107,13 +109,32 @@ describe('scouting and medical staff', () => {
         ctx,
       );
       if (!done.ok) throw new Error(done.error.message);
-      const events = done.events;
-      return events.reduce(
-        (s, e) => (e.kind === 'player.injured' && e.teamIds.includes(mine) ? s + e.days : s),
-        0,
-      );
+      const hurt = done.events.find((e) => e.kind === 'player.injured' && e.teamIds.includes(mine));
+      if (hurt?.kind !== 'player.injured') throw new Error('no injury');
+      return hurt;
     };
-    // Same games and draws either way: only the days change (x0.8 against x1.2).
-    expect(total(1)).toBeLessThan(total(0) * 0.75);
+    const [best, worst] = [first(1), first(0)];
+    expect(best.playerId).toBe(worst.playerId);
+    expect(best.days).toBeLessThan(worst.days);
+    // x0.81 against x1.19 (the league average moves a little with this team's staff).
+    expect(best.days / worst.days).toBeGreaterThan(0.5);
+    expect(best.days / worst.days).toBeLessThan(0.8);
+  });
+});
+
+describe('the head coach in games', () => {
+  it('a great coach adds to the team, a poor one takes away', () => {
+    const state = createLeague(1, ctx);
+    const teamId = Object.keys(state.teams).sort()[0] as TeamId;
+    const players = Object.values(state.players).filter((p) => p.teamId === teamId);
+    const strength = (quality: number) => {
+      const team = state.teams[teamId]!;
+      team.coach = { name: 'A B', hired: 2026, salary: 1, years: 3, quality };
+      return strengthFor(state, ctx, teamId, players) as { offense: number; defense: number };
+    };
+    const [great, poor] = [strength(1), strength(0)];
+    const points = 2 * ctx.ruleset.frontOffice.coaching.points;
+    expect(great.offense - poor.offense).toBeCloseTo(points);
+    expect(great.defense - poor.defense).toBeCloseTo(points);
   });
 });
