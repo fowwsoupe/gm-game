@@ -15,6 +15,13 @@ export function overall(player: Player): number {
   return values.length ? values.reduce((a, b) => a + b, 0) / values.length : 50;
 }
 
+/** Best overall first, ties by id. */
+export const byOverall = (a: Player, b: Player) =>
+  overall(b) - overall(a) || a.id.localeCompare(b.id);
+
+/** A rating rounded to a whole point and kept within 1-99. */
+export const clampRating = (n: number) => Math.max(1, Math.min(99, Math.round(n)));
+
 /** How one kind of player (a position) ages. Ages are the age in the season about to start. */
 export interface AgingCurve {
   /** Until this age he closes the gap to his potential; the gap is gone by this age. */
@@ -47,8 +54,6 @@ export interface RulesDevelopmentConfig {
   };
 }
 
-const clamp = (n: number) => Math.max(1, Math.min(99, Math.round(n)));
-
 /**
  * Rules-based default: young players close the gap to their potential at a steady pace, hold
  * steady through their peak, then lose a little more each year. Numbers per position come
@@ -71,7 +76,7 @@ export function rulesDevelopment(config: RulesDevelopmentConfig): DevelopmentMod
       const luck = rng.normal(0, c.noise);
       const ratings: Record<string, number> = {};
       for (const [key, value] of Object.entries(player.ratings)) {
-        ratings[key] = clamp(value + delta + luck + rng.normal(0, 1));
+        ratings[key] = clampRating(value + delta + luck + rng.normal(0, 1));
       }
       return { ...player, ratings };
     },

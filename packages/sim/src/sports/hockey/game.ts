@@ -140,12 +140,17 @@ function playGame(
   const build = (n: 0 | 1, kind: 'ev' | 'pp' | 'pk', size: number) =>
     buildUnit(S[n], kind, size, rng);
 
+  /** Seconds before the end of regulation a side pulls its goalie (down one or two), else 0. */
+  const pullWindow = (n: 0 | 1) => {
+    const down = score(1 - n) - score(n);
+    return down >= 1 && down <= 2 ? T.pullSeconds[down - 1]! : 0;
+  };
+
   /** Puts out new units for the situation and recomputes every rate. */
   const refresh = (regulation: boolean, allowPenalties: boolean) => {
     for (const n of [0, 1] as const) {
       const s = S[n];
-      const down = score(1 - n) - score(n);
-      const window = down >= 1 && down <= 2 ? T.pullSeconds[down - 1]! : 0;
+      const window = pullWindow(n);
       s.pulled = regulation && window > 0 && t >= REGULATION - window && s.current >= 0;
     }
     for (const n of [0, 1] as const) {
@@ -358,8 +363,7 @@ function playGame(
       // The goalie is pulled at a set time, so it is a boundary too.
       if (opts.regulation) {
         for (const n of [0, 1] as const) {
-          const down = score(1 - n) - score(n);
-          const window = down >= 1 && down <= 2 ? T.pullSeconds[down - 1]! : 0;
+          const window = pullWindow(n);
           if (window && !S[n].pulled && S[n].current >= 0 && t < REGULATION - window)
             boundary = Math.min(boundary, REGULATION - window);
         }

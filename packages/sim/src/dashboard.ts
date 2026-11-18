@@ -1,5 +1,5 @@
 import type { Dashboard, TeamId, TodoItem } from '@gm/shared';
-import { phaseOf, type LeagueState } from './core';
+import { phaseOf, playerName, type LeagueState } from './core';
 import { capYearIssues, teamCapTotal } from './cba';
 import { resignOffers } from './offseason';
 import type { SimContext } from './context';
@@ -31,7 +31,7 @@ export function dashboard(state: LeagueState, ctx: SimContext, teamId: TeamId): 
     if (p) {
       todo.push({
         code: 'tradeRequest',
-        params: { player: `${p.firstName} ${p.lastName}` },
+        params: { player: playerName(p) },
         screen: 'trades',
       });
     }
@@ -41,7 +41,7 @@ export function dashboard(state: LeagueState, ctx: SimContext, teamId: TeamId): 
     if (p) {
       todo.push({
         code: 'holdout',
-        params: { player: `${p.firstName} ${p.lastName}` },
+        params: { player: playerName(p) },
         screen: 'roster',
       });
     }

@@ -1,12 +1,12 @@
 import type { FreeAgentOffer, Player, TeamId } from '@gm/shared';
-import type { Emit, LeagueState, Rng } from '../core';
+import { playerName, teamName, type Emit, type LeagueState, type Rng } from '../core';
 import type { SimContext } from '../context';
 import { overall } from '../players';
 import { buyoutCharges, capYearIssues, capYearOf, deadCap, teamCapTotal } from '../cba';
 import { GM_LEAN, gmOf, seenBy } from '../people';
 import { compensationFor, signFreeAgent, signingInterest } from './signing';
 import { capRoom, countAt, freeAgents, rosterOf, neededPosition } from './roster';
-import { wantedYears } from './freeAgency';
+import { drawYears } from './freeAgency';
 import { CORE } from './gms';
 
 /**
@@ -110,7 +110,7 @@ function letGo(state: LeagueState, ctx: SimContext, emit: Emit, teamId: TeamId, 
     emit('notable', [teamId], {
       kind: 'news.posted',
       headline: 'event.madeRoom',
-      params: { team: `${team.city} ${team.name}`, player: `${x.firstName} ${x.lastName}` },
+      params: { team: teamName(team), player: playerName(x) },
     });
   }
 }
@@ -213,8 +213,8 @@ export function decideOffers(state: LeagueState, ctx: SimContext, emit: Emit): v
           kind: 'news.posted',
           headline: 'event.lostFreeAgent',
           params: {
-            player: `${player.firstName} ${player.lastName}`,
-            team: `${state.teams[o.teamId]!.city} ${state.teams[o.teamId]!.name}`,
+            player: playerName(player),
+            team: teamName(state.teams[o.teamId]!),
           },
         });
       }
@@ -259,7 +259,7 @@ function makeOffers(state: LeagueState, ctx: SimContext, rng: Rng, emit: Emit): 
         (plan === 'contend' ? CONTEND_PREMIUM : 0);
       const salary = Math.round(ask * Math.max(1, premium));
       const years = Math.min(
-        wantedYears(season - p.birthYear, rng),
+        drawYears(season - p.birthYear, rng),
         ruleset.contracts.maxYearsNewTeam,
       );
       const room = roomFor(state, ctx, teamId, p, salary);

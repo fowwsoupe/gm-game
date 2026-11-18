@@ -6,10 +6,10 @@ import type {
   TradeProposal,
   TradeReason,
 } from '@gm/shared';
-import { pct, phaseOf, type LeagueState } from '../core';
+import { pct, phaseOf, playerName, type LeagueState } from '../core';
 import { capYearIssues, capYearOf, retentionIssues, teamCapTotal } from '../cba';
 import { pickValue, type TeamContext } from '../value';
-import { computeStandings, draftPicks, nextDraftSeason } from '../league';
+import { draftPicks, nextDraftSeason, worstFirst } from '../league';
 import { GM_LEAN, gmOf, planStatus, seenBy } from '../people';
 import type { SimContext } from '../context';
 
@@ -63,7 +63,7 @@ export function planRetention(
   for (const { playerId, pct: share } of proposal.retain ?? []) {
     const p = state.players[playerId];
     const contract = p?.contract;
-    const name = p ? `${p.firstName} ${p.lastName}` : playerId;
+    const name = p ? playerName(p) : playerId;
     const { maxRetentionPct: max, maxRetainedContracts: contracts } = ctx.ruleset.trades;
     const fail = {
       error: { code: 'retention' as const, params: { player: name, max, contracts } },
@@ -159,7 +159,6 @@ export function evaluateTrade(
     value: 0,
     reasons: [{ code, ...(params && { params }) }],
   });
-  const name = (p: Player) => `${p.firstName} ${p.lastName}`;
 
   if (!tradeWindowOpen(state, ctx)) return refuse('closed');
   if (from === to || !state.teams[from] || !state.teams[to]) return refuse('not_on_team');
@@ -195,8 +194,8 @@ export function evaluateTrade(
   ] as const) {
     for (const id of ids) {
       const p = state.players[id];
-      if (p?.teamId !== owner) return refuse('not_on_team', { player: p ? name(p) : id });
-      if (p.contract?.noTrade) return refuse('no_trade', { player: name(p) });
+      if (p?.teamId !== owner) return refuse('not_on_team', { player: p ? playerName(p) : id });
+      if (p.contract?.noTrade) return refuse('no_trade', { player: playerName(p) });
     }
   }
 
@@ -255,13 +254,7 @@ export function evaluateTrade(
   // Only needed to value picks, and costly (every result this season): computed on first use.
   const slotOf = (teamId: TeamId) => {
     const order = (cache ?? {}) as { worstFirst?: TeamId[] };
-    order.worstFirst ??= computeStandings(
-      Object.keys(state.teams) as TeamId[],
-      Object.values(state.results),
-      ruleset.season.points,
-    )
-      .map((r) => r.teamId)
-      .reverse();
+    order.worstFirst ??= worstFirst(state, ruleset);
     return order.worstFirst.indexOf(teamId) + 1;
   };
   const next = nextDraftSeason(state);
@@ -316,7 +309,7 @@ export function evaluateTrade(
     if (!v.p) continue;
     for (const r of v.reasons) {
       const code = r === 'negative_contract' ? 'bad_contract' : r;
-      reasons.push({ code, params: { player: name(v.p) } });
+      reasons.push({ code, params: { player: playerName(v.p) } });
     }
   }
   return { accepted, value, reasons: reasons.slice(0, MAX_REASONS) };

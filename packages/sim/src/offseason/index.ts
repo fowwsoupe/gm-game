@@ -8,9 +8,8 @@
  * `openFreeAgency` (steps 1-5), then `finishRollover` (6-8). AI teams draft and fill rosters for
  * human teams too, until the draft screen exists.
  */
-import type { TeamId } from '@gm/shared';
 import { Rng, phaseOf, type Emit, type LeagueState } from '../core';
-import { computeStandings, makeSchedule } from '../league';
+import { makeSchedule, worstFirst } from '../league';
 import type { SimContext } from '../context';
 import { runDraft } from './draft';
 import { changeGms, setPlans } from './gms';
@@ -20,7 +19,6 @@ export { scoutReport } from './scouting';
 export { signingInterest, signFreeAgent, sheetCompensation } from './signing';
 export { acceptSheet, marketDay, roomFor } from './market';
 export { aiHoldouts, resignOffers, resignContract, isExpiring, resignWindowOpen } from './resign';
-export { RFA_DISCOUNT } from './roster';
 export { stayChance } from './freeAgency';
 import { expireContracts, fillRosters, meetCapFloor, reSignPlayers } from './freeAgency';
 import { MARKET_DAYS, decideOffers, marketDay } from './market';
@@ -43,14 +41,6 @@ function archiveStats(state: LeagueState, ctx: SimContext, emit: Emit) {
   });
 }
 
-/** Worst team first, from this season's standings (taken before anything changes). */
-export function worstFirst(state: LeagueState, ctx: SimContext): TeamId[] {
-  const teamIds = Object.keys(state.teams).sort() as TeamId[];
-  return computeStandings(teamIds, Object.values(state.results), ctx.ruleset.season.points)
-    .map((row) => row.teamId)
-    .reverse();
-}
-
 /**
  * First half of the summer (steps 1-5), then free agency opens for human GMs. Ages are for the
  * season about to start; the date stays in the old season until `finishRollover`.
@@ -58,7 +48,7 @@ export function worstFirst(state: LeagueState, ctx: SimContext): TeamId[] {
 export function openFreeAgency(state: LeagueState, ctx: SimContext, emit: Emit): void {
   const season = state.date.season + 1;
   const rng = new Rng(state.rngState);
-  const order = worstFirst(state, ctx);
+  const order = worstFirst(state, ctx.ruleset);
   changeGms(state, rng.fork('gms'), emit, order);
   archiveStats(state, ctx, emit);
   developPlayers(state, ctx.models.development, rng.fork('development'), emit, season);
@@ -75,7 +65,7 @@ export function finishRollover(state: LeagueState, ctx: SimContext, emit: Emit):
   const season = state.date.season + 1;
   // Forks do not advance the parent stream, so splitting the summer draws the same numbers.
   const rng = new Rng(state.rngState);
-  const order = worstFirst(state, ctx);
+  const order = worstFirst(state, ctx.ruleset);
   const from = phaseOf(ctx.ruleset.season.calendar, state.date);
   // AI teams bid for free agents over a few days; whoever is still short is filled below.
   for (let day = 0; day < MARKET_DAYS; day++) {

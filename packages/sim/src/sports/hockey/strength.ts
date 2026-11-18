@@ -1,6 +1,6 @@
 import { isGoalie, SPECIAL_UNIT_SIZE, type Player, type SpecialUnit } from '@gm/shared';
 import { linemateKey } from '../../core';
-import { overall } from '../../players';
+import { byOverall } from '../../players';
 
 const avg = (xs: number[]) => (xs.length ? xs.reduce((a, b) => a + b, 0) / xs.length : 50);
 
@@ -182,8 +182,6 @@ export function lineupFit(lineup: Lineup): { forwards: number; defense: number }
   };
 }
 
-const byRating = (a: Player, b: Player) => overall(b) - overall(a) || a.id.localeCompare(b.id);
-
 /**
  * The lineup a coach would pick: the best centre, left wing and right wing together on line 1,
  * the next best on line 2, and so on; defence in pairs; goalies in order. `depth` (the GM's
@@ -194,13 +192,13 @@ const byRating = (a: Player, b: Player) => overall(b) - overall(a) || a.id.local
 export function autoLineup(players: readonly Player[], depth: readonly string[] = []): Lineup {
   const rank = new Map(depth.map((id, i) => [id, i]));
   const order = (a: Player, b: Player) =>
-    (rank.get(a.id) ?? Infinity) - (rank.get(b.id) ?? Infinity) || byRating(a, b);
+    (rank.get(a.id) ?? Infinity) - (rank.get(b.id) ?? Infinity) || byOverall(a, b);
   const at = (position: string) => players.filter((p) => p.position === position).sort(order);
   const [c, lw, rw, d] = [at('C'), at('LW'), at('RW'), at('D')];
   // A line short of a centre or winger (injuries) takes the best spare forward of any position.
   const spares = [c, lw, rw]
     .flatMap((list) => list.slice(ICE_TIME.forwardLines.length))
-    .sort(byRating);
+    .sort(byOverall);
   const lines = ICE_TIME.forwardLines.map((_, i) =>
     [c[i] ?? spares.shift(), lw[i] ?? spares.shift(), rw[i] ?? spares.shift()].filter(
       (p) => p !== undefined,
@@ -320,6 +318,15 @@ export function lineupUnits(
   ];
 }
 
+/** The auto penalty kill: the four best defensive forwards (ties by lineup order), two a unit. */
+export const autoKillers = (lineup: Lineup): Player[] =>
+  lineup.forwards
+    .flat()
+    .map((p, i) => [p, i] as const)
+    .sort((a, b) => rating(b[0], 'defense') - rating(a[0], 'defense') || a[1] - b[1])
+    .slice(0, 4)
+    .map(([p]) => p);
+
 /** Power-play and penalty-kill units as the game would use them, and whether the GM set them. */
 export function specialUnitsView(
   players: readonly Player[],
@@ -328,13 +335,7 @@ export function specialUnitsView(
 ): Record<SpecialUnit, { playerIds: string[]; custom: boolean }> {
   const lineup = autoLineup(players, depth);
   const mine = dressedUnits(lineup, saved);
-  // The auto kill: the four best defensive forwards (ties by lineup order), two a unit.
-  const killers = lineup.forwards
-    .flat()
-    .map((p, i) => [p, i] as const)
-    .sort((a, b) => rating(b[0], 'defense') - rating(a[0], 'defense') || a[1] - b[1])
-    .slice(0, 4)
-    .map(([p]) => p);
+  const killers = autoKillers(lineup);
   const auto = (unit: SpecialUnit, k: number) =>
     unit.startsWith('pp')
       ? [...(lineup.forwards[k] ?? []).slice(0, 3), ...(lineup.defense[k] ?? []).slice(0, 2)]

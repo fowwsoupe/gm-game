@@ -9,6 +9,7 @@ import {
   available,
   capSheet,
   computeStandings,
+  leagueStandings,
   createLeague,
   defaultContext,
   phaseOf,
@@ -144,11 +145,7 @@ export class LeagueService {
 
   standings() {
     const { state } = this.open();
-    return computeStandings(
-      Object.keys(state.teams) as TeamId[],
-      Object.values(state.results),
-      defaultContext(state.rulesetId).ruleset.season.points,
-    );
+    return leagueStandings(state, defaultContext(state.rulesetId).ruleset);
   }
 
   playoffs() {
@@ -437,11 +434,7 @@ export class LeagueService {
       rng: new Rng(state.rngState),
       sims: 1000,
     });
-    const rows = computeStandings(
-      teams.map((t) => t.id),
-      results,
-      ruleset.season.points,
-    );
+    const rows = leagueStandings(state, ruleset);
     const rating = teamRatings(rows, sport.pythagoreanExponent);
     return teams.map((t) => ({
       teamId: t.id,

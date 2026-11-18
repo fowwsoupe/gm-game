@@ -1,10 +1,16 @@
 import type { GameResult, StandingsRow, TeamId } from '@gm/shared';
+import type { LeagueState } from '../core';
+import type { Ruleset } from '../cba';
 
-/** Points per result come from the ruleset (default: 2 for a win, 1 for an OT/SO loss). */
+/** Standings order: points, then wins, then goal difference, then team id (a total order). */
+export const byStanding = (a: StandingsRow, b: StandingsRow) =>
+  b.pts - a.pts || b.w - a.w || b.gf - b.ga - (a.gf - a.ga) || a.teamId.localeCompare(b.teamId);
+
+/** Points per result come from the ruleset (`ruleset.season.points`). */
 export function computeStandings(
   teamIds: readonly TeamId[],
   results: Iterable<GameResult>,
-  points: { win: number; overtimeLoss: number } = { win: 2, overtimeLoss: 1 },
+  points: { win: number; overtimeLoss: number },
 ): StandingsRow[] {
   const rows = new Map<TeamId, StandingsRow>(
     teamIds.map((id) => [id, { teamId: id, gp: 0, w: 0, l: 0, otl: 0, pts: 0, gf: 0, ga: 0 }]),
@@ -31,8 +37,19 @@ export function computeStandings(
       loser.l++;
     }
   }
-  return [...rows.values()].sort(
-    (a, b) =>
-      b.pts - a.pts || b.w - a.w || b.gf - b.ga - (a.gf - a.ga) || a.teamId.localeCompare(b.teamId),
-  );
+  return [...rows.values()].sort(byStanding);
 }
+
+/** This season's standings of every team in the league. */
+export const leagueStandings = (state: LeagueState, ruleset: Ruleset): StandingsRow[] =>
+  computeStandings(
+    Object.keys(state.teams) as TeamId[],
+    Object.values(state.results),
+    ruleset.season.points,
+  );
+
+/** Worst team first, from this season's standings. */
+export const worstFirst = (state: LeagueState, ruleset: Ruleset): TeamId[] =>
+  leagueStandings(state, ruleset)
+    .map((row) => row.teamId)
+    .reverse();

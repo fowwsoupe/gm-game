@@ -2,7 +2,7 @@ import type { Player, PlayerId, TeamId, TeamStatus } from '@gm/shared';
 import type { Emit, LeagueState, Rng } from '../core';
 import type { SimContext } from '../context';
 import { deadCap, payroll } from '../cba';
-import { overall } from '../players';
+import { byOverall, overall } from '../players';
 import { personalityOf, planStatus, seenBy } from '../people';
 import {
   ageIn,
@@ -15,6 +15,7 @@ import {
   offerContract,
   rosterOf,
 } from './roster';
+import { wantedYears } from './signing';
 
 /** The median overall rating of players on a roster. */
 function typicalRating(state: LeagueState): number {
@@ -60,7 +61,7 @@ export function stayChance(status: TeamStatus, playerId: string): number {
 const RESIGN_SLACK = 8;
 
 /** Contract length a player of this age would like (an upper bound; the ruleset caps it). */
-export const wantedYears = (age: number, rng: Rng) => rng.int(1, age < 28 ? 5 : age < 32 ? 3 : 2);
+export const drawYears = (age: number, rng: Rng) => rng.int(1, wantedYears(age));
 
 /**
  * Step 3: contracts that ran out make the player a free agent, unless he signed an extension
@@ -133,19 +134,12 @@ export function reSignPlayers(
       // Not every player wants to stay: some test the market (and the worst teams pick first).
       const status = planStatus(team, state.teamStatus[teamId] ?? 'bubble');
       if (!rng.chance(stayChance(status, p.id))) continue;
-      const contract = offerContract(
-        ruleset,
-        roster,
-        p,
-        season,
-        wantedYears(ageIn(p, season), rng),
-        {
-          isResign: true,
-          discount: false,
-          ask: resignAsk(ctx, p, season),
-          dead: deadCap(state, teamId, season),
-        },
-      );
+      const contract = offerContract(ruleset, roster, p, season, drawYears(ageIn(p, season), rng), {
+        isResign: true,
+        discount: false,
+        ask: resignAsk(ctx, p, season),
+        dead: deadCap(state, teamId, season),
+      });
       if (contract) {
         emit('minor', [teamId], {
           kind: 'player.signed',
@@ -187,19 +181,12 @@ export function fillRosters(
       .filter((p) => position === null || p.position === position)
       .sort((a, b) => seen(b) - seen(a) || a.id.localeCompare(b.id));
     for (const p of pool) {
-      const contract = offerContract(
-        ruleset,
-        roster,
-        p,
-        season,
-        wantedYears(ageIn(p, season), rng),
-        {
-          isResign: false,
-          discount: true,
-          ask: ctx.models.contractDemand.ask(ruleset, p),
-          dead: deadCap(state, teamId, season),
-        },
-      );
+      const contract = offerContract(ruleset, roster, p, season, drawYears(ageIn(p, season), rng), {
+        isResign: false,
+        discount: true,
+        ask: ctx.models.contractDemand.ask(ruleset, p),
+        dead: deadCap(state, teamId, season),
+      });
       if (contract) {
         emit('minor', [teamId], { kind: 'player.signed', playerId: p.id, teamId, contract });
         return true;
@@ -250,14 +237,14 @@ export function meetCapFloor(
       const short = ruleset.cap.lowerLimit - payroll(roster) - dead;
       if (short <= 0) break;
       const signed = freeAgents(state)
-        .sort((a, b) => overall(b) - overall(a) || a.id.localeCompare(b.id))
+        .sort(byOverall)
         .some((p) => {
           const contract = offerContract(
             ruleset,
             roster,
             p,
             season,
-            wantedYears(ageIn(p, season), rng),
+            drawYears(ageIn(p, season), rng),
             {
               isResign: false,
               discount: false,

@@ -1,5 +1,5 @@
 import type { TeamId } from '@gm/shared';
-import type { Emit, LeagueState, Rng } from '../core';
+import { teamName, type Emit, type LeagueState, type Rng } from '../core';
 import { choosePlan, gmOf, randomGm, seenBy } from '../people';
 import { overall } from '../players';
 
@@ -29,7 +29,7 @@ export function changeGms(state: LeagueState, rng: Rng, emit: Emit, worstFirst: 
     emit('minor', [teamId], {
       kind: 'news.posted',
       headline: fired ? 'event.gmFired' : 'event.gmLeft',
-      params: { team: `${team.city} ${team.name}` },
+      params: { team: teamName(team) },
     });
   }
 }
@@ -78,7 +78,7 @@ export function setPlans(state: LeagueState, emit: Emit, season: number) {
     emit('notable', [team.id], {
       kind: 'news.posted',
       headline: kind === 'rebuild' ? 'event.planRebuild' : 'event.planContend',
-      params: { team: `${team.city} ${team.name}` },
+      params: { team: teamName(team) },
     });
   }
 }

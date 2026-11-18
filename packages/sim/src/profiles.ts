@@ -1,6 +1,6 @@
 import type { Player, PlayerProfile, TeamId } from '@gm/shared';
 import type { LeagueState } from './core';
-import { overall, percentileRank } from './players';
+import { byOverall, percentileRank } from './players';
 import { morale, notableTraits, personalityOf } from './people';
 import type { SimContext } from './context';
 
@@ -80,7 +80,7 @@ export function playerProfiles(
 function moraleOf(state: LeagueState, ctx: SimContext, p: Player) {
   const mates = Object.values(state.players)
     .filter((x) => x.teamId === p.teamId && x.position === p.position)
-    .sort((a, b) => overall(b) - overall(a) || a.id.localeCompare(b.id));
+    .sort(byOverall);
   const ask = ctx.models.contractDemand.ask(ctx.ruleset, p);
   return morale(p.id, {
     teamStatus: state.teamStatus[p.teamId!] ?? 'bubble',

@@ -51,8 +51,13 @@ const HORIZON: Record<TeamStatus, { now: number; later: number }> = {
 const LEAN_NOW = 0.2;
 const LEAN_LATER = 0.06;
 
+/**
+ * A restricted player (younger than the UFA age) re-signs at this share of his market ask: his
+ * team holds his rights. This is where cheap young cores come from.
+ */
+export const RFA_DISCOUNT = 0.75;
 /** After his deal a restricted player re-signs this far below his worth. */
-const CONTROL_DISCOUNT = 0.25;
+const CONTROL_DISCOUNT = 1 - RFA_DISCOUNT;
 /** Restricted years counted at most. */
 const MAX_CONTROL_YEARS = 3;
 /**

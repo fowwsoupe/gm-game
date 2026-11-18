@@ -29,6 +29,9 @@ export const HOCKEY_TUNING = {
   penaltySeconds: 120,
   /** A team on the power play shoots from chances this much better. */
   powerPlayQuality: 1.5,
+  /** A shot's goal chance scales by (shooting / reference) ^ exponent: a 65 shooter is the baseline. */
+  shootingReference: 65,
+  shootingExponent: 0.7,
   /** Scales every shot's goal chance (the GoalModel's output) so the league saves about 90%. */
   xgScale: 1.02,
   /** A trailing team pulls its goalie this many seconds before the end: down one, down two. */
@@ -71,7 +74,7 @@ export const rulesGoalModel: GoalModel = {
   shotXg: ({ x, y, shooting, power }) =>
     HOCKEY_TUNING.xgScale *
     shotQuality(x, y) *
-    (shooting / 65) ** 0.7 *
+    (shooting / HOCKEY_TUNING.shootingReference) ** HOCKEY_TUNING.shootingExponent *
     (power ? HOCKEY_TUNING.powerPlayQuality : 1),
 };
 

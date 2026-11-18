@@ -3,7 +3,7 @@ import { phaseOf, type Emit, type LeagueState, type Rng } from '../core';
 import { capIssues, capSheet, validateContract, type ContractIssue } from '../cba';
 import type { SimContext } from '../context';
 import { gmOf } from '../people';
-import { wantedYears } from './freeAgency';
+import { drawYears } from './freeAgency';
 import { ageIn, resignAsk, rosterOf } from './roster';
 
 /**
@@ -88,7 +88,7 @@ export function aiHoldouts(state: LeagueState, ctx: SimContext, rng: Rng, emit: 
     const offer = resignOffers(state, ctx, team.id).find((o) => o.playerId === h.playerId);
     if (!offer || offer.issues[0]!.length > 0) continue;
     const p = state.players[h.playerId]!;
-    const deal = resignContract(state, ctx, p, wantedYears(ageIn(p, state.date.season + 1), rng));
+    const deal = resignContract(state, ctx, p, drawYears(ageIn(p, state.date.season + 1), rng));
     if ('issues' in deal) continue;
     emit('notable', [team.id], {
       kind: 'contract.extended',
