@@ -79,7 +79,7 @@ describe('power-play and penalty-kill units', () => {
     const set = (unit: 'pp1' | 'pk1', playerIds: PlayerId[]) =>
       handleCommand(state, { kind: 'units.set', teamId: mine, unit, playerIds }, local, ctx).ok;
     expect(set('pp1', [...fourth.slice(0, 2), ...pair])).toBe(false); // four skaters
-    const twoPairs = [...auto.defense[1]!, ...pair].map((p) => (typeof p === 'string' ? p : p.id));
+    const twoPairs = [...auto.defense[1]!.map((p) => p.id), ...pair];
     expect(set('pp1', [fourth[0]!, ...twoPairs])).toBe(false); // 1F+4D
     const fifth = auto.forwards[2]!.slice(0, 2).map((p) => p.id);
     expect(set('pp1', [...fourth, ...fifth])).toBe(true); // 5F
@@ -249,28 +249,36 @@ describe('chemistry in games', () => {
     );
     const settled = teamStrength(roster, [], 1);
     const fresh = teamStrength(roster, [], 0);
-    const rng = new Rng(9);
-    let diff = 0;
-    const games = 6000;
-    for (let i = 0; i < games; i++) {
-      const home = i % 2 === 0;
-      const g = ctx.sport.simGame(
-        {
-          id: `c${i}` as GameId,
-          homeTeamId: 'a' as TeamId,
-          awayTeamId: 'b' as TeamId,
-          home: home ? settled : fresh,
-          away: home ? fresh : settled,
-          resultOnly: true,
-        },
-        rng,
-      );
-      diff += home ? g.homeScore - g.awayScore : g.awayScore - g.homeScore;
-    }
+    // Chemistry is capped where it is computed: past "fully settled" it adds nothing.
+    expect(teamStrength(roster, [], 5).chemistry).toBe(settled.chemistry);
+    const games = 1000;
+    const edge = (good: typeof settled, bad: typeof settled) => {
+      const rng = new Rng(9);
+      let diff = 0;
+      for (let i = 0; i < games; i++) {
+        const home = i % 2 === 0;
+        const g = ctx.sport.simGame(
+          {
+            id: `c${i}` as GameId,
+            homeTeamId: 'a' as TeamId,
+            awayTeamId: 'b' as TeamId,
+            home: home ? good : bad,
+            away: home ? bad : good,
+            resultOnly: true,
+          },
+          rng,
+        );
+        diff += home ? g.homeScore - g.awayScore : g.awayScore - g.homeScore;
+      }
+      return diff / games;
+    };
+    // The real gap (~0.05 a game) needs ~6,000 games to see; five times the chemistry shows in
+    // 1,000 that the game uses it (same approach as the line-bonus test below).
+    const inflate = (s: typeof settled) => ({ ...s, chemistry: s.chemistry * 5 });
+    expect(edge(inflate(settled), inflate(fresh))).toBeGreaterThan(0.1);
     // Worth something, but capped: a few tenths of a goal a game at most.
-    expect(diff / games).toBeGreaterThan(0.02);
-    expect(diff / games).toBeLessThan(0.6);
-  }, 30_000); // ~1.5 s locally, ~5 s on CI; seeded, so the threshold never flakes
+    expect(edge(settled, fresh)).toBeLessThan(0.6);
+  }, 30_000); // seeded, so the thresholds never flake
 
   it('line bonuses (builds fit) reach the game, not only the strength numbers', () => {
     const state = createLeague(75, ctx);

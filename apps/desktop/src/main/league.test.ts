@@ -2,9 +2,10 @@ import { EventEmitter } from 'node:events';
 import { existsSync, mkdtempSync, rmSync } from 'node:fs';
 import { tmpdir } from 'node:os';
 import { join } from 'node:path';
-import { beforeEach, describe, expect, it, vi } from 'vitest';
+import { afterAll, beforeEach, describe, expect, it, vi } from 'vitest';
 
 const dir = mkdtempSync(join(tmpdir(), 'gm-svc-'));
+afterAll(() => rmSync(dir, { recursive: true, force: true }));
 vi.mock('electron', () => ({ app: { getPath: () => dir } }));
 
 /** A stand-in for the sim worker: tests decide what each command gets back. */

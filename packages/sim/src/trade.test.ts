@@ -8,6 +8,7 @@ import {
   handleCommand,
   surplusValuator,
   type PlayerValuator,
+  type LeagueState,
   type TeamContext,
 } from './index';
 
@@ -232,7 +233,8 @@ describe('surplus value', () => {
 });
 
 describe('AI-to-AI trades', () => {
-  it('happen during the season, never with a human team, the same way every time', () => {
+  // Same seed, same trades: covered by the season determinism checks (sim.test, offseason.test).
+  it('happen during the season, never with a human team', () => {
     const run = (seed: number) => {
       const state = createLeague(seed, base);
       // Trades end at the deadline, so the season after it is not needed.
@@ -257,7 +259,6 @@ describe('AI-to-AI trades', () => {
         expect(e.date.day).toBeLessThanOrEqual(base.ruleset.season.calendar.tradeDeadlineDay);
       }
     }
-    expect(run(2).trades).toEqual(seasons[0]!.trades);
   }, 60_000);
 });
 
@@ -327,7 +328,7 @@ describe('retained salary', () => {
 });
 
 describe('AI offers to you', () => {
-  const seasonWithOffer = () => {
+  const findOffer = () => {
     for (const seed of [11, 12, 13, 14, 15]) {
       const state = createLeague(seed, base);
       for (let d = 0; d < base.ruleset.season.calendar.tradeDeadlineDay; d += 7) {
@@ -338,6 +339,9 @@ describe('AI offers to you', () => {
     }
     throw new Error('no offer in five leagues');
   };
+  // Searched once; each test gets its own copy.
+  let found: LeagueState | undefined;
+  const seasonWithOffer = () => structuredClone((found ??= findOffer()));
 
   it('arrive, can be accepted, and the trade goes through', () => {
     const state = seasonWithOffer();

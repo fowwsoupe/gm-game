@@ -119,13 +119,13 @@ describe('offseason rollover', () => {
     );
   }, 60_000);
 
-  it('is deterministic: the same seed gives the same 3 seasons', () => {
+  it('is deterministic: the same seed gives the same 2 seasons, across the rollover', () => {
     const a = createLeague(5, ctx);
     const b = createLeague(5, ctx);
-    for (let i = 0; i < 3; i++) {
+    for (let i = 0; i < 2; i++) {
       expect(playSeasonAndRollOver(a).events).toEqual(playSeasonAndRollOver(b).events);
     }
-  }, 30_000); // six seasons with the shift-by-shift game: ~2 s here, over 5 s on a slow CI runner
+  }, 30_000); // four seasons with the shift-by-shift game: ~1.5 s here, more on a slow CI runner
 });
 
 describe('awards', () => {
@@ -168,6 +168,17 @@ describe('awards', () => {
   });
 });
 
+/** A league whose season and playoffs are over, played once per seed. A fresh copy each call. */
+const played = new Map<number, LeagueState>();
+function seasonOver(seed: number): LeagueState {
+  if (!played.has(seed)) {
+    const state = createLeague(seed, ctx);
+    run(state, { kind: 'sim.advance', days: calendar.regularSeasonDays + calendar.playoffDays });
+    played.set(seed, state);
+  }
+  return structuredClone(played.get(seed)!);
+}
+
 describe('offseason steps', () => {
   it('free agents that nobody can use never block a team from filling its roster', () => {
     const state = createLeague(8, ctx);
@@ -184,8 +195,7 @@ describe('offseason steps', () => {
   });
 
   it('a team under the cap floor reaches it even when the free-agent pool is empty', () => {
-    const state = createLeague(8, ctx);
-    run(state, { kind: 'sim.advance', days: calendar.regularSeasonDays + calendar.playoffDays });
+    const state = seasonOver(8);
     // Nobody reaches free agency this summer, and the pool starts empty.
     for (const p of Object.values(state.players)) {
       if (p.teamId === null) delete state.players[p.id];
@@ -203,8 +213,7 @@ describe('offseason steps', () => {
   });
 
   it('dead cap counts when the summer fills a roster: nobody is signed over the cap', () => {
-    const state = createLeague(8, ctx);
-    run(state, { kind: 'sim.advance', days: calendar.regularSeasonDays + calendar.playoffDays });
+    const state = seasonOver(8);
     // One team lets everyone go but carries almost a full cap of dead money next season.
     const victim = Object.keys(state.teams)[2] as TeamId;
     for (const p of Object.values(state.players)) {
@@ -223,9 +232,11 @@ describe('offseason steps', () => {
     checkLeagueIsLegal(state);
   });
 
-  it('a lottery team drafts first and drafted players get entry-level contracts', () => {
-    const state = createLeague(9, ctx);
-    run(state, { kind: 'sim.advance', days: calendar.regularSeasonDays + calendar.playoffDays });
+  it('the lottery is drawn at the crown, a lottery team drafts first, draftees get entry-level deals', () => {
+    const state = seasonOver(9);
+    // The lottery is drawn when the champion is crowned and the draft follows it.
+    expect(state.draftOrder).toHaveLength(Object.keys(state.teams).length);
+    const order = [...state.draftOrder];
     const standings = computeStandings(
       Object.keys(state.teams) as TeamId[],
       Object.values(state.results),
@@ -239,6 +250,9 @@ describe('offseason steps', () => {
     const picks = run(state, { kind: 'season.rollover' }).filter(
       (e) => e.kind === 'player.drafted' && e.round > 0,
     );
+    const firstRound = picks.filter((e) => e.kind === 'player.drafted' && e.round === 1);
+    expect(firstRound.map((e) => e.teamIds[0])).toEqual(order);
+    expect(state.draftOrder).toEqual([]);
     expect(picks).toHaveLength(Object.keys(state.teams).length * ruleset.draft.rounds);
     const first = picks[0]!;
     if (first.kind !== 'player.drafted') throw new Error();
@@ -248,18 +262,6 @@ describe('offseason steps', () => {
     expect(elcYears(ruleset, state.date.season - first.player.birthYear)).toBe(
       first.player.contract!.expiresAfterSeason - state.date.season + 1,
     );
-  });
-
-  it('the lottery is drawn when the champion is crowned and the draft follows it', () => {
-    const state = createLeague(9, ctx);
-    run(state, { kind: 'sim.advance', days: calendar.regularSeasonDays + calendar.playoffDays });
-    expect(state.draftOrder).toHaveLength(Object.keys(state.teams).length);
-    const order = [...state.draftOrder];
-    const picks = run(state, { kind: 'season.rollover' }).filter(
-      (e) => e.kind === 'player.drafted' && e.round === 1,
-    );
-    expect(picks.map((e) => e.teamIds[0])).toEqual(order);
-    expect(state.draftOrder).toEqual([]);
   });
 
   it('players age, develop and retire: nobody ends up older than the retirement age', () => {

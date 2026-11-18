@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest';
-import type { Actor, Command } from '@gm/shared';
+import type { Actor } from '@gm/shared';
 import {
   buyoutCharges,
   createLeague,
@@ -7,18 +7,12 @@ import {
   handleCommand,
   signingInterest,
   validateContract,
-  type LeagueState,
 } from './index';
+import { freeAgencyLeague } from './testLeagues';
 
 const local: Actor = { id: 'local', controls: [] };
 const ctx = defaultContext();
 const { ruleset } = ctx;
-
-function run(state: LeagueState, command: Command) {
-  const res = handleCommand(state, command, local, ctx);
-  if (!res.ok) throw new Error(res.error.message);
-  return res.events;
-}
 
 describe('signing bonuses', () => {
   const salaries = [ruleset.cap.minSalary * 4, ruleset.cap.minSalary * 4];
@@ -55,9 +49,7 @@ describe('signing bonuses', () => {
   });
 
   it('a free agent signs with the bonus on his contract, and likes it', () => {
-    const state = createLeague(5, ctx);
-    run(state, { kind: 'sim.advance', days: 300 });
-    run(state, { kind: 'offseason.openFreeAgency' });
+    const state = freeAgencyLeague(5);
     const mine = Object.values(state.teams).find((t) => t.userControlled)!.id;
     const fa = Object.values(state.players).filter((p) => p.teamId === null);
     for (const p of fa) {

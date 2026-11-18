@@ -112,7 +112,8 @@ describe('SaveFile', () => {
     expect(retired.length).toBeGreaterThan(0);
     expect(retired.some((c) => c.lines.length > 0)).toBe(true);
     const logged = save.listEvents(5000).find((e) => e.kind === 'stats.archived');
-    expect(logged && 'lines' in logged && logged.lines).toBeFalsy();
+    expect(logged).toBeDefined();
+    expect(logged).not.toHaveProperty('lines');
     const res = handleCommand(state, { kind: 'season.rollover' }, local, ctx);
     if (!res.ok) throw new Error(res.error.message);
     save.persist(res.events, state);
@@ -173,7 +174,7 @@ describe('SaveFile', () => {
     const afterLoad = handleCommand(resumed, { kind: 'sim.advance', days: 30 }, local, ctx);
     expect(afterLoad).toEqual(direct);
     save.close();
-  });
+  }, 30_000); // two full seasons: ~4 s locally, too close to the 5 s default under load
 
   it('filters the event log by importance', () => {
     const save = openSave(':memory:');
@@ -183,7 +184,9 @@ describe('SaveFile', () => {
     if (!res.ok) throw new Error();
     save.persist(res.events, state);
     expect(save.listEvents(1000).length).toBeGreaterThan(0);
-    for (const e of save.listEvents(1000, 'notable')) expect(e.importance).not.toBe('minor');
+    const notable = save.listEvents(1000, 'notable');
+    expect(notable.length).toBeGreaterThan(0);
+    for (const e of notable) expect(e.importance).not.toBe('minor');
     save.close();
   });
 

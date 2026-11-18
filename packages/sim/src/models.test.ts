@@ -45,6 +45,8 @@ describe('table shot model', () => {
     const [a, b] = Object.keys(state.teams) as TeamId[];
     const strength = (id: TeamId) =>
       teamStrength(Object.values(state.players).filter((p) => p.teamId === id));
+    const home = strength(a!);
+    const away = strength(b!);
     const goals = (model?: typeof rulesGoalModel) => {
       const rng = new Rng(4);
       let n = 0;
@@ -54,8 +56,8 @@ describe('table shot model', () => {
             id: 'g' as GameId,
             homeTeamId: a!,
             awayTeamId: b!,
-            home: strength(a!),
-            away: strength(b!),
+            home,
+            away,
             resultOnly: true,
           },
           rng,
@@ -71,8 +73,27 @@ describe('table shot model', () => {
   it('is built into the context, and bad files come back as readable errors', () => {
     const parsed = parseXgTable(template);
     if (!parsed.ok) throw new Error('template must parse');
-    const ctx = defaultContext(undefined, { goalModel: parsed.model });
-    expect(ctx.sport.id).toBe('nhl');
+    expect(defaultContext(undefined, { goalModel: parsed.model }).sport.id).toBe('nhl');
+    // The context's games use the model it was given: every shot a sure thing scores far more.
+    const state = createLeague(11, defaultContext());
+    const [a, b] = Object.keys(state.teams) as TeamId[];
+    const strength = (id: TeamId) =>
+      teamStrength(Object.values(state.players).filter((p) => p.teamId === id));
+    const game = {
+      id: 'g' as GameId,
+      homeTeamId: a!,
+      awayTeamId: b!,
+      home: strength(a!),
+      away: strength(b!),
+      resultOnly: true,
+    };
+    const goals = (ctx: ReturnType<typeof defaultContext>) => {
+      const r = ctx.sport.simGame(game, new Rng(4));
+      return r.homeScore + r.awayScore;
+    };
+    expect(goals(defaultContext(undefined, { goalModel: { shotXg: () => 1 } }))).toBeGreaterThan(
+      goals(defaultContext()) + 10,
+    );
     const bad = parseXgTable({ ...template, goal: [[0.1, 2], [0.1]], powerPlay: 0, version: 2 });
     expect(bad.ok).toBe(false);
     if (!bad.ok) {

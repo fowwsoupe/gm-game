@@ -13,6 +13,7 @@ import {
   signingInterest,
   type LeagueState,
 } from './index';
+import { freeAgencyLeague, summerLeague } from './testLeagues';
 
 const local: Actor = { id: 'local', controls: [] };
 const ctx = defaultContext();
@@ -24,10 +25,8 @@ function run(state: LeagueState, command: Command) {
 }
 
 /** Free agency is open; one free agent is restricted, his rights held by `mine`, with an AI team's sheet on the table. */
-function withSheet(seed: number) {
-  const state = createLeague(seed, ctx);
-  run(state, { kind: 'sim.advance', days: 300 });
-  run(state, { kind: 'offseason.openFreeAgency' });
+function findSheet(seed: number) {
+  const state = freeAgencyLeague(seed);
   const mine = Object.values(state.teams).find((t) => t.userControlled)!.id;
   const ai = Object.keys(state.teams).filter((id) => id !== mine) as TeamId[];
   for (const player of Object.values(state.players).filter((p) => p.teamId === null)) {
@@ -46,11 +45,16 @@ function withSheet(seed: number) {
   throw new Error('no sheet could be made');
 }
 
+const sheets = new Map<number, ReturnType<typeof findSheet>>();
+/** `findSheet`, searched once per seed. A fresh copy each call. */
+function withSheet(seed: number) {
+  if (!sheets.has(seed)) sheets.set(seed, findSheet(seed));
+  return structuredClone(sheets.get(seed)!);
+}
+
 describe('restricted free agents', () => {
   it('unsigned young players keep their team as rights holder; veterans do not', () => {
-    const state = createLeague(5, ctx);
-    run(state, { kind: 'sim.advance', days: 300 });
-    run(state, { kind: 'offseason.openFreeAgency' });
+    const state = freeAgencyLeague(5);
     const rights = Object.entries(state.rfaRights);
     expect(rights.length).toBeGreaterThan(0);
     for (const [id, teamId] of rights) {
@@ -95,9 +99,7 @@ describe('restricted free agents', () => {
   });
 
   it('your offer to another team’s restricted player is never instant', () => {
-    const state = createLeague(5, ctx);
-    run(state, { kind: 'sim.advance', days: 300 });
-    run(state, { kind: 'offseason.openFreeAgency' });
+    const state = freeAgencyLeague(5);
     const mine = Object.values(state.teams).find((t) => t.userControlled)!.id;
     const [id] = Object.entries(state.rfaRights).find(([, t]) => t !== mine)!;
     const p = state.players[id!]!;
@@ -109,6 +111,7 @@ describe('restricted free agents', () => {
       local,
       ctx,
     );
+    expect(res.ok).toBe(true);
     if (res.ok) expect(res.events[0]!.kind).toBe('freeAgency.offered');
     expect(p.teamId).toBeNull();
   });
@@ -157,9 +160,7 @@ describe('offer-sheet compensation', () => {
 
 describe('loyalty and hometown', () => {
   it('a free agent likes his old team and his hometown more for the same offer', () => {
-    const state = createLeague(5, ctx);
-    run(state, { kind: 'sim.advance', days: 300 });
-    run(state, { kind: 'offseason.openFreeAgency' });
+    const state = freeAgencyLeague(5);
     const teams = Object.keys(state.teams) as TeamId[];
     const [id, former] = Object.entries(state.formerTeams).find(
       ([pid]) => state.players[pid]!.teamId === null,
@@ -206,8 +207,7 @@ describe('goalie rotation', () => {
 
 describe('scout reports', () => {
   it('are the same every time and name real rating keys', () => {
-    const state = createLeague(5, ctx);
-    run(state, { kind: 'sim.advance', days: 300 });
+    const state = summerLeague(5);
     expect(state.draftClass.length).toBeGreaterThan(0);
     for (const d of state.draftClass.slice(0, 20)) {
       const a = scoutReport(ctx, d);
@@ -255,8 +255,7 @@ describe('trade block', () => {
 
 describe('protected picks', () => {
   it('a protected first-round pick that lands high stays with the team that traded it', () => {
-    const state = createLeague(5, ctx);
-    run(state, { kind: 'sim.advance', days: 300 });
+    const state = summerLeague(5);
     const [a, b] = Object.keys(state.teams) as TeamId[];
     const id = `${state.date.season + 1}-1-${a}`;
     state.pickOwners[id] = b!;
