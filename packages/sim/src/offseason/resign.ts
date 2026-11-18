@@ -1,10 +1,17 @@
 import type { Contract, Player, ResignOffer, TeamId } from '@gm/shared';
 import { phaseOf, type Emit, type LeagueState, type Rng } from '../core';
-import { capIssues, capSheet, validateContract, type ContractIssue } from '../cba';
+import {
+  capIssues,
+  capSheet,
+  contractIn,
+  deadCap,
+  validateContract,
+  type ContractIssue,
+} from '../cba';
 import type { SimContext } from '../context';
 import { gmOf } from '../people';
 import { drawYears } from './freeAgency';
-import { ageIn, resignAsk, rosterOf } from './roster';
+import { ageIn, capRoom, rosterOf, resignAsk } from './roster';
 
 /**
  * The re-sign window: during the season (an extension that starts next season) and after the
@@ -90,6 +97,15 @@ export function aiHoldouts(state: LeagueState, ctx: SimContext, rng: Rng, emit: 
     const p = state.players[h.playerId]!;
     const deal = resignContract(state, ctx, p, drawYears(ageIn(p, state.date.season + 1), rng));
     if ('issues' in deal) continue;
+    // The raise must leave room to fill next season's roster at the minimum, as a signing must.
+    const next = state.date.season + 1;
+    const signed = rosterOf(state, team.id).flatMap((x) => {
+      const c = x.id === p.id ? undefined : contractIn(x, next);
+      return c ? [{ ...x, contract: c }] : [];
+    });
+    if (deal.contract.capHit > capRoom(ctx.ruleset, signed, p, deadCap(state, team.id, next))) {
+      continue;
+    }
     emit('notable', [team.id], {
       kind: 'contract.extended',
       playerId: p.id,

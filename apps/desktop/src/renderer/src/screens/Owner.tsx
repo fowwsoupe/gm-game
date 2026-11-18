@@ -1,13 +1,15 @@
 import type { OwnerObjective } from '@gm/shared';
-import { useOwnerReport, useTeams } from '@/lib/queries';
+import { useDispatch, useOwnerReport, useStatus, useTeams } from '@/lib/queries';
 import { money } from '@/lib/format';
 import { useT, type MessageKey } from '@/i18n';
-import { BarLineChart, Card, StatRow, Td, Th } from '@/ui';
+import { BarLineChart, Button, Card, StatRow, Td, Th } from '@/ui';
 
 /** Your owner: what he thinks of you, where the money goes, and every meeting so far. */
 export function Owner() {
   const t = useT();
   const { data: teams = [] } = useTeams();
+  const { data: league } = useStatus();
+  const dispatch = useDispatch();
   const mine = teams.find((x) => x.userControlled);
   const { data: report } = useOwnerReport(mine?.id);
   if (!mine) return <p className="text-muted">{t('owner.empty')}</p>;
@@ -36,6 +38,19 @@ export function Owner() {
           <StatRow label={t('owner.cash')} value={money(report.cash)} />
           <StatRow label={t('owner.budget')} value={money(standing.payrollBudget)} />
         </div>
+        {league && (
+          <div className="mt-3 flex items-center gap-3 text-sm text-muted">
+            <span>{t('owner.canBeFired')}</span>
+            <Button
+              variant={league.canBeFired ? 'primary' : 'ghost'}
+              onClick={() =>
+                dispatch.mutate({ kind: 'league.setCanBeFired', on: !league.canBeFired })
+              }
+            >
+              {t(league.canBeFired ? 'owner.canBeFired.on' : 'owner.canBeFired.off')}
+            </Button>
+          </div>
+        )}
       </Card>
       <Card title={t('owner.chart')}>
         {report.money.length ? (

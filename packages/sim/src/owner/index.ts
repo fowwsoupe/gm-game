@@ -2,7 +2,8 @@
  * Owner engine (shared by all sports): the three meetings a season, the owner's confidence in
  * his GM, and the cards he puts to a human GM.
  * Owns: preseason objectives and payroll budget, the deadline check-in, the season-end review,
- * a month's nudge to confidence, and every card (AI GMs answer theirs at once, with no card).
+ * a month's nudge to confidence, every card (AI GMs answer theirs at once, with no card), the
+ * head coach's seat, and a human GM's: warned below `HOT_SEAT.warn`, fired at a review.
  * Owner behaviour numbers are game feel, not league rules: named constants here, unsourced.
  */
 import type { CardEffects, OwnerCard, OwnerObjective, OwnerStanding, TeamId } from '@gm/shared';
@@ -16,6 +17,7 @@ import {
   marketOf,
   newCoach,
   ownerOf,
+  randomGm,
   ticketPctOf,
 } from '../people';
 import { fansOf, seatsOf } from '../finance';
@@ -26,6 +28,19 @@ import type { SimContext } from '../context';
 const START_CONFIDENCE = 60;
 /** Confidence never drops below this in a new GM's honeymoon (one to three seasons by patience). */
 const HONEYMOON_FLOOR = 40;
+/**
+ * A human GM's job: the owner warns him below `warn` (once a season), and fires him at a
+ * season-end review below `fire`, once warned and past the honeymoon. Never mid-season.
+ */
+const HOT_SEAT = { warn: 30, fire: 15 };
+/**
+ * An AI GM is fired in the summer when his owner's confidence is below this. Higher than a
+ * human's line, and with no honeymoon rule beyond the floor (40): AI GMs go along with every
+ * card, which keeps confidence up. Tuned in the lab to the old bottom-quarter rule's turnover
+ * (AI GM tenure about 4.2 seasons): less turnover steadies rosters, and goalie save % starts to
+ * repeat more than the real league's.
+ */
+const AI_FIRED_BELOW = 52;
 /** A month: confidence per point of points % above (or below) expectation. */
 const MONTHLY_RESULTS = 20;
 /** The review: confidence for each objective met, and lost for each missed. */
@@ -95,6 +110,10 @@ function moved(standing: OwnerStanding, delta: number, patience: number, season:
   return clamp(Math.max(floor, next));
 }
 
+/** Whether an AI GM's owner has lost confidence in him (asked in the summer, after the review). */
+export const aiGmFired = (state: LeagueState, teamId: TeamId): boolean =>
+  (state.owners[teamId]?.confidence ?? START_CONFIDENCE) < AI_FIRED_BELOW;
+
 /** The owner's baseline payroll budget: from the floor toward the cap by his budget trait. */
 function baseBudget(ctx: SimContext, budget: number): Dollars {
   const { lowerLimit, upperLimit } = ctx.ruleset.cap;
@@ -154,8 +173,30 @@ function answer(emit: Emit, card: OwnerCard, option: OwnerCard['options'][number
 /** Cards still open when the next meeting comes are answered for the GM: refused, else agreed. */
 function closeOpen(state: LeagueState, emit: Emit, teamId: TeamId) {
   for (const card of state.ownerCards.filter((c) => c.teamId === teamId)) {
-    answer(emit, card, card.options.some((o) => o.key === 'refuse') ? 'refuse' : 'agree');
+    answer(
+      emit,
+      card,
+      card.options.some((o) => o.key === 'refuse') ? 'refuse' : card.options[0]!.key,
+    );
   }
+}
+
+/** The owner warns a human GM his job is on the line: once a season, while "can be fired" is on. */
+function warnIfHot(state: LeagueState, emit: Emit, teamId: TeamId, confidence: number) {
+  const standing = state.owners[teamId];
+  if (!state.canBeFired || !state.teams[teamId]!.userControlled) return;
+  if (confidence >= HOT_SEAT.warn || standing?.warned === state.date.season) return;
+  offer(
+    state,
+    emit,
+    {
+      teamId,
+      kind: 'hotSeat',
+      params: { n: Math.round(confidence), fire: HOT_SEAT.fire },
+      options: [{ key: 'noted', effects: {} }],
+    },
+    'noted',
+  );
 }
 
 /**
@@ -468,6 +509,7 @@ export function ownerMonth(state: LeagueState, ctx: SimContext, emit: Emit): voi
     if (Math.round(confidence) !== Math.round(standing.confidence)) {
       emit('minor', [teamId], { kind: 'owner.confidenceMoved', teamId, confidence });
     }
+    warnIfHot(state, emit, teamId, confidence);
   }
 }
 
@@ -525,6 +567,27 @@ export function seasonReview(state: LeagueState, ctx: SimContext, emit: Emit, rn
         coachHeat: round3(COACH.carry * heat),
       },
     });
+    // A human GM who was warned and has not turned it round is fired; the rest is his successor's.
+    const fired =
+      state.canBeFired &&
+      team.userControlled &&
+      confidence < HOT_SEAT.fire &&
+      prev.warned !== undefined &&
+      season >= prev.since + honeymoon(owner.patience);
+    if (fired) {
+      emit('major', [teamId], {
+        kind: 'career.fired',
+        teamId,
+        gm: randomGm(rng.fork(`gm${teamId}`)),
+      });
+      emit('notable', [teamId], {
+        kind: 'news.posted',
+        headline: 'event.gmFired',
+        params: { team: teamName(team) },
+      });
+      continue;
+    }
+    warnIfHot(state, emit, teamId, confidence);
     // The coach decision: a new one starts next season with a clean slate.
     const r = rng.fork(teamId);
     const chance = COACH.review * (heat - COACH.reviewHeat) * (1.5 - owner.patience);

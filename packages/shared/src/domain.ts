@@ -306,6 +306,18 @@ export interface OwnerStanding {
   coachHeat?: number;
   /** The season the owner last asked a human GM to fire the coach mid-season (once a season). */
   coachAsked?: number;
+  /** The season the owner last warned a human GM that his job is on the line (absent: never). */
+  warned?: number;
+}
+
+/**
+ * A human GM out of work: fired by `firedFrom`'s owner at the `season` review. `offers` are the
+ * teams with a vacancy that want him (filled each summer as AI GMs leave or are fired).
+ */
+export interface Career {
+  firedFrom: TeamId;
+  season: number;
+  offers: TeamId[];
 }
 
 /** The Owner screen: the owner, his view of you, the money's flow and every meeting, oldest first. */
@@ -371,10 +383,12 @@ export interface OwnerCard {
     | 'fireSale'
     | 'renovation'
     | 'festival'
-    | 'fireCoach';
+    | 'fireCoach'
+    | 'hotSeat';
   /** Text params: `amount` in dollars, `pct` in whole percent. */
   params: Record<string, number>;
-  options: { key: 'agree' | 'refuse' | 'more'; effects: CardEffects }[];
+  /** `noted`: a warning, nothing to decide. */
+  options: { key: 'agree' | 'refuse' | 'more' | 'noted'; effects: CardEffects }[];
 }
 
 /** Generic standings row. `otl` stays 0 in sports without overtime-loss points. */
@@ -568,6 +582,10 @@ export interface LeagueStatus {
   playoffsEndDay: number;
   /** Trades allowed right now. */
   tradesOpen: boolean;
+  /** You were fired and have no team (null: you have a job, or never had one). */
+  career: Career | null;
+  /** The save option: owners may fire a human GM (default on). */
+  canBeFired: boolean;
 }
 
 /**

@@ -69,6 +69,8 @@ const JSON_META = {
   ownerCards: '[]',
   projects: '[]',
   arenas: '{}',
+  career: 'null',
+  canBeFired: 'true',
   faOffers: '[]',
   rfaRights: '{}',
   formerTeams: '{}',
@@ -452,6 +454,16 @@ export class SaveFile {
           case 'team.gmChanged':
             setGm.run(JSON.stringify(e.gm), e.teamId);
             break;
+          case 'career.fired':
+            setControl.run(0, e.teamId);
+            setGm.run(JSON.stringify(e.gm), e.teamId);
+            break;
+          case 'career.hired':
+            setControl.run(1, e.teamId);
+            break;
+          case 'career.offers':
+          case 'league.optionSet':
+            break; // stored with the clock below
           case 'team.planChanged':
             setPlan.run(JSON.stringify(e.plan), e.teamId);
             break;

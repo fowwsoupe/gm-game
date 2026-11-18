@@ -49,7 +49,7 @@ export function openFreeAgency(state: LeagueState, ctx: SimContext, emit: Emit):
   const season = state.date.season + 1;
   const rng = new Rng(state.rngState);
   const order = worstFirst(state, ctx.ruleset);
-  changeGms(state, rng.fork('gms'), emit, order);
+  changeGms(state, rng.fork('gms'), emit);
   archiveStats(state, ctx, emit);
   developPlayers(state, ctx.models.development, rng.fork('development'), emit, season);
   retirePlayers(state, ctx.models.development, rng.fork('retirement'), emit, season);

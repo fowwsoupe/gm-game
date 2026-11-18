@@ -230,6 +230,21 @@ season's unpaid share included), lifts confidence 4, and the new coach's heat co
 games from then on. Lab, seeds 1/101/201: coach changes 0.295/0.294/0.286 a team-season, fired
 in-season 0.125/0.127/0.124.
 
+Job 8: below 30 confidence the owner warns a human GM (a `hotSeat` card, once a season); at a
+season-end review below 15, once warned and past the honeymoon, he fires him (`career.fired`):
+the team goes to a new AI GM, and the human is out of work with no team (picking one is refused).
+Each summer the teams whose AI GM left or was fired become offers (`career.offers`, his old team
+left out); `career.takeJob` takes one, with a fresh owner standing and honeymoon. "Can be fired"
+is a save option (`league.setCanBeFired`, on the Owner screen, default on); off, there is no
+warning and no firing. AI GMs are now fired in the summer when their owner's confidence is below
+52, in place of the bottom-quarter rule; the voluntary 15% stays. That line is higher than a
+human's because AI GMs agree to every card, and it was tuned to the old rule's turnover (AI GM
+tenure about 4.2 seasons). Less turnover steadies rosters, and the lab shows it: at 48, tenure
+4.5-4.65, goalie save % repeated at r 0.31 on average over seeds 1/101/201/301 (cap 0.30, main
+0.28); at 52 it is back to 0.286. A new GM (AI or human) starts with a fresh owner standing. The lab also
+caught an old gap: a win-now GM could pay a holdout so much that next season's roster could not
+be filled; the raise must now leave room for a full roster at the minimum, as a signing must.
+
 ## What the balance lab should measure
 
 Per team-season, over the usual 20 leagues x 20 years, on seeds 1, 101 and 201:

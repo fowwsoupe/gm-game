@@ -33,6 +33,14 @@ export const fr: Record<MessageKey, string> = {
   'owner.meeting.preseason': 'Présaison',
   'owner.meeting.deadline': 'Date limite des échanges',
   'owner.meeting.review': 'Bilan de saison',
+  'owner.canBeFired': 'Le propriétaire peut vous congédier',
+  'owner.canBeFired.on': 'Oui',
+  'owner.canBeFired.off': 'Non',
+  'job.title': 'Sans emploi',
+  'job.fired': 'Le propriétaire de {team} vous a congédié au bilan de la saison {season}.',
+  'job.none':
+    'Aucune offre pour l’instant. Les équipes qui perdent leur DG cet été vous appelleront; d’ici là, suivez la ligue.',
+  'job.take': 'Accepter le poste',
   'nav.cap': 'Masse salariale',
   'team.back': 'Retour au classement',
   'team.view': "Voir la page de l'équipe",
@@ -353,6 +361,9 @@ export const fr: Record<MessageKey, string> = {
   'owner.card.fireCoach':
     'Les résultats ne suivent pas : le propriétaire veut le départ de l’entraîneur-chef. Le congédier coûte les {amount} qui restent à son contrat.',
   'owner.effect.coach': '{name} prend la relève',
+  'owner.card.hotSeat':
+    'Votre poste est en jeu : la confiance du propriétaire est tombée à {n}. Sous {fire} à un bilan de saison, il vous congédie.',
+  'owner.option.noted': 'Compris',
   'owner.option.agree': 'Accepter',
   'owner.option.refuse': 'Refuser',
   'owner.option.more': 'Demander plus',

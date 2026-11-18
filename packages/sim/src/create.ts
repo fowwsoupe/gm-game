@@ -71,6 +71,8 @@ export function createLeague(
     ownerCards: [],
     projects: [],
     arenas: {},
+    career: null,
+    canBeFired: true,
     faOffers: [],
     rfaRights: {},
     formerTeams: {},

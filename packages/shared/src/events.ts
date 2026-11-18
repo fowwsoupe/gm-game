@@ -228,6 +228,14 @@ export type LeagueEvent =
   | (EventBase & { kind: 'team.controlChanged'; teamId: TeamId; userControlled: boolean })
   /** An AI team has a new GM (the old one was fired or moved on). */
   | (EventBase & { kind: 'team.gmChanged'; teamId: TeamId; gm: GmProfile; fired: boolean })
+  /** The owner fired a human GM at the review: the team goes to `gm`, an AI GM, and you are out of work. */
+  | (EventBase & { kind: 'career.fired'; teamId: TeamId; gm: GmProfile })
+  /** Teams with a vacancy that want the GM who is out of work (replaces any earlier ones). */
+  | (EventBase & { kind: 'career.offers'; offers: TeamId[] })
+  /** The GM out of work took a job: he runs `teamId` now, with a new owner's honeymoon. */
+  | (EventBase & { kind: 'career.hired'; teamId: TeamId })
+  /** The save option "can be fired" changed. */
+  | (EventBase & { kind: 'league.optionSet'; canBeFired: boolean })
   /** An AI GM sets a new plan for his team (contend, retool, rebuild). */
   | (EventBase & { kind: 'team.planChanged'; teamId: TeamId; plan: TeamPlan })
   | (EventBase & { kind: 'season.phaseChanged'; from: SeasonPhase; to: SeasonPhase })
