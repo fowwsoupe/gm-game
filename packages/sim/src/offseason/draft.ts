@@ -1,9 +1,9 @@
 import type { DraftProspect, Player, Team, TeamId } from '@gm/shared';
-import { teamName, type Emit, type LeagueState, type Rng } from '../core';
+import { Rng, teamName, type Emit, type LeagueState } from '../core';
 import type { SimContext } from '../context';
 import { deadCap } from '../cba';
 import { pickId, pickOwner } from '../league';
-import { seenBy } from '../people';
+import { hash, staffOf } from '../people';
 import { clampRating } from '../players';
 import { entryContract, rosterOf } from './roster';
 
@@ -15,15 +15,33 @@ const SCOUT_HALF_RANGE = 5;
 const scouted = (d: DraftProspect) => (d.low + d.high) / 2;
 
 /**
- * An AI GM without a board picks the best potential as his own scouts read it (`seenBy`: a good
- * GM sees close to the truth, a poor one worse than the public range) among the next few.
+ * A prospect's potential range as this team's scouts read it: a good scouting department reads
+ * close to the truth and narrower than the public range, a poor one wider and further off. The
+ * read is the same every time for the same department and prospect; nothing is stored.
  */
+export function teamRange(
+  team: Team,
+  d: DraftProspect,
+  ctx: SimContext,
+  season: number,
+): { low: number; high: number } {
+  const fo = ctx.ruleset.frontOffice;
+  const q = staffOf(team, 'scouting', fo.salary, season).quality;
+  const sd = fo.scouting.best + (1 - q) * (fo.scouting.worst - fo.scouting.best);
+  const read =
+    d.player.potential + new Rng(hash(`draftRead:${team.id}:${q}:${d.player.id}`)).normal(0, sd);
+  const half = (SCOUT_HALF_RANGE * sd) / SCOUT_SD;
+  return { low: clampRating(read - half), high: clampRating(read + half) };
+}
+
+/** An AI GM without a board picks the best potential as his scouts read it among the next few. */
 const AI_LOOKS_AT = 12;
-function aiPick(team: Team, pool: readonly DraftProspect[]): number {
+function aiPick(team: Team, pool: readonly DraftProspect[], ctx: SimContext, season: number) {
   let best = 0;
   let bestRead = -Infinity;
   pool.slice(0, AI_LOOKS_AT).forEach((d, i) => {
-    const read = seenBy(team, d.player).potential;
+    const r = teamRange(team, d, ctx, season);
+    const read = (r.low + r.high) / 2;
     if (read > bestRead) [best, bestRead] = [i, read];
   });
   return best;
@@ -128,7 +146,7 @@ export function runDraft(
     const team = state.teams[teamId]!;
     const wanted =
       board.map((id) => pool.findIndex((d) => d.player.id === id)).find((at) => at >= 0) ??
-      (team.userControlled ? undefined : aiPick(team, pool));
+      (team.userControlled ? undefined : aiPick(team, pool, ctx, season));
     const [{ player: prospect }] = pool.splice(wanted ?? 0, 1) as [DraftProspect];
     const contract = entryContract(
       ctx.ruleset,

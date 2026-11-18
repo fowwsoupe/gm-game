@@ -166,6 +166,11 @@ export function applyEvent(state: LeagueState, event: LeagueEvent): void {
       if (team) team.plan = event.plan;
       return;
     }
+    case 'staff.hired': {
+      const team = state.teams[event.teamId];
+      if (team) team.staff = { ...team.staff, [event.department]: event.head };
+      return;
+    }
     case 'team.gmChanged': {
       const team = state.teams[event.teamId];
       if (team) team.gm = event.gm;

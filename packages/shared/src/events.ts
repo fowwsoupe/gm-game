@@ -6,7 +6,9 @@ import type {
   DraftProspect,
   FinanceLines,
   GameResult,
+  Department,
   GmProfile,
+  StaffProfile,
   OwnerCard,
   OwnerStanding,
   Player,
@@ -238,6 +240,14 @@ export type LeagueEvent =
   | (EventBase & { kind: 'team.controlChanged'; teamId: TeamId; userControlled: boolean })
   /** An AI team has a new GM (the old one was fired or moved on). */
   | (EventBase & { kind: 'team.gmChanged'; teamId: TeamId; gm: GmProfile; fired: boolean })
+  /** A department head left (`poached`: hired away after a good season) and `head` took over. */
+  | (EventBase & {
+      kind: 'staff.hired';
+      teamId: TeamId;
+      department: Department;
+      head: StaffProfile;
+      poached: boolean;
+    })
   /** The owner fired a human GM at the review: the team goes to `gm`, an AI GM, and you are out of work. */
   | (EventBase & { kind: 'career.fired'; teamId: TeamId; gm: GmProfile })
   /** Teams with a vacancy that want the GM who is out of work (replaces any earlier ones). */

@@ -1,4 +1,5 @@
-import type { GameId, GameResult, LeagueEvent, Player, TeamId } from '@gm/shared';
+import type { GameId, GameResult, LeagueEvent, Player, StopCategory, TeamId } from '@gm/shared';
+import { STOP_CATEGORIES } from '@gm/shared';
 import {
   applyEvent,
   emitter,
@@ -14,7 +15,7 @@ import { classifyTeams, leagueStandings, nextRound, seedPlayoffs, worstFirst } f
 import { giveSeasonAwards } from './awards';
 import { aiHoldouts, announceDraftClass } from './offseason';
 import { aiOffers, aiTrades } from './trades';
-import { disputesWeek, holdoutsWeek, startHoldouts, tradeRequests } from './people';
+import { disputesWeek, holdoutsWeek, staffOf, startHoldouts, tradeRequests } from './people';
 import { sitsOut, strengthFor } from './tonight';
 import { byOverall } from './players';
 import { payBonuses } from './cba';
@@ -39,7 +40,7 @@ import type { SimContext } from './context';
 export function advance(
   state: LeagueState,
   days: number,
-  stopOn: 'never' | 'major',
+  stopOn: 'never' | 'major' | readonly StopCategory[],
   ctx: SimContext,
 ): LeagueEvent[] {
   const events: LeagueEvent[] = [];
@@ -48,7 +49,27 @@ export function advance(
     events.push(e);
   };
   const rng = new Rng(state.rngState);
+  const stops = new Set<StopCategory>(
+    stopOn === 'major' ? STOP_CATEGORIES : stopOn === 'never' ? [] : stopOn,
+  );
   const cal = ctx.ruleset.season.calendar;
+  // Medical staff: injury days x (1 + medical.days x (league average - quality)). Staff only
+  // change in the summer, so once per call is enough.
+  const fo = ctx.ruleset.frontOffice;
+  const medical = new Map(
+    Object.values(state.teams).map((t) => [
+      t.id,
+      staffOf(t, 'medical', fo.salary, state.date.season).quality,
+    ]),
+  );
+  const avgMedical = [...medical.values()].reduce((a, b) => a + b, 0) / Math.max(1, medical.size);
+  const healed = (teamId: TeamId | null | undefined, days: number) =>
+    Math.max(
+      1,
+      Math.round(
+        days * (1 + fo.medical.days * (avgMedical - (medical.get(teamId!) ?? avgMedical))),
+      ),
+    );
 
   // Rosters once per call; a team's strength is rebuilt only when its set of injured players changes.
   const sport = ctx.sport;
@@ -165,8 +186,10 @@ export function advance(
         }
       }
     }
-    for (const { playerId, days } of injuries) {
+    for (const injury of injuries) {
+      const { playerId } = injury;
       const teamId = state.players[playerId]?.teamId;
+      const days = healed(teamId, injury.days);
       emit(
         makeEvent(state, 'notable', teamId ? [teamId] : [], {
           kind: 'player.injured',
@@ -384,7 +407,7 @@ export function advance(
       }),
     );
 
-    if (stopOn === 'major' && events.slice(dayStart).some((e) => matters(state, e))) break;
+    if (stops.size && events.slice(dayStart).some((e) => matters(state, e, stops))) break;
   }
   return events;
 }
@@ -404,10 +427,14 @@ const LONG_INJURY_DAYS = 14;
  * champion), a major event for a human team (its series, its trade), or a long injury to one of
  * its players. Other teams' trades and series don't.
  */
-function matters(state: LeagueState, e: LeagueEvent): boolean {
+function matters(state: LeagueState, e: LeagueEvent, stops: ReadonlySet<StopCategory>): boolean {
   const yours = e.teamIds.some((id) => state.teams[id]?.userControlled);
   if (e.kind === 'career.fired') return true; // it was yours a moment ago
-  if (e.importance === 'major') return e.teamIds.length === 0 || yours;
-  if (e.kind === 'trade.offered') return yours; // an offer waits on you
-  return e.kind === 'player.injured' && yours && e.days >= LONG_INJURY_DAYS;
+  if (e.importance === 'major') {
+    return e.teamIds.length === 0 ? stops.has('league') : yours && stops.has('yours');
+  }
+  if (e.kind === 'trade.offered') return yours && stops.has('offers'); // an offer waits on you
+  return (
+    e.kind === 'player.injured' && yours && e.days >= LONG_INJURY_DAYS && stops.has('injuries')
+  );
 }

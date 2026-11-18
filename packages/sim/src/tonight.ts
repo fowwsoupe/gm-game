@@ -1,6 +1,6 @@
 import type { Player, TeamId } from '@gm/shared';
 import type { LeagueState } from './core';
-import { chemistry } from './people';
+import { chemistry, coachOf } from './people';
 import type { SimContext } from './context';
 
 /** Whether a player sits out on `day`: hurt, or holding out. */
@@ -13,7 +13,8 @@ export const available = (state: LeagueState, teamId: TeamId, day: number): Play
 
 /**
  * A team's strength with these players, as the games play it: chemistry, the GM's lines and
- * units, and time together.
+ * units, time together, and the head coach (`frontOffice.coaching.points` either way at the
+ * extremes, around an average coach of 0.5).
  */
 export function strengthFor(
   state: LeagueState,
@@ -27,5 +28,14 @@ export function strengthFor(
     chemistry(players, state.date.season).value,
     state.specialUnits[teamId],
     state.linemates[teamId],
+    coachingPoints(state, ctx, teamId),
   );
+}
+
+function coachingPoints(state: LeagueState, ctx: SimContext, teamId: TeamId): number {
+  const team = state.teams[teamId];
+  if (!team) return 0;
+  // ponytail: around a fixed 0.5 (coach quality is uniform); the league average if hiring tilts it.
+  const q = coachOf(team, ctx.ruleset.finance.coach, state.date.season).quality ?? 0.5;
+  return ctx.ruleset.frontOffice.coaching.points * 2 * (q - 0.5);
 }

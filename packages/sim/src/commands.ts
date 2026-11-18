@@ -11,7 +11,7 @@ import {
 } from './core';
 import { buyoutCharges, capYearIssues, capYearOf, teamCapTotal } from './cba';
 import { parsePick } from './league';
-import { PROMISE_DAYS, talkedDown, talkedRound } from './people';
+import { DEPARTMENTS, PROMISE_DAYS, talkedDown, talkedRound } from './people';
 import {
   isExpiring,
   acceptSheet,
@@ -21,6 +21,7 @@ import {
   resignWindowOpen,
   rolloverSeason,
   signFreeAgent,
+  staffCandidates,
 } from './offseason';
 import { evaluateTrade, planRetention } from './trades';
 import { advance } from './advance';
@@ -379,6 +380,27 @@ export function handleCommand(
         kind: 'finance.ticketPriceSet',
         teamId: team.id,
         pct: command.pct,
+      });
+      return applied(state, ev);
+    }
+
+    case 'staff.hire': {
+      const team = state.teams[command.teamId];
+      if (!team) return invalid('unknown team');
+      if (!controls(actor, team)) return notYours;
+      if (!DEPARTMENTS.includes(command.department)) return invalid('unknown department');
+      const season = state.date.season;
+      const head = staffCandidates(team, command.department, ctx, season)[command.candidate];
+      if (!head) return invalid('unknown candidate');
+      if (team.staff?.[command.department]?.hired === season) {
+        return invalid('already hired for this department this season');
+      }
+      const ev = makeEvent(state, 'notable', [team.id], {
+        kind: 'staff.hired',
+        teamId: team.id,
+        department: command.department,
+        head,
+        poached: false,
       });
       return applied(state, ev);
     }

@@ -85,6 +85,12 @@ export const useOwner = (teamId: TeamId | undefined) =>
     queryFn: () => window.gm.league.owner({ teamId: teamId! }),
     enabled: !!teamId,
   });
+export const useStaffCandidates = (teamId: TeamId | undefined) =>
+  useQuery({
+    queryKey: ['league', 'staffCandidates', teamId] as const,
+    queryFn: () => window.gm.league.staffCandidates({ teamId: teamId! }),
+    enabled: !!teamId,
+  });
 export const useOwnerReport = (teamId: TeamId | undefined) =>
   useQuery({
     queryKey: ['league', 'ownerReport', teamId] as const,
