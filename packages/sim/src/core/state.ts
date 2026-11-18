@@ -83,6 +83,8 @@ export interface LeagueState {
   tradeRequests: { playerId: PlayerId; teamId: TeamId }[];
   /** Players on human teams holding out: they sit out until paid, talked round or traded. */
   holdouts: { playerId: PlayerId; teamId: TeamId }[];
+  /** Players unhappy with their role on a human team; `until`: the day a promised role is due. */
+  disputes: { playerId: PlayerId; teamId: TeamId; until?: number; listed?: true }[];
   /**
    * Games each pair of teammates has played in the same unit (a line or a pair), by team and
    * `linemateKey`, capped at `LINEMATE_GAMES_CAP`. A pair goes when either player leaves the team.
@@ -120,6 +122,7 @@ export const capYearOf = (state: LeagueState) => state.date.season + (state.cham
 const endRequest = (state: LeagueState, playerId: string) => {
   state.tradeRequests = state.tradeRequests.filter((r) => r.playerId !== playerId);
   state.holdouts = state.holdouts.filter((r) => r.playerId !== playerId);
+  state.disputes = state.disputes.filter((r) => r.playerId !== playerId);
 };
 
 /** Games together past which a pair stops counting (more would not change anything). */
@@ -299,6 +302,22 @@ export function applyEvent(state: LeagueState, event: LeagueEvent): void {
     case 'player.tradeRequestEnded':
       endRequest(state, event.playerId);
       return;
+    case 'player.disputeStarted':
+      state.disputes.push({ playerId: event.playerId, teamId: event.teamId });
+      return;
+    case 'player.disputeListed': {
+      const d = state.disputes.find((x) => x.playerId === event.playerId);
+      if (d) d.listed = true;
+      return;
+    }
+    case 'player.disputePromised': {
+      const d = state.disputes.find((x) => x.playerId === event.playerId);
+      if (d) d.until = event.until;
+      return;
+    }
+    case 'player.disputeEnded':
+      state.disputes = state.disputes.filter((x) => x.playerId !== event.playerId);
+      return;
     case 'player.holdoutStarted':
       state.holdouts.push({ playerId: event.playerId, teamId: event.teamId });
       return;
@@ -372,6 +391,7 @@ export function applyEvent(state: LeagueState, event: LeagueEvent): void {
       state.schedule = event.schedule.map((g) => ({ ...g, date: { ...g.date } }));
       state.results = {};
       state.holdouts = [];
+      state.disputes = [];
       for (const p of Object.values(state.players)) delete p.injuredUntil;
       state.playoffSeries = {};
       state.championTeamId = null;

@@ -219,6 +219,18 @@ export type LeagueEvent =
   | (EventBase & { kind: 'player.tradeRequested'; playerId: PlayerId; teamId: TeamId })
   /** A trade request ends: withdrawn after a talk, or he was traded. */
   | (EventBase & { kind: 'player.tradeRequestEnded'; playerId: PlayerId; withdrawn: boolean })
+  /** A player unhappy with his role (he sits well down the depth order for his rating) asks for more. */
+  | (EventBase & { kind: 'player.disputeStarted'; playerId: PlayerId; teamId: TeamId })
+  /** The GM put him on the block: the dispute stays open while he is listed (unlisted: he asks out). */
+  | (EventBase & { kind: 'player.disputeListed'; playerId: PlayerId })
+  /** The GM promised him a bigger role by day `until` (of this season). */
+  | (EventBase & { kind: 'player.disputePromised'; playerId: PlayerId; until: number })
+  /** Settled: he accepted (`settled`), the GM kept his word (`kept`), or it is over without peace (`request`: he asks out; `listed`: he is on the block). */
+  | (EventBase & {
+      kind: 'player.disputeEnded';
+      playerId: PlayerId;
+      outcome: 'settled' | 'kept' | 'request' | 'listed';
+    })
   /** A player under contract refuses to report until he is paid, talked round or traded. */
   | (EventBase & { kind: 'player.holdoutStarted'; playerId: PlayerId; teamId: TeamId })
   /** A holdout ends with the player back at work (`talked`: after a talk with the GM). */

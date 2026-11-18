@@ -61,6 +61,7 @@ const JSON_META = {
   tradeOffers: '[]',
   tradeRequests: '[]',
   holdouts: '[]',
+  disputes: '[]',
   linemates: '{}',
   cash: '{}',
   fans: '{}',
@@ -495,6 +496,10 @@ export class SaveFile {
           case 'freeAgency.sheetDropped':
           case 'player.tradeRequested':
           case 'player.tradeRequestEnded':
+          case 'player.disputeStarted':
+          case 'player.disputePromised':
+          case 'player.disputeListed':
+          case 'player.disputeEnded':
           case 'player.holdoutStarted':
           case 'player.holdoutEnded':
           case 'trade.offerClosed':

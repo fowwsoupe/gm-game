@@ -677,9 +677,10 @@ export interface TodoItem {
     | 'deadline'
     | 'tradeOffers'
     | 'tradeRequest'
-    | 'holdout';
+    | 'holdout'
+    | 'dispute';
   params?: Record<string, string | number>;
-  screen: 'roster' | 'cap' | 'draft' | 'trades';
+  screen: 'roster' | 'cap' | 'draft' | 'trades' | 'lines';
 }
 
 /** What the Home screen needs for a team beyond standings: the to-do list and the next game. */
