@@ -1,4 +1,5 @@
 import { create } from 'zustand';
+import { STOP_CATEGORIES, type StopCategory } from '@gm/shared';
 import type { Locale } from '@/i18n';
 
 /**
@@ -31,6 +32,9 @@ interface UiState {
   focus: { teamId: string; playerId?: string | undefined } | null;
   setScreen: (screen: Screen) => void;
   setLocale: (locale: Locale) => void;
+  /** What stops "sim until it matters" (the sim bar's filter). */
+  stopOn: StopCategory[];
+  toggleStop: (c: StopCategory) => void;
   openRoster: (teamId: string, playerId?: string) => void;
   /** The player's own page. `teamId` null = a free agent. */
   openPlayer: (teamId: string | null, playerId: string) => void;
@@ -48,4 +52,10 @@ export const useUi = create<UiState>((set) => ({
     set({ screen: 'player', focus: { teamId: teamId ?? 'fa', playerId } }),
   setScreen: (screen) => set({ screen }),
   setLocale: (locale) => set({ locale }),
+  // ponytail: in memory, all on at launch; persist it if players ask.
+  stopOn: [...STOP_CATEGORIES],
+  toggleStop: (c) =>
+    set((s) => ({
+      stopOn: s.stopOn.includes(c) ? s.stopOn.filter((x) => x !== c) : [...s.stopOn, c],
+    })),
 }));
