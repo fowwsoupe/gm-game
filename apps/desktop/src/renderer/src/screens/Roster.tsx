@@ -12,8 +12,8 @@ import {
   useTeams,
 } from '@/lib/queries';
 import { useT, type MessageKey } from '@/i18n';
-import { Button, Card, Face, PercentileBar, PlayerCard, Td, Th } from '@/ui';
-import { money, statValue } from '@/lib/format';
+import { Button, Card, Face, PercentileBar, PlayerCard, TeamSelect, Td, Th } from '@/ui';
+import { fullName, money, statValue } from '@/lib/format';
 
 const FREE_AGENTS = 'fa';
 
@@ -51,20 +51,14 @@ export function Roster({ freeAgents = false }: { freeAgents?: boolean }) {
       {!freeAgents && (
         <label className="flex items-center gap-2 text-sm text-muted">
           {t('roster.team')}
-          <select
+          <TeamSelect
+            teams={teams}
             value={value}
-            onChange={(e) => {
-              setPicked(e.target.value);
+            onChange={(id) => {
+              setPicked(id);
               setSelected(undefined);
             }}
-            className="rounded border border-line bg-panel px-2 py-1 text-ink"
-          >
-            {teams.map((x) => (
-              <option key={x.id} value={x.id}>
-                {x.city} {x.name}
-              </option>
-            ))}
-          </select>
+          />
         </label>
       )}
       <div className="grid gap-4 lg:grid-cols-[1fr_20rem]">
@@ -121,7 +115,7 @@ function PlayerTable({
             >
               <Td left>
                 <Face seed={p.id} age={p.age} size={22} />
-                {p.firstName} {p.lastName}
+                {fullName(p)}
                 {p.injuredUntil !== undefined && (
                   <span className="ml-2 text-xs text-bad">{t('roster.injuredShort')}</span>
                 )}
@@ -156,7 +150,7 @@ export function Profile({
   return (
     <div className="space-y-2">
       <PlayerCard
-        name={`${p.firstName} ${p.lastName}`}
+        name={fullName(p)}
         face={<Face seed={p.id} age={p.age} />}
         subtitle={`${t('roster.subtitle', { position: p.position, age: p.age })} · ${t(`build.${p.build}` as MessageKey)}`}
         bars={[
@@ -469,7 +463,7 @@ function Sheets({ teamId }: { teamId: TeamId | undefined }) {
             <span className="flex-1">
               {t('sheet.line', {
                 team: from?.abbreviation ?? '',
-                player: p ? `${p.firstName} ${p.lastName}` : o.playerId,
+                player: p ? fullName(p) : o.playerId,
                 amount: money(o.salary),
                 years: o.years,
               })}

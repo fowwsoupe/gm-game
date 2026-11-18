@@ -10,8 +10,8 @@ import {
   useTradeRequests,
 } from '@/lib/queries';
 import { useT, type MessageKey } from '@/i18n';
-import { Button, Card, Face, TeamLink, Td, Th } from '@/ui';
-import { money, statValue } from '@/lib/format';
+import { Button, Card, Face, TeamLink, TeamSelect, Td, Th } from '@/ui';
+import { fullName, money, moneyParams, statValue, teamName } from '@/lib/format';
 
 /** Build a trade with another team; its GM answers live, with reasons, before you send it. */
 export function Trades() {
@@ -62,21 +62,15 @@ export function Trades() {
     <div className="max-w-6xl space-y-4">
       <label className="flex items-center gap-2 text-sm text-muted">
         {t('trade.partner')}
-        <select
+        <TeamSelect
+          teams={others}
           value={partner}
-          onChange={(e) => {
-            setPartner(e.target.value as TeamId);
+          onChange={(id) => {
+            setPartner(id as TeamId);
             setGet([]);
             setGetPicks([]);
           }}
-          className="rounded border border-line bg-panel px-2 py-1 text-ink"
-        >
-          {others.map((x) => (
-            <option key={x.id} value={x.id}>
-              {x.city} {x.name}
-            </option>
-          ))}
-        </select>
+        />
         <TeamLink teamId={partner}>{t('team.view')}</TeamLink>
       </label>
       <Requests teamId={mine.id} />
@@ -169,9 +163,7 @@ export function Trades() {
 function useReasonText() {
   const t = useT();
   return (r: TradeReason) => {
-    const params = { ...r.params };
-    if (typeof params.amount === 'number') params.amount = money(params.amount);
-    return t(`trade.reason.${r.code}` as MessageKey, params);
+    return t(`trade.reason.${r.code}` as MessageKey, moneyParams(r.params));
   };
 }
 
@@ -237,7 +229,7 @@ function Side({
                     className="mr-2"
                   />
                   <Face seed={p.id} age={p.age} size={22} />
-                  {p.firstName} {p.lastName}
+                  {fullName(p)}
                 </Td>
                 <Td left>{p.position}</Td>
                 <Td>{p.age}</Td>
@@ -301,7 +293,7 @@ function Offers({ teamId }: { teamId: TeamId }) {
   if (offers.length === 0) return null;
   const name = (list: PlayerProfile[], id: string) => {
     const p = list.find((x) => x.id === id);
-    return p ? `${p.firstName} ${p.lastName} (${p.position}, ${p.age})` : id;
+    return p ? `${fullName(p)} (${p.position}, ${p.age})` : id;
   };
   const respond = (offerId: string, accept: boolean) =>
     dispatch.mutate(
@@ -318,7 +310,7 @@ function Offers({ teamId }: { teamId: TeamId }) {
               <span>
                 <TeamLink teamId={o.proposal.fromTeamId}>{team?.abbreviation}</TeamLink>{' '}
                 {t('trade.offerLine', {
-                  team: team ? `${team.city} ${team.name}` : o.proposal.fromTeamId,
+                  team: teamName(teams, o.proposal.fromTeamId),
                   give: o.proposal.give.map((id) => name(theirs, id)).join(', '),
                   get: o.proposal.get.map((id) => name(ours, id)).join(', '),
                   day: o.expiresDay,
@@ -360,9 +352,7 @@ function Requests({ teamId }: { teamId: TeamId }) {
           const p = players.find((x) => x.id === id);
           return (
             <li key={id} className="flex flex-wrap items-center justify-between gap-2">
-              <span>
-                {t('trade.requestLine', { player: p ? `${p.firstName} ${p.lastName}` : id })}
-              </span>
+              <span>{t('trade.requestLine', { player: p ? fullName(p) : id })}</span>
               <Button
                 disabled={dispatch.isPending}
                 onClick={() =>

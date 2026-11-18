@@ -12,9 +12,9 @@ import {
   useTeams,
 } from '@/lib/queries';
 import { useUi } from '@/stores/ui';
-import { money } from '@/lib/format';
+import { money, moneyParams, pct, teamName } from '@/lib/format';
 import { isMessageKey, useT, type MessageKey } from '@/i18n';
-import { Button, Card, Face, StatRow } from '@/ui';
+import { Button, Card, Face, StatRow, TeamSelect } from '@/ui';
 
 export function Home({
   hasLeague,
@@ -61,18 +61,12 @@ function TeamPicker() {
   return (
     <label className="flex items-center gap-2 text-sm text-muted md:col-span-2">
       {t('home.yourTeam')}
-      <select
+      <TeamSelect
+        teams={teams}
         value={mine?.id ?? ''}
-        onChange={(e) => choose(e.target.value as TeamId)}
-        className="rounded border border-line bg-panel px-2 py-1 text-ink"
-      >
-        {!mine && <option value="">{t('home.noTeam')}</option>}
-        {teams.map((x) => (
-          <option key={x.id} value={x.id}>
-            {x.city} {x.name}
-          </option>
-        ))}
-      </select>
+        onChange={(id) => id && choose(id)}
+        {...(!mine && { empty: t('home.noTeam') })}
+      />
     </label>
   );
 }
@@ -92,7 +86,6 @@ function TeamStrip({ teamId }: { teamId: TeamId }) {
   const odds = inSeason ? pulse.find((p) => p.teamId === teamId)?.playoffOdds : undefined;
   const space = sheet?.seasons[0]?.space;
   const opponent = teams.find((x) => x.id === home?.nextGame?.opponentId);
-  const pct = (n: number) => `${Math.round(n * 100)}%`;
   const stats: { label: string; value: string; note?: string }[] = [
     {
       label: t('home.record'),
@@ -145,8 +138,7 @@ function TodoCard({ teamId }: { teamId: TeamId }) {
       ) : (
         <ul className="space-y-1 text-sm">
           {items.map((item) => {
-            const params = { ...item.params };
-            if (typeof params.amount === 'number') params.amount = money(params.amount);
+            const params = moneyParams(item.params);
             return (
               <li key={item.code + JSON.stringify(params)}>
                 <button
@@ -174,14 +166,14 @@ function FeedCard() {
   const events = data?.events ?? [];
   const names = data?.names ?? {};
   const ages = data?.ages ?? {};
-  const teamName = (id: string) => teams.find((x) => x.id === id)?.name ?? id;
+  const team = (id: string) => teamName(teams, id);
   const yours = (ids: readonly string[]) =>
     ids.some((id) => teams.find((x) => x.id === id)?.userControlled);
 
   const describe = (e: LeagueEvent): string | null => {
     switch (e.kind) {
       case 'team.statusChanged':
-        return t('event.statusChanged', { team: teamName(e.teamId), status: t(`status.${e.to}`) });
+        return t('event.statusChanged', { team: team(e.teamId), status: t(`status.${e.to}`) });
       case 'draft.classAnnounced':
         return t('event.draftClass');
       case 'player.injured':
@@ -189,7 +181,7 @@ function FeedCard() {
         if (e.days < LONG_INJURY && !yours(e.teamIds)) return null;
         return t('event.injured', {
           player: names[e.playerId] ?? '',
-          team: teamName(e.teamIds[0] ?? ''),
+          team: team(e.teamIds[0] ?? ''),
           days: e.days,
         });
       case 'bonuses.paid': {
@@ -197,7 +189,7 @@ function FeedCard() {
         if (!mine.length) return null;
         const teamId = mine[0]!.teamId;
         return t('event.bonusesPaid', {
-          team: teamName(teamId),
+          team: team(teamId),
           amount: money(mine.reduce((s, x) => s + x.amount, 0)),
           over: money(
             e.charges.filter((c) => c.teamId === teamId).reduce((s, c) => s + c.amount, 0),
@@ -207,14 +199,14 @@ function FeedCard() {
       case 'player.signed':
         return t('event.signed', {
           player: names[e.playerId] ?? '',
-          team: teamName(e.teamId),
+          team: team(e.teamId),
           amount: money(e.contract.capHit),
           season: e.contract.expiresAfterSeason,
         });
       case 'contract.extended':
         return t('event.extended', {
           player: names[e.playerId] ?? '',
-          team: teamName(e.teamId),
+          team: team(e.teamId),
           amount: money(e.contract.capHit),
           season: e.contract.expiresAfterSeason,
         });
@@ -222,18 +214,18 @@ function FeedCard() {
         return e.pick === 1
           ? t('event.firstPick', {
               player: names[e.player.id] ?? '',
-              team: teamName(e.player.teamId ?? ''),
+              team: team(e.player.teamId ?? ''),
             })
           : null;
       case 'player.tradeRequested':
         return t('event.tradeRequested', {
           player: names[e.playerId] ?? '',
-          team: teamName(e.teamId),
+          team: team(e.teamId),
         });
       case 'player.holdoutStarted':
         return t('event.holdoutStarted', {
           player: names[e.playerId] ?? '',
-          team: teamName(e.teamId),
+          team: team(e.teamId),
         });
       case 'player.holdoutEnded':
         return t('event.holdoutEnded', { player: names[e.playerId] ?? '' });
@@ -242,7 +234,7 @@ function FeedCard() {
           ? t('event.requestWithdrawn', { player: names[e.playerId] ?? '' })
           : null;
       case 'trade.offered':
-        return t('event.tradeOffered', { team: teamName(e.offer.proposal.fromTeamId) });
+        return t('event.tradeOffered', { team: team(e.offer.proposal.fromTeamId) });
       case 'freeAgency.opened':
         return t('event.freeAgencyOpened');
       case 'season.phaseChanged':
@@ -293,15 +285,12 @@ function PlayoffCard() {
   const { data } = usePlayoffs();
   const { data: teams = [] } = useTeams();
   if (!data?.series.length) return null;
-  const teamName = (id: string) => {
-    const team = teams.find((x) => x.id === id);
-    return team ? `${team.city} ${team.name}` : id;
-  };
+  const team = (id: string) => teamName(teams, id);
   return (
     <Card title={t('playoffs.title')}>
       {data.championTeamId && (
         <p className="mb-3 font-semibold text-accent">
-          {t('playoffs.champion', { team: teamName(data.championTeamId) })}
+          {t('playoffs.champion', { team: team(data.championTeamId) })}
         </p>
       )}
       <div className="space-y-3 text-sm">
@@ -309,10 +298,10 @@ function PlayoffCard() {
           <div key={series.id} className="border-b border-line pb-2">
             <p className="text-xs text-muted">{t('playoffs.round', { round: series.round })}</p>
             <p>
-              {series.higherSeed}. {teamName(series.higherTeamId)} {series.higherWins}
+              {series.higherSeed}. {team(series.higherTeamId)} {series.higherWins}
             </p>
             <p>
-              {series.lowerSeed}. {teamName(series.lowerTeamId)} {series.lowerWins}
+              {series.lowerSeed}. {team(series.lowerTeamId)} {series.lowerWins}
             </p>
           </div>
         ))}

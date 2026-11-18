@@ -9,11 +9,4 @@ export const dollars = (millions: number): Dollars => Math.round(millions * 1_00
 export const pct = (amount: Dollars, percent: number): Dollars =>
   Math.floor((amount * percent) / 100);
 
-export function formatDollars(amount: Dollars): string {
-  const abs = Math.abs(amount);
-  const sign = amount < 0 ? '-' : '';
-  if (abs >= 1_000_000)
-    return `${sign}$${(abs / 1_000_000).toFixed(abs % 1_000_000 === 0 ? 0 : 2)}M`;
-  if (abs >= 1_000) return `${sign}$${Math.round(abs / 1_000)}K`;
-  return `${sign}$${abs}`;
-}
+// Display formatting lives in @gm/shared (`formatMoney`), shared with the UI.

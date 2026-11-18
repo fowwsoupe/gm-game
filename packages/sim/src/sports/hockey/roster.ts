@@ -1,4 +1,5 @@
 import {
+  formatMoney,
   GOALIE_RATINGS,
   isGoalie,
   parseRosterFile,
@@ -11,7 +12,6 @@ import {
   type TeamId,
 } from '@gm/shared';
 import { validateContract, type ContractIssue, type Ruleset } from '../../cba';
-import { formatDollars } from '../../core';
 import type { RosterImport } from '../sport';
 
 const teamId = (abbreviation: string) => `t_${abbreviation}` as TeamId;
@@ -22,9 +22,9 @@ function describe(issue: ContractIssue): string {
     case 'too_long':
       return `runs longer than the ${issue.max}-season maximum`;
     case 'below_minimum':
-      return `cap hit is below the league minimum of ${formatDollars(issue.min)}`;
+      return `cap hit is below the league minimum of ${formatMoney(issue.min)}`;
     case 'above_maximum':
-      return `cap hit is above the maximum of ${formatDollars(issue.max)}`;
+      return `cap hit is above the maximum of ${formatMoney(issue.max)}`;
     default:
       return `breaks the contract rules (${issue.code})`;
   }

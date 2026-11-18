@@ -2,7 +2,7 @@ import { useCapSheet, useLines, useRoster, useTeams } from '@/lib/queries';
 import { useUi } from '@/stores/ui';
 import { useT, type MessageKey } from '@/i18n';
 import { Button, Card, Td, Th } from '@/ui';
-import { money } from '@/lib/format';
+import { fullName, money, teamName } from '@/lib/format';
 import { Summary } from '@/screens/Cap';
 
 /** Any team's roster, cap sheet and depth chart, built from the existing queries. */
@@ -18,16 +18,14 @@ export function TeamPage() {
   const byId = new Map<string, (typeof roster)[number]>(roster.map((p) => [p.id, p]));
   const name = (id: string) => {
     const p = byId.get(id);
-    return p ? `${p.firstName} ${p.lastName}` : id;
+    return p ? fullName(p) : id;
   };
 
   return (
     <div className="max-w-5xl space-y-4">
       <div className="flex items-center gap-3">
         <Button onClick={() => setScreen('standings')}>{t('team.back')}</Button>
-        <h1 className="text-lg font-semibold">
-          {team.city} {team.name}
-        </h1>
+        <h1 className="text-lg font-semibold">{teamName(teams, team.id)}</h1>
       </div>
       <Card title={t('team.depth')}>
         <div className="grid gap-4 text-sm md:grid-cols-2 xl:grid-cols-4">
@@ -49,10 +47,10 @@ export function TeamPage() {
         <table className="tabular w-full text-sm">
           <thead>
             <tr className="border-b border-line text-left text-muted">
-              <Th>{t('cap.player')}</Th>
-              <Th>{t('team.pos')}</Th>
-              <Th>{t('team.hit')}</Th>
-              <Th>{t('team.thru')}</Th>
+              <Th>{t('roster.player')}</Th>
+              <Th>{t('roster.pos')}</Th>
+              <Th>{t('roster.capHit')}</Th>
+              <Th>{t('roster.through')}</Th>
             </tr>
           </thead>
           <tbody>

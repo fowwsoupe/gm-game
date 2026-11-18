@@ -11,14 +11,16 @@ import type { PulseRow, StandingsRow, Team } from '@gm/shared';
 import { usePulse, useStandings, useTeams } from '@/lib/queries';
 import { useT, type MessageKey } from '@/i18n';
 import { Button, Card, TeamLink, Td, Th } from '@/ui';
+import { pct, teamName } from '@/lib/format';
 
 type Row = StandingsRow & { team: Team | undefined; pulse: PulseRow | undefined; power: number };
 const col = createColumnHelper<Row>();
 
 function useColumns() {
   const t = useT();
+  const { data: teams = [] } = useTeams();
   return [
-    col.accessor((r) => (r.team ? `${r.team.city} ${r.team.name}` : r.teamId), {
+    col.accessor((r) => teamName(teams, r.teamId), {
       id: 'team',
       header: t('standings.team'),
       cell: (c) => <TeamLink teamId={c.row.original.teamId}>{c.getValue()}</TeamLink>,
@@ -34,7 +36,7 @@ function useColumns() {
     col.accessor((r) => r.pulse?.playoffOdds ?? 0, {
       id: 'odds',
       header: t('standings.odds'),
-      cell: (c) => `${Math.round(c.getValue() * 100)}%`,
+      cell: (c) => pct(c.getValue()),
     }),
     col.accessor('power', { header: t('standings.power') }),
     col.accessor((r) => r.pulse?.status ?? 'bubble', {

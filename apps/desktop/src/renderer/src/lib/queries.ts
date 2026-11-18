@@ -141,6 +141,16 @@ export const usePlayers = (teamId: TeamId | null | undefined) =>
     queryFn: () => window.gm.league.players({ teamId: teamId ?? null }),
     enabled: teamId !== undefined,
   });
+/** Every player in the league: one read per team, plus free agents. */
+export const useAllPlayers = (teamIds: readonly TeamId[]) =>
+  useQuery({
+    queryKey: ['league', 'allPlayers', teamIds.join()] as const,
+    queryFn: async () =>
+      (
+        await Promise.all([...teamIds, null].map((teamId) => window.gm.league.players({ teamId })))
+      ).flat(),
+    enabled: teamIds.length > 0,
+  });
 export const useGames = (teamId: TeamId | undefined, limit = 30) =>
   useQuery({
     queryKey: [...keys.games(teamId), limit],

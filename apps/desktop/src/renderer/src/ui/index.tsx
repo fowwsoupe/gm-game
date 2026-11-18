@@ -1,4 +1,5 @@
 import type { ReactNode, ThHTMLAttributes, TdHTMLAttributes } from 'react';
+import type { Team, TeamId } from '@gm/shared';
 import { useUi } from '@/stores/ui';
 
 export { Face } from './Face';
@@ -162,6 +163,38 @@ export function TeamLink({ teamId, children }: { teamId: string; children: React
     <button onClick={() => openTeam(teamId)} className="hover:underline">
       {children}
     </button>
+  );
+}
+
+/**
+ * Pick a team by full name. `empty` adds a first option with value '' (pass '' for a blank one).
+ */
+export function TeamSelect({
+  teams,
+  value,
+  onChange,
+  empty,
+  className = '',
+}: {
+  teams: readonly Team[];
+  value: string;
+  onChange: (id: TeamId | '') => void;
+  empty?: string;
+  className?: string;
+}) {
+  return (
+    <select
+      value={value}
+      onChange={(e) => onChange(e.target.value as TeamId | '')}
+      className={`rounded border border-line bg-panel px-2 py-1 text-sm text-ink ${className}`}
+    >
+      {empty !== undefined && <option value="">{empty}</option>}
+      {teams.map((x) => (
+        <option key={x.id} value={x.id}>
+          {x.city} {x.name}
+        </option>
+      ))}
+    </select>
   );
 }
 
