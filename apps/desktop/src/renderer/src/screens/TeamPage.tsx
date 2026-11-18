@@ -173,3 +173,13 @@ export function TeamPage() {
 }
 
 const signedPct = (pct: number) => `${pct > 0 ? '+' : ''}${pct}%`;
+
+/** Staff quality as a word: the number stays hidden, like player ratings. */
+const qualityKey = (q: number): MessageKey =>
+  q < 0.25
+    ? 'staff.quality.poor'
+    : q < 0.6
+      ? 'staff.quality.average'
+      : q < 0.85
+        ? 'staff.quality.good'
+        : 'staff.quality.elite';
