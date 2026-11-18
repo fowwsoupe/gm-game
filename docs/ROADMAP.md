@@ -28,10 +28,10 @@ Needs a design first (a short brief in `docs/research/`, then jobs):
 
 - **A lasting team edge** (long-run flattening): [research/2026-11-long-run-spread.md](research/2026-11-long-run-spread.md) is the brief.
 - Minor / junior leagues; camp and a trade deadline that matters; player traits and clustered builds.
-- Every Phase 2 headline below. Owner and finance comes first among them: hot seat, and
-  frustrated-owner events, need an owner and a coach to attach to.
-  [research/2026-11-owner-finance.md](research/2026-11-owner-finance.md) is its brief, with
-  eight jobs in order (jobs 1-7 done; next: 8, your job on the line).
+- Every other Phase 2 headline below. Owner and finance is done (all eight jobs of
+  [research/2026-11-owner-finance.md](research/2026-11-owner-finance.md)): the event engine's
+  hot-seat and frustrated-owner team events, and the front office (staff budgets, the coach's
+  effect on games), can now attach to an owner and a coach.
 
 ---
 
@@ -75,7 +75,7 @@ Build order, owners and "done when" for each step: **[V0.1_PLAN.md](V0.1_PLAN.md
 - [~] Draft v1: class announced after the playoffs with scouted potential ranges (AI sees the same ranges), your ranked list drives your picks, scout reports (best and weakest skills, ready or raw) done; lottery drawn before the draft so picks trade at their real slot done; the live draft room is Phase 2
 - [x] Playoffs: bracket, NHL-style wild cards, honest momentum (per-game goalie form, calibrated), Playoff MVP, playoff cap; the cup is "Champion" until it is named
 - [x] Awards, records, history (own award names, Playoff MVP included)
-- [~] Living league: feed with names (trades, signings, extensions, long injuries, first pick), league pulse, playoff odds and power rating, sim until it matters (your team and league-wide moments only), race nights (odds if you win or lose the next game), streak news, trade requests with a talk (personality decides), slump news (a top-6 skater 10 games without a point), holdouts (underpaid, greedy core players; AI GMs extend or wait them out) done; hot seat to do
+- [~] Living league: feed with names (trades, signings, extensions, long injuries, first pick), league pulse, playoff odds and power rating, sim until it matters (your team and league-wide moments only), race nights (odds if you win or lose the next game), streak news, trade requests with a talk (personality decides), slump news (a top-6 skater 10 games without a point), holdouts (underpaid, greedy core players; AI GMs extend or wait them out), the hot seat (coaches fired in-season and at the review; your owner warns you, then fires you at a review, and teams with a vacancy offer you a job) done
 - [~] Chemistry: v1 from time together (visible on Lines, changes with every move, capped at ±1 rating point per unit) done; locker room (leaders and toxic personalities), builds fit and linemates done
 
 **Screens**
@@ -98,7 +98,7 @@ Build order, owners and "done when" for each step: **[V0.1_PLAN.md](V0.1_PLAN.md
 
 ## Phase 2 — Part of the first release (one headline each)
 
-- [~] Owner & finance: decision cards, pricing policy, fans, projects, owner meetings; owners and markets, the money ledger, fans and ticket pricing, confidence, meetings and cards, the Owner screen, projects and more cards, and the head coach (salary, heat, AI firings in-season and at the review, the fire-or-keep card) (jobs 1-7 of 8 in [the brief](research/2026-11-owner-finance.md)) done
+- [x] Owner & finance: decision cards, pricing policy, fans, projects, owner meetings; owners and markets, the money ledger, fans and ticket pricing, confidence, meetings and cards, the Owner screen, projects and more cards, the head coach (salary, heat, AI firings in-season and at the review, the fire-or-keep card), and your job on the line (hot-seat warning, fired at a review, job offers, a "can be fired" option, AI GMs fired on confidence) (all 8 jobs in [the brief](research/2026-11-owner-finance.md))
 - [ ] Front office: scouting, analytics, medical, coaching, development staff
 - [ ] Live draft trade room
 - [ ] Free-agency live bidding war + full contract negotiation
