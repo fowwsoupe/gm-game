@@ -222,6 +222,8 @@ const goalieSvPairs: [number, number][] = [];
 const money = { revenue: [] as number[], gate: 0, profit: [] as number[], spread: [] as number[] };
 /** Regular-season home dates: fans in and seats there were. */
 const crowds = { fans: 0, seats: 0 };
+/** Head coaches fired (all, and in the regular season), over team-seasons played. */
+const coaches = { changed: 0, inSeason: 0, teamSeasons: 0 };
 /**
  * Long-run parity: from this season on a multi-year league has gone through enough offseasons
  * that its teams are built by the AI GMs, not by league generation.
@@ -278,6 +280,10 @@ for (let l = 0; l < leagues; l++) {
     if (!played.ok) throw new Error(played.error.message);
     const books = new Map<string, { revenue: number; profit: number }>();
     for (const e of played.events) {
+      if (e.kind === 'owner.cardAnswered' && e.effects.coach) {
+        coaches.changed++;
+        if (e.date.day < cal.regularSeasonDays) coaches.inSeason++;
+      }
       if (e.kind !== 'finance.settled') continue;
       const b = books.get(e.teamId) ?? { revenue: 0, profit: 0 };
       b.revenue += Object.values(e.revenue).reduce((a, x) => a + x, 0);
@@ -291,6 +297,7 @@ for (let l = 0; l < leagues; l++) {
       }
     }
     const revenues = [...books.values()].map((b) => b.revenue);
+    coaches.teamSeasons += Object.keys(state.teams).length;
     money.revenue.push(...revenues);
     money.profit.push(...[...books.values()].map((b) => b.profit));
     money.spread.push(Math.max(...revenues) / Math.min(...revenues));
@@ -535,6 +542,19 @@ const checks: Check[] = [
     min: 35,
     max: 45,
     unit: '%',
+  },
+  // Head coaches, per team-season: The Win Column (2000-23 tenures) and ESPN (2019-24 firings).
+  {
+    name: 'Coach changes a team-season',
+    value: coaches.changed / coaches.teamSeasons,
+    min: 0.25,
+    max: 0.4,
+  },
+  {
+    name: 'Coaches fired in-season',
+    value: coaches.inSeason / coaches.teamSeasons,
+    min: 0.1,
+    max: 0.2,
   },
   // Long run (multi-year leagues, LONG_RUN_FROM on): teams converge and games drift toward coin
   // flips, because nothing gives a team a lasting edge (docs/research/2026-11-long-run-spread.md).

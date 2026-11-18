@@ -1,6 +1,8 @@
 import { describe, expect, it } from 'vitest';
 import type { Actor, Command, LeagueEvent, OwnerCard, TeamId } from '@gm/shared';
 import {
+  coachOf,
+  coachSeasonsLeft,
   createLeague,
   defaultContext,
   fansOf,
@@ -50,6 +52,7 @@ describe('owner meetings', () => {
   it('sets and grades objectives every season, for every team, three seasons running', () => {
     const state = createLeague(4, ctx);
     const teams = Object.keys(state.teams).length;
+    const firings = { inSeason: 0, review: 0 };
     for (let year = 0; year < 3; year++) {
       const events = run(state, {
         kind: 'sim.advance',
@@ -74,8 +77,72 @@ describe('owner meetings', () => {
       // Seasons differ, so the owners grade on something real: not every objective goes one way.
       const met = graded.flatMap((e) => e.owner.objectives.map((o) => o.met));
       expect(new Set(met).size).toBe(2);
+      for (const e of events) {
+        if (e.kind === 'owner.cardAnswered' && e.effects.coach) {
+          firings[e.date.day < cal.regularSeasonDays ? 'inSeason' : 'review']++;
+        }
+      }
       run(state, { kind: 'season.rollover' });
     }
+    // AI owners move on from coaches both mid-season and at the review.
+    expect(firings.inSeason).toBeGreaterThan(0);
+    expect(firings.review).toBeGreaterThan(0);
+  });
+
+  it('every team has a head coach; an old save derives the same one every time', () => {
+    const state = createLeague(4, ctx);
+    const terms = ctx.ruleset.finance.coach;
+    for (const team of Object.values(state.teams)) {
+      expect(team.coach!.salary).toBe(terms.salary);
+      expect(team.coach!.hired).toBeLessThanOrEqual(state.date.season);
+      const old = structuredClone(team);
+      delete old.coach;
+      expect(coachOf(old, terms, 2030)).toEqual(coachOf(old, terms, 2030));
+      expect(coachSeasonsLeft(coachOf(old, terms, 2030), 2030)).toBe(
+        coachSeasonsLeft(coachOf(old, terms, 2031), 2031),
+      );
+    }
+  });
+
+  it("firing the coach pays out his deal's remaining years in cash, and a new coach is paid from then on", () => {
+    const { state, teamId } = humanLeague();
+    run(state, { kind: 'sim.advance', days: 1 });
+    // Results far below what the owner expected: he wants the coach gone once 20 games are in.
+    state.owners[teamId]!.coachHeat = 0.5;
+    let card: OwnerCard | undefined;
+    while (!card) {
+      run(state, { kind: 'sim.advance', days: 7 });
+      card = state.ownerCards.find((c) => c.kind === 'fireCoach');
+    }
+    const team = state.teams[teamId]!;
+    const old = team.coach!;
+    const season = state.date.season;
+    const gp = Object.values(state.results).filter(
+      (g) => g.homeTeamId === teamId || g.awayTeamId === teamId,
+    ).length;
+    const games = ctx.ruleset.season.gamesPerTeam;
+    const left = coachSeasonsLeft(old, season) - 1 + (games - gp) / games;
+    expect(card.params.amount).toBe(Math.round(old.salary * left));
+    const cash = state.cash[teamId] ?? 0;
+    run(state, { kind: 'owner.answerCard', cardId: card.id, option: 'agree' });
+    expect(state.cash[teamId]).toBe(cash - card.params.amount!);
+    expect(team.coach!.name).not.toBe(old.name);
+    expect(team.coach!.hired).toBe(season);
+    // His heat starts clean, and he is not put on the seat again this season.
+    expect(Math.abs(state.owners[teamId]!.coachHeat!)).toBeLessThan(0.5);
+    const rest = run(state, { kind: 'sim.advance', days: cal.regularSeasonDays });
+    expect(
+      rest.some(
+        (e) =>
+          e.kind === 'owner.cardOpened' &&
+          e.card.kind === 'fireCoach' &&
+          e.date.day < cal.regularSeasonDays,
+      ),
+    ).toBe(false);
+    const staff = rest.flatMap((e) =>
+      e.kind === 'finance.settled' && e.teamId === teamId && e.homeDates > 0 ? [e.costs.staff] : [],
+    );
+    expect(staff.every((s) => s! > 0 && s! < team.coach!.salary)).toBe(true);
   });
 
   it('each card option changes exactly what it says', () => {

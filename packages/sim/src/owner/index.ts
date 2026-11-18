@@ -6,10 +6,18 @@
  * Owner behaviour numbers are game feel, not league rules: named constants here, unsourced.
  */
 import type { CardEffects, OwnerCard, OwnerObjective, OwnerStanding, TeamId } from '@gm/shared';
-import type { Emit, LeagueState } from '../core';
-import { pct, type Dollars } from '../core';
+import type { Emit, LeagueState, Rng } from '../core';
+import { pct, teamName, type Dollars } from '../core';
 import { teamCapTotal } from '../cba';
-import { gmOf, marketOf, ownerOf, ticketPctOf } from '../people';
+import {
+  coachOf,
+  coachSeasonsLeft,
+  gmOf,
+  marketOf,
+  newCoach,
+  ownerOf,
+  ticketPctOf,
+} from '../people';
 import { fansOf, seatsOf } from '../finance';
 import { leagueStandings } from '../league';
 import type { SimContext } from '../context';
@@ -45,8 +53,34 @@ const FESTIVAL = { costPct: 4, fanInterest: 8, below: 45 };
 /** Arena naming rights, sold when cash is below zero: this % of the cap now, fans sour. */
 const NAMING_RIGHTS = { cashPct: 20, fanInterest: -5 };
 
+/**
+ * The head coach's seat. Heat is points % below expectation since he was hired, in points % x
+ * seasons (a .550 team expected that finishes .450 adds 0.1). Tuned in the balance lab to The
+ * Win Column's and ESPN's rates (docs/research/2026-11-owner-finance.md).
+ */
+const COACH = {
+  /** Fewest games before an owner judges his coach in-season. */
+  minGames: 20,
+  /** In-season: a weekly chance of firing, per point of heat above `heat`. */
+  heat: 0,
+  weekly: 1.2,
+  /**
+   * At the review: a chance per point of heat above `reviewHeat`. Below zero, because the sim's
+   * seasons vary less than real ones: a coach only just beating expectation is not safe either.
+   */
+  reviewHeat: -0.02,
+  review: 18,
+  /** Share of a season's heat carried into the next. */
+  carry: 0.5,
+  /** Confidence firing him lifts; keeping him costs `kept` plus `keptPerHeat` per point of heat. */
+  fired: 4,
+  kept: 3,
+  keptPerHeat: 40,
+};
+
 const clamp = (n: number) => Math.round(Math.min(100, Math.max(0, n)) * 10) / 10;
 const round2 = (n: number) => Math.round(n * 100) / 100;
+const round3 = (n: number) => Math.round(n * 1000) / 1000;
 
 /** Seasons a new GM's honeymoon lasts: one for the least patient owner, three for the most. */
 const honeymoon = (patience: number) => 1 + Math.round(2 * patience);
@@ -336,6 +370,92 @@ export function deadlineCheckIn(state: LeagueState, ctx: SimContext, emit: Emit)
   }
 }
 
+/**
+ * The owner wants the coach gone: a card for a human GM (fire him: pay the rest of his deal, a
+ * new coach starts with `heat`; or keep him, at a cost in confidence that grows with the heat),
+ * and an AI GM fires him at once.
+ */
+function coachOnTheSeat(
+  state: LeagueState,
+  ctx: SimContext,
+  emit: Emit,
+  rng: Rng,
+  args: { teamId: TeamId; heat: number; payout: Dollars; hired: number; startHeat: number },
+) {
+  const team = state.teams[args.teamId]!;
+  const hire = newCoach(rng.fork('hire'), args.hired, ctx.ruleset.finance.coach);
+  const gone = coachOf(team, ctx.ruleset.finance.coach, state.date.season).name;
+  offer(
+    state,
+    emit,
+    {
+      teamId: args.teamId,
+      kind: 'fireCoach',
+      params: { amount: args.payout },
+      options: [
+        {
+          key: 'agree',
+          effects: {
+            cash: -args.payout,
+            confidence: COACH.fired,
+            coach: { hire, heat: args.startHeat },
+          },
+        },
+        {
+          key: 'refuse',
+          effects: { confidence: -Math.round(COACH.kept + COACH.keptPerHeat * args.heat) },
+        },
+      ],
+    },
+    'agree',
+  );
+  if (team.userControlled) return;
+  emit('notable', [args.teamId], {
+    kind: 'news.posted',
+    headline: 'event.coachFired',
+    params: { team: teamName(team), coach: gone, next: hire.name },
+  });
+}
+
+/** Whether a human GM already has the coach card this season (asked once, or still open). */
+const askedAlready = (state: LeagueState, teamId: TeamId, standing: OwnerStanding) =>
+  state.teams[teamId]!.userControlled &&
+  (standing.coachAsked === state.date.season ||
+    state.ownerCards.some((c) => c.teamId === teamId && c.kind === 'fireCoach'));
+
+/**
+ * Each week of the regular season, from `COACH.minGames` games: an owner whose coach's heat
+ * (carried, plus this season's games so far) runs high may move on him, sooner if impatient.
+ * He is paid what is left of this season and of his deal; the new coach answers only for the
+ * games from here.
+ */
+export function coachWeek(state: LeagueState, ctx: SimContext, rng: Rng, emit: Emit): void {
+  const season = state.date.season;
+  const games = ctx.ruleset.season.gamesPerTeam;
+  const win = ctx.ruleset.season.points.win;
+  const rows = leagueStandings(state, ctx.ruleset).sort((a, b) => a.teamId.localeCompare(b.teamId));
+  for (const row of rows) {
+    const standing = state.owners[row.teamId];
+    if (row.gp < COACH.minGames || !standing || standing.season !== season) continue;
+    if (askedAlready(state, row.teamId, standing)) continue;
+    const team = state.teams[row.teamId]!;
+    const sofar = ((standing.expected - row.pts / (win * row.gp)) * row.gp) / games;
+    const heat = (standing.coachHeat ?? 0) + sofar;
+    const chance = COACH.weekly * (heat - COACH.heat) * (1.5 - ownerOf(team).patience);
+    const r = rng.fork(row.teamId);
+    if (chance <= 0 || !r.chance(chance)) continue;
+    const coach = coachOf(team, ctx.ruleset.finance.coach, season);
+    const left = coachSeasonsLeft(coach, season) - 1 + (games - row.gp) / games;
+    coachOnTheSeat(state, ctx, emit, r, {
+      teamId: row.teamId,
+      heat,
+      payout: Math.round(coach.salary * left),
+      hired: season,
+      startHeat: round3(-sofar),
+    });
+  }
+}
+
 /** A month of results against what the owner expected nudges his confidence. */
 export function ownerMonth(state: LeagueState, ctx: SimContext, emit: Emit): void {
   const points = pointsPct(state, ctx);
@@ -356,7 +476,7 @@ export function ownerMonth(state: LeagueState, ctx: SimContext, emit: Emit): voi
  * season): each objective is graded, confidence moves with them, with money and fans, and the
  * owner sets next season's payroll budget (a card: a GM may ask for more, at a cost).
  */
-export function seasonReview(state: LeagueState, ctx: SimContext, emit: Emit): void {
+export function seasonReview(state: LeagueState, ctx: SimContext, emit: Emit, rng: Rng): void {
   const season = state.date.season;
   const points = pointsPct(state, ctx);
   const series = Object.values(state.playoffSeries);
@@ -391,12 +511,37 @@ export function seasonReview(state: LeagueState, ctx: SimContext, emit: Emit): v
     const floor = season < prev.since + honeymoon(owner.patience) ? HONEYMOON_FLOOR : 0;
     const confidence = clamp(Math.max(floor, prev.confidence + delta));
     const payrollBudget = baseBudget(ctx, owner.budget);
+    const heat = (prev.coachHeat ?? 0) + prev.expected - lastPct;
     emit(team.userControlled ? 'major' : 'minor', [teamId], {
       kind: 'owner.meeting',
       teamId,
       meeting: 'review',
-      owner: { ...prev, objectives, confidence, lastPct, payrollBudget },
+      owner: {
+        ...prev,
+        objectives,
+        confidence,
+        lastPct,
+        payrollBudget,
+        coachHeat: round3(COACH.carry * heat),
+      },
     });
+    // The coach decision: a new one starts next season with a clean slate.
+    const r = rng.fork(teamId);
+    const chance = COACH.review * (heat - COACH.reviewHeat) * (1.5 - owner.patience);
+    if (
+      chance > 0 &&
+      r.chance(chance) &&
+      !askedAlready(state, teamId, { ...prev, coachAsked: 0 })
+    ) {
+      const coach = coachOf(team, ctx.ruleset.finance.coach, season);
+      coachOnTheSeat(state, ctx, emit, r, {
+        teamId,
+        heat,
+        payout: coach.salary * (coachSeasonsLeft(coach, season) - 1),
+        hired: season + 1,
+        startHeat: 0,
+      });
+    }
     offer(
       state,
       emit,

@@ -19,7 +19,14 @@ import { sitsOut, strengthFor } from './tonight';
 import { byOverall } from './players';
 import { payBonuses } from './cba';
 import { settleMonth, settlePlayoffs, settlesOn } from './finance';
-import { checksInOn, deadlineCheckIn, ownerMonth, preseasonMeeting, seasonReview } from './owner';
+import {
+  checksInOn,
+  coachWeek,
+  deadlineCheckIn,
+  ownerMonth,
+  preseasonMeeting,
+  seasonReview,
+} from './owner';
 import type { SimContext } from './context';
 
 /**
@@ -280,7 +287,7 @@ export function advance(
           // Still this season's cap year: bonuses over the cap go to next season's.
           const paid = payBonuses(state, ctx, emitter(state, events));
           settlePlayoffs(state, ctx, emitter(state, events), paid);
-          seasonReview(state, ctx, emitter(state, events));
+          seasonReview(state, ctx, emitter(state, events), rng.fork('review'));
           emit(
             makeEvent(state, 'major', [championTeamId], {
               kind: 'champion.crowned',
@@ -336,6 +343,7 @@ export function advance(
       aiHoldouts(state, ctx, rng.fork(`aiHoldouts${today.day}`), emitter(state, events));
       holdoutsWeek(state, rng.fork(`holdouts${today.day}`), emitter(state, events));
       if (events.length > before) loadRosters();
+      coachWeek(state, ctx, rng.fork(`coach${today.day}`), emitter(state, events));
     }
 
     const tomorrow = { season: today.season, day: today.day + 1 };

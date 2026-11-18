@@ -44,6 +44,9 @@ export const en = {
   'team.owner.priority': 'Cares about winning over profit',
   'team.owner.patience': 'Patience',
   'team.owner.market': 'Market size',
+  'team.coach': 'Head coach',
+  'team.coach.since': 'In charge since',
+  'team.coach.salary': 'Salary',
   'team.arena': 'Arena and fans',
   'team.arena.capacity': 'Seats',
   'team.arena.attendance': 'Crowd last month',
@@ -125,6 +128,7 @@ export const en = {
   'event.lotteryWon': '{team} won the draft lottery',
   'event.gmFired': '{team} fire their general manager',
   'event.gmLeft': "{team}'s general manager moves on",
+  'event.coachFired': '{team} fire head coach {coach}; {next} takes over',
   'event.planRebuild': '{team} announce a rebuild',
   'event.planContend': '{team} go all in',
   'event.bonusesPaid':
@@ -344,6 +348,9 @@ export const en = {
     'The building sells out: the owner proposes a renovation, {amount} a season for {n} seasons, for {seats} more seats.',
   'owner.card.festival': 'Interest is sagging: the owner proposes a fan festival for {amount}.',
   'owner.effect.project': '{seats} more seats when built',
+  'owner.card.fireCoach':
+    'Results keep falling short: the owner wants the head coach gone. Firing him pays the {amount} left on his deal.',
+  'owner.effect.coach': '{name} takes over',
   'owner.option.agree': 'Agree',
   'owner.option.refuse': 'Refuse',
   'owner.option.more': 'Ask for more',

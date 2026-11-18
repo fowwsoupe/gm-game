@@ -22,6 +22,7 @@ import {
   seatsOf,
   fansOf,
   marketOf,
+  coachOf,
   ownerOf,
   ownerStanding,
   ticketPctOf,
@@ -372,10 +373,12 @@ export class LeagueService {
     const { state } = this.open();
     const team = state.teams[teamId];
     if (!team) throw new Error(`No team ${teamId}`);
+    const { ruleset } = defaultContext(state.rulesetId);
     return {
       owner: ownerOf(team),
+      coach: coachOf(team, ruleset.finance.coach, state.date.season),
       market: marketOf(team),
-      capacity: seatsOf(state, teamId, defaultContext(state.rulesetId).ruleset),
+      capacity: seatsOf(state, teamId, ruleset),
       fans: fansOf(state, teamId),
       ticketPct: ticketPctOf(team, state.ticketPrices),
     };

@@ -217,6 +217,19 @@ winning-first owner; a fire sale for a seller losing money this season. The lab'
 profit leaves projects out (capital spending, as Forbes counts it). Local media came down to
 $10M to keep the revenue mean in range as arenas grow.
 
+Job 6: each team has a head coach (`Team.coach`, generated with the league; an old save's is
+derived from the team id), paid `finance.coach` ($2.95M a season, three-year deals that renew
+while he keeps the job) as a `staff` cost line. Coach heat is points % below the owner's
+expectation since he was hired, in points % x seasons; half of it carries into the next season.
+From 20 games in, an owner fires at a weekly chance of 1.2 x heat x (1.5 - patience), and at the
+review at 18 x (heat + 0.02) x (1.5 - patience): the sim's seasons vary less than real ones, so
+a coach only just at expectation is not safe either. Firing is the `fireCoach` card. AI GMs agree
+at once; a human GM is asked at most once in-season and again at the review, and keeping the coach
+costs 3 confidence plus 40 per point of heat. Firing pays the rest of his deal in cash (this
+season's unpaid share included), lifts confidence 4, and the new coach's heat counts only the
+games from then on. Lab, seeds 1/101/201: coach changes 0.295/0.294/0.286 a team-season, fired
+in-season 0.125/0.127/0.124.
+
 ## What the balance lab should measure
 
 Per team-season, over the usual 20 leagues x 20 years, on seeds 1, 101 and 201:

@@ -95,6 +95,7 @@ export const NHL_2026: Ruleset = {
     leagueShare: dollars(59), // national media, under $1.5B league-wide
     playoffs: { markupPct: 15, playersPct: 35, feePerDate: dollars(0.5) }, // LVSportsBiz
     operations: { yearly: dollars(50), perHomeDate: dollars(1.9) },
+    coach: { salary: dollars(2.95), years: 3 }, // ESPN 2024: about $2.5M, usually three-year deals
   },
   roster: {
     maxActive: 23,

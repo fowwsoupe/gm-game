@@ -123,6 +123,8 @@ export interface Ruleset {
     playoffs: { markupPct: number; playersPct: number; feePerDate: Dollars };
     /** Arena and operations: a fixed yearly amount plus a cost per home date (x market). */
     operations: { yearly: Dollars; perHomeDate: Dollars };
+    /** A head coach's salary a season and the length of his deals. */
+    coach: { salary: Dollars; years: number };
   };
 
   roster: {

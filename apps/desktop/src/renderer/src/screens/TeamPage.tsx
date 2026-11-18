@@ -46,6 +46,21 @@ export function TeamPage() {
                 <div className="tabular">{value}</div>
               </div>
             ))}
+            <div className="font-semibold">
+              <div className="font-normal text-muted">{t('team.coach')}</div>
+              {owned.coach.name}
+            </div>
+            {(
+              [
+                ['team.coach.since', String(owned.coach.hired)],
+                ['team.coach.salary', money(owned.coach.salary)],
+              ] as const
+            ).map(([key, value]) => (
+              <div key={key}>
+                <div className="text-muted">{t(key)}</div>
+                <div className="tabular">{value}</div>
+              </div>
+            ))}
           </div>
         </Card>
       )}

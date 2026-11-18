@@ -130,7 +130,7 @@ export class SaveFile {
 
   saveNewLeague(state: LeagueState) {
     const insertTeam = this.db.prepare(
-      'INSERT INTO teams (id, city, name, abbreviation, user_controlled, status, conference, division, gm_json, plan_json) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?)',
+      'INSERT INTO teams (id, city, name, abbreviation, user_controlled, status, conference, division, gm_json, plan_json, coach_json) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)',
     );
     const insertPlayer = this.insertPlayer();
     const insertGame = this.insertGame();
@@ -148,6 +148,7 @@ export class SaveFile {
           t.division ?? null,
           t.gm ? JSON.stringify(t.gm) : null,
           t.plan ? JSON.stringify(t.plan) : null,
+          t.coach ? JSON.stringify(t.coach) : null,
         );
       }
       for (const p of Object.values(state.players)) insertPlayer(p);
@@ -333,6 +334,7 @@ export class SaveFile {
     const setControl = this.db.prepare('UPDATE teams SET user_controlled = ? WHERE id = ?');
     const setGm = this.db.prepare('UPDATE teams SET gm_json = ? WHERE id = ?');
     const setPlan = this.db.prepare('UPDATE teams SET plan_json = ? WHERE id = ?');
+    const setCoach = this.db.prepare('UPDATE teams SET coach_json = ? WHERE id = ?');
     const setTeam = this.db.prepare('UPDATE players SET team_id = ? WHERE id = ?');
     // Who joined a new team (or left one) in these events; written from the final state below.
     const moved = new Set<string>();
@@ -484,9 +486,11 @@ export class SaveFile {
           case 'owner.meeting':
           case 'owner.confidenceMoved':
           case 'owner.cardOpened':
-          case 'owner.cardAnswered':
           case 'project.finished':
             break; // stored with the clock below
+          case 'owner.cardAnswered':
+            if (e.effects.coach) setCoach.run(JSON.stringify(e.effects.coach.hire), e.teamId);
+            break; // the rest is stored with the clock below
           case 'freeAgency.opened':
             this.setMeta('freeAgencyOpen', '1');
             break;
@@ -583,6 +587,7 @@ export class SaveFile {
       division: string | null;
       gm_json: string | null;
       plan_json: string | null;
+      coach_json: string | null;
     }[];
     return rows.map((r) => ({
       id: r.id as Team['id'],
@@ -594,6 +599,7 @@ export class SaveFile {
       userControlled: r.user_controlled === 1,
       ...(r.gm_json ? { gm: JSON.parse(r.gm_json) as NonNullable<Team['gm']> } : {}),
       ...(r.plan_json ? { plan: JSON.parse(r.plan_json) as NonNullable<Team['plan']> } : {}),
+      ...(r.coach_json ? { coach: JSON.parse(r.coach_json) as NonNullable<Team['coach']> } : {}),
     }));
   }
 
