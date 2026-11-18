@@ -5,8 +5,7 @@ import { overall } from '../players';
 import { buyoutCharges, capYearIssues, capYearOf, deadCap, teamCapTotal } from '../cba';
 import { GM_LEAN, gmOf, seenBy } from '../people';
 import { compensationFor, signFreeAgent, signingInterest } from './signing';
-import { capRoom, countAt, freeAgents, rosterOf, neededPosition } from './roster';
-import { drawYears } from './freeAgency';
+import { capRoom, countAt, drawYears, freeAgents, rosterOf, neededPosition } from './roster';
 import { CORE } from './gms';
 
 /**

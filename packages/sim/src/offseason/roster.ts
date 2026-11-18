@@ -1,8 +1,14 @@
 import type { Contract, Player, TeamId } from '@gm/shared';
-import type { LeagueState } from '../core';
+import type { LeagueState, Rng } from '../core';
 import type { SimContext } from '../context';
 import { elcYears, maxPlayerCapHit, payroll, validateContract, type Ruleset } from '../cba';
 import { RFA_DISCOUNT } from '../value';
+
+/** Years a player of this age would like (more years is never worse for him). */
+export const wantedYears = (age: number) => (age < 28 ? 5 : age < 32 ? 3 : 2);
+
+/** Contract length a player of this age would like (an upper bound; the ruleset caps it). */
+export const drawYears = (age: number, rng: Rng) => rng.int(1, wantedYears(age));
 
 /** Players in a stable order (by id), so every step is reproducible whatever the key order. */
 export const allPlayers = (state: LeagueState): Player[] =>
