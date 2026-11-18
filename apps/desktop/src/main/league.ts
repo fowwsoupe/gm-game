@@ -23,6 +23,8 @@ import {
   fansOf,
   marketOf,
   coachOf,
+  DEPARTMENTS,
+  staffOf,
   ownerOf,
   ownerStanding,
   ticketPctOf,
@@ -46,6 +48,7 @@ import type {
   Actor,
   Command,
   CommandResult,
+  Department,
   GameDetail,
   GameId,
   GameResult,
@@ -56,6 +59,7 @@ import type {
   OwnerReport,
   PulseRow,
   RosterPlayer,
+  StaffProfile,
   TeamId,
   TradeProposal,
 } from '@gm/shared';
@@ -379,6 +383,12 @@ export class LeagueService {
     return {
       owner: ownerOf(team),
       coach: coachOf(team, ruleset.finance.coach, state.date.season),
+      staff: Object.fromEntries(
+        DEPARTMENTS.map((d) => [
+          d,
+          staffOf(team, d, ruleset.frontOffice.salary, state.date.season),
+        ]),
+      ) as Record<Department, StaffProfile>,
       market: marketOf(team),
       capacity: seatsOf(state, teamId, ruleset),
       fans: fansOf(state, teamId),

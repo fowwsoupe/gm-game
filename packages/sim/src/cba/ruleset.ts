@@ -127,6 +127,12 @@ export interface Ruleset {
     coach: { salary: Dollars; years: number };
   };
 
+  /** Front-office staff (docs/research/2026-11-front-office.md). */
+  frontOffice: {
+    /** A department head's salary, the worst (quality 0) to the best (1), rising with quality squared. */
+    salary: { min: Dollars; max: Dollars };
+  };
+
   roster: {
     maxActive: number;
     minActive: number;
