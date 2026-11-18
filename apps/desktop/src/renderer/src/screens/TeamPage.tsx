@@ -1,4 +1,5 @@
-import { useCapSheet, useLines, useOwner, useRoster, useTeams } from '@/lib/queries';
+import { TICKET_STEPS } from '@gm/shared';
+import { useCapSheet, useDispatch, useLines, useOwner, useRoster, useTeams } from '@/lib/queries';
 import { useUi } from '@/stores/ui';
 import { useT, type MessageKey } from '@/i18n';
 import { Button, Card, Td, Th } from '@/ui';
@@ -15,6 +16,7 @@ export function TeamPage() {
   const { data: sheet } = useCapSheet(team?.id);
   const { data: lines } = useLines(team?.id);
   const { data: owned } = useOwner(team?.id);
+  const dispatch = useDispatch();
   if (!team) return <p className="text-muted">{t('team.empty')}</p>;
   const byId = new Map<string, (typeof roster)[number]>(roster.map((p) => [p.id, p]));
   const name = (id: string) => {
@@ -44,6 +46,49 @@ export function TeamPage() {
                 <div className="tabular">{value}</div>
               </div>
             ))}
+          </div>
+        </Card>
+      )}
+      {owned && (
+        <Card title={t('team.arena')}>
+          <div className="grid gap-4 text-sm md:grid-cols-4">
+            {(
+              [
+                ['team.arena.capacity', owned.capacity.toLocaleString()],
+                [
+                  'team.arena.attendance',
+                  owned.fans.attendance
+                    ? `${owned.fans.attendance.toLocaleString()} (${Math.round((100 * owned.fans.attendance) / owned.capacity)}%)`
+                    : '—',
+                ],
+                ['team.arena.interest', `${Math.round(owned.fans.interest)} / 100`],
+              ] as const
+            ).map(([key, value]) => (
+              <div key={key}>
+                <div className="text-muted">{t(key)}</div>
+                <div className="tabular">{value}</div>
+              </div>
+            ))}
+            <div>
+              <div className="text-muted">{t('team.arena.price')}</div>
+              {team.userControlled ? (
+                <div className="mt-1 flex flex-wrap gap-1">
+                  {TICKET_STEPS.map((pct) => (
+                    <Button
+                      key={pct}
+                      variant={pct === owned.ticketPct ? 'primary' : 'ghost'}
+                      onClick={() =>
+                        dispatch.mutate({ kind: 'finance.setTicketPrice', teamId: team.id, pct })
+                      }
+                    >
+                      {signedPct(pct)}
+                    </Button>
+                  ))}
+                </div>
+              ) : (
+                <div className="tabular">{signedPct(owned.ticketPct)}</div>
+              )}
+            </div>
           </div>
         </Card>
       )}
@@ -89,3 +134,5 @@ export function TeamPage() {
     </div>
   );
 }
+
+const signedPct = (pct: number) => `${pct > 0 ? '+' : ''}${pct}%`;

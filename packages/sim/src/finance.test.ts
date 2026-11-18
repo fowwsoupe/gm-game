@@ -1,6 +1,13 @@
 import { describe, expect, it } from 'vitest';
 import type { Actor, Command, LeagueEvent, TeamId } from '@gm/shared';
-import { createLeague, defaultContext, handleCommand, net, type LeagueState } from './index';
+import {
+  createLeague,
+  defaultContext,
+  handleCommand,
+  leagueStandings,
+  net,
+  type LeagueState,
+} from './index';
 import { summerLeague } from './testLeagues';
 
 const ctx = defaultContext();
@@ -53,5 +60,59 @@ describe('the ledger', () => {
     run(state, { kind: 'season.rollover' });
     const months = settled(run(state, { kind: 'sim.advance', days: days + 1 }), teamId);
     expect(months.reduce((s, m) => s + m.costs.deadCap, 0)).toBe(owed);
+  });
+});
+
+describe('fans and ticket prices', () => {
+  const month = (events: readonly LeagueEvent[], teamId: TeamId) =>
+    settled(events, teamId).find((e) => e.date.day === 30)!;
+
+  it('+20% on a losing team sells fewer seats and earns less at the gate', () => {
+    const base = createLeague(2, ctx);
+    const teamId = Object.keys(base.teams)[0] as TeamId;
+    run(base, { kind: 'team.setUserControlled', teamId, userControlled: true });
+    base.fans[teamId] = { interest: 30, sponsorDeal: 30, mediaDeal: 30, attendance: 0 };
+    const [cheap, dear] = [0, 20].map((pct) => {
+      const state = structuredClone(base);
+      run(state, { kind: 'finance.setTicketPrice', teamId, pct });
+      return month(run(state, { kind: 'sim.advance', days: 31 }), teamId);
+    });
+    expect(dear!.fans.attendance).toBeLessThan(cheap!.fans.attendance);
+    expect(dear!.revenue.gate).toBeLessThan(cheap!.revenue.gate);
+  });
+
+  it('refuses a price that is not a step, or another team', () => {
+    const state = createLeague(2, ctx);
+    const teamId = Object.keys(state.teams)[0] as TeamId;
+    const set = (pct: number) =>
+      handleCommand(
+        state,
+        { kind: 'finance.setTicketPrice', teamId, pct },
+        { id: 'x', controls: [teamId] },
+        ctx,
+      );
+    expect(set(15).ok).toBe(false);
+    expect(set(10).ok).toBe(true);
+    expect(
+      handleCommand(
+        state,
+        { kind: 'finance.setTicketPrice', teamId, pct: 10 },
+        { id: 'x', controls: [] },
+        ctx,
+      ).ok,
+    ).toBe(false);
+  });
+
+  it("a winning season raises next season's attendance, a losing one lowers it", () => {
+    const state = createLeague(3, ctx);
+    // Dear tickets everywhere, so no building sells out and every change in demand shows.
+    for (const id of Object.keys(state.teams)) state.ticketPrices[id as TeamId] = 20;
+    const first = run(state, { kind: 'sim.advance', days: 220 });
+    const rows = leagueStandings(state, ctx.ruleset);
+    const [best, worst] = [rows[0]!.teamId, rows[rows.length - 1]!.teamId];
+    run(state, { kind: 'season.rollover' });
+    const second = run(state, { kind: 'sim.advance', days: 31 });
+    expect(month(second, best).fans.attendance).toBeGreaterThan(month(first, best).fans.attendance);
+    expect(month(second, worst).fans.attendance).toBeLessThan(month(first, worst).fans.attendance);
   });
 });

@@ -109,8 +109,8 @@ export interface Ruleset {
 
   /** League money: revenue and costs (docs/research/2026-11-owner-finance.md). */
   finance: {
-    /** Fans a home date (until capacity and fan interest set attendance). */
-    fansPerDate: number;
+    /** Seats in a team's arena, smallest to largest (each team's is derived from its id). */
+    capacity: { min: number; max: number };
     /** A fan's ticket, and spend on the night (concessions, parking, merch), at a market-1 team. */
     ticketPrice: Dollars;
     gameDaySpend: Dollars;

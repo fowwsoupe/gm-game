@@ -12,6 +12,7 @@ import type {
   PlayoffSeries,
   RetainedSalary,
   ScheduledGame,
+  TeamFans,
   TeamId,
   FreeAgentOffer,
   TradeOffer,
@@ -110,8 +111,19 @@ export type LeagueEvent =
       paid: { playerId: PlayerId; teamId: TeamId; amount: number }[];
       charges: CapCharge[];
     })
-  /** A team's cash for a month (or the playoffs) settles: revenue in, costs out. */
-  | (EventBase & ({ kind: 'finance.settled'; teamId: TeamId } & FinanceLines))
+  /**
+   * A team's cash for a month (or the playoffs) settles: revenue in, costs out, over `homeDates`
+   * home dates. `fans`: the team's fans after the month.
+   */
+  | (EventBase &
+      ({
+        kind: 'finance.settled';
+        teamId: TeamId;
+        homeDates: number;
+        fans: TeamFans;
+      } & FinanceLines))
+  /** A team's ticket price policy changed (see `TICKET_STEPS`); the next settlement uses it. */
+  | (EventBase & { kind: 'finance.ticketPriceSet'; teamId: TeamId; pct: number })
   /** End of season: who won an award. `playerId` is absent for team awards (champion). */
   | (EventBase & {
       kind: 'award.given';

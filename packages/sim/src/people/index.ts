@@ -23,5 +23,5 @@ export { morale, type MoraleInput } from './morale';
 export { chemistry } from './chemistry';
 export { talkedDown, tradeRequests } from './requests';
 export { startHoldouts, holdoutsWeek, talkedRound } from './holdouts';
-export { marketOf, ownerOf } from './owner';
+export { capacityOf, marketOf, ownerOf, ticketPctOf } from './owner';
 export { GM_LEAN, choosePlan, gmOf, misread, planStatus, randomGm, seenBy } from './gm';

@@ -193,6 +193,12 @@ date's operating cost, scale with market like sponsorship and media do. Market i
 (most teams small or mid-market, mean about 1). Operations are $50M a year plus $1.9M a home date
 at market 1.
 
+Job 3 tuned the fans: demand is 1.1 x (0.3 + 0.7 x interest / 50) x market^0.2 x price^-1.5 of
+capacity; interest pulls 30% a month toward 50 + 150 x (points % - .500), less half a point per
+percent of seats left empty, and gains 3 per playoff series. Local media came down to $15M at
+market 1 and interest 50 to keep the revenue mean near $300M. Star players and selling them do
+not move interest yet. AI teams price +10% (profit-first owner), 0 or -10% (winning-first).
+
 ## What the balance lab should measure
 
 Per team-season, over the usual 20 leagues x 20 years, on seeds 1, 101 and 201:

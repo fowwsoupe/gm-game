@@ -17,6 +17,7 @@ import { resolve } from 'node:path';
 import type { Actor, GameResult, HockeyBoxScore, Player, TeamId } from '@gm/shared';
 import {
   leagueStandings,
+  capacityOf,
   createLeague,
   defaultContext,
   handleCommand,
@@ -219,6 +220,8 @@ let playoffSpotsCompared = 0;
 const goalieSvPairs: [number, number][] = [];
 /** Per team-season money ($): revenue, gate (regular and playoff), operating profit. */
 const money = { revenue: [] as number[], gate: 0, profit: [] as number[], spread: [] as number[] };
+/** Regular-season home dates: fans in and seats there were. */
+const crowds = { fans: 0, seats: 0 };
 /**
  * Long-run parity: from this season on a multi-year league has gone through enough offseasons
  * that its teams are built by the AI GMs, not by league generation.
@@ -281,6 +284,11 @@ for (let l = 0; l < leagues; l++) {
       b.profit += net(e);
       books.set(e.teamId, b);
       money.gate += e.revenue.gate + e.revenue.playoffs;
+      if (e.revenue.gate > 0) {
+        crowds.fans += e.fans.attendance * e.homeDates;
+        crowds.seats +=
+          capacityOf(state.teams[e.teamId]!, ctx.ruleset.finance.capacity) * e.homeDates;
+      }
     }
     const revenues = [...books.values()].map((b) => b.revenue);
     money.revenue.push(...revenues);
@@ -512,6 +520,13 @@ const checks: Check[] = [
     value: (100 * money.profit.filter((p) => p < 0).length) / money.profit.length,
     min: 0,
     max: 10,
+    unit: '%',
+  },
+  {
+    name: 'Attendance, % of capacity',
+    value: (100 * crowds.fans) / crowds.seats,
+    min: 94,
+    max: 99,
     unit: '%',
   },
   {

@@ -19,8 +19,11 @@ import {
   autoLineup,
   lineupFit,
   lineupTogether,
+  capacityOf,
+  fansOf,
   marketOf,
   ownerOf,
+  ticketPctOf,
   dashboard,
   raceNight,
   draftPicks,
@@ -364,9 +367,16 @@ export class LeagueService {
   }
 
   owner(teamId: TeamId) {
-    const team = this.open().state.teams[teamId];
+    const { state } = this.open();
+    const team = state.teams[teamId];
     if (!team) throw new Error(`No team ${teamId}`);
-    return { owner: ownerOf(team), market: marketOf(team) };
+    return {
+      owner: ownerOf(team),
+      market: marketOf(team),
+      capacity: capacityOf(team, defaultContext(state.rulesetId).ruleset.finance.capacity),
+      fans: fansOf(state, teamId),
+      ticketPct: ticketPctOf(team, state.ticketPrices),
+    };
   }
 
   offerSheets(teamId: TeamId) {
