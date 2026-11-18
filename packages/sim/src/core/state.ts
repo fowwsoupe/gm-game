@@ -245,6 +245,10 @@ export function applyEvent(state: LeagueState, event: LeagueEvent): void {
       p.teamId = event.teamId;
       p.contract = { ...event.contract };
       delete p.extension;
+      for (const id of event.compensation?.picks ?? []) {
+        state.pickOwners[id] = event.compensation!.toTeamId;
+        delete state.pickProtection[id];
+      }
       delete state.rfaRights[p.id];
       delete state.formerTeams[p.id];
       state.rfaSheets = state.rfaSheets.filter((o) => o.playerId !== p.id);

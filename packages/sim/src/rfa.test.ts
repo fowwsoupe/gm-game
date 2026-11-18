@@ -5,7 +5,10 @@ import {
   defaultContext,
   handleCommand,
   hometownOf,
+  nextDraftSeason,
   scoutReport,
+  sheetCompensation,
+  signFreeAgent,
   signingInterest,
   type LeagueState,
 } from './index';
@@ -105,6 +108,47 @@ describe('restricted free agents', () => {
     );
     if (res.ok) expect(res.events[0]!.kind).toBe('freeAgency.offered');
     expect(p.teamId).toBeNull();
+  });
+});
+
+describe('offer-sheet compensation', () => {
+  const tiers = ctx.ruleset.contracts.offerSheetCompensation;
+
+  it('costs picks by the cap hit tier, first-rounders from the next drafts in a row', () => {
+    const { state, player, from } = withSheet(5);
+    const cost = (capHit: number) => sheetCompensation(state, ctx.ruleset, player, from, capHit);
+    const next = nextDraftSeason(state);
+    expect(cost(tiers[0]!.minCapHit - 1)).toEqual({ picks: [], owned: true });
+    expect(cost(tiers[1]!.minCapHit).picks).toEqual([`${next}-1-${from}`]);
+    expect(cost(tiers.at(-1)!.minCapHit).picks).toEqual(
+      [0, 1, 2, 3].map((n) => `${next + n}-1-${from}`),
+    );
+    // Not restricted, or his own team: nothing.
+    expect(sheetCompensation(state, ctx.ruleset, player, state.rfaRights[player.id]!, 1e8)).toEqual(
+      { picks: [], owned: true },
+    );
+  });
+
+  it('a team without its own first-rounder cannot send a first-round sheet', () => {
+    const { state, player, from, mine } = withSheet(5);
+    const sheet = state.rfaSheets[0]!;
+    state.rfaSheets = [];
+    state.pickOwners[`${nextDraftSeason(state)}-1-${from}`] = mine;
+    expect(
+      signFreeAgent(state, ctx, player, from, { salary: tiers[1]!.minCapHit, years: 2 }),
+    ).toEqual({ error: 'not enough draft picks for an offer sheet' });
+    expect(sheet.teamId).toBe(from);
+  });
+
+  it('a sheet that stands sends the picks to the team that held his rights', () => {
+    const { state, player, from, mine } = withSheet(5);
+    const sheet = state.rfaSheets[0]!;
+    sheet.salary = Math.max(sheet.salary, tiers[0]!.minCapHit);
+    const { picks } = sheetCompensation(state, ctx.ruleset, player, from, sheet.salary);
+    expect(picks.length).toBeGreaterThan(0);
+    run(state, { kind: 'freeAgency.declineSheet', playerId: player.id, teamId: mine });
+    expect(state.players[player.id]!.teamId).toBe(from);
+    for (const id of picks) expect(state.pickOwners[id]).toBe(mine);
   });
 });
 

@@ -52,6 +52,15 @@ export const NHL_2026: Ruleset = {
     maxBonusPct: 50,
     // The NHL's "Schedule A" entry-level bonus limit, $850,000 a year.
     maxPerformanceBonus: dollars(0.85),
+    // The NHL's offer-sheet table (2025-26 tiers scaled to this cap), third-rounders dropped
+    // because this draft has two rounds. TODO(verify): the tiers move with the league's average salary.
+    offerSheetCompensation: [
+      { minCapHit: dollars(2.55), rounds: [2] },
+      { minCapHit: dollars(5.09), rounds: [1] },
+      { minCapHit: dollars(7.64), rounds: [1, 2] },
+      { minCapHit: dollars(10.19), rounds: [1, 1, 2] },
+      { minCapHit: dollars(12.74), rounds: [1, 1, 1, 1] },
+    ],
   },
   // The real draft has 7 rounds, but most picks stay in junior or college and never take an NHL
   // roster spot. Until prospects exist as a separate pool, only the picks that sign are drafted.

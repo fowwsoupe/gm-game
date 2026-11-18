@@ -4,7 +4,7 @@ import type { SimContext } from '../context';
 import { overall } from '../players';
 import { buyoutCharges, capYearIssues, capYearOf, deadCap, teamCapTotal } from '../cba';
 import { GM_LEAN, gmOf, seenBy } from '../people';
-import { signFreeAgent, signingInterest } from './signing';
+import { compensationFor, signFreeAgent, signingInterest } from './signing';
 import { capRoom, countAt, freeAgents, rosterOf, neededPosition } from './roster';
 import { wantedYears } from './freeAgency';
 import { CORE } from './gms';
@@ -145,11 +145,13 @@ export function acceptSheet(
     return;
   }
   letGo(state, ctx, emit, sheet.teamId, room.letGo);
-  emit('minor', [sheet.teamId], {
+  const rights = state.rfaRights[player.id];
+  emit('minor', rights ? [sheet.teamId, rights] : [sheet.teamId], {
     kind: 'player.signed',
     playerId: player.id,
     teamId: sheet.teamId,
     contract: deal.contract,
+    ...compensationFor(state, ctx.ruleset, player, sheet.teamId, deal.contract.capHit),
   });
 }
 
@@ -203,6 +205,7 @@ export function decideOffers(state: LeagueState, ctx: SimContext, emit: Emit): v
         playerId: player.id,
         teamId: o.teamId,
         contract: deal.contract,
+        ...compensationFor(state, ctx.ruleset, player, o.teamId, deal.contract.capHit),
       });
       for (const teamId of losers) {
         if (!state.teams[teamId]?.userControlled) continue;

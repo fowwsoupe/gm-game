@@ -32,6 +32,7 @@ export {
   RFA_DISCOUNT,
   roomFor,
   scoutReport,
+  sheetCompensation,
   signFreeAgent,
   signingInterest,
   stayChance,

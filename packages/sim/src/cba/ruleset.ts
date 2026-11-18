@@ -69,6 +69,13 @@ export interface Ruleset {
      * cap hit; earned bonuses over the cap count against next season's.
      */
     maxPerformanceBonus: Dollars;
+    /**
+     * Draft picks (by round) a team gives the rights team when its offer sheet signs a restricted
+     * free agent away, by the sheet's cap hit: the highest tier it reaches, lowest tier first.
+     * First-round picks come from consecutive drafts starting with the next one; the team must
+     * own every one of them to send the sheet.
+     */
+    offerSheetCompensation: { minCapHit: Dollars; rounds: number[] }[];
   };
 
   draft: {

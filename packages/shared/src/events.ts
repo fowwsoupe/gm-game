@@ -96,6 +96,8 @@ export type LeagueEvent =
       teamId: TeamId;
       contract: Contract;
       staying?: true;
+      /** An offer sheet signed him away: these draft picks go to the team that held his rights. */
+      compensation?: { toTeamId: TeamId; picks: string[] };
     })
   /**
    * End of the playoffs: performance bonuses earned this season, and the part of each team's

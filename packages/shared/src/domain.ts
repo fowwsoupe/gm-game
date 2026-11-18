@@ -393,6 +393,8 @@ export interface LeagueStatus {
  * player of his age cares about; he signs when `interest` reaches `threshold`.
  */
 export interface SigningInterest {
+  /** An offer sheet to a restricted free agent: the draft picks it would cost, and whether you own them. */
+  sheet?: { picks: string[]; owned: boolean };
   playerId: PlayerId;
   /** His asking salary per year, whole dollars. */
   ask: number;

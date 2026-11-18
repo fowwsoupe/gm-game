@@ -1,6 +1,7 @@
 import type { Contract, Player, SigningInterest, TeamId, TeamStatus } from '@gm/shared';
 import { phaseOf, type LeagueState } from '../core';
-import { capYearIssues, capYearOf, teamCapTotal, validateContract } from '../cba';
+import { capYearIssues, capYearOf, teamCapTotal, validateContract, type Ruleset } from '../cba';
+import { nextDraftSeason, pickId, pickOwner } from '../league';
 import { overall } from '../players';
 import { hometownOf, personalityOf } from '../people';
 import type { SimContext } from '../context';
@@ -109,7 +110,9 @@ export function signingInterest(
   };
   const keys = ['money', 'winning', 'role', 'term'] as const;
   const interest = keys.reduce((sum, k) => sum + scores[k] * weights[k], 0) + pull; // pulls score 1
+  const sheet = sheetCompensation(state, ruleset, player, teamId, Math.round(offer.salary));
   return {
+    ...(sheet.picks.length && { sheet }),
     playerId: player.id,
     ask,
     maxYears: ruleset.contracts.maxYearsNewTeam,
@@ -124,6 +127,44 @@ export function signingInterest(
       ...pulls.map((x) => ({ key: x.key, score: 100, weight: x.weight })),
     ],
   };
+}
+
+/**
+ * The draft picks `teamId` gives up if its offer sheet at `capHit` signs `player` away from the
+ * team holding his rights (`ruleset.contracts.offerSheetCompensation`), none when it costs
+ * nothing or he is not restricted, and whether the team owns them all (it must, to send it).
+ */
+export function sheetCompensation(
+  state: LeagueState,
+  rules: Ruleset,
+  player: Player,
+  teamId: TeamId,
+  capHit: number,
+): { picks: string[]; owned: boolean } {
+  const rights = state.rfaRights[player.id];
+  if (!rights || rights === teamId) return { picks: [], owned: true };
+  const tier = rules.contracts.offerSheetCompensation.filter((t) => capHit >= t.minCapHit).at(-1);
+  const first = nextDraftSeason(state);
+  const taken = new Map<number, number>();
+  const picks = (tier?.rounds ?? []).map((round) => {
+    const n = taken.get(round) ?? 0;
+    taken.set(round, n + 1);
+    return pickId(first + n, round, teamId);
+  });
+  return { picks, owned: picks.every((id) => pickOwner(state, id, teamId) === teamId) };
+}
+
+/** The `player.signed` field for a sheet that stands: his old team's picks, if any. */
+export function compensationFor(
+  state: LeagueState,
+  rules: Ruleset,
+  player: Player,
+  teamId: TeamId,
+  capHit: number,
+): { compensation?: { toTeamId: TeamId; picks: string[] } } {
+  const { picks, owned } = sheetCompensation(state, rules, player, teamId, capHit);
+  const toTeamId = state.rfaRights[player.id];
+  return owned && picks.length && toTeamId ? { compensation: { toTeamId, picks } } : {};
 }
 
 /**
@@ -163,6 +204,9 @@ export function signFreeAgent(
   if (issues.length) return { error: `illegal contract: ${issues[0]!.code}` };
   const total = teamCapTotal(state, teamId) + salary - capFreed;
   if (capYearIssues(ruleset, state, total).length) return { error: 'no cap room' };
+  if (!sheetCompensation(state, ruleset, player, teamId, salary).owned) {
+    return { error: 'not enough draft picks for an offer sheet' };
+  }
   const view = signingInterest(state, ctx, player, teamId, {
     salary,
     years: offer.years,
