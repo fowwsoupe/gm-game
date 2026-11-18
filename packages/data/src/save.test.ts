@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest';
-import type { Actor } from '@gm/shared';
+import type { Actor, TeamId } from '@gm/shared';
 import { createLeague, defaultContext, handleCommand } from '@gm/sim';
 import { openSave } from './index';
 import { migrations } from './migrations';
@@ -24,6 +24,34 @@ describe('SaveFile', () => {
     if (!res.ok) throw new Error(res.error.message);
     save.persist(res.events, state);
     expect(save.loadState()).toEqual(state);
+    save.close();
+  });
+
+  it("reads a team's owner history from a year-20 log inside the screen budget", () => {
+    const save = openSave(':memory:');
+    const state = createLeague(4, ctx);
+    save.saveNewLeague(state);
+    const res = handleCommand(state, { kind: 'sim.advance', days: 252 }, local, ctx);
+    if (!res.ok) throw new Error(res.error.message);
+    save.persist(res.events, state);
+    const teamId = Object.keys(state.teams)[0] as TeamId;
+    const season = save.ownerHistory(teamId);
+    // Months 0, 30 ... 180, the regular season's end, and the playoffs; three meetings.
+    expect(season.money).toHaveLength(9);
+    expect(season.meetings.map((m) => m.meeting)).toEqual(['preseason', 'deadline', 'review']);
+    // The same season's log 19 more times: a save 20 years in.
+    save.db.exec(`
+      WITH RECURSIVE n(k) AS (SELECT 1 UNION ALL SELECT k + 1 FROM n WHERE k < 19)
+      INSERT INTO events (id, season, day, kind, importance, team_ids, payload_json)
+      SELECT e.id || '-' || n.k, e.season + n.k, e.day, e.kind, e.importance, e.team_ids,
+             e.payload_json
+      FROM events e, n WHERE e.season = ${state.date.season}`);
+    const t0 = performance.now();
+    const years = save.ownerHistory(teamId);
+    const ms = performance.now() - t0;
+    expect(years.money).toHaveLength(180);
+    expect(years.meetings).toHaveLength(60);
+    expect(ms).toBeLessThan(200);
     save.close();
   });
 

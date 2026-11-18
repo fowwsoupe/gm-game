@@ -18,6 +18,7 @@ export type Screen =
   | 'leaders'
   | 'history'
   | 'team'
+  | 'owner'
   | 'player';
 
 interface UiState {

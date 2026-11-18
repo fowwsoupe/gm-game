@@ -31,7 +31,7 @@ Needs a design first (a short brief in `docs/research/`, then jobs):
 - Every Phase 2 headline below. Owner and finance comes first among them: hot seat, and
   frustrated-owner events, need an owner and a coach to attach to.
   [research/2026-11-owner-finance.md](research/2026-11-owner-finance.md) is its brief, with
-  eight jobs in order (jobs 1-4 done: owners and markets, the ledger, fans and tickets, meetings and cards).
+  eight jobs in order (jobs 1-5 done: owners and markets, the ledger, fans and tickets, meetings and cards, the Owner screen).
 
 ---
 
@@ -98,7 +98,7 @@ Build order, owners and "done when" for each step: **[V0.1_PLAN.md](V0.1_PLAN.md
 
 ## Phase 2 — Part of the first release (one headline each)
 
-- [~] Owner & finance: decision cards, pricing policy, fans, projects, owner meetings; owners and markets, the money ledger, fans and ticket pricing, and confidence, meetings and cards (jobs 1-4 of 8 in [the brief](research/2026-11-owner-finance.md)) done
+- [~] Owner & finance: decision cards, pricing policy, fans, projects, owner meetings; owners and markets, the money ledger, fans and ticket pricing, confidence, meetings and cards, and the Owner screen (jobs 1-5 of 8 in [the brief](research/2026-11-owner-finance.md)) done
 - [ ] Front office: scouting, analytics, medical, coaching, development staff
 - [ ] Live draft trade room
 - [ ] Free-agency live bidding war + full contract negotiation
