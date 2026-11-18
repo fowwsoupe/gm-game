@@ -139,8 +139,14 @@ describe('owner meetings', () => {
           e.date.day < cal.regularSeasonDays,
       ),
     ).toBe(false);
+    // Staff are paid in the regular season's settlements (a playoff gate settlement pays none).
     const staff = rest.flatMap((e) =>
-      e.kind === 'finance.settled' && e.teamId === teamId && e.homeDates > 0 ? [e.costs.staff] : [],
+      e.kind === 'finance.settled' &&
+      e.teamId === teamId &&
+      e.homeDates > 0 &&
+      e.date.day < cal.regularSeasonDays
+        ? [e.costs.staff]
+        : [],
     );
     expect(staff.every((s) => s! > 0 && s! < team.coach!.salary)).toBe(true);
   });
