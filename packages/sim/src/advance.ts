@@ -353,7 +353,9 @@ export function advance(
       const next = classifyTeams(rows);
       // In crisis: losing, and the owner has lost faith in the GM (the brief's job 1, first part).
       for (const id of Object.keys(next) as TeamId[]) {
-        if ((next[id] === 'seller' || next[id] === 'rebuilder') && aiGmFired(state, id)) {
+        // AI teams only: a human GM's owner has his own, lower hot-seat lines.
+        const ai = !state.teams[id]?.userControlled;
+        if (ai && (next[id] === 'seller' || next[id] === 'rebuilder') && aiGmFired(state, id)) {
           next[id] = 'crisis';
         }
       }

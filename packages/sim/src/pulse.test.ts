@@ -22,5 +22,7 @@ describe('teams in crisis', () => {
     expect(statuses).not.toContain('seller');
     expect(statuses).not.toContain('rebuilder');
     expect(statuses).toContain('contender');
+    const mine = Object.values(state.teams).find((t) => t.userControlled)!.id;
+    expect(state.teamStatus[mine]).not.toBe('crisis');
   });
 });
