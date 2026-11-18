@@ -14,7 +14,7 @@ import type { SimContext } from '../context';
 import { runDraft } from './draft';
 import { changeGms, setPlans } from './gms';
 
-export { lotteryOrder, announceDraftClass } from './draft';
+export { lotteryOrder, announceDraftClass, teamRange } from './draft';
 export { scoutReport } from './scouting';
 export { signingInterest, signFreeAgent, sheetCompensation } from './signing';
 export { acceptSheet, marketDay, roomFor } from './market';
