@@ -538,10 +538,20 @@ export function ownerMonth(state: LeagueState, ctx: SimContext, emit: Emit): voi
     const patience = ownerOf(state.teams[teamId]!).patience;
     const delta = MONTHLY_RESULTS * ((points.get(teamId) ?? 0.5) - standing.expected);
     const confidence = moved(standing, delta, patience, state.date.season);
-    if (Math.round(confidence) !== Math.round(standing.confidence)) {
+    const was = standing.confidence;
+    if (Math.round(confidence) !== Math.round(was)) {
       emit('minor', [teamId], { kind: 'owner.confidenceMoved', teamId, confidence });
     }
     warnIfHot(state, emit, teamId, confidence);
+    // An AI owner losing faith makes the league's news as he crosses the line he fires a GM below.
+    const team = state.teams[teamId]!;
+    if (!team.userControlled && was >= AI_FIRED_BELOW && confidence < AI_FIRED_BELOW) {
+      emit('minor', [teamId], {
+        kind: 'news.posted',
+        headline: 'event.ownerFrustrated',
+        params: { team: teamName(team) },
+      });
+    }
   }
 }
 

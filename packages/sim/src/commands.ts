@@ -11,7 +11,7 @@ import {
 } from './core';
 import { buyoutCharges, capYearIssues, capYearOf, teamCapTotal } from './cba';
 import { parsePick } from './league';
-import { talkedDown, talkedRound } from './people';
+import { DEPARTMENTS, PROMISE_DAYS, talkedDown, talkedRound } from './people';
 import {
   isExpiring,
   acceptSheet,
@@ -21,6 +21,7 @@ import {
   resignWindowOpen,
   rolloverSeason,
   signFreeAgent,
+  staffCandidates,
 } from './offseason';
 import { evaluateTrade, planRetention } from './trades';
 import { advance } from './advance';
@@ -202,6 +203,59 @@ export function handleCommand(
       return applied(state, ev);
     }
 
+    case 'dispute.talk': {
+      const dispute = state.disputes.find((d) => d.playerId === command.playerId);
+      if (!dispute) return invalid('no such dispute');
+      const team = state.teams[dispute.teamId]!;
+      if (!controls(actor, team)) return notYours;
+      if (dispute.until !== undefined) return invalid('you already promised him a role');
+      const p = state.players[command.playerId]!;
+      const ends = (outcome: 'settled' | 'request' | 'listed') =>
+        makeEvent(state, 'notable', [team.id], {
+          kind: 'player.disputeEnded',
+          playerId: p.id,
+          outcome,
+        });
+      const events: LeagueEvent[] = [];
+      const push = (ev: LeagueEvent) => {
+        applyEvent(state, ev);
+        events.push(ev);
+      };
+      if (command.answer === 'promise') {
+        push(
+          makeEvent(state, 'notable', [team.id], {
+            kind: 'player.disputePromised',
+            playerId: p.id,
+            until: state.date.day + PROMISE_DAYS,
+          }),
+        );
+      } else if (command.answer === 'block') {
+        push(
+          makeEvent(state, 'minor', [team.id], {
+            kind: 'trade.blockSet',
+            teamId: team.id,
+            playerId: p.id,
+            onBlock: true,
+          }),
+        );
+        push(ends('listed'));
+      } else if (talkedDown(p.id)) {
+        push(ends('settled'));
+      } else {
+        push(ends('request'));
+        if (!state.tradeRequests.some((r) => r.playerId === p.id)) {
+          push(
+            makeEvent(state, 'major', [team.id], {
+              kind: 'player.tradeRequested',
+              playerId: p.id,
+              teamId: team.id,
+            }),
+          );
+        }
+      }
+      return { ok: true, events };
+    }
+
     case 'holdout.talk': {
       const holdout = state.holdouts.find((h) => h.playerId === command.playerId);
       if (!holdout) return invalid('no such holdout');
@@ -326,6 +380,27 @@ export function handleCommand(
         kind: 'finance.ticketPriceSet',
         teamId: team.id,
         pct: command.pct,
+      });
+      return applied(state, ev);
+    }
+
+    case 'staff.hire': {
+      const team = state.teams[command.teamId];
+      if (!team) return invalid('unknown team');
+      if (!controls(actor, team)) return notYours;
+      if (!DEPARTMENTS.includes(command.department)) return invalid('unknown department');
+      const season = state.date.season;
+      const head = staffCandidates(team, command.department, ctx, season)[command.candidate];
+      if (!head) return invalid('unknown candidate');
+      if (team.staff?.[command.department]?.hired === season) {
+        return invalid('already hired for this department this season');
+      }
+      const ev = makeEvent(state, 'notable', [team.id], {
+        kind: 'staff.hired',
+        teamId: team.id,
+        department: command.department,
+        head,
+        poached: false,
       });
       return applied(state, ev);
     }

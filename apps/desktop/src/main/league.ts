@@ -23,6 +23,8 @@ import {
   fansOf,
   marketOf,
   coachOf,
+  DEPARTMENTS,
+  staffOf,
   ownerOf,
   ownerStanding,
   ticketPctOf,
@@ -33,6 +35,8 @@ import {
   teamRatings,
   evaluateTrade,
   scoutReport,
+  teamRange,
+  staffCandidates,
   signingInterest,
   tradeWindowOpen,
   playerRecords,
@@ -46,6 +50,7 @@ import type {
   Actor,
   Command,
   CommandResult,
+  Department,
   GameDetail,
   GameId,
   GameResult,
@@ -56,6 +61,7 @@ import type {
   OwnerReport,
   PulseRow,
   RosterPlayer,
+  StaffProfile,
   TeamId,
   TradeProposal,
 } from '@gm/shared';
@@ -379,11 +385,27 @@ export class LeagueService {
     return {
       owner: ownerOf(team),
       coach: coachOf(team, ruleset.finance.coach, state.date.season),
+      staff: Object.fromEntries(
+        DEPARTMENTS.map((d) => [
+          d,
+          staffOf(team, d, ruleset.frontOffice.salary, state.date.season),
+        ]),
+      ) as Record<Department, StaffProfile>,
       market: marketOf(team),
       capacity: seatsOf(state, teamId, ruleset),
       fans: fansOf(state, teamId),
       ticketPct: ticketPctOf(team, state.ticketPrices),
     };
+  }
+
+  staffCandidates(teamId: TeamId) {
+    const { state } = this.open();
+    const team = state.teams[teamId];
+    if (!team) throw new Error(`No team ${teamId}`);
+    const ctx = defaultContext(state.rulesetId);
+    return Object.fromEntries(
+      DEPARTMENTS.map((d) => [d, staffCandidates(team, d, ctx, state.date.season)]),
+    ) as Record<Department, StaffProfile[]>;
   }
 
   ownerReport(teamId: TeamId): OwnerReport {
@@ -437,6 +459,9 @@ export class LeagueService {
       fit: lineupFit(lineup),
       together: lineupTogether(lineup, state.linemates[teamId]),
       rotation: state.goalieRotation[teamId] ?? 'backToBack',
+      disputes: state.disputes
+        .filter((d) => d.teamId === teamId)
+        .map((d) => ({ playerId: d.playerId, ...(d.until !== undefined && { until: d.until }) })),
     };
   }
 
@@ -497,7 +522,10 @@ export class LeagueService {
     const { state } = this.open();
     const ctx = defaultContext(state.rulesetId);
     return {
-      prospects: state.draftClass.map((d) => {
+      prospects: state.draftClass.map((pd) => {
+        // Your scouting department's read, not the public range.
+        const team = state.teams[teamId];
+        const d = team ? { ...pd, ...teamRange(team, pd, ctx, state.date.season) } : pd;
         const { player: p, low, high } = d;
         return {
           id: p.id,

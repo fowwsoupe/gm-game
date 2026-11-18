@@ -3,6 +3,7 @@ import type {
   CapSheet,
   CareerLine,
   CoachProfile,
+  Department,
   Dashboard,
   DraftPick,
   DraftBoardEntry,
@@ -20,6 +21,7 @@ import type {
   Team,
   LeagueStatus,
   OwnerProfile,
+  StaffProfile,
   OwnerReport,
   TeamFans,
   SigningInterest,
@@ -93,6 +95,8 @@ export interface GmApi {
       together: { forwards: number; defense: number };
       /** How the team's goalies share starts. */
       rotation: GoalieRotation;
+      /** Players unhappy with their role; `until`: the day a promised role is due. */
+      disputes: { playerId: string; until?: number }[];
     }>;
     /** A player's finished regular seasons, oldest first. */
     career(input: { playerId: string }): Promise<CareerLine[]>;
@@ -102,15 +106,18 @@ export interface GmApi {
     picks(input: { teamId: TeamId }): Promise<DraftPick[]>;
     /** Players on a team who asked to be traded. */
     tradeRequests(input: { teamId: TeamId }): Promise<string[]>;
-    /** A team's owner, head coach, market size (0.65-1.75), arena seats, fans and ticket price step. */
+    /** A team's owner, head coach, department heads, market size (0.65-1.75), arena seats, fans and ticket price step. */
     owner(input: { teamId: TeamId }): Promise<{
       owner: OwnerProfile;
       coach: CoachProfile;
+      staff: Record<Department, StaffProfile>;
       market: number;
       capacity: number;
       fans: TeamFans;
       ticketPct: number;
     }>;
+    /** Who a team can hire for each department this season (`staff.hire` takes the index). */
+    staffCandidates(input: { teamId: TeamId }): Promise<Record<Department, StaffProfile[]>>;
     /** The Owner screen for a team (money flow and meetings come from the event log). */
     ownerReport(input: { teamId: TeamId }): Promise<OwnerReport>;
     /** Offer sheets other teams gave this team's restricted free agents (match or decline). */
@@ -182,6 +189,7 @@ export const IPC = {
   tradeOffers: 'league:tradeOffers',
   tradeRequests: 'league:tradeRequests',
   owner: 'league:owner',
+  staffCandidates: 'league:staffCandidates',
   ownerReport: 'league:ownerReport',
   evaluateTrade: 'league:evaluateTrade',
   status: 'league:status',

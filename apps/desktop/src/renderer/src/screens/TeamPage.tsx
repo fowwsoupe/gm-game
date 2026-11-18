@@ -3,7 +3,7 @@ import { useCapSheet, useDispatch, useLines, useOwner, useRoster, useTeams } fro
 import { useUi } from '@/stores/ui';
 import { useT, type MessageKey } from '@/i18n';
 import { Button, Card, Td, Th } from '@/ui';
-import { fullName, money, teamName } from '@/lib/format';
+import { fullName, money, qualityKey, teamName } from '@/lib/format';
 import { Summary } from '@/screens/Cap';
 
 /** Any team's roster, cap sheet and depth chart, built from the existing queries. */
@@ -59,6 +59,28 @@ export function TeamPage() {
               <div key={key}>
                 <div className="text-muted">{t(key)}</div>
                 <div className="tabular">{value}</div>
+              </div>
+            ))}
+          </div>
+        </Card>
+      )}
+      {owned && (
+        <Card title={t('team.staff')}>
+          <div className="grid gap-4 text-sm md:grid-cols-4">
+            {(
+              [
+                ['team.coach', owned.coach],
+                ['team.staff.scouting', owned.staff.scouting],
+                ['team.staff.development', owned.staff.development],
+                ['team.staff.medical', owned.staff.medical],
+              ] as const
+            ).map(([key, head]) => (
+              <div key={key}>
+                <div className="text-muted">{t(key)}</div>
+                <div className="font-semibold">{head.name}</div>
+                <div className="tabular">
+                  {t(qualityKey(head.quality ?? 0.5))} · {money(head.salary)}
+                </div>
               </div>
             ))}
           </div>

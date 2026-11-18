@@ -62,7 +62,7 @@ export interface FinanceLines {
     operations: number;
     /** Projects under way (a renovation). */
     projects: number;
-    /** The head coach's salary. Absent in settlements from before coaches. */
+    /** The head coach's and department heads' salaries. Absent in settlements from before coaches. */
     staff?: number;
   };
 }
@@ -222,8 +222,24 @@ export interface Team {
   gm?: GmProfile;
   /** The AI GM's plan for the next seasons. Absent: none yet (follows the standings). */
   plan?: TeamPlan;
-  /** The head coach. Absent: derived from the id. No effect on games yet. */
+  /** The head coach. Absent: derived from the id. His quality moves the team's strength in games. */
   coach?: CoachProfile;
+  /** Front-office department heads. A department absent: derived from the id. No effects yet. */
+  staff?: Partial<Record<Department, StaffProfile>>;
+}
+
+/** Front-office departments besides the head coach (docs/research/2026-11-front-office.md). */
+export type Department = 'scouting' | 'development' | 'medical';
+
+/** The head of a front-office department; his salary stands for the whole department's cost. */
+export interface StaffProfile {
+  name: string;
+  /** 0-1: how good the department is. Hidden like player ratings; shown as a word. */
+  quality: number;
+  /** First season in the job. */
+  hired: number;
+  /** Whole dollars a season. */
+  salary: number;
 }
 
 /**
@@ -237,6 +253,8 @@ export interface CoachProfile {
   /** Whole dollars a season. */
   salary: number;
   years: number;
+  /** 0-1: how good a coach he is. Absent: derived from his name and first season. */
+  quality?: number;
 }
 
 /** Go for it while the core is good, tune around the edges, or tear down and build up. */
@@ -659,9 +677,10 @@ export interface TodoItem {
     | 'deadline'
     | 'tradeOffers'
     | 'tradeRequest'
-    | 'holdout';
+    | 'holdout'
+    | 'dispute';
   params?: Record<string, string | number>;
-  screen: 'roster' | 'cap' | 'draft' | 'trades';
+  screen: 'roster' | 'cap' | 'draft' | 'trades' | 'lines';
 }
 
 /** What the Home screen needs for a team beyond standings: the to-do list and the next game. */

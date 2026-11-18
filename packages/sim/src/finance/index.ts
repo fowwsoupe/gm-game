@@ -9,7 +9,7 @@
 import { NEW_FANS, type FinanceLines, type PlayerId, type TeamFans, type TeamId } from '@gm/shared';
 import type { Emit, LeagueState } from '../core';
 import { contractIn, type Ruleset } from '../cba';
-import { capacityOf, coachOf, marketOf, ticketPctOf } from '../people';
+import { capacityOf, coachOf, DEPARTMENTS, marketOf, staffOf, ticketPctOf } from '../people';
 import type { SimContext } from '../context';
 
 /** Days in a settlement month. */
@@ -167,7 +167,12 @@ export function settleMonth(state: LeagueState, ctx: SimContext, emit: Emit, day
     r.media = yearly(Math.round((f.localMedia * market * fans.mediaDeal) / 50));
     r.leagueShare = yearly(f.leagueShare);
     lines.costs.operations = yearly(f.operations.yearly) + Math.round(dateCost(f, market) * dates);
-    lines.costs.staff = yearly(coachOf(team, f.coach, season).salary);
+    lines.costs.staff = yearly(
+      DEPARTMENTS.reduce(
+        (sum, d) => sum + staffOf(team, d, ctx.ruleset.frontOffice.salary, season).salary,
+        coachOf(team, f.coach, season).salary,
+      ),
+    );
     if (dates > 0) {
       const target =
         50 +
