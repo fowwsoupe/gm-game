@@ -21,9 +21,11 @@ export { acceptSheet, marketDay, roomFor } from './market';
 export { aiHoldouts, resignOffers, resignContract, isExpiring, resignWindowOpen } from './resign';
 export { stayChance } from './freeAgency';
 export { developPlayers } from './progression';
+export { changeStaff } from './staff';
 import { expireContracts, fillRosters, meetCapFloor, reSignPlayers } from './freeAgency';
 import { MARKET_DAYS, decideOffers, marketDay } from './market';
 import { developPlayers, retirePlayers } from './progression';
+import { changeStaff } from './staff';
 
 /** Step 0: the season's stat lines go to the record books before anyone ages, moves or retires. */
 function archiveStats(state: LeagueState, ctx: SimContext, emit: Emit) {
@@ -51,6 +53,7 @@ export function openFreeAgency(state: LeagueState, ctx: SimContext, emit: Emit):
   const rng = new Rng(state.rngState);
   const order = worstFirst(state, ctx.ruleset);
   changeGms(state, rng.fork('gms'), emit);
+  changeStaff(state, ctx, rng.fork('staff'), emit, season);
   archiveStats(state, ctx, emit);
   developPlayers(state, ctx, rng.fork('development'), emit, season);
   retirePlayers(state, ctx.models.development, rng.fork('retirement'), emit, season);

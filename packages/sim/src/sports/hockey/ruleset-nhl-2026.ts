@@ -103,6 +103,10 @@ export const NHL_2026: Ruleset = {
   frontOffice: {
     salary: { min: dollars(0.5), max: dollars(3) },
     development: { points: 2 }, // was ORG_DEVELOPMENT, from GM skill
+    leave: 0.12,
+    poach: 0.15,
+    spend: 0.6,
+    hireSd: 0.2,
   },
   roster: {
     maxActive: 23,

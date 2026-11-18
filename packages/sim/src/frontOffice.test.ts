@@ -1,7 +1,8 @@
 import { describe, expect, it } from 'vitest';
 import type { LeagueEvent, Player, Team, TeamId } from '@gm/shared';
 import { createLeague, defaultContext, emitter, Rng, type LeagueState } from './index';
-import { developPlayers } from './offseason';
+import { changeStaff, developPlayers } from './offseason';
+import { ownerOf } from './people';
 import { overall } from './players';
 
 const ctx = defaultContext();
@@ -35,5 +36,29 @@ describe('development staff', () => {
     // Elite (+2 at most) against poor (-2 at most): about 4 points a year apart.
     expect(gain(a)).toBeGreaterThan(3);
     expect(gain(b)).toBeLessThan(-3);
+  });
+});
+
+describe('the staff market', () => {
+  it('heads move on and rich owners hire better ones; the new head is stored', () => {
+    const state = createLeague(1, ctx);
+    const log: LeagueEvent[] = [];
+    const emit = emitter(state, log);
+    for (let season = 0; season < 30; season++) {
+      changeStaff(state, ctx, new Rng(season), emit, 2027 + season);
+    }
+    const hires = log.flatMap((e) => (e.kind === 'staff.hired' ? [e] : []));
+    // About 12% of 48 heads a summer, plus poaching.
+    expect(hires.length).toBeGreaterThan(30 * 48 * 0.1);
+    expect(hires.length).toBeLessThan(30 * 48 * 0.25);
+    const last = hires.at(-1)!;
+    expect(state.teams[last.teamId]!.staff?.[last.department]).toEqual(last.head);
+    const byBudget = (rich: boolean) => {
+      const q = hires
+        .filter((h) => ownerOf(state.teams[h.teamId]!).budget > 0.5 === rich)
+        .map((h) => h.head.quality);
+      return q.reduce((a, b) => a + b, 0) / q.length;
+    };
+    expect(byBudget(true)).toBeGreaterThan(byBudget(false) + 0.1);
   });
 });

@@ -133,6 +133,14 @@ export interface Ruleset {
     salary: { min: Dollars; max: Dollars };
     /** Rating points a year the best development staff adds to a young player, the worst takes away. */
     development: { points: number };
+    /** Yearly chance a department head leaves, however the team did. */
+    leave: number;
+    /** Extra chance a good head is hired away: x his quality x the team's points % above average, in SDs. */
+    poach: number;
+    /** How far the owner's budget (0-1) tilts the quality of a new hire around average (0.5). */
+    spend: number;
+    /** Spread (SD) of a new hire's quality. */
+    hireSd: number;
   };
 
   roster: {
