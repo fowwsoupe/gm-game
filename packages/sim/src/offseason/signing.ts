@@ -6,6 +6,7 @@ import { overall } from '../players';
 import { hometownOf, personalityOf } from '../people';
 import type { SimContext } from '../context';
 import { resignWindowOpen } from './resign';
+import { wantedYears } from './roster';
 
 /**
  * Free agency v1: a free agent weighs an offer on money, winning, his role and the term, with
@@ -55,9 +56,6 @@ function priorities(age: number, playerId: string) {
 /** Most of his weight a pull to the team he left (scaled by loyalty) or to his hometown can take. */
 const LOYALTY_PULL = 0.2;
 const HOME_PULL = 0.1;
-
-/** Years he would like (more years is never worse for him). */
-export const wantedYears = (age: number) => (age < 28 ? 5 : age < 32 ? 3 : 2);
 
 const clamp = (n: number, lo: number, hi: number) => Math.max(lo, Math.min(hi, n));
 

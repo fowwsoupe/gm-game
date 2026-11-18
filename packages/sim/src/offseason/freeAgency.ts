@@ -9,13 +9,13 @@ import {
   resignAsk,
   allPlayers,
   countAt,
+  drawYears,
   entryContract,
   freeAgents,
   neededPosition,
   offerContract,
   rosterOf,
 } from './roster';
-import { wantedYears } from './signing';
 
 /** The median overall rating of players on a roster. */
 function typicalRating(state: LeagueState): number {
@@ -59,9 +59,6 @@ export function stayChance(status: TeamStatus, playerId: string): number {
 
 /** How far below the league's typical rostered player a player may be and still get re-signed. */
 const RESIGN_SLACK = 8;
-
-/** Contract length a player of this age would like (an upper bound; the ruleset caps it). */
-export const drawYears = (age: number, rng: Rng) => rng.int(1, wantedYears(age));
 
 /**
  * Step 3: contracts that ran out make the player a free agent, unless he signed an extension

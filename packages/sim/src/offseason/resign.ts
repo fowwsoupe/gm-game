@@ -10,8 +10,7 @@ import {
 } from '../cba';
 import type { SimContext } from '../context';
 import { gmOf } from '../people';
-import { drawYears } from './freeAgency';
-import { ageIn, capRoom, rosterOf, resignAsk } from './roster';
+import { ageIn, capRoom, drawYears, rosterOf, resignAsk } from './roster';
 
 /**
  * The re-sign window: during the season (an extension that starts next season) and after the
