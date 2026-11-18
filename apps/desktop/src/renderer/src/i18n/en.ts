@@ -153,6 +153,7 @@ export const en = {
   'event.lotteryWon': '{team} won the draft lottery',
   'event.gmFired': '{team} fire their general manager',
   'event.gmLeft': "{team}'s general manager moves on",
+  'event.fireSale': '{team} hold a fire sale: {n} players on expiring deals are on the block',
   'event.ownerFrustrated': "{team}'s owner is losing patience with his general manager",
   'event.staffLeft': '{team}: {name} leaves the head of {dept} job; {next} takes over',
   'event.staffPoached': '{team} lose {name}, head of {dept}, to a rival; {next} takes over',
