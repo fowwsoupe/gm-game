@@ -3,6 +3,5 @@ dist
 out
 release
 pnpm-lock.yaml
-models
 ml
 .claude/

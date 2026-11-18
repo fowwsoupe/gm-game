@@ -33,7 +33,7 @@ import {
   teamCapTotal,
   validateContract,
 } from '@gm/sim';
-import { fitLinear, pearson, sd } from './stats';
+import { fitLinear, mean, pearson, sd } from './stats';
 
 interface Check {
   name: string;
@@ -354,7 +354,6 @@ const ms = performance.now() - started;
 const games = all.length;
 const goals = all.reduce((s, g) => s + g.homeScore + g.awayScore, 0);
 const shots = all.reduce((s, g) => s + (g.stats.homeShots ?? 0) + (g.stats.awayShots ?? 0), 0);
-const avg = (xs: number[]) => xs.reduce((a, b) => a + b, 0) / xs.length;
 const faceoffEffect =
   fitLinear(
     faceoffRows.map((r) => r.slice(1)),
@@ -391,7 +390,7 @@ const checks: Check[] = [
     max: 12,
     unit: '%',
   },
-  { name: 'Points gap 1st-last (unverified)', value: avg(pointSpreads), min: 40, max: 70 },
+  { name: 'Points gap 1st-last (unverified)', value: mean(pointSpreads), min: 40, max: 70 },
   {
     name: 'Power-play % (unverified)',
     value: (100 * ppGoals) / ppChances,
@@ -400,11 +399,11 @@ const checks: Check[] = [
     unit: '%',
   },
   // 16 teams and 84 games; a 32-team league has a bit higher leaders. Refine with real data.
-  { name: 'Top scorer points (unverified)', value: avg(topScorer), min: 80, max: 140 },
-  { name: 'Top goal scorer goals (unverified)', value: avg(topGoals), min: 40, max: 70 },
+  { name: 'Top scorer points (unverified)', value: mean(topScorer), min: 80, max: 140 },
+  { name: 'Top goal scorer goals (unverified)', value: mean(topGoals), min: 40, max: 70 },
   {
     name: 'Best save % of qualified goalies (unverified)',
-    value: avg(topSavePct),
+    value: mean(topSavePct),
     min: 0.905,
     max: 0.935,
   },
@@ -501,7 +500,7 @@ const checks: Check[] = [
     // Same seasons, 82 games: team points % has an SD of 0.095 (0.077-0.122 in a season); the
     // range is +-2 standard errors of that 10-season mean. The real benchmark for the spread.
     name: `Points % spread (SD), years ${LONG_RUN_FROM}+`,
-    value: avg(pointsPctSd),
+    value: mean(pointsPctSd),
     min: 0.085,
     max: 0.105,
     known: KNOWN_SPREAD,
@@ -525,7 +524,7 @@ const checks: Check[] = [
   {
     // Team strength SD from LONG_RUN_FROM on over year 0's: the spread should stay flat.
     name: `Team strength spread, years ${LONG_RUN_FROM}+ / year 0`,
-    value: avg(spreadLongRun) / avg(spreadYear0),
+    value: mean(spreadLongRun) / mean(spreadYear0),
     min: 0.85,
     max: 1.15,
     known: KNOWN_SPREAD,

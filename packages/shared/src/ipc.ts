@@ -38,9 +38,6 @@ import type { Importance, LeagueEvent } from './events';
  * Add a query here first, then implement it in main and call it from the UI.
  */
 export interface GmApi {
-  app: {
-    version(): Promise<string>;
-  };
   league: {
     newLeague(input: { seed: number }): Promise<{ teams: Team[] }>;
     /** Opens a file picker for a roster JSON file and starts a league from it. */
@@ -146,7 +143,6 @@ export interface GmApi {
 
 /** IPC channel names. */
 export const IPC = {
-  appVersion: 'app:version',
   newLeague: 'league:new',
   newLeagueFromRoster: 'league:newFromRoster',
   listTeams: 'league:listTeams',

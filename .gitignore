@@ -21,7 +21,6 @@ __pycache__/
 *.pyc
 ml/data/raw/
 ml/data/processed/
-.ipynb_checkpoints/
 
 # Steam (dev only, never commit your real app id file)
 steam_appid.txt
@@ -30,7 +29,3 @@ steam_appid.txt
 research_notes/
 reports/
 graphify-out/
-
-# Vendored design-helper skill (not game code)
-.claude/skills/ui-ux-pro-max/
-.claude/skills/rtk/

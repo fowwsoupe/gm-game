@@ -8,7 +8,6 @@ export type Sport = 'nhl' | 'nba' | 'nfl';
 
 /** Branded IDs stop you from passing a TeamId where a PlayerId is expected. */
 export type Brand<T, B extends string> = T & { readonly __brand: B };
-export type LeagueId = Brand<string, 'LeagueId'>;
 export type TeamId = Brand<string, 'TeamId'>;
 export type PlayerId = Brand<string, 'PlayerId'>;
 export type GameId = Brand<string, 'GameId'>;
@@ -87,7 +86,6 @@ export interface RosterPlayer {
   id: PlayerId;
   firstName: string;
   lastName: string;
-  birthYear: number;
   position: string;
   contract?: Contract;
 }
@@ -255,7 +253,6 @@ export interface GameSummary {
   awayScore: number;
   overtime: boolean;
   shootout: boolean;
-  playoff: boolean;
 }
 
 /** A game with everything the game center needs: the result (and box score) plus player names by id. */

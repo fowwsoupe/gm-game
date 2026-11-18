@@ -2,16 +2,7 @@
 name = "gm-ml"
 version = "0.0.0"
 requires-python = ">=3.11"
-dependencies = [
-  "numpy",
-  "pandas",
-  "scikit-learn",
-  "xgboost",
-  "onnx",
-  "onnxmltools",
-  "skl2onnx",
-  "jupyter",
-]
+dependencies = []
 
 [build-system]
 requires = ["setuptools>=68"]
