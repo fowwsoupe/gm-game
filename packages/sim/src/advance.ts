@@ -407,7 +407,10 @@ export function advance(
       }),
     );
 
-    if (stops.size && events.slice(dayStart).some((e) => matters(state, e, stops))) break;
+    // Any list, even an empty one, still stops when you are fired.
+    if (stopOn !== 'never' && events.slice(dayStart).some((e) => matters(state, e, stops))) {
+      break;
+    }
   }
   return events;
 }
