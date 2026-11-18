@@ -11,6 +11,7 @@ import {
 import { useDispatch, useLines, usePlayers, useTeams } from '@/lib/queries';
 import { useT, type MessageKey } from '@/i18n';
 import { Button, Card } from '@/ui';
+import { fullName } from '@/lib/format';
 
 /**
  * Your lines: the lineup the game dresses tonight. Drag a player onto another of his position to swap them (the arrow buttons do the same from the
@@ -25,7 +26,7 @@ export function Lines() {
   const { data: players = [] } = usePlayers(mine);
   const dispatch = useDispatch();
   const [error, setError] = useState<string | null>(null);
-  if (!mine) return <p className="text-muted">{t('trade.noTeam')}</p>;
+  if (!mine) return <p className="text-muted">{t('common.noTeam')}</p>;
 
   const byId = new Map(players.map((p) => [p.id as string, p]));
   const dressed = units.flatMap((u) => u.playerIds);
@@ -94,7 +95,7 @@ export function Lines() {
     >
       <span>
         <span className="mr-2 text-xs text-muted">{p.position}</span>
-        {p.firstName} {p.lastName}
+        {fullName(p)}
         {p.injuredUntil !== undefined && (
           <span className="ml-2 text-xs text-bad">{t('roster.injuredShort')}</span>
         )}
@@ -216,7 +217,7 @@ export function Lines() {
                           const p = byId.get(x);
                           return (
                             <option key={x} value={x}>
-                              {p?.position} {p?.firstName} {p?.lastName}
+                              {p ? `${p.position} ${fullName(p)}` : x}
                             </option>
                           );
                         })}

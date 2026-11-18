@@ -4,6 +4,7 @@ import type { Worker } from 'node:worker_threads';
 import { app } from 'electron';
 import { openSave, type SaveFile } from '@gm/data';
 import {
+  HOCKEY_TUNING,
   applyEvent,
   available,
   capSheet,
@@ -307,7 +308,9 @@ export class LeagueService {
         if (p) names[id] = `${p.firstName} ${p.lastName}`;
       }
     }
-    return { result, names };
+    // Playoff overtime is played in full periods.
+    const overtimeSeconds = result.playoffSeriesId ? 1200 : HOCKEY_TUNING.overtimeSeconds;
+    return { result, names, overtimeSeconds };
   }
 
   /** Players on the team now, including ones whose contract ends this season. */

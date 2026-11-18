@@ -2,8 +2,8 @@ import { useState } from 'react';
 import type { CapIssue, CapSheet, ResignOffer, RosterPlayer, TeamId } from '@gm/shared';
 import { useCapSheet, useDispatch, useResignOffers, useRoster, useTeams } from '@/lib/queries';
 import { useT } from '@/i18n';
-import { Button, Card, Td, Th } from '@/ui';
-import { money } from '@/lib/format';
+import { Button, Card, TeamSelect, Td, Th } from '@/ui';
+import { fullName, money } from '@/lib/format';
 const issueAmount = (i: CapIssue) => ('over' in i ? i.over : i.short);
 const years = (n: number) => Array.from({ length: n }, (_, i) => i + 1);
 
@@ -20,18 +20,8 @@ export function Cap() {
   return (
     <div className="max-w-5xl space-y-4">
       <label className="flex items-center gap-2 text-sm text-muted">
-        {t('cap.team')}
-        <select
-          value={teamId}
-          onChange={(e) => setPicked(e.target.value as TeamId)}
-          className="rounded border border-line bg-panel px-2 py-1 text-ink"
-        >
-          {teams.map((x) => (
-            <option key={x.id} value={x.id}>
-              {x.city} {x.name}
-            </option>
-          ))}
-        </select>
+        {t('roster.team')}
+        <TeamSelect teams={teams} value={teamId} onChange={(id) => setPicked(id as TeamId)} />
       </label>
       <Advisor sheet={sheet} />
       <Summary sheet={sheet} />
@@ -102,7 +92,7 @@ export function Summary({ sheet }: { sheet: CapSheet }) {
 }
 
 const nameOf = (p: RosterPlayer | undefined, fallback: string) =>
-  p ? `${p.firstName} ${p.lastName} (${p.position})` : fallback;
+  p ? `${fullName(p)} (${p.position})` : fallback;
 
 function Contracts({ sheet, roster }: { sheet: CapSheet; roster: RosterPlayer[] }) {
   const t = useT();
@@ -114,7 +104,7 @@ function Contracts({ sheet, roster }: { sheet: CapSheet; roster: RosterPlayer[] 
       <table className="tabular w-full text-sm">
         <thead>
           <tr className="border-b border-line text-right text-muted">
-            <Th left>{t('cap.player')}</Th>
+            <Th left>{t('roster.player')}</Th>
             {sheet.seasons.map((s) => (
               <Th key={s.season}>{s.season}</Th>
             ))}

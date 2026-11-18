@@ -3,6 +3,7 @@ import type { PlayerId } from '@gm/shared';
 import { useDispatch, useDraftClass, useTeams } from '@/lib/queries';
 import { useT, type MessageKey } from '@/i18n';
 import { Button, Card, Face, RangeBar, Td, Th } from '@/ui';
+import { fullName } from '@/lib/format';
 
 /**
  * Draft board: the class as the scouts see it (a potential range, not the truth) and your
@@ -15,7 +16,7 @@ export function Draft() {
   const { data } = useDraftClass(mine);
   const dispatch = useDispatch();
   const [error, setError] = useState<string | null>(null);
-  if (!mine) return <p className="text-muted">{t('trade.noTeam')}</p>;
+  if (!mine) return <p className="text-muted">{t('common.noTeam')}</p>;
   if (!data || data.prospects.length === 0) {
     return <p className="text-muted">{t('draft.empty')}</p>;
   }
@@ -56,7 +57,7 @@ export function Draft() {
                 <Td className="text-muted">{i + 1}</Td>
                 <Td>
                   <Face seed={p.id} age={p.age} size={22} />
-                  {p.firstName} {p.lastName}
+                  {fullName(p)}
                 </Td>
                 <Td>{p.position}</Td>
                 <Td>{p.age}</Td>
@@ -97,7 +98,7 @@ export function Draft() {
                 <li key={id} className="flex items-center justify-between gap-2">
                   <span>
                     <span className="mr-2 text-muted">{i + 1}</span>
-                    {p ? `${p.firstName} ${p.lastName} (${p.position})` : id}
+                    {p ? `${fullName(p)} (${p.position})` : id}
                   </span>
                   <span className="flex gap-1">
                     <Button disabled={i === 0 || dispatch.isPending} onClick={() => move(i, -1)}>

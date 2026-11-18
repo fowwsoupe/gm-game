@@ -1,17 +1,14 @@
 import { useEffect, useMemo, useState } from 'react';
 import type { GameDetail, HockeyBoxScore, HockeyBoxSide, Team, TeamId } from '@gm/shared';
 import { useExhibition, useGames, useOpenGame, useTeams } from '@/lib/queries';
+import { statValue, teamName } from '@/lib/format';
 import { useT } from '@/i18n';
-import { Button, Card, TeamLink, SectionHeader, Td, Th } from '@/ui';
+import { Button, Card, TeamLink, TeamSelect, SectionHeader, Td, Th } from '@/ui';
 
 const SPEEDS = [60, 180, 600] as const;
-const teamName = (teams: Team[], id: string) => {
-  const t = teams.find((x) => x.id === id);
-  return t ? `${t.city} ${t.name}` : id;
-};
-const clockText = (sec: number) => {
-  const inPeriod = sec < 3600 ? sec % 1200 : (sec - 3600) % 1200;
-  const left = Math.max(0, (sec < 3600 ? 1200 : 1200) - inPeriod);
+/** Time left in the period; overtime is one 20:00 period at a time in the playoffs, shorter otherwise. */
+const clockText = (sec: number, ot: number) => {
+  const left = Math.max(0, sec < 3600 ? 1200 - (sec % 1200) : ot - ((sec - 3600) % ot));
   return `${String(Math.floor(left / 60)).padStart(2, '0')}:${String(Math.floor(left % 60)).padStart(2, '0')}`;
 };
 
@@ -28,7 +25,7 @@ export function Games() {
   const open = useOpenGame();
   const exhibition = useExhibition();
 
-  if (teams.length === 0) return <p className="text-muted">{t('cap.empty')}</p>;
+  if (teams.length === 0) return <p className="text-muted">{t('common.noLeague')}</p>;
   const play = () => {
     if (!home || !away || home === away) return setError(t('games.pickTeams'));
     setError(null);
@@ -40,18 +37,7 @@ export function Games() {
   const teamSelect = (value: TeamId | '', set: (v: TeamId | '') => void, label: string) => (
     <label className="flex flex-col gap-1 text-xs text-muted">
       {label}
-      <select
-        value={value}
-        onChange={(e) => set(e.target.value as TeamId | '')}
-        className="rounded border border-line bg-panel px-2 py-1 text-sm text-ink"
-      >
-        <option value="" />
-        {teams.map((x) => (
-          <option key={x.id} value={x.id}>
-            {x.city} {x.name}
-          </option>
-        ))}
-      </select>
+      <TeamSelect teams={teams} value={value} onChange={set} empty="" />
     </label>
   );
 
@@ -69,18 +55,13 @@ export function Games() {
           </div>
         </Card>
         <Card title={t('games.recentTitle')}>
-          <select
+          <TeamSelect
+            teams={teams}
             value={filter ?? ''}
-            onChange={(e) => setFilter((e.target.value || undefined) as TeamId | undefined)}
-            className="mb-3 w-full rounded border border-line bg-panel px-2 py-1 text-sm"
-          >
-            <option value="">{mine ? teamName(teams, mine) : t('games.allTeams')}</option>
-            {teams.map((x) => (
-              <option key={x.id} value={x.id}>
-                {x.city} {x.name}
-              </option>
-            ))}
-          </select>
+            onChange={(id) => setFilter(id || undefined)}
+            empty={mine ? teamName(teams, mine) : t('games.allTeams')}
+            className="mb-3 w-full"
+          />
           {games.length === 0 ? (
             <p className="text-sm text-muted">{t('games.recentEmpty')}</p>
           ) : (
@@ -200,7 +181,7 @@ function Replay({ detail, teams }: { detail: GameDetail; teams: Team[] }) {
               </span>
             ) : (
               <>
-                <div className="text-lg text-ink">{clockText(clock)}</div>
+                <div className="text-lg text-ink">{clockText(clock, detail.overtimeSeconds)}</div>
                 {period > 0 ? t('games.period', { n: period }) : t('games.overtime')}
               </>
             )}
@@ -264,8 +245,10 @@ function Replay({ detail, teams }: { detail: GameDetail; teams: Team[] }) {
               {lines.map((l, i) => (
                 <li key={i} className="flex gap-2">
                   <span className="tabular w-12 shrink-0 text-muted">
-                    {l.at < 3600 ? `P${Math.floor(l.at / 1200) + 1}` : 'OT'}{' '}
-                    {l.at < 3600 || l.at < end ? clockText(l.at) : ''}
+                    {l.at < 3600
+                      ? t('games.periodShort', { n: Math.floor(l.at / 1200) + 1 })
+                      : t('games.ot')}{' '}
+                    {l.at < 3600 || l.at < end ? clockText(l.at, detail.overtimeSeconds) : ''}
                   </span>
                   <span>{l.text}</span>
                 </li>
@@ -367,10 +350,12 @@ function BoxSide({
       <table className="tabular w-full text-sm">
         <thead>
           <tr className="border-b border-line text-right text-muted">
-            <Th left>{t('games.player')}</Th>
-            {['TOI', 'G', 'A', 'PTS', '+/-', 'S', 'PIM'].map((h) => (
-              <Th key={h}>{h}</Th>
-            ))}
+            <Th left>{t('roster.player')}</Th>
+            {(['toi', 'goals', 'assists', 'points', 'plusMinus', 'shots', 'pim'] as const).map(
+              (k) => (
+                <Th key={k}>{t(`stat.${k}`)}</Th>
+              ),
+            )}
           </tr>
         </thead>
         <tbody>
@@ -392,10 +377,10 @@ function BoxSide({
         <thead>
           <tr className="border-b border-line text-right text-muted">
             <Th left>{t('games.goalies')}</Th>
-            <Th>TOI</Th>
+            <Th>{t('stat.toi')}</Th>
             <Th>{t('games.shotsAgainst')}</Th>
             <Th>{t('games.saves')}</Th>
-            <Th>{t('games.savePct')}</Th>
+            <Th>{t('stat.savePct')}</Th>
           </tr>
         </thead>
         <tbody>
@@ -407,9 +392,7 @@ function BoxSide({
               <Td>{g.toi.toFixed(1)}</Td>
               <Td>{g.shotsAgainst}</Td>
               <Td>{g.saves}</Td>
-              <Td>
-                {g.shotsAgainst ? (g.saves / g.shotsAgainst).toFixed(3).replace(/^0/, '') : '—'}
-              </Td>
+              <Td>{g.shotsAgainst ? statValue('savePct', g.saves / g.shotsAgainst) : '—'}</Td>
             </tr>
           ))}
         </tbody>

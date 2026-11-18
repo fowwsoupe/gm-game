@@ -2,6 +2,7 @@ import { useLeaders, useTeams } from '@/lib/queries';
 import { useT, type MessageKey } from '@/i18n';
 import { useUi } from '@/stores/ui';
 import { Card, Face } from '@/ui';
+import { statValue } from '@/lib/format';
 
 /** Stat leaders of the season so far. */
 export function Leaders() {
@@ -32,7 +33,7 @@ export function Leaders() {
                   <span className="text-muted">{abbreviation(r.teamId)}</span>
                 </span>
                 <span>
-                  {board.key === 'savePct' ? r.value.toFixed(3).slice(1) : r.value}
+                  {statValue(board.key, r.value)}
                   <span className="ml-2 text-muted">{t('leaders.gp', { gp: r.gp })}</span>
                 </span>
               </li>

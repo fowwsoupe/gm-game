@@ -22,10 +22,9 @@
   --radius-card: 0.75rem;
 }
 
-/* Team theming: set --team-primary / --team-secondary on any container to theme what's inside. */
+/* Team theming: set --team-primary on any container to theme what's inside. */
 :root {
   --team-primary: var(--color-accent);
-  --team-secondary: var(--color-panel-2);
 }
 
 html,

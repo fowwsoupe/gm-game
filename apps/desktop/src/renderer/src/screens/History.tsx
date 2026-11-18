@@ -1,5 +1,5 @@
 import { useAwards, useHallOfFame, useRecords, useTeams } from '@/lib/queries';
-import { statValue } from '@/lib/format';
+import { statValue, teamName as nameOf } from '@/lib/format';
 import { useT, type MessageKey } from '@/i18n';
 import { Card } from '@/ui';
 
@@ -10,10 +10,7 @@ export function History() {
   const { data: teams = [] } = useTeams();
   const { data: records = [] } = useRecords();
   const { data: legends = [] } = useHallOfFame();
-  const teamName = (id: string) => {
-    const team = teams.find((x) => x.id === id);
-    return team ? `${team.city} ${team.name}` : id;
-  };
+  const teamName = (id: string) => nameOf(teams, id);
   if (awards.length === 0) return <p className="text-muted">{t('history.empty')}</p>;
 
   const seasons = [...new Set(awards.map((a) => a.season))];
@@ -53,7 +50,7 @@ export function History() {
             <li key={r.key} className="flex justify-between gap-4">
               <span className="text-muted">{t(`record.${r.key}` as MessageKey)}</span>
               <span>
-                {r.key === 'playerSavePct' ? r.value.toFixed(3) : r.value} ·{' '}
+                {r.key === 'playerSavePct' ? statValue('savePct', r.value) : r.value} ·{' '}
                 {r.playerName ?? teamName(r.teamId!)}
                 {r.season ? ` (${r.season})` : ''}
               </span>

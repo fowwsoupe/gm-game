@@ -3,7 +3,7 @@
  */
 export { Rng } from './rng';
 export { eventId } from './ids';
-export { dollars, pct, formatDollars, type Dollars } from './money';
+export { dollars, pct, type Dollars } from './money';
 export { phaseOf, type CalendarConfig } from './calendar';
 export {
   applyEvent,

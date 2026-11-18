@@ -2,6 +2,7 @@ import { usePlayers, useTeams } from '@/lib/queries';
 import { useT } from '@/i18n';
 import { useUi } from '@/stores/ui';
 import { Button, Face } from '@/ui';
+import { fullName, teamName } from '@/lib/format';
 import type { TeamId } from '@gm/shared';
 import { Profile } from './Roster';
 
@@ -23,17 +24,14 @@ export function Player() {
       </div>
     );
   }
-  const team = teams.find((x) => x.id === p.teamId);
   return (
     <div className="flex max-w-3xl flex-col gap-4">
       <div className="flex items-center gap-4">
         <Face seed={p.id} age={p.age} size={112} />
         <div>
-          <h1 className="text-xl font-semibold">
-            {p.firstName} {p.lastName}
-          </h1>
+          <h1 className="text-xl font-semibold">{fullName(p)}</h1>
           <p className="text-sm text-muted">
-            {team ? `${team.city} ${team.name}` : t('roster.freeAgents')} · {p.position}
+            {p.teamId ? teamName(teams, p.teamId) : t('roster.freeAgents')} · {p.position}
           </p>
         </div>
         <div className="ml-auto">

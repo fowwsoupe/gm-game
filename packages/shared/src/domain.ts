@@ -259,6 +259,8 @@ export interface GameSummary {
 export interface GameDetail {
   result: GameResult;
   names: Record<string, string>;
+  /** Length of one overtime period in seconds (a full period in the playoffs, shorter otherwise). */
+  overtimeSeconds: number;
 }
 
 export interface PlayoffSeries {
