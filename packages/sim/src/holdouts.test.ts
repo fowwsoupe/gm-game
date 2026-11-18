@@ -1,6 +1,7 @@
 import { describe, expect, it } from 'vitest';
 import type { Actor, Command } from '@gm/shared';
 import {
+  available,
   createLeague,
   defaultContext,
   handleCommand,
@@ -80,5 +81,19 @@ describe('holdouts', () => {
   it('the AI teams never hold out', () => {
     const { state, mine } = atStart(3);
     expect(state.holdouts.every((h) => h.teamId === mine)).toBe(true);
+  });
+});
+
+describe('who plays tonight', () => {
+  it('a holdout or a hurt player is out of the lineup the games and the lines screen use', () => {
+    const state = createLeague(95, ctx);
+    const mine = Object.values(state.teams).find((t) => t.userControlled)!.id;
+    const [a, b] = Object.values(state.players).filter((p) => p.teamId === mine);
+    state.holdouts.push({ playerId: a!.id, teamId: mine });
+    state.players[b!.id]!.injuredUntil = state.date.day + 5;
+    const ids = available(state, mine, state.date.day).map((p) => p.id);
+    expect(ids).not.toContain(a!.id);
+    expect(ids).not.toContain(b!.id);
+    expect(available(state, mine, state.date.day + 5).map((p) => p.id)).toContain(b!.id);
   });
 });
