@@ -20,6 +20,7 @@ import { byOverall } from './players';
 import { payBonuses } from './cba';
 import { settleMonth, settlePlayoffs, settlesOn } from './finance';
 import {
+  aiGmFired,
   checksInOn,
   coachWeek,
   deadlineCheckIn,
@@ -327,6 +328,12 @@ export function advance(
     if (phaseOf(cal, today) === 'regular' && today.day % 7 === 6) {
       const rows = leagueStandings(state, ctx.ruleset);
       const next = classifyTeams(rows);
+      // In crisis: losing, and the owner has lost faith in the GM (the brief's job 1, first part).
+      for (const id of Object.keys(next) as TeamId[]) {
+        if ((next[id] === 'seller' || next[id] === 'rebuilder') && aiGmFired(state, id)) {
+          next[id] = 'crisis';
+        }
+      }
       for (const [teamId, to] of Object.entries(next) as [TeamId, (typeof next)[TeamId]][]) {
         const from = state.teamStatus[teamId];
         if (from && from !== to) {
