@@ -14,6 +14,7 @@ export function ownerOf(team: Team): OwnerProfile {
     name: `${rng.pick(FIRST)} ${rng.pick(LAST)}`,
     priority: round2(rng.next()),
     patience: round2(rng.next()),
+    budget: round2(rng.next()),
   };
 }
 

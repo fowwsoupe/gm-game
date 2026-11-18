@@ -305,6 +305,21 @@ export const fr: Record<MessageKey, string> = {
   'home.nextGame': 'Prochain match',
   'home.vs': 'contre {team}',
   'home.at': 'à {team}',
+  'owner.card.ticketPrice':
+    'Le propriétaire veut ramener le prix des billets à {pct} % de la référence de la ligue.',
+  'owner.card.deadlineBuy':
+    'Équipe sur la ligne à la date limite : le propriétaire veut que vous achetiez et ajoute {amount} au budget salarial si vous le faites.',
+  'owner.card.deadlineSell':
+    'Équipe sur la ligne à la date limite : le propriétaire veut que vous vendiez.',
+  'owner.card.budget': 'Le propriétaire fixe le budget salarial de la saison prochaine à {amount}.',
+  'owner.option.agree': 'Accepter',
+  'owner.option.refuse': 'Refuser',
+  'owner.option.more': 'Demander plus',
+  'owner.effect.confidence': 'confiance {n}',
+  'owner.effect.payrollBudget': 'budget {amount}',
+  'owner.effect.cash': 'encaisse {amount}',
+  'owner.effect.fanInterest': 'partisans {n}',
+  'owner.effect.ticketPct': 'billets {pct} %',
   'home.todoTitle': 'À faire',
   'home.todoClear': 'Rien ne vous attend pour l’instant.',
   'todo.resign': '{count} joueur(s) à re-signer avant le marché',

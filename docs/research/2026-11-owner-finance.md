@@ -199,6 +199,14 @@ percent of seats left empty, and gains 3 per playoff series. Local media came do
 market 1 and interest 50 to keep the revenue mean near $300M. Star players and selling them do
 not move interest yet. AI teams price +10% (profit-first owner), 0 or -10% (winning-first).
 
+Job 4 put the meetings in their own engine, `sim/owner` (it reads standings, money and people, so
+it sits above them), with its constants there. Expectation is last season's points %, halfway
+back to .500, plus or minus .03 for a contend or rebuild plan (.500 in a league's first season).
+The owner gains a `budget` trait; the review sets next season's payroll budget from it. The
+first three cards: ticket prices back to a profit owner's policy (preseason), buy or sell on the
+bubble (deadline), and next season's budget (review). A card still open at the next meeting is
+refused for the GM (or agreed, if it has no refuse).
+
 ## What the balance lab should measure
 
 Per team-season, over the usual 20 leagues x 20 years, on seeds 1, 101 and 201:

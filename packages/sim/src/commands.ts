@@ -277,6 +277,23 @@ export function handleCommand(
       return applied(state, ev);
     }
 
+    case 'owner.answerCard': {
+      const card = state.ownerCards.find((c) => c.id === command.cardId);
+      if (!card) return invalid('no such card');
+      if (!controls(actor, state.teams[card.teamId]!)) return notYours;
+      const chosen = card.options.find((o) => o.key === command.option);
+      if (!chosen) return invalid('no such option');
+      const ev = makeEvent(state, 'minor', [card.teamId], {
+        kind: 'owner.cardAnswered',
+        teamId: card.teamId,
+        cardId: card.id,
+        cardKind: card.kind,
+        option: chosen.key,
+        effects: chosen.effects,
+      });
+      return applied(state, ev);
+    }
+
     case 'finance.setTicketPrice': {
       const team = state.teams[command.teamId];
       if (!team) return invalid('unknown team');
