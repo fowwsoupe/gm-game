@@ -2,45 +2,49 @@ import type { Player } from '@gm/shared';
 import type { Emit, LeagueState, Rng } from '../core';
 import type { DevelopmentModel } from '../players';
 import { ageIn, allPlayers } from './roster';
-import { gmOf } from '../people';
+import { staffOf } from '../people';
+import type { SimContext } from '../context';
 import { clampRating, overall } from '../players';
 import { playerName, teamName } from '../core';
 
 const sameRatings = (a: Player, b: Player) =>
   a.potential === b.potential && Object.keys(a.ratings).every((k) => a.ratings[k] === b.ratings[k]);
 
-/**
- * Rating points a year the best organization adds to a young player's development, and the worst
- * takes away, against an average one (GM skill stands for the whole front office: scouting, coaching, development staff).
- */
-const ORG_DEVELOPMENT = 2;
-/** How much of that reaches a player by age: all of it to 24, half from 30 (a slower decline). */
+/** How much of the development staff's effect reaches a player by age: all of it to 24, half from 30. */
 const orgReach = (age: number) => (age <= 24 ? 1 : age >= 30 ? 0.5 : 1 - (age - 24) / 12);
 
 /**
- * Step 1: every player (free agents too) ages a year and develops, in one event. Players on AI
- * teams also get their organization's effect (`ORG_DEVELOPMENT`); human teams get none.
+ * Step 1: every player (free agents too) ages a year and develops, in one event. Players on a team
+ * also get its development staff's effect: up to `frontOffice.development.points` a year from the
+ * best department, against the league's average one.
  */
 export function developPlayers(
   state: LeagueState,
-  model: DevelopmentModel,
+  ctx: SimContext,
   rng: Rng,
   emit: Emit,
   season: number,
 ) {
+  const model = ctx.models.development;
+  const fo = ctx.ruleset.frontOffice;
   const changes: { playerId: Player['id']; ratings: Record<string, number>; potential: number }[] =
     [];
   const orgRng = rng.fork('organization');
-  // Measured against the league's average AI GM, so organizations move talent between teams and
-  // do not raise the league as a whole.
-  const ai = Object.values(state.teams).filter((t) => !t.userControlled);
-  const avgSkill = ai.length ? ai.reduce((s, t) => s + gmOf(t).skill, 0) / ai.length : 0.5;
+  // Measured against the league's average department, so staff move talent between teams and do
+  // not raise the league as a whole.
+  const quality = new Map(
+    Object.values(state.teams).map((t) => [
+      t.id,
+      staffOf(t, 'development', fo.salary, season).quality,
+    ]),
+  );
+  const avg = quality.size ? [...quality.values()].reduce((a, b) => a + b, 0) / quality.size : 0.5;
   for (const p of allPlayers(state)) {
     const age = ageIn(p, season);
     let next = model.developOneYear(p, age, rng);
-    const team = p.teamId ? state.teams[p.teamId] : undefined;
-    if (team && !team.userControlled) {
-      const effect = (gmOf(team).skill - avgSkill) * 2 * ORG_DEVELOPMENT * orgReach(age);
+    const q = p.teamId ? quality.get(p.teamId) : undefined;
+    if (q !== undefined) {
+      const effect = (q - avg) * 2 * fo.development.points * orgReach(age);
       // Whole points, rounded up or down at random so the average effect is exact.
       const whole =
         Math.floor(effect) + (orgRng.fork(p.id).chance(effect - Math.floor(effect)) ? 1 : 0);

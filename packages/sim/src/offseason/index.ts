@@ -14,15 +14,18 @@ import type { SimContext } from '../context';
 import { runDraft } from './draft';
 import { changeGms, setPlans } from './gms';
 
-export { lotteryOrder, announceDraftClass } from './draft';
+export { lotteryOrder, announceDraftClass, teamRange } from './draft';
 export { scoutReport } from './scouting';
 export { signingInterest, signFreeAgent, sheetCompensation } from './signing';
 export { acceptSheet, marketDay, roomFor } from './market';
 export { aiHoldouts, resignOffers, resignContract, isExpiring, resignWindowOpen } from './resign';
 export { stayChance } from './freeAgency';
+export { developPlayers } from './progression';
+export { changeStaff, staffCandidates } from './staff';
 import { expireContracts, fillRosters, meetCapFloor, reSignPlayers } from './freeAgency';
 import { MARKET_DAYS, decideOffers, marketDay } from './market';
 import { breakoutNews, developPlayers, retirePlayers } from './progression';
+import { changeStaff } from './staff';
 import { allPlayers } from './roster';
 import { overall } from '../players';
 
@@ -52,9 +55,10 @@ export function openFreeAgency(state: LeagueState, ctx: SimContext, emit: Emit):
   const rng = new Rng(state.rngState);
   const order = worstFirst(state, ctx.ruleset);
   changeGms(state, rng.fork('gms'), emit);
+  changeStaff(state, ctx, rng.fork('staff'), emit, season);
   archiveStats(state, ctx, emit);
   const before = new Map(allPlayers(state).map((p) => [p.id, overall(p)]));
-  developPlayers(state, ctx.models.development, rng.fork('development'), emit, season);
+  developPlayers(state, ctx, rng.fork('development'), emit, season);
   breakoutNews(state, before, emit, season);
   retirePlayers(state, ctx.models.development, rng.fork('retirement'), emit, season);
   setPlans(state, emit, season);

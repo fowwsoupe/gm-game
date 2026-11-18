@@ -259,8 +259,9 @@ export function teamStrength(
   chemistry = 0.5,
   saved: SavedUnits = {},
   linemates: Readonly<Record<string, number>> = {},
+  coaching = 0,
 ): TeamStrength {
-  const chem = CHEMISTRY_POINTS * 2 * (Math.max(0, Math.min(1, chemistry)) - 0.5);
+  const chem = CHEMISTRY_POINTS * 2 * (Math.max(0, Math.min(1, chemistry)) - 0.5) + coaching;
   const lineup = autoLineup(players, depth);
   lineup.special = dressedUnits(lineup, saved);
   const { forwards, defense, goalies } = lineup;
