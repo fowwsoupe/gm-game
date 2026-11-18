@@ -411,6 +411,7 @@ export const fr: Record<MessageKey, string> = {
   'lines.dispute.promise': 'Promettre un rôle',
   'lines.dispute.patience': 'Demander de la patience',
   'lines.dispute.block': 'Le mettre sur le marché',
+  'lines.disputeListed': '{player} est sur le marché (retirez-le et il demandera un échange)',
   'event.holdoutStarted': '{player} fait la grève pour un nouveau contrat avec les {team}',
   'event.holdoutEnded': '{player} a mis fin à la grève et s’est présenté',
   'event.holdoutStands': '{player} fait toujours la grève après sa rencontre avec le DG',

@@ -498,6 +498,7 @@ export class SaveFile {
           case 'player.tradeRequestEnded':
           case 'player.disputeStarted':
           case 'player.disputePromised':
+          case 'player.disputeListed':
           case 'player.disputeEnded':
           case 'player.holdoutStarted':
           case 'player.holdoutEnded':

@@ -36,10 +36,12 @@ export function roleGap(state: LeagueState, teamId: TeamId, player: Player): num
 export function disputesWeek(state: LeagueState, rng: Rng, emit: Emit): void {
   const day = state.date.day;
   for (const d of [...state.disputes]) {
-    if (d.until === undefined || d.until > day) continue;
     const p = state.players[d.playerId];
     if (!p || p.teamId !== d.teamId) continue;
-    const kept = roleGap(state, d.teamId, p) < ROLE_GAP;
+    // Listed and then taken off the block: he asks out. Still listed: it waits for a trade.
+    const unlisted = d.listed && !state.tradeBlock.includes(p.id);
+    if (!unlisted && (d.until === undefined || d.until > day)) continue;
+    const kept = !unlisted && roleGap(state, d.teamId, p) < ROLE_GAP;
     emit('notable', [d.teamId], {
       kind: 'player.disputeEnded',
       playerId: p.id,
