@@ -204,6 +204,15 @@ export interface GmProfile {
   skill: number;
 }
 
+/** The person who owns a team. Derived from the team id; nothing is stored. */
+export interface OwnerProfile {
+  name: string;
+  /** 0-1: from profit (0) to winning (1). */
+  priority: number;
+  /** 0-1: how long he waits on a bad season. */
+  patience: number;
+}
+
 /** Generic standings row. `otl` stays 0 in sports without overtime-loss points. */
 export interface StandingsRow {
   teamId: TeamId;

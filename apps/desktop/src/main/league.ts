@@ -19,6 +19,8 @@ import {
   autoLineup,
   lineupFit,
   lineupTogether,
+  marketOf,
+  ownerOf,
   dashboard,
   raceNight,
   draftPicks,
@@ -359,6 +361,12 @@ export class LeagueService {
     return this.open()
       .state.tradeRequests.filter((r) => r.teamId === teamId)
       .map((r) => r.playerId);
+  }
+
+  owner(teamId: TeamId) {
+    const team = this.open().state.teams[teamId];
+    if (!team) throw new Error(`No team ${teamId}`);
+    return { owner: ownerOf(team), market: marketOf(team) };
   }
 
   offerSheets(teamId: TeamId) {

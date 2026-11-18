@@ -98,7 +98,7 @@ Build order, owners and "done when" for each step: **[V0.1_PLAN.md](V0.1_PLAN.md
 
 ## Phase 2 — Part of the first release (one headline each)
 
-- [ ] Owner & finance: decision cards, pricing policy, fans, projects, owner meetings
+- [~] Owner & finance: decision cards, pricing policy, fans, projects, owner meetings; owners and markets (job 1 of 8 in [the brief](research/2026-11-owner-finance.md)) done
 - [ ] Front office: scouting, analytics, medical, coaching, development staff
 - [ ] Live draft trade room
 - [ ] Free-agency live bidding war + full contract negotiation

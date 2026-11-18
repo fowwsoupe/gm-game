@@ -1,4 +1,4 @@
-import { useCapSheet, useLines, useRoster, useTeams } from '@/lib/queries';
+import { useCapSheet, useLines, useOwner, useRoster, useTeams } from '@/lib/queries';
 import { useUi } from '@/stores/ui';
 import { useT, type MessageKey } from '@/i18n';
 import { Button, Card, Td, Th } from '@/ui';
@@ -14,6 +14,7 @@ export function TeamPage() {
   const { data: roster = [] } = useRoster(team?.id);
   const { data: sheet } = useCapSheet(team?.id);
   const { data: lines } = useLines(team?.id);
+  const { data: owned } = useOwner(team?.id);
   if (!team) return <p className="text-muted">{t('team.empty')}</p>;
   const byId = new Map<string, (typeof roster)[number]>(roster.map((p) => [p.id, p]));
   const name = (id: string) => {
@@ -27,6 +28,25 @@ export function TeamPage() {
         <Button onClick={() => setScreen('standings')}>{t('team.back')}</Button>
         <h1 className="text-lg font-semibold">{teamName(teams, team.id)}</h1>
       </div>
+      {owned && (
+        <Card title={t('team.owner')}>
+          <div className="grid gap-4 text-sm md:grid-cols-4">
+            <div className="font-semibold">{owned.owner.name}</div>
+            {(
+              [
+                ['team.owner.priority', `${Math.round(owned.owner.priority * 100)}%`],
+                ['team.owner.patience', `${Math.round(owned.owner.patience * 100)}%`],
+                ['team.owner.market', `×${owned.market.toFixed(2)}`],
+              ] as const
+            ).map(([key, value]) => (
+              <div key={key}>
+                <div className="text-muted">{t(key)}</div>
+                <div className="tabular">{value}</div>
+              </div>
+            ))}
+          </div>
+        </Card>
+      )}
       <Card title={t('team.depth')}>
         <div className="grid gap-4 text-sm md:grid-cols-2 xl:grid-cols-4">
           {lines?.units.map((u) => (
