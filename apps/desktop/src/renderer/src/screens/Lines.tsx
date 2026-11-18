@@ -184,7 +184,9 @@ export function Lines() {
               const player = p ? fullName(p) : d.playerId;
               return (
                 <li key={d.playerId} className="flex flex-wrap items-center justify-between gap-2">
-                  {d.until === undefined ? (
+                  {d.listed ? (
+                    <span>{t('lines.disputeListed', { player })}</span>
+                  ) : d.until === undefined ? (
                     <>
                       <span>{t('lines.disputeLine', { player })}</span>
                       <span className="flex gap-1">

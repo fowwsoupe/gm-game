@@ -209,7 +209,11 @@ export function handleCommand(
       const team = state.teams[dispute.teamId]!;
       if (!controls(actor, team)) return notYours;
       if (dispute.until !== undefined) return invalid('you already promised him a role');
+      if (dispute.listed) return invalid('he is on the block');
       const p = state.players[command.playerId]!;
+      // Promises are checked once a week in the regular season: one due later is due at the last check.
+      const days = ctx.ruleset.season.calendar.regularSeasonDays;
+      const lastWeek = days - 1 - ((days - 7) % 7);
       const ends = (outcome: 'settled' | 'request' | 'listed') =>
         makeEvent(state, 'notable', [team.id], {
           kind: 'player.disputeEnded',
@@ -226,7 +230,7 @@ export function handleCommand(
           makeEvent(state, 'notable', [team.id], {
             kind: 'player.disputePromised',
             playerId: p.id,
-            until: state.date.day + PROMISE_DAYS,
+            until: Math.min(state.date.day + PROMISE_DAYS, lastWeek),
           }),
         );
       } else if (command.answer === 'block') {
@@ -238,7 +242,9 @@ export function handleCommand(
             onBlock: true,
           }),
         );
-        push(ends('listed'));
+        push(
+          makeEvent(state, 'notable', [team.id], { kind: 'player.disputeListed', playerId: p.id }),
+        );
       } else if (talkedDown(p.id)) {
         push(ends('settled'));
       } else {

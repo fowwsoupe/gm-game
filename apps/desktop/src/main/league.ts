@@ -461,7 +461,11 @@ export class LeagueService {
       rotation: state.goalieRotation[teamId] ?? 'backToBack',
       disputes: state.disputes
         .filter((d) => d.teamId === teamId)
-        .map((d) => ({ playerId: d.playerId, ...(d.until !== undefined && { until: d.until }) })),
+        .map((d) => ({
+          playerId: d.playerId,
+          ...(d.until !== undefined && { until: d.until }),
+          ...(d.listed && { listed: true as const }),
+        })),
     };
   }
 
