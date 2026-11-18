@@ -55,8 +55,7 @@ export function advance(
     const roster = rosters.get(team) ?? [];
     const away = new Set(state.holdouts.map((h) => h.playerId));
     const hurt = roster.filter((p) => (p.injuredUntil ?? 0) > day || away.has(p.id));
-    // Rebuilt weekly too, so time together (linemates) shows up as it grows.
-    const out = `${hurt.map((p) => p.id).join()}|${Math.floor(day / 7)}`;
+    const out = hurt.map((p) => p.id).join();
     let cached = strengths.get(team);
     if (!cached || cached.out !== out) {
       const healthy = hurt.length ? roster.filter((p) => !hurt.includes(p)) : roster;
@@ -100,6 +99,10 @@ export function advance(
   /** Records a finished game and the injuries it caused (the injuries are not kept on the result). */
   const finishGame = (result: GameResult, day: number) => {
     const { injuries = [], ...game } = result;
+    // Time together (linemates) grew: both teams' strength is rebuilt before their next game, so
+    // it never depends on how many days one call sims.
+    strengths.delete(game.homeTeamId);
+    strengths.delete(game.awayTeamId);
     emit(
       makeEvent(state, 'minor', [game.homeTeamId, game.awayTeamId], {
         kind: 'game.final',
