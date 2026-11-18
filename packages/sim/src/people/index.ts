@@ -17,7 +17,6 @@ export {
   PRIORITIES,
   type Personality,
   type Trait,
-  type Priorities,
   type Priority,
 } from './personality';
 export { morale, type MoraleInput } from './morale';

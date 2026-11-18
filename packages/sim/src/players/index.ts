@@ -8,7 +8,6 @@ export {
   overall,
   rulesDevelopment,
   type AgingCurve,
-  type CareerShape,
   type DevelopmentModel,
   type RulesDevelopmentConfig,
 } from './development';

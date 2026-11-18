@@ -192,5 +192,3 @@ export type LeagueEvent =
       body?: string;
       params?: Record<string, string | number>;
     });
-
-export type LeagueEventKind = LeagueEvent['kind'];
