@@ -169,7 +169,7 @@ export function nextRound(won: readonly PlayoffSeries[]): PlayoffSeries[] {
  * Teams that break the playoff cap: the best skaters and goalies (by rating, as the lineup
  * would dress them) cost more in cap hits than the upper limit. Nobody can today, since the
  * whole roster must fit under the cap; this guards the day in-season overage or retention exists.
- * TODO(M5): the consequence (a compliance warning, forced moves) once the cap sheet exists.
+ * TODO(M5): the consequence (a compliance warning, forced moves).
  */
 export function playoffCapBreaches(players: readonly Player[], ruleset: Ruleset): TeamId[] {
   const rule = ruleset.cap.playoffCap;

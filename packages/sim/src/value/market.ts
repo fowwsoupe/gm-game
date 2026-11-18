@@ -12,7 +12,7 @@ import { overall } from '../players';
  * flattened over the years (balance lab long-run checks).
  * TODO(M6, Azmi): contract demand model calibrated on real signings, with age and market.
  */
-export function marketSalary(rules: Ruleset, player: Player): Dollars {
+function marketSalary(rules: Ruleset, player: Player): Dollars {
   return salaryForOverall(rules, overall(player));
 }
 

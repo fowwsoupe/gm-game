@@ -11,7 +11,7 @@ import type {
 import { Rng } from '../core';
 import { hash } from './personality';
 
-export const GM_STYLES: readonly GmStyle[] = ['winNow', 'balanced', 'builder'];
+const GM_STYLES: readonly GmStyle[] = ['winNow', 'balanced', 'builder'];
 
 /** Each style's lean between now (1) and the future (-1), as the valuator reads it. */
 export const GM_LEAN: Record<GmStyle, number> = { winNow: 1, balanced: 0, builder: -1 };
@@ -52,7 +52,7 @@ export function seenBy(team: Team, player: Player): Player {
 }
 
 /** Seasons a rebuild is given before the GM reconsiders (unless the kids arrive early)... */
-export const REBUILD_SEASONS = 2;
+const REBUILD_SEASONS = 2;
 /** ...and the most it lasts: then the GM has to push (retool), however the kids look. */
 export const REBUILD_MAX_SEASONS = 4;
 /** A core younger than this on average is promise, not just weakness. */

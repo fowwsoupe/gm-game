@@ -8,7 +8,6 @@ export {
   validateContract,
   contractIn,
   payroll,
-  averageAnnualValue,
   maxPlayerCapHit,
   elcYears,
   type ContractTerms,
@@ -23,6 +22,5 @@ export {
   deadCap,
   buyoutCharges,
   retentionIssues,
-  type RetentionIssue,
 } from './cap';
 export { payBonuses } from './bonuses';

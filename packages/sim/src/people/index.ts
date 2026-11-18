@@ -20,17 +20,7 @@ export {
   type Priority,
 } from './personality';
 export { morale, type MoraleInput } from './morale';
-export { chemistry, CHEMISTRY_FULL_SEASONS } from './chemistry';
+export { chemistry } from './chemistry';
 export { talkedDown, tradeRequests } from './requests';
 export { startHoldouts, holdoutsWeek, talkedRound } from './holdouts';
-export {
-  GM_LEAN,
-  GM_STYLES,
-  REBUILD_SEASONS,
-  choosePlan,
-  gmOf,
-  misread,
-  planStatus,
-  randomGm,
-  seenBy,
-} from './gm';
+export { GM_LEAN, choosePlan, gmOf, misread, planStatus, randomGm, seenBy } from './gm';

@@ -20,7 +20,7 @@ export { scoutReport } from './scouting';
 export { signingInterest, signFreeAgent, sheetCompensation } from './signing';
 export { acceptSheet, marketDay, roomFor } from './market';
 export { aiHoldouts, resignOffers, resignContract, isExpiring, resignWindowOpen } from './resign';
-export { RFA_DISCOUNT, resignAsk } from './roster';
+export { RFA_DISCOUNT } from './roster';
 export { stayChance } from './freeAgency';
 import { expireContracts, fillRosters, meetCapFloor, reSignPlayers } from './freeAgency';
 import { MARKET_DAYS, decideOffers, marketDay } from './market';

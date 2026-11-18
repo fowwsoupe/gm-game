@@ -134,19 +134,18 @@ const rate = (keys: readonly string[], r: () => number) =>
 export function generateFictionalLeague(
   rng: Rng,
   ruleset: Ruleset,
-  teamCount = 16,
 ): { teams: Team[]; players: Player[] } {
+  const teamCount = 16;
   const teams: Team[] = [];
   const players: Player[] = [];
   let level = 0;
   for (let t = 0; t < teamCount; t++) {
-    const name = `${CITIES[t % CITIES.length]!}|${NAMES[t % NAMES.length]!}`;
-    const [city, nick] = name.split('|') as [string, string];
+    const city = CITIES[t % CITIES.length]!;
     const id = `t${t}` as TeamId;
     teams.push({
       id,
       city,
-      name: nick,
+      name: NAMES[t % NAMES.length]!,
       abbreviation: city.slice(0, 3).toUpperCase(),
       // Two conferences, each split into divisions of four.
       conference: t % 2 === 0 ? 'East' : 'West',

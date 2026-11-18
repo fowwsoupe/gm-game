@@ -22,7 +22,6 @@ export {
   lineupTogether,
   LINEMATES_FULL_GAMES,
   unitFit,
-  hockeyLeaders,
   hockeySeasonStats,
   type SkaterTotals,
   type GoalieTotals,

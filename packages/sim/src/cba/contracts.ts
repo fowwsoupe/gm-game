@@ -47,7 +47,7 @@ export type ContractIssue =
   | { code: 'bonus_too_high'; max: number }
   | { code: 'empty' };
 
-export const averageAnnualValue = (salaries: Dollars[]): Dollars =>
+const averageAnnualValue = (salaries: Dollars[]): Dollars =>
   salaries.length === 0 ? 0 : Math.round(salaries.reduce((a, b) => a + b, 0) / salaries.length);
 
 export const maxPlayerCapHit = (rules: Ruleset): Dollars =>
@@ -96,8 +96,8 @@ export function validateContract(rules: Ruleset, terms: ContractTerms): Contract
     if (terms.noTrade.held >= rules.contracts.maxNoTradePerTeam)
       issues.push({ code: 'no_trade_limit', max: rules.contracts.maxNoTradePerTeam });
   }
-  // Not modelled yet, so they cannot be broken: performance bonuses, 35+ contracts
-  // and the ELC slide (rules still to verify, see ruleset-nhl-2026.ts).
+  // Not modelled yet, so they cannot be broken: 35+ contracts and the ELC slide (rules still
+  // to verify, see ruleset-nhl-2026.ts).
   return issues;
 }
 

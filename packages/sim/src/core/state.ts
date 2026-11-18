@@ -100,7 +100,7 @@ const endRequest = (state: LeagueState, playerId: string) => {
 };
 
 /** Games together past which a pair stops counting (more would not change anything). */
-export const LINEMATE_GAMES_CAP = 100;
+const LINEMATE_GAMES_CAP = 100;
 /** The key of two teammates in `linemates`, the same whichever comes first. */
 export const linemateKey = (a: string, b: string) => (a < b ? `${a}|${b}` : `${b}|${a}`);
 

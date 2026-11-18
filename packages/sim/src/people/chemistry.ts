@@ -2,7 +2,7 @@ import type { Player } from '@gm/shared';
 import { personalityOf } from './personality';
 
 /** Seasons together after which a player is fully part of the group. */
-export const CHEMISTRY_FULL_SEASONS = 3;
+const CHEMISTRY_FULL_SEASONS = 3;
 
 /** Leadership at or above this makes a leader; a team uses at most `MAX_LEADERS` of them. */
 const LEADER = 0.75;

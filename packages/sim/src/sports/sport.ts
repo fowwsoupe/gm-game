@@ -26,7 +26,6 @@ export type RosterImport =
 
 export interface SportModule<Strength = unknown> {
   id: Sport;
-  name: string;
 
   /** Position codes in display order, e.g. hockey: C, LW, RW, D, G. */
   positions: readonly string[];
@@ -35,9 +34,6 @@ export interface SportModule<Strength = unknown> {
 
   /** Pythagorean exponent for win share from scoring (hockey about 2), for odds and power rankings. */
   pythagoreanExponent: number;
-
-  /** Rules shipped with the sport (season length, cap, contracts...). */
-  defaultRuleset: Ruleset;
 
   /** Builds a fictional league for this sport, with payrolls legal under `ruleset`. */
   generateLeague(rng: Rng, ruleset: Ruleset): { teams: Team[]; players: Player[] };
@@ -143,6 +139,9 @@ export interface SportModule<Strength = unknown> {
       /** The team also played yesterday (hockey: its backup goalie starts). */
       homeBackToBack?: boolean;
       awayBackToBack?: boolean;
+      /** The starter plays the second night of a back-to-back anyway (hockey: a little worse). */
+      homeTired?: boolean;
+      awayTired?: boolean;
     },
     rng: Rng,
   ): GameResult;
