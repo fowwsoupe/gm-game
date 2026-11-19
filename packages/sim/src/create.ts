@@ -1,4 +1,5 @@
 import type { Player, Team, TeamId, TeamStatus } from '@gm/shared';
+import { STOP_CATEGORIES } from '@gm/shared';
 import { Rng, type LeagueState } from './core';
 import { makeSchedule } from './league';
 import { newCoach, randomGm } from './people';
@@ -74,6 +75,7 @@ export function createLeague(
     arenas: {},
     career: null,
     canBeFired: true,
+    stopOn: [...STOP_CATEGORIES],
     faOffers: [],
     rfaRights: {},
     formerTeams: {},

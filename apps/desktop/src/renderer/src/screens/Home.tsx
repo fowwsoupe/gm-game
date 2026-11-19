@@ -380,7 +380,6 @@ function PlayoffCard() {
 function SimBar() {
   const t = useT();
   const { data: status } = useStatus();
-  const { stopOn, toggleStop } = useUi();
   const dispatch = useDispatch();
   const [picked, setPicked] = useState<number | null>(null);
   if (!status || status.championTeamId || status.day >= status.playoffsEndDay) return null;
@@ -422,7 +421,11 @@ function SimBar() {
           variant="primary"
           disabled={dispatch.isPending}
           onClick={() => {
-            dispatch.mutate({ kind: 'sim.advance', days: target - status.day, stopOn });
+            dispatch.mutate({
+              kind: 'sim.advance',
+              days: target - status.day,
+              stopOn: status.stopOn,
+            });
             setPicked(null);
           }}
         >
@@ -433,7 +436,18 @@ function SimBar() {
         <span>{t('home.stopOn')}</span>
         {STOP_CATEGORIES.map((c) => (
           <label key={c} className="flex items-center gap-1">
-            <input type="checkbox" checked={stopOn.includes(c)} onChange={() => toggleStop(c)} />
+            <input
+              type="checkbox"
+              checked={status.stopOn.includes(c)}
+              onChange={() =>
+                dispatch.mutate({
+                  kind: 'league.setStopOn',
+                  stopOn: status.stopOn.includes(c)
+                    ? status.stopOn.filter((x) => x !== c)
+                    : [...status.stopOn, c],
+                })
+              }
+            />
             {t(`home.stopOn.${c}`)}
           </label>
         ))}
