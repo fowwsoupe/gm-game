@@ -1,13 +1,6 @@
 import { useState } from 'react';
 import type { CapIssue, CapSheet, ResignOffer, RosterPlayer, TeamId } from '@gm/shared';
-import {
-  useCapSheet,
-  useDispatch,
-  useResignOffers,
-  useRoster,
-  useTeams,
-  useMine,
-} from '@/lib/queries';
+import { useCapSheet, useResignOffers, useRoster, useTeams, useMine } from '@/lib/queries';
 import { useT } from '@/i18n';
 import { Button, Card, TeamSelect, Td, Th } from '@/ui';
 import { fullName, money } from '@/lib/format';
