@@ -1,8 +1,8 @@
-import { useState } from 'react';
+import { useCallback, useEffect, useRef, useState } from 'react';
 import type { PlayerId } from '@gm/shared';
 import { useDispatch, useDraftClass, useTeams, useTradeOffers } from '@/lib/queries';
 import { useT, type MessageKey } from '@/i18n';
-import { Button, Card, Face, RangeBar, Td, Th } from '@/ui';
+import { Button, Card, Cutscene, Face, RangeBar, Td, Th } from '@/ui';
 import { fullName, pickParams, teamName } from '@/lib/format';
 import { useUi } from '@/stores/ui';
 
@@ -19,6 +19,25 @@ export function Draft() {
   const dispatch = useDispatch();
   const openTrade = useUi((s) => s.openTrade);
   const [error, setError] = useState<string | null>(null);
+  // Cutscene when one of your picks lands during this session (never for picks already made).
+  const seen = useRef<Set<string> | null>(null);
+  const [cut, setCut] = useState<string | null>(null);
+  useEffect(() => {
+    if (!data) return;
+    const key = (r: { pick: number }) => `${data.madeSeason}-${r.pick}`;
+    const mineNew = data.made.filter((r) => r.teamId === mine && !seen.current?.has(key(r))).pop();
+    if (seen.current && mineNew) {
+      setCut(
+        t('cutscene.draft', {
+          pick: mineNew.pick,
+          player: fullName(mineNew),
+          pos: mineNew.position,
+        }),
+      );
+    }
+    seen.current = new Set(data.made.map(key));
+  }, [data, mine, t]);
+  const closeCut = useCallback(() => setCut(null), []);
   if (!mine) return <p className="text-muted">{t('common.noTeam')}</p>;
   // The latest draft's picks, as they are made and after.
   const results = data && data.madeSeason !== null && data.made.length > 0 && (
@@ -82,6 +101,7 @@ export function Draft() {
 
   return (
     <div className="grid max-w-6xl gap-4 lg:grid-cols-[1fr_22rem]">
+      {cut && <Cutscene icon="🏒" text={cut} onDone={closeCut} />}
       <Card title={t('draft.classTitle')}>
         {clock && (
           <p className={`mb-2 text-sm ${myTurn ? 'text-ink' : 'text-muted'}`}>
