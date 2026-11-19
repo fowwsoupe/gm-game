@@ -57,6 +57,27 @@ describe('SaveFile', () => {
     save.close();
   });
 
+  it('persists an expansion team and the players it drafted', () => {
+    const save = openSave(':memory:');
+    const state = createLeague(4, ctx);
+    save.saveNewLeague(state);
+    const open = handleCommand(state, { kind: 'sim.advance', days: 400 }, local, ctx);
+    if (!open.ok) throw new Error(open.error.message);
+    const fa = handleCommand(state, { kind: 'offseason.openFreeAgency' }, local, ctx);
+    if (!fa.ok) throw new Error(fa.error.message);
+    save.persist([...open.events, ...fa.events], state);
+    const res = handleCommand(
+      state,
+      { kind: 'league.expand', city: 'Houston', name: 'Comets', abbreviation: 'HOU', market: 1.4 },
+      local,
+      ctx,
+    );
+    if (!res.ok) throw new Error(res.error.message);
+    save.persist(res.events, state);
+    expect(save.loadState()).toEqual(state);
+    save.close();
+  });
+
   it('persists events so a reopened save matches the live state', () => {
     const save = openSave(':memory:');
     const state = createLeague(8, ctx);

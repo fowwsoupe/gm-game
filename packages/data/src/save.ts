@@ -145,28 +145,13 @@ export class SaveFile {
   // ---------- whole league ----------
 
   saveNewLeague(state: LeagueState) {
-    const insertTeam = this.db.prepare(
-      'INSERT INTO teams (id, city, name, abbreviation, user_controlled, status, conference, division, gm_json, plan_json, coach_json, staff_json) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)',
-    );
+    const insertTeam = this.insertTeam();
     const insertPlayer = this.insertPlayer();
     const insertGame = this.insertGame();
     const insertCharge = this.insertCapCharge();
     this.db.transaction(() => {
       for (const t of Object.values(state.teams)) {
-        insertTeam.run(
-          t.id,
-          t.city,
-          t.name,
-          t.abbreviation,
-          t.userControlled ? 1 : 0,
-          state.teamStatus[t.id] ?? 'bubble',
-          t.conference ?? null,
-          t.division ?? null,
-          t.gm ? JSON.stringify(t.gm) : null,
-          t.plan ? JSON.stringify(t.plan) : null,
-          t.coach ? JSON.stringify(t.coach) : null,
-          t.staff ? JSON.stringify(t.staff) : null,
-        );
+        insertTeam(t, state.teamStatus[t.id] ?? 'bubble');
       }
       for (const p of Object.values(state.players)) insertPlayer(p);
       for (const g of state.schedule) insertGame(g);
@@ -271,6 +256,28 @@ export class SaveFile {
     };
   }
 
+  private insertTeam() {
+    const stmt = this.db.prepare(
+      'INSERT INTO teams (id, city, name, abbreviation, user_controlled, status, conference, division, gm_json, plan_json, coach_json, staff_json, market) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)',
+    );
+    return (t: Team, status: TeamStatus) =>
+      stmt.run(
+        t.id,
+        t.city,
+        t.name,
+        t.abbreviation,
+        t.userControlled ? 1 : 0,
+        status,
+        t.conference ?? null,
+        t.division ?? null,
+        t.gm ? JSON.stringify(t.gm) : null,
+        t.plan ? JSON.stringify(t.plan) : null,
+        t.coach ? JSON.stringify(t.coach) : null,
+        t.staff ? JSON.stringify(t.staff) : null,
+        t.market ?? null,
+      );
+  }
+
   private insertPlayer() {
     const stmt = this.db.prepare(
       `INSERT INTO players (id, team_id, first_name, last_name, birth_year, position, potential, ratings_json, contract_json)
@@ -351,6 +358,7 @@ export class SaveFile {
     const setIdentity = this.db.prepare(
       'UPDATE teams SET city = ?, name = ?, abbreviation = ? WHERE id = ?',
     );
+    const insertTeam = this.insertTeam();
     const setMarket = this.db.prepare('UPDATE teams SET market = ? WHERE id = ?');
     const setControl = this.db.prepare('UPDATE teams SET user_controlled = ? WHERE id = ?');
     const setGm = this.db.prepare('UPDATE teams SET gm_json = ? WHERE id = ?');
@@ -484,6 +492,14 @@ export class SaveFile {
             if (e.kind === 'team.relocated') setMarket.run(e.market, e.teamId);
             setIdentity.run(e.city, e.name, e.abbreviation, e.teamId);
             break;
+          case 'team.expanded': {
+            insertTeam(e.team, 'bubble');
+            for (const id of e.taken) {
+              moved.add(id);
+              setTeam.run(e.team.id, id);
+            }
+            break;
+          }
           case 'team.controlChanged':
             setControl.run(e.userControlled ? 1 : 0, e.teamId);
             break;

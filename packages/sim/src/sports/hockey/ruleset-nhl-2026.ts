@@ -115,6 +115,8 @@ export const NHL_2026: Ruleset = {
     coach: { salary: dollars(2.95), years: 3 }, // ESPN 2024: about $2.5M, usually three-year deals
     relocationFanLoss: 15, // game design: a move costs fans, a market change is a fresh start
   },
+  // The 2021 Seattle draft: 11 protected a team (7 F, 3 D, 1 G), one player from each of the others.
+  expansion: { maxTeams: 32, protect: 11, picks: 18, maxLossPerTeam: 2 },
   // docs/research/2026-11-front-office.md: no public source; unverified, tuned in the lab.
   frontOffice: {
     salary: { min: dollars(0.5), max: dollars(3) },

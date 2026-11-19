@@ -271,6 +271,20 @@ export function applyEvent(state: LeagueState, event: LeagueEvent): void {
       state.fans[event.teamId] = { ...fans, interest: Math.max(0, fans.interest - event.fanLoss) };
       return;
     }
+    case 'team.expanded': {
+      state.teams[event.team.id] = structuredClone(event.team);
+      state.teamStatus[event.team.id] = 'bubble';
+      const gone = new Set(event.taken);
+      state.tradeBlock = state.tradeBlock.filter((id) => !gone.has(id));
+      for (const id of event.taken) {
+        const p = state.players[id];
+        if (!p) throw new Error(`unknown player ${id}`);
+        p.teamId = event.team.id;
+        p.joined = capYearOf(state);
+        endRequest(state, id);
+      }
+      return;
+    }
     case 'team.controlChanged': {
       const team = state.teams[event.teamId];
       if (team) team.userControlled = event.userControlled;

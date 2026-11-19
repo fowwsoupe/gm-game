@@ -78,6 +78,12 @@ export const fr: Record<MessageKey, string> = {
   'team.relocate.market.1': 'Ville moyenne',
   'team.relocate.market.1.4': 'Grande ville',
   'team.relocate.market.1.75': 'Marché majeur',
+  'expansion.title': 'Expansion',
+  'expansion.add': "Ajouter une équipe d'expansion",
+  'expansion.note':
+    'La nouvelle équipe prend des joueurs non protégés chez les autres (chacune garde ses meilleurs), puis se complète en autonomie. Elle rejoint la plus petite division et joue dès la saison prochaine.',
+  'event.expanded':
+    "Expansion : les {team} rejoignent la ligue et choisissent {n} joueurs lors du repêchage d'expansion.",
   'event.relocated': 'La franchise déménage : désormais les {team}.',
   'team.owner': 'Propriétaire',
   'team.owner.priority': 'Préfère gagner plutôt que faire du profit',

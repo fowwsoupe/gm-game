@@ -143,6 +143,16 @@ export interface Ruleset {
     relocationFanLoss: number;
   };
 
+  /** The sandbox's expansion draft: the league's size limit and how the new team picks. */
+  expansion: {
+    maxTeams: number;
+    /** Best players (by overall) each team keeps safe from the draft. */
+    protect: number;
+    /** Players the new team takes, and the most from any one team. */
+    picks: number;
+    maxLossPerTeam: number;
+  };
+
   /** Front-office staff (docs/research/2026-11-front-office.md). */
   frontOffice: {
     /** A department head's salary, the worst (quality 0) to the best (1), rising with quality squared. */

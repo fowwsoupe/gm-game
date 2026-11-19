@@ -34,6 +34,8 @@ export type Command =
       abbreviation: string;
       market: number;
     }
+  /** Add a team to the league (free agency is open): it takes unprotected players from the others in an expansion draft. */
+  | { kind: 'league.expand'; city: string; name: string; abbreviation: string; market: number }
   /** After the champion is crowned: age, retire, draft, re-sign and sign, then start next season. */
   | { kind: 'season.rollover' }
   /** Buy out a player's contract (offseason only, once the champion is crowned). */

@@ -6,6 +6,7 @@ import type {
   LeagueEvent,
   Player,
   Team,
+  TeamId,
   TradeProposal,
 } from '@gm/shared';
 import { GOALIE_ROTATIONS, MARKET_SIZES, STOP_CATEGORIES, TICKET_STEPS } from '@gm/shared';
@@ -19,11 +20,13 @@ import {
   type LeagueState,
 } from './core';
 import { buyoutCharges, capYearIssues, capYearOf, teamCapTotal } from './cba';
-import { pickLabel } from './league';
+import { expansionDraft, pickLabel, thinnestDivision } from './league';
 import {
   departmentsOf,
   moraleOf,
+  newCoach,
   PROMISE_DAYS,
+  randomGm,
   staffOf,
   talkedDown,
   talkedRound,
@@ -63,6 +66,22 @@ const invalid = (message: string): CommandResult => ({
   ok: false,
   error: { code: 'invalid', message },
 });
+/** A trimmed, valid city, name and abbreviation (unique among the other teams), or the reason it is not. */
+function checkIdentity(
+  state: LeagueState,
+  c: { city: string; name: string; abbreviation: string },
+  exceptId?: TeamId,
+) {
+  const city = c.city.trim();
+  const name = c.name.trim();
+  const abbreviation = c.abbreviation.trim().toUpperCase();
+  if (!city || !name || city.length > 24 || name.length > 24)
+    return 'city and name: 1–24 characters';
+  if (!/^[A-Z]{2,4}$/.test(abbreviation)) return 'abbreviation: 2–4 letters';
+  if (Object.values(state.teams).some((t) => t.id !== exceptId && t.abbreviation === abbreviation))
+    return 'abbreviation already taken';
+  return { city, name, abbreviation };
+}
 /** Applies one event and returns it as the command's result. */
 const applied = (state: LeagueState, ev: LeagueEvent): CommandResult => {
   applyEvent(state, ev);
@@ -105,23 +124,46 @@ export function handleCommand(
       return applied(state, ev);
     }
 
+    case 'league.expand': {
+      if (actor.id !== 'local') return notYours;
+      if (!state.freeAgencyOpen) return invalid('expansion happens once free agency is open');
+      const { maxTeams } = ctx.ruleset.expansion;
+      if (Object.keys(state.teams).length >= maxTeams) return invalid(`at most ${maxTeams} teams`);
+      const identity = checkIdentity(state, command);
+      if (typeof identity === 'string') return invalid(identity);
+      if (!(MARKET_SIZES as readonly number[]).includes(command.market))
+        return invalid('unknown market size');
+      const rng = new Rng(state.rngState).fork(`expansion${state.eventSeq}`);
+      let n = Object.keys(state.teams).length;
+      while (state.teams[`t${n}` as TeamId]) n++;
+      const team: Team = {
+        id: `t${n}` as TeamId,
+        ...identity,
+        ...thinnestDivision(Object.values(state.teams)),
+        market: command.market,
+        userControlled: false,
+        gm: randomGm(rng.fork('gm')),
+        coach: newCoach(rng.fork('coach'), state.date.season + 1, ctx.ruleset.finance.coach),
+      };
+      return applied(
+        state,
+        makeEvent(state, 'major', [team.id], {
+          kind: 'team.expanded',
+          team,
+          taken: expansionDraft(state, ctx.ruleset),
+        }),
+      );
+    }
+
     case 'team.rename':
     case 'team.relocate': {
       const team = state.teams[command.teamId];
       if (!team) return invalid('unknown team');
       // The local player edits any team's identity (sandbox); a remote player only his own.
       if (actor.id !== 'local' && !actor.controls.includes(team.id)) return notYours;
-      const city = command.city.trim();
-      const name = command.name.trim();
-      const abbreviation = command.abbreviation.trim().toUpperCase();
-      if (!city || !name || city.length > 24 || name.length > 24)
-        return invalid('city and name: 1–24 characters');
-      if (!/^[A-Z]{2,4}$/.test(abbreviation)) return invalid('abbreviation: 2–4 letters');
-      if (
-        Object.values(state.teams).some((t) => t.id !== team.id && t.abbreviation === abbreviation)
-      )
-        return invalid('abbreviation already taken');
-      const identity = { teamId: team.id, city, name, abbreviation };
+      const checked = checkIdentity(state, command, team.id);
+      if (typeof checked === 'string') return invalid(checked);
+      const identity = { teamId: team.id, ...checked };
       if (command.kind === 'team.rename')
         return applied(
           state,
