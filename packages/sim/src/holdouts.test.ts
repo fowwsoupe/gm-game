@@ -1,6 +1,7 @@
 import { describe, expect, it } from 'vitest';
 import type { Actor, Command } from '@gm/shared';
 import {
+  applyEvent,
   available,
   createLeague,
   defaultContext,
@@ -131,6 +132,30 @@ describe('holdouts', () => {
       expect(state.tradeBlock.includes(playerId) || gone).toBe('shops' in c);
       if (pays) expect(state.holdouts.some((h) => h.playerId === playerId)).toBe(false);
     }
+  });
+});
+
+describe('a holdout that ends', () => {
+  it("leaves an AI team's trade block, but not a human team's own list", () => {
+    const state = createLeague(5, ctx);
+    const on = (userControlled: boolean) => {
+      const team = Object.values(state.teams).find((t) => t.userControlled === userControlled)!;
+      const p = Object.values(state.players).find((x) => x.teamId === team.id)!;
+      state.holdouts.push({ playerId: p.id, teamId: team.id });
+      state.tradeBlock.push(p.id);
+      applyEvent(state, {
+        id: 'e',
+        date: state.date,
+        importance: 'minor',
+        teamIds: [team.id],
+        kind: 'player.holdoutEnded',
+        playerId: p.id,
+        talked: false,
+      });
+      return state.tradeBlock.includes(p.id);
+    };
+    expect(on(false)).toBe(false);
+    expect(on(true)).toBe(true);
   });
 });
 

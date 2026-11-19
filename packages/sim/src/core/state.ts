@@ -134,6 +134,15 @@ const endRequest = (state: LeagueState, playerId: string) => {
   state.disputes = state.disputes.filter((r) => r.playerId !== playerId);
 };
 
+/** His holdout is over: an AI GM stops shopping him (a human's block list is his own call). */
+const endHoldout = (state: LeagueState, playerId: string) => {
+  const h = state.holdouts.find((x) => x.playerId === playerId);
+  state.holdouts = state.holdouts.filter((x) => x.playerId !== playerId);
+  if (h && !state.teams[h.teamId]?.userControlled) {
+    state.tradeBlock = state.tradeBlock.filter((id) => id !== playerId);
+  }
+};
+
 /** Games together past which a pair stops counting (more would not change anything). */
 const LINEMATE_GAMES_CAP = 100;
 /** The key of two teammates in `linemates`, the same whichever comes first. */
@@ -338,7 +347,7 @@ export function applyEvent(state: LeagueState, event: LeagueEvent): void {
       state.holdouts.push({ playerId: event.playerId, teamId: event.teamId });
       return;
     case 'player.holdoutEnded':
-      state.holdouts = state.holdouts.filter((h) => h.playerId !== event.playerId);
+      endHoldout(state, event.playerId);
       return;
     case 'player.noTradeWaived':
       delete state.players[event.playerId]?.contract?.noTrade;
@@ -407,7 +416,7 @@ export function applyEvent(state: LeagueState, event: LeagueEvent): void {
       if (!p) throw new Error(`unknown player ${event.playerId}`);
       p.extension = { ...event.contract };
       // A raise settles it.
-      state.holdouts = state.holdouts.filter((h) => h.playerId !== p.id);
+      endHoldout(state, p.id);
       return;
     }
     case 'season.started':
