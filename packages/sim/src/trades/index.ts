@@ -12,4 +12,4 @@ export {
   planRetention,
   tradeWindowOpen,
 } from './evaluate';
-export { aiOffers, aiTrades, deadlineRecap, inDeadlineWeek } from './ai';
+export { aiOffers, aiTrades, deadlineRecap, inDeadlineWeek, offerExpires } from './ai';

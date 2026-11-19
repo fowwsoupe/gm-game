@@ -246,6 +246,8 @@ const coaches = { changed: 0, inSeason: 0, gms: 0, teamSeasons: 0 };
 const staff = { changed: 0, rich: [] as number[], frugal: [] as number[] };
 /** Free agents signed with two or more teams bidding: each one's salary over his ask (a share). */
 const contested = { overAsk: [] as number[] };
+/** Free agents signed off an AI offer in the summer market (before rosters are topped up). */
+let marketSignings = 0;
 /** AI trades in the season (camp to the end of the playoffs), and those in the deadline's last seven days. */
 const trades = { all: 0, deadlineWeek: 0 };
 /**
@@ -404,6 +406,7 @@ for (let l = 0; l < leagues; l++) {
         const teams = bidders.get(e.offer.playerId) ?? new Set();
         bidders.set(e.offer.playerId, teams.add(e.offer.teamId));
       }
+      if (e.kind === 'player.signed' && bidders.has(e.playerId)) marketSignings++;
       if (e.kind === 'player.signed' && (bidders.get(e.playerId)?.size ?? 0) >= 2) {
         const ask = ctx.models.contractDemand.ask(ctx.ruleset, state.players[e.playerId]!);
         contested.overAsk.push(e.contract.capHit / ask - 1);
@@ -584,6 +587,12 @@ const checks: Check[] = [
   { name: 'Free-agent pool, largest (unverified)', value: maxPool, min: 0, max: 150 },
   // Report only (docs/research/2026-11-free-agency-bidding.md): no benchmark. A race's salary is
   // at least the ask and at most an AI team's walk-away (ask x 1.33 at the most).
+  {
+    name: 'Market signings a summer (unverified)',
+    value: marketSignings / (leagues * years),
+    min: 0,
+    max: 200,
+  },
   {
     name: 'Contested signings a summer (unverified)',
     value: contested.overAsk.length / (leagues * years),

@@ -2,17 +2,25 @@ import { describe, expect, it } from 'vitest';
 import type { Actor, Command, LeagueEvent, Player, TeamId } from '@gm/shared';
 import {
   applyEvent,
+  counterSalary,
   createLeague,
   defaultContext,
+  disputesWeek,
+  emitter,
   handleCommand,
+  lineOf,
   overall,
   personalityOf,
   playerProfiles,
+  PROMISE_DAYS,
+  resignOffers,
+  Rng,
   roomFor,
   seenBy,
   signFreeAgent,
   signingInterest,
   stayChance,
+  talksLeft,
   walkAway,
   type LeagueState,
 } from './index';
@@ -72,7 +80,7 @@ describe('free agency', () => {
     const salary = Math.round(view.ask * 1.2);
     expect(
       signingInterest(state, ctx, target, mine, { salary, years: 5 }).interest,
-    ).toBeGreaterThanOrEqual(view.threshold);
+    ).toBeGreaterThanOrEqual(lineOf(ctx, target.id));
     const [ev] = run(state, sign(target, mine, salary, 2));
     expect(ev!.kind).toBe('player.signed');
     expect(state.players[target.id]!.teamId).toBe(mine);
@@ -86,13 +94,14 @@ describe('free agency', () => {
     expect(state.players[target.id]!.teamId).toBe(mine);
   });
 
-  it('refuses a lowball, a player under contract and a team with no room', () => {
+  it('answers a lowball with his agent, refuses a player under contract and a team with no room', () => {
     const { state, mine } = finishedSeason(23);
     run(state, { kind: 'offseason.openFreeAgency' });
-    const target = freeAgents(state)[0]!;
+    const [target, other] = freeAgents(state) as [Player, Player];
     const { ask } = signingInterest(state, ctx, target, mine, { salary: 0, years: 1 });
-    const lowball = handleCommand(state, sign(target, mine, Math.round(ask * 0.5), 1), local, ctx);
-    expect(lowball.ok).toBe(false);
+    const lowball = run(state, sign(other, mine, Math.round(ask * 0.5), 1));
+    expect(lowball[0]!.kind).toBe('contract.countered');
+    expect(other.teamId).toBeNull();
 
     const rostered = Object.values(state.players).find((p) => p.teamId && p.teamId !== mine)!;
     expect(handleCommand(state, sign(rostered, mine, ask, 1), local, ctx).ok).toBe(false);
@@ -109,13 +118,18 @@ describe('free agency', () => {
     const own = Object.values(state.players).find((p) => p.teamId === mine)!;
     own.contract = { ...own.contract!, expiresAfterSeason: state.date.season };
     delete own.extension;
-    const res = handleCommand(
-      state,
-      { kind: 'contract.resign', playerId: own.id, years: 2.5 },
-      local,
-      ctx,
-    );
-    expect(res.ok).toBe(false);
+    for (const [salary, years] of [
+      [own.contract!.capHit, 2.5],
+      [NaN, 2],
+    ]) {
+      const res = handleCommand(
+        state,
+        { kind: 'contract.resign', playerId: own.id, salary: salary!, years: years! },
+        local,
+        ctx,
+      );
+      expect(res.ok).toBe(false);
+    }
     run(state, { kind: 'offseason.openFreeAgency' });
     const fa = freeAgents(state)[0]!;
     expect('error' in signFreeAgent(state, ctx, fa, mine, { salary: NaN, years: 1 })).toBe(true);
@@ -295,6 +309,7 @@ describe('AI offers in free agency', () => {
         bidders.includes(e.offer.teamId),
     );
     expect(raises.length).toBeGreaterThan(0);
+    expect(raises.every((e) => e.kind === 'freeAgency.offered' && e.raise)).toBe(true); // the room's "raises"
     for (const o of state.faOffers.filter((x) => x.playerId === star.id)) {
       expect(o.salary).toBeLessThanOrEqual(walkAway(state, ctx, o.teamId, ask(star)));
       if (bidders.includes(o.teamId)) expect(o.since).toBe(0);
@@ -337,6 +352,191 @@ describe('personality in free agency', () => {
         (f) => f.key === 'money',
       )!.weight;
     expect(moneyWeight(greedy)).toBeGreaterThan(moneyWeight(modest));
+  });
+});
+
+describe('negotiation', () => {
+  const askOf = (p: Player) => ctx.models.contractDemand.ask(ctx.ruleset, p);
+  const countered = (events: LeagueEvent[]) => {
+    const ev = events[0];
+    if (ev?.kind !== 'contract.countered') throw new Error(`no counter: ${ev?.kind}`);
+    return ev;
+  };
+
+  it("a greedy player's line is above a modest one's, within the ruleset's swing", () => {
+    const ids = Array.from({ length: 500 }, (_, i) => `p${i}`);
+    const greedy = ids.find((id) => personalityOf(id).greed > 0.9)!;
+    const modest = ids.find((id) => personalityOf(id).greed < 0.1)!;
+    expect(lineOf(ctx, greedy)).toBeGreaterThan(lineOf(ctx, modest));
+    const { line, lineSwing } = ctx.ruleset.freeAgency;
+    for (const id of ids) expect(Math.abs(lineOf(ctx, id) - line)).toBeLessThanOrEqual(lineSwing);
+  });
+
+  it('an offer under his line gets a counter that signs him when sent back', () => {
+    const { state, mine } = finishedSeason(22);
+    run(state, { kind: 'offseason.openFreeAgency' });
+    state.teamStatus[mine] = 'contender';
+    const low = (p: Player) => ({ salary: Math.round(askOf(p) * 0.7), years: 2 });
+    // An unrestricted free agent nobody else bids for, who turns down 70% of his ask.
+    const target = freeAgents(state).find(
+      (p) =>
+        !state.rfaRights[p.id] &&
+        talksLeft(state, ctx, p.id, mine) >= 3 &&
+        low(p).salary >= ctx.ruleset.cap.minSalary &&
+        signingInterest(state, ctx, p, mine, low(p)).interest < lineOf(ctx, p.id) &&
+        counterSalary(state, ctx, p, mine, low(p)) !== null,
+    )!;
+    const before = talksLeft(state, ctx, target.id, mine);
+    const reply = countered(run(state, sign(target, mine, low(target).salary, 2)));
+    expect(reply.rounds).toBeLessThan(before);
+    expect(talksLeft(state, ctx, target.id, mine)).toBe(reply.rounds);
+    // His agent asks for more than his line: the counter clears it.
+    const at = signingInterest(state, ctx, target, mine, { salary: reply.counter!, years: 2 });
+    expect(at.interest).toBeGreaterThanOrEqual(lineOf(ctx, target.id));
+    const [ev] = run(state, sign(target, mine, reply.counter!, 2));
+    expect(ev).toMatchObject({ kind: 'player.signed', contract: { capHit: reply.counter } });
+  });
+
+  it('a calm player hears more offers than a hot head, a lowball spends two, talks reopen with free agency', () => {
+    const { state, mine } = finishedSeason(22);
+    run(state, { kind: 'offseason.openFreeAgency' });
+    const { lowball } = ctx.ruleset.freeAgency;
+    const { minSalary } = ctx.ruleset.cap;
+    // An offer just under his line: the most, in steps of 1% of his ask, that he turns down.
+    const justUnder = (p: Player) => {
+      for (let pct = 150; pct > 0; pct--) {
+        const salary = Math.round((askOf(p) * pct) / 100);
+        const { interest } = signingInterest(state, ctx, p, mine, { salary, years: 2 });
+        if (interest < lineOf(ctx, p.id)) return { salary, under: lineOf(ctx, p.id) - interest };
+      }
+      return { salary: 0, under: Infinity };
+    };
+    const pool = freeAgents(state).filter((p) => {
+      const u = justUnder(p);
+      return !state.rfaRights[p.id] && u.salary >= minSalary && u.under <= lowball;
+    });
+    const temper = (p: Player) => personalityOf(p.id).temperament;
+    const calm = pool.reduce((a, b) => (temper(b) > temper(a) ? b : a));
+    const hot = pool.reduce((a, b) => (temper(b) < temper(a) ? b : a));
+    const patience = (p: Player) => talksLeft(state, ctx, p.id, mine);
+    const full = { calm: patience(calm), hot: patience(hot) };
+    expect(full.calm).toBeGreaterThan(full.hot);
+    // Each offer he turns down spends a round, until he breaks off talks.
+    const heard = (p: Player) => {
+      let n = 0;
+      while (patience(p) > 0) {
+        countered(run(state, sign(p, mine, justUnder(p).salary, 2)));
+        n++;
+      }
+      return n;
+    };
+    expect(heard(calm)).toBe(full.calm);
+    expect(heard(hot)).toBe(full.hot);
+    expect(handleCommand(state, sign(calm, mine, askOf(calm) * 2, 2), local, ctx)).toMatchObject({
+      ok: false,
+      error: { message: 'he has broken off talks with you' },
+    });
+
+    // A lowball, far under his line, spends two rounds.
+    const lowballed = freeAgents(state).find((p) => {
+      const salary = Math.round(askOf(p) * 0.6);
+      const { interest } = signingInterest(state, ctx, p, mine, { salary, years: 2 });
+      return (
+        !state.rfaRights[p.id] &&
+        salary >= minSalary &&
+        lineOf(ctx, p.id) - interest > lowball &&
+        patience(p) >= 3
+      );
+    })!;
+    const left = patience(lowballed);
+    const reply = countered(
+      run(state, sign(lowballed, mine, Math.round(askOf(lowballed) * 0.6), 2)),
+    );
+    expect(reply.rounds).toBe(left - 2);
+
+    // When free agency opens again, every team gets his full patience back.
+    applyEvent(state, { ...reply, kind: 'freeAgency.opened' } as LeagueEvent);
+    expect(state.talks).toEqual({});
+    expect(patience(calm)).toBe(full.calm);
+    expect(handleCommand(state, sign(calm, mine, justUnder(calm).salary, 2), local, ctx).ok).toBe(
+      true,
+    );
+  });
+
+  it('a re-sign under his line is countered, and one over it extends him', () => {
+    const state = createLeague(61, ctx);
+    const mine = Object.values(state.teams).find((t) => t.userControlled)!.id;
+    run(state, { kind: 'sim.advance', days: 40 });
+    const offer = resignOffers(state, ctx, mine).sort((a, b) => b.ask - a.ask)[0]!;
+    const resign = (salary: number): Command => ({
+      kind: 'contract.resign',
+      playerId: offer.playerId,
+      salary,
+      years: 3,
+    });
+    const reply = countered(run(state, resign(Math.round(offer.ask * 0.7))));
+    expect(reply).toMatchObject({ playerId: offer.playerId, teamId: mine });
+    const [ev] = run(state, resign(reply.counter!));
+    expect(ev).toMatchObject({ kind: 'contract.extended', contract: { capHit: reply.counter } });
+  });
+});
+
+describe('the pitch', () => {
+  it('a promised role scores 100; one promise a position; not first by day PROMISE_DAYS, a dispute', () => {
+    const { state, mine } = finishedSeason(22);
+    run(state, { kind: 'offseason.openFreeAgency' });
+    state.teamStatus[mine] = 'contender';
+    const pitch = (p: Player): Command => ({
+      kind: 'contract.sign',
+      playerId: p.id,
+      teamId: mine,
+      salary: ctx.models.contractDemand.ask(ctx.ruleset, p) * 2,
+      years: 2,
+      promiseRole: true,
+    });
+    const role = (p: Player, promiseRole?: true) =>
+      signingInterest(state, ctx, p, mine, {
+        salary: 1,
+        years: 1,
+        ...(promiseRole && { promiseRole }),
+      }).factors.find((f) => f.key === 'role')!.score;
+    // Unrestricted skaters nobody bids for, weakest first, who would sit behind someone without it.
+    const pool = freeAgents(state)
+      .filter((p) => !state.rfaRights[p.id] && p.position !== 'G' && role(p) < 100)
+      .sort((a, b) => overall(a) - overall(b));
+    const a = pool[0]!;
+    const b = pool.find((p) => p.position !== a.position)!;
+    const c = pool.find((p) => p.position === a.position && p !== a)!;
+    expect(role(a, true)).toBe(100);
+
+    expect(run(state, pitch(a))[0]).toMatchObject({ kind: 'player.signed', promiseRole: true });
+    expect(run(state, pitch(b))[0]).toMatchObject({ kind: 'player.signed', promiseRole: true });
+    expect(handleCommand(state, pitch(c), local, ctx)).toMatchObject({
+      ok: false,
+      error: { message: 'you have promised that role to another player' },
+    });
+
+    // The promises carry into his first season; on day PROMISE_DAYS `a` is first at his position, `b` last.
+    run(state, { kind: 'season.rollover' });
+    expect(state.rolePromises.map((r) => r.playerId).sort()).toEqual([a.id, b.id].sort());
+    const others = (p: Player) =>
+      Object.values(state.players)
+        .filter((x) => x.teamId === mine && x.position === p.position && x !== p)
+        .map((x) => x.id);
+    state.depthCharts[mine] = [a.id, ...others(a), ...others(b), b.id];
+    state.date.day = PROMISE_DAYS - 1;
+    disputesWeek(state, ctx, new Rng(1), emitter(state, [] as LeagueEvent[]));
+    expect(state.rolePromises).toHaveLength(2); // not due yet
+    state.date.day = PROMISE_DAYS;
+    const log: LeagueEvent[] = [];
+    disputesWeek(state, ctx, new Rng(1), emitter(state, log));
+    expect(state.rolePromises).toEqual([]);
+    const due = log.flatMap((e) =>
+      e.kind === 'player.rolePromiseDue' ? [[e.playerId, e.kept]] : [],
+    );
+    expect(Object.fromEntries(due)).toEqual({ [a.id]: true, [b.id]: false });
+    expect(state.disputes.some((d) => d.playerId === b.id)).toBe(true);
+    expect(state.disputes.some((d) => d.playerId === a.id)).toBe(false);
   });
 });
 

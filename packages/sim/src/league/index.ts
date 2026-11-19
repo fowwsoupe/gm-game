@@ -17,4 +17,6 @@ export {
   pickOwner,
 } from './picks';
 export { bracketSeeds, seedPlayoffs, nextRound, playoffCapBreaches } from './playoffs';
+export { expansionDraft, thinnestDivision } from './expansion';
 export { playerRecords, teamRecords } from './records';
+export { storyOf } from './stories';

@@ -82,6 +82,9 @@ export interface TeamFans {
 /** Fans of a new league, or of an old save that has none yet. */
 export const NEW_FANS: TeamFans = { interest: 50, sponsorDeal: 50, mediaDeal: 50, attendance: 0 };
 
+/** Market sizes a relocated franchise can move to: a small town to a big city (see `marketOf`). */
+export const MARKET_SIZES = [0.7, 1, 1.4, 1.75] as const;
+
 /** Ticket price policy: whole percent around the league's reference price. */
 export const TICKET_STEPS = [-20, -10, 0, 10, 20] as const;
 
@@ -193,6 +196,8 @@ export interface FreeAgentOffer {
   bonusPct?: number;
   /** The market day this team first bid for him, kept when it raises (set by the reducer; absent = 0). */
   since?: number;
+  /** The pitch: the top role at his position on this team's depth chart. */
+  promiseRole?: true;
 }
 
 export interface Player {
@@ -237,6 +242,8 @@ export interface Team {
   city: string;
   name: string;
   abbreviation: string;
+  /** Market size after a relocation (a multiplier, see `MARKET_SIZES`). Absent: derived from the id. */
+  market?: number;
   /** Optional league structure. The schedule plays division rivals most, then the conference. */
   conference?: string;
   division?: string;
@@ -683,11 +690,13 @@ export interface LeagueStatus {
   canBeFired: boolean;
   /** The save option: what stops "sim until it matters" (the sim bar's filter). */
   stopOn: StopCategory[];
+  /** While free agency is open: market days played, and the days starting the season still plays. */
+  market?: { day: number; closing: number };
 }
 
 /**
  * How a free agent feels about an offer. Each factor is scored 0–100 and weighted by what a
- * player of his age cares about; he signs when `interest` reaches `threshold`.
+ * player of his age cares about; he signs when `interest` reaches his line, which only he knows.
  */
 export interface SigningInterest {
   /** An offer sheet to a restricted free agent: the draft picks it would cost, and whether you own them. */
@@ -697,7 +706,8 @@ export interface SigningInterest {
   ask: number;
   maxYears: number;
   interest: number;
-  threshold: number;
+  /** Rounds of talks this team has left with him (0: he broke them off). */
+  talks: number;
   factors: {
     key: 'money' | 'winning' | 'role' | 'term' | 'loyalty' | 'home';
     score: number;
@@ -903,8 +913,9 @@ export interface HallOfFamer {
 }
 
 /**
- * An AI GM's offer to a human team. `proposal` is written from the AI's side (`fromTeamId` is
- * the AI team, `give` what it sends, `get` what it wants back). Open until `expiresDay`.
+ * An offer to a human team, from an AI GM or (hot-seat) another human GM. `proposal` is written
+ * from the caller's side (`fromTeamId` is his team, `give` what it sends, `get` what it wants
+ * back). Open until `expiresDay`.
  */
 export interface TradeOffer {
   id: string;

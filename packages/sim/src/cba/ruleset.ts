@@ -139,6 +139,18 @@ export interface Ruleset {
     operations: { yearly: Dollars; perHomeDate: Dollars };
     /** A head coach's salary a season and the length of his deals. */
     coach: { salary: Dollars; years: number };
+    /** Fan interest a relocated franchise loses (the sandbox's relocation). */
+    relocationFanLoss: number;
+  };
+
+  /** The sandbox's expansion draft: the league's size limit and how the new team picks. */
+  expansion: {
+    maxTeams: number;
+    /** Best players (by overall) each team keeps safe from the draft. */
+    protect: number;
+    /** Players the new team takes, and the most from any one team. */
+    picks: number;
+    maxLossPerTeam: number;
   };
 
   /** Front-office staff (docs/research/2026-11-front-office.md). */
@@ -175,6 +187,15 @@ export interface Ruleset {
     raiseStep: number;
     /** An AI team pays at most his ask times this, plus its GM's lean and a contender's premium. */
     maxPremium: number;
+    /** The interest an average player signs at (his line); greed moves it up to `lineSwing` either way. */
+    line: number;
+    lineSwing: number;
+    /** His agent's counter asks up to this much interest over his line (the greediest player most). */
+    markup: number;
+    /** Offers under his line a team may make before he breaks off talks: 1 plus this x temperament. */
+    patience: number;
+    /** An offer more than this far under his line is a lowball and spends two of them. */
+    lowball: number;
   };
 
   /** Summer training plans (docs/research/2026-11-summer-training.md). */

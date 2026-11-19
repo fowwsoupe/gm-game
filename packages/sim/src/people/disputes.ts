@@ -19,23 +19,54 @@ export const PROMISE_DAYS = 30;
  * best first; a team that never set its lines plays by rating, so nobody is short of a role.
  */
 export function roleGap(state: LeagueState, teamId: TeamId, player: Player): number {
+  const { byRating, depth } = depthOf(state, teamId, player);
+  return depth.indexOf(player) - byRating.indexOf(player);
+}
+
+/** His position on his team best rating first, and its depth order: the GM's, then the rest by rating. */
+function depthOf(state: LeagueState, teamId: TeamId, player: Player) {
   const group = Object.values(state.players).filter(
     (p) => p.teamId === teamId && p.position === player.position,
   );
   const byRating = [...group].sort(byOverall);
   const order = state.depthCharts[teamId] ?? [];
   const placed = order.flatMap((id) => group.filter((p) => p.id === id));
-  const depth = [...placed, ...byRating.filter((p) => !placed.includes(p))];
-  return depth.indexOf(player) - byRating.indexOf(player);
+  return { byRating, depth: [...placed, ...byRating.filter((p) => !placed.includes(p))] };
+}
+
+/**
+ * The pitch's promise comes due on day `PROMISE_DAYS` of his first regular season with the team
+ * (`PROMISE_DAYS` after he signed, in season): not first at his position by then, he opens a
+ * dispute at once and the disputes' own rules take over.
+ */
+function rolePromisesDue(state: LeagueState, emit: Emit): void {
+  const { season, day } = state.date;
+  for (const r of [...state.rolePromises]) {
+    if (r.season > season || (r.season === season && day < r.day + PROMISE_DAYS)) continue;
+    const p = state.players[r.playerId]!; // a player who leaves takes his promise with him
+    const kept =
+      !state.teams[r.teamId]?.userControlled || depthOf(state, r.teamId, p).depth[0] === p;
+    emit('minor', [r.teamId], { kind: 'player.rolePromiseDue', playerId: p.id, kept });
+    const upset = (x: { playerId: string }) => x.playerId === p.id;
+    if (!kept && !state.disputes.some(upset) && !state.tradeRequests.some(upset)) {
+      emit('notable', [r.teamId], {
+        kind: 'player.disputeStarted',
+        playerId: p.id,
+        teamId: r.teamId,
+      });
+    }
+  }
 }
 
 /**
  * Disputes (docs/research/2026-11-league-events.md), human teams only, once a week in the
  * regular season: a player in low spirits (his morale) who is kept well down the depth order for his
  * rating asks for more ice. One open dispute per team. A promised role that has not come by its day turns the
- * dispute into a trade request. AI teams' players settle it in the room, out of the news.
+ * dispute into a trade request. AI teams' players settle it in the room, out of the news. A role
+ * promised in free agency that has not come opens one (`rolePromisesDue`).
  */
 export function disputesWeek(state: LeagueState, ctx: SimContext, rng: Rng, emit: Emit): void {
+  rolePromisesDue(state, emit);
   const day = state.date.day;
   for (const d of [...state.disputes]) {
     const p = state.players[d.playerId];

@@ -39,6 +39,13 @@ interface UiState {
   /** Set by the draft room: the Trades screen opens with this team and its pick asked for. */
   tradeAsk: { teamId: string; pickId: string } | null;
   openTrade: (teamId: string, pickId: string) => void;
+  /** Hot-seat: the human team whose GM has the seat (absent or no longer human = the first one). */
+  seat: string | undefined;
+  setSeat: (teamId: string | undefined) => void;
+  /** Hot-seat hand-over: the seat goes to `teamId`'s GM behind a curtain he lifts himself. */
+  curtain: boolean;
+  handOver: (teamId: string) => void;
+  liftCurtain: () => void;
 }
 
 export const useUi = create<UiState>((set) => ({
@@ -55,4 +62,9 @@ export const useUi = create<UiState>((set) => ({
   openTrade: (teamId, pickId) => set({ screen: 'trades', tradeAsk: { teamId, pickId } }),
   setScreen: (screen) => set({ screen, tradeAsk: null }),
   setLocale: (locale) => set({ locale }),
+  seat: undefined,
+  setSeat: (seat) => set({ seat }),
+  curtain: false,
+  handOver: (seat) => set({ seat, curtain: true, screen: 'home', tradeAsk: null }),
+  liftCurtain: () => set({ curtain: false }),
 }));

@@ -1,17 +1,18 @@
 import { useState } from 'react';
 import type { CapIssue, CapSheet, ResignOffer, RosterPlayer, TeamId } from '@gm/shared';
-import { useCapSheet, useDispatch, useResignOffers, useRoster, useTeams } from '@/lib/queries';
+import { useCapSheet, useResignOffers, useRoster, useTeams, useMine } from '@/lib/queries';
 import { useT } from '@/i18n';
 import { Button, Card, TeamSelect, Td, Th } from '@/ui';
 import { fullName, money } from '@/lib/format';
+import { Offer } from './Roster';
 const issueAmount = (i: CapIssue) => ('over' in i ? i.over : i.short);
-const years = (n: number) => Array.from({ length: n }, (_, i) => i + 1);
 
 export function Cap() {
   const t = useT();
   const { data: teams = [] } = useTeams();
   const [picked, setPicked] = useState<TeamId>();
-  const teamId = picked ?? (teams.find((x) => x.userControlled) ?? teams[0])?.id;
+  const mine = useMine();
+  const teamId = picked ?? (mine ?? teams[0])?.id;
   const { data: sheet } = useCapSheet(teamId);
   const { data: roster = [] } = useRoster(teamId);
   const { data: offers = [] } = useResignOffers(teamId);
@@ -27,7 +28,7 @@ export function Cap() {
       <Summary sheet={sheet} />
       <Contracts sheet={sheet} roster={roster} />
       {teams.find((x) => x.id === teamId)?.userControlled && (
-        <Resign offers={offers} roster={roster} sheet={sheet} />
+        <Resign offers={offers} roster={roster} sheet={sheet} teamId={teamId} />
       )}
     </div>
   );
@@ -126,21 +127,24 @@ function Contracts({ sheet, roster }: { sheet: CapSheet; roster: RosterPlayer[] 
   );
 }
 
+/** Expiring players and their asks; each opens the same offer card as a free agent's. */
 function Resign({
   offers,
   roster,
   sheet,
+  teamId,
 }: {
   offers: ResignOffer[];
   roster: RosterPlayer[];
   sheet: CapSheet;
+  teamId: TeamId;
 }) {
   const t = useT();
   const text = useIssueText();
-  const dispatch = useDispatch();
-  const [term, setTerm] = useState<Record<string, number>>({});
-  const [error, setError] = useState<string | null>(null);
+  const [open, setOpen] = useState<string>();
   const byId = new Map(roster.map((p) => [p.id, p]));
+  const picked = offers.find((o) => o.playerId === open);
+  const player = picked && byId.get(picked.playerId);
   // No offers until the season is over, so this card only shows in the re-sign window.
   if (offers.length === 0) return null;
 
@@ -149,10 +153,9 @@ function Resign({
       <table className="tabular w-full text-sm">
         <tbody>
           {offers.map((o) => {
-            const n = term[o.playerId] ?? Math.min(3, o.maxYears);
-            const warns = o.issues
-              .slice(0, n)
-              .flatMap((list, i) => list.map((x) => text(sheet.seasons[i]!.season, x)));
+            const warns = o.issues.flatMap((list, i) =>
+              list.map((x) => text(sheet.seasons[i]!.season, x)),
+            );
             return (
               <tr key={o.playerId} className="border-b border-line/50 align-top">
                 <Td>
@@ -167,33 +170,8 @@ function Resign({
                   {t('resign.ask')} {money(o.ask)}
                 </Td>
                 <Td>
-                  <select
-                    aria-label={t('resign.years')}
-                    value={n}
-                    onChange={(e) => setTerm({ ...term, [o.playerId]: Number(e.target.value) })}
-                    className="rounded border border-line bg-panel px-2 py-1"
-                  >
-                    {years(o.maxYears).map((y) => (
-                      <option key={y} value={y}>
-                        {y}
-                      </option>
-                    ))}
-                  </select>
-                </Td>
-                <Td>
-                  <Button
-                    disabled={dispatch.isPending}
-                    onClick={() =>
-                      dispatch.mutate(
-                        { kind: 'contract.resign', playerId: o.playerId, years: n },
-                        {
-                          onSuccess: (res) =>
-                            setError(res.ok ? null : `${t('resign.failed')} ${res.error.message}`),
-                        },
-                      )
-                    }
-                  >
-                    {t('resign.action')}
+                  <Button onClick={() => setOpen(o.playerId === open ? undefined : o.playerId)}>
+                    {t('sign.title')}
                   </Button>
                 </Td>
               </tr>
@@ -201,7 +179,16 @@ function Resign({
           })}
         </tbody>
       </table>
-      {error && <p className="mt-2 text-sm text-bad">{error}</p>}
+      {picked && player && (
+        <div className="mt-3">
+          <Offer
+            key={picked.playerId}
+            player={{ ...player, ask: picked.ask }}
+            teamId={teamId}
+            resign
+          />
+        </div>
+      )}
     </Card>
   );
 }

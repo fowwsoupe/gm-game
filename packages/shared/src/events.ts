@@ -19,6 +19,7 @@ import type {
   PlayerId,
   PlayoffSeries,
   RetainedSalary,
+  Team,
   ScheduledGame,
   TeamFans,
   TeamId,
@@ -127,6 +128,8 @@ export type LeagueEvent =
       staying?: true;
       /** An offer sheet signed him away: these draft picks go to the team that held his rights. */
       compensation?: { toTeamId: TeamId; picks: string[] };
+      /** His offer promised him the top role at his position (checked in his first regular season). */
+      promiseRole?: true;
     })
   /**
    * End of the playoffs: performance bonuses earned this season, and the part of each team's
@@ -228,8 +231,22 @@ export type LeagueEvent =
   | (EventBase & { kind: 'trade.blockSet'; teamId: TeamId; playerId: PlayerId; onBlock: boolean })
   /** A team changed how its goalies share starts. */
   | (EventBase & { kind: 'goalies.rotationSet'; teamId: TeamId; rotation: GoalieRotation })
-  /** A team made a free agent an offer (replaces its earlier one, a raise); he answers on his decision day. */
-  | (EventBase & { kind: 'freeAgency.offered'; offer: FreeAgentOffer })
+  /** A team made a free agent an offer (replaces its earlier one; `raise`: an AI team trailing in the race); he answers on his decision day. */
+  | (EventBase & { kind: 'freeAgency.offered'; offer: FreeAgentOffer; raise?: true })
+  /**
+   * His agent's answer to an offer under his line: the lowest salary he signs for at its term,
+   * clause and bonus (`counter`) or, when no salary gets him there, the factor holding him back;
+   * and the rounds of talks `teamId` has left (0: broken off until free agency opens or the season
+   * starts, so no counter).
+   */
+  | (EventBase & {
+      kind: 'contract.countered';
+      playerId: PlayerId;
+      teamId: TeamId;
+      rounds: number;
+      counter?: number;
+      holdsBack?: 'winning' | 'role' | 'term';
+    })
   /** A new market day in the summer's free agency (1 on the first after it opens). */
   | (EventBase & { kind: 'freeAgency.dayPassed'; day: number })
   /** An offer sheet to a restricted free agent: the team holding his rights may match it or not. */
@@ -268,6 +285,8 @@ export type LeagueEvent =
   | (EventBase & { kind: 'player.tradeRequestEnded'; playerId: PlayerId; withdrawn: boolean })
   /** A player unhappy with his role (he sits well down the depth order for his rating) asks for more. */
   | (EventBase & { kind: 'player.disputeStarted'; playerId: PlayerId; teamId: TeamId })
+  /** The role promised when he signed came due: `kept` if he is first at his position (else a dispute opens). */
+  | (EventBase & { kind: 'player.rolePromiseDue'; playerId: PlayerId; kept: boolean })
   /** The GM put him on the block: the dispute stays open while he is listed (unlisted: he asks out). */
   | (EventBase & { kind: 'player.disputeListed'; playerId: PlayerId })
   /** The GM promised him a bigger role by day `until` (of this season). */
@@ -286,11 +305,33 @@ export type LeagueEvent =
   | (EventBase & { kind: 'player.noTradeWaived'; playerId: PlayerId })
   /** A young player on a human team broke out, for `season`: Home asks if you talk extension now. */
   | (EventBase & { kind: 'player.brokeOut'; playerId: PlayerId; teamId: TeamId; season: number })
-  /** An AI GM offers a human team a trade (see `TradeOffer`). */
+  /** An AI or another human GM offers a human team a trade (see `TradeOffer`). */
   | (EventBase & { kind: 'trade.offered'; offer: TradeOffer })
   /** An offer is gone: accepted (a `trade.completed` follows), declined or expired. */
   | (EventBase & { kind: 'trade.offerClosed'; offerId: string; accepted: boolean })
   | (EventBase & { kind: 'team.controlChanged'; teamId: TeamId; userControlled: boolean })
+  /** A team's identity changed (the identity editor). */
+  | (EventBase & {
+      kind: 'team.renamed';
+      teamId: TeamId;
+      city: string;
+      name: string;
+      abbreviation: string;
+    })
+  /** A franchise moved: new identity and market size, and its fans lost `fanLoss` interest. */
+  | (EventBase & {
+      kind: 'team.relocated';
+      teamId: TeamId;
+      city: string;
+      name: string;
+      abbreviation: string;
+      market: number;
+      fanLoss: number;
+    })
+  /** An expansion team joined the league and took `taken` from the other teams. */
+  | (EventBase & { kind: 'team.expanded'; team: Team; taken: PlayerId[] })
+  /** The commissioner moved a player to `toTeamId` (null: free agency, his contract voided). */
+  | (EventBase & { kind: 'player.moved'; playerId: PlayerId; toTeamId: TeamId | null })
   /** An AI team has a new GM (the old one was fired or moved on). */
   | (EventBase & { kind: 'team.gmChanged'; teamId: TeamId; gm: GmProfile; fired: boolean })
   /** A department head left (`poached`: hired away after a good season) and `head` took over. */

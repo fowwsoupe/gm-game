@@ -113,7 +113,10 @@ export const NHL_2026: Ruleset = {
     // on average (see frontOffice), so total costs hold.
     operations: { yearly: dollars(44.7), perHomeDate: dollars(1.9) },
     coach: { salary: dollars(2.95), years: 3 }, // ESPN 2024: about $2.5M, usually three-year deals
+    relocationFanLoss: 15, // game design: a move costs fans, a market change is a fresh start
   },
+  // The 2021 Seattle draft: 11 protected a team (7 F, 3 D, 1 G), one player from each of the others.
+  expansion: { maxTeams: 32, protect: 11, picks: 18, maxLossPerTeam: 2 },
   // docs/research/2026-11-front-office.md: no public source; unverified, tuned in the lab.
   frontOffice: {
     salary: { min: dollars(0.5), max: dollars(3) },
@@ -133,7 +136,16 @@ export const NHL_2026: Ruleset = {
     interim: 0.3, // the brief's interim quality
   },
   // docs/research/2026-11-free-agency-bidding.md: the brief's numbers, unverified game numbers.
-  freeAgency: { days: 2, raiseStep: 0.05, maxPremium: 1.2 },
+  freeAgency: {
+    days: 2,
+    raiseStep: 0.05,
+    maxPremium: 1.2,
+    line: 70,
+    lineSwing: 5,
+    markup: 6,
+    patience: 4,
+    lowball: 15,
+  },
   training: { points: 2 }, // the brief's start, a game number for the lab
   international: { every: 4 },
   roster: {

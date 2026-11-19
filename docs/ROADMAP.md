@@ -47,9 +47,9 @@ Summer training, camp battles, international tournament: brief in
 [research/2026-11-summer-training.md](research/2026-11-summer-training.md); summer training plans
 and the international tournament are done; camp battles wait for the camp job above.
 
-Free-agency bidding war and contract negotiation: brief in
-[research/2026-11-free-agency-bidding.md](research/2026-11-free-agency-bidding.md); job 1 (the
-bidding war) done, jobs 2 and 3 (negotiation, the room and the pitch) are ready, in that order.
+Free-agency bidding war and contract negotiation: all three jobs of
+[research/2026-11-free-agency-bidding.md](research/2026-11-free-agency-bidding.md) done (the
+bidding war, negotiation, the room and the pitch).
 
 Needs a design first (a short brief in `docs/research/`, then jobs):
 
@@ -83,14 +83,14 @@ C. Design brief first, then jobs (Opus 5.5)
 D. Phase 2 headlines
 
 - [x] Live draft room with trading (Opus, high, 3-4 PRs)
-- [ ] League news tab (Opus for storylines, Sonnet for UI; high; brief done: [research/2026-11-league-news.md](research/2026-11-league-news.md); the news tab and front-office faces done, storylines next)
-- [ ] Free-agency bidding war and contract negotiation (Opus, xhigh; brief done: [research/2026-11-free-agency-bidding.md](research/2026-11-free-agency-bidding.md), job 1 done, jobs 2-3 next)
+- [x] League news tab (Opus for storylines, Sonnet for UI; high; brief done: [research/2026-11-league-news.md](research/2026-11-league-news.md); the news tab, front-office faces and storylines done)
+- [x] Free-agency bidding war and contract negotiation (Opus, xhigh; brief done: [research/2026-11-free-agency-bidding.md](research/2026-11-free-agency-bidding.md), jobs 1-3 done)
 - [x] Media and press conferences, text (Sonnet, medium, 2-3 PRs)
 - [~] Summer training, camp battles, international tournament (Opus, high, 3 PRs): brief, summer training plans and the international tournament done; camp battles wait for camp
 - [x] Cutscenes (Sonnet, medium, 3 PRs)
 - [ ] Match viewer (2D) with coach from the bench (Fable 5.2, xhigh, 6+ PRs)
-- [ ] League sandbox (Sonnet, high, 4 PRs)
-- [ ] Multiplayer step 1, hot-seat (Opus, high, 2 PRs)
+- [x] League sandbox (Sonnet, high, 4 PRs)
+- [x] Multiplayer step 1, hot-seat (Opus, high, 2 PRs)
 - [ ] Multiplayer step 2, hosted online (Fable 5.2, max, 8+ PRs)
 
 ---
@@ -162,15 +162,15 @@ Build order, owners and "done when" for each step: **[V0.1_PLAN.md](V0.1_PLAN.md
 - [x] Owner & finance: decision cards, pricing policy, fans, projects, owner meetings; owners and markets, the money ledger, fans and ticket pricing, confidence, meetings and cards, the Owner screen, projects and more cards, the head coach (salary, heat, AI firings in-season and at the review, the fire-or-keep card), and your job on the line (hot-seat warning, fired at a review, job offers, a "can be fired" option, AI GMs fired on confidence) (all 8 jobs in [the brief](research/2026-11-owner-finance.md))
 - [~] Front office: scouting, analytics, medical, coaching, development staff. Department heads with a quality and a salary, coach quality in games, development staff (replacing GM skill), per-team draft reads, medical injury days, the staff market (leave, poaching, owner budgets), the Front Office screen with three candidates a season, tuned against the long-run benchmarks (all jobs of [the brief](research/2026-11-front-office.md); the price curve was tried and dropped), an assistant GM for human teams whose advice on Home (extend first, take or turn down an offer) is as accurate as his quality (the best-value free agent for your cap room, who would help on the top line, and a guess at a trade's answer), done; department returns (what each department added against an average one, on the Front Office screen) and firing a head without a replacement (an interim, severance) done; hired head coaches drawn from the owner-tilted market (coaching measured around the league's average coach) and medical scaling re-injury risk done; an analytics department (a fourth head; a weak one blurs what you see of other teams' players, a fixed amount per player, view only) done; his return (how far his read of your roster is off) done; delegation (maybe) to do
 - [x] Live draft trade room: pick by pick, trade for any pick to come, AI teams trade up and call you on the clock, draft results with the picks that changed hands
-- [ ] League news tab, social-media style: a feed page of posts with the generated face of the player and of the AI GM (or coach, owner) in each one, built on the existing `news.posted` events and the news-feed faces. Storylines that run over weeks and seasons (a holdout becoming a trade, a breakout and his extension ask, a GM's fire sale, a contender clearing cap for a star, a rivalry, a coach on the hot seat), each told as a short thread of linked posts; generated GM faces; likes and follows only if they carry a use. Brief done: [research/2026-11-league-news.md](research/2026-11-league-news.md) (no likes or follows); the tab (All / Your team, insider and team accounts, a face on every post about a player, on Home too) done; front-office faces (AI GMs get a name; the fired coach, the GM leaving, the frustrated owner and the camp report post as themselves; owner, coach and GM faces on the team page) done; storylines next.
-- [ ] Free-agency live bidding war + full contract negotiation ([brief](research/2026-11-free-agency-bidding.md): the bidding war done; negotiation, the room and the pitch, to do)
+- [x] League news tab, social-media style: a feed page of posts with the generated face of the player and of the AI GM (or coach, owner) in each one, built on the existing `news.posted` events and the news-feed faces. Storylines that run over weeks and seasons (a holdout becoming a trade, a breakout and his extension ask, a GM's fire sale, a contender clearing cap for a star, a rivalry, a coach on the hot seat), each told as a short thread of linked posts; generated GM faces; likes and follows only if they carry a use. Brief done: [research/2026-11-league-news.md](research/2026-11-league-news.md) (no likes or follows); the tab (All / Your team, insider and team accounts, a face on every post about a player, on Home too) done; front-office faces (AI GMs get a name; the fired coach, the GM leaving, the frustrated owner and the camp report post as themselves; owner, coach and GM faces on the team page) done; storylines (`storyOf` threads a holdout, a trade request, a breakout, a fire sale, an owner losing patience, a contender clearing room and a rivalry from the log on read; an AI GM shopping his holdout says so himself; a rematch of last season's playoff series is a rivalry renewed) done.
+- [x] Free-agency live bidding war + full contract negotiation ([brief](research/2026-11-free-agency-bidding.md): the bidding war and negotiation (a hidden line by greed, his agent's counter, patience by temperament, re-signing through the meter) done; the room (the market board on the Free Agency screen: who is bidding, the leading interest, days to his decision, your standing, and the day's signings and raises) and the pitch (an offer can promise the top role at his position, 100 on the meter; not first at it a month into his first season, he opens a dispute) done)
 - [x] Media & press conferences (text)
 - [ ] Match viewer (2D) + coach from the bench
 - [x] Cutscenes (trophy lift, draft pick, signing): trophy lift (a skippable full-screen Cup lift when your team wins, once per title) done; draft pick (a skippable cutscene when one of your picks lands during the session) done; signing (a skippable cutscene when you sign a free agent) done
 - [~] Summer training, camp battles, international tournament: summer training plans (a focus per player on a human team reshapes his ratings at development, never past his ceiling) done; an international tournament every four years (a nation per player, six nations, two groups of three, semi-finals and a final, late in the summer on its own random stream; the champion and top scorer on History, your players' medals in your news) done
 - [~] Hall of Fame, legends return as staff, awards named after legends: Hall of Fame (rule-based induction, History screen), awards named after legends (the first inducted goalie, defenceman and forward lend their surname to the goalie, defence and MVP awards from the next season, on History) and legends as staff (a Hall of Famer is one of a human team's candidates, one a team-season) done
-- [ ] League sandbox: expansion, relocation, identity editor, commissioner mode
-- [ ] Multiplayer step 1: shared save (hot-seat)
+- [x] League sandbox: expansion, relocation, identity editor, commissioner mode: identity editor (rename any team's city, name and abbreviation from its team page) and relocation (a franchise moves to a new city, name and market size from its team page; its fans cool) and expansion (once free agency is open a new team joins the smallest division and takes unprotected players from the others in an expansion draft; the ruleset sets the size limit, protected count and picks) and commissioner mode (move a player to any team or to free agency from his page, whatever the cap and trade rules say) done
+- [x] Multiplayer step 1: shared save (hot-seat): several human GMs in one save (add a GM for another team from Home, the GM at the controls picked in the sidebar, every screen follows his team), turn hand-over (a curtain the next GM lifts himself), trades between human GMs needing both (sent as an offer the other GM answers from his seat) and each GM seeing through his own analytics department, done
 - [ ] Multiplayer step 2: hosted online league over Steam
 
 ## Phase 3 — Long term

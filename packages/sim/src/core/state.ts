@@ -84,10 +84,17 @@ export interface LeagueState {
     give: PlayerId[];
     get: PlayerId[];
   }[];
+  /** Pairs of teams that met in the playoffs this season or last (`pairKey`): the season they last met. */
+  playoffPairs: Record<string, number>;
   /** Open offers to free agents (AI teams' and yours); a free agent picks one on his decision day. */
   faOffers: FreeAgentOffer[];
   /** Market days played since free agency last opened (0 when it opens). */
   marketDay: number;
+  /**
+   * Rounds of talks each team has left with a player, by player then team (absent: his full
+   * patience; 0: broken off). Cleared when free agency opens and when the season starts.
+   */
+  talks: Record<PlayerId, Record<TeamId, number>>;
   /** First-round picks traded with top-N protection: if the pick lands in the top `top`, `keeper` keeps it. */
   pickProtection: Record<string, { top: number; keeper: TeamId }>;
   /** Players human teams listed as available: AI GMs make offers for them more often. */
@@ -110,6 +117,11 @@ export interface LeagueState {
   breakouts: Record<PlayerId, number>;
   /** Players unhappy with their role on a human team; `until`: the day a promised role is due. */
   disputes: { playerId: PlayerId; teamId: TeamId; until?: number; listed?: true }[];
+  /**
+   * Free agents signed with the top role at their position promised (`promiseRole`): the season
+   * and day it counts from (0 for a summer signing), checked `PROMISE_DAYS` later.
+   */
+  rolePromises: { playerId: PlayerId; teamId: TeamId; season: number; day: number }[];
   /**
    * Games each pair of teammates has played in the same unit (a line or a pair), by team and
    * `linemateKey`, capped at `LINEMATE_GAMES_CAP`. A pair goes when either player leaves the team.
@@ -147,11 +159,15 @@ export interface LeagueState {
  */
 export const capYearOf = (state: LeagueState) => state.date.season + (state.championTeamId ? 1 : 0);
 
+/** Two teams as one key, the same whichever is named first. */
+export const pairKey = (a: TeamId, b: TeamId) => [a, b].sort().join(':');
+
 /** His trade request is settled: withdrawn, or he left the team (it would block new ones). */
 const endRequest = (state: LeagueState, playerId: string) => {
   state.tradeRequests = state.tradeRequests.filter((r) => r.playerId !== playerId);
   state.holdouts = state.holdouts.filter((r) => r.playerId !== playerId);
   state.disputes = state.disputes.filter((r) => r.playerId !== playerId);
+  state.rolePromises = state.rolePromises.filter((r) => r.playerId !== playerId);
 };
 
 /** His holdout is over: an AI GM stops shopping him (a human's block list is his own call). */
@@ -243,6 +259,57 @@ export function applyEvent(state: LeagueState, event: LeagueEvent): void {
       if (event.canBeFired !== undefined) state.canBeFired = event.canBeFired;
       if (event.stopOn) state.stopOn = [...event.stopOn];
       return;
+    case 'team.renamed': {
+      const team = state.teams[event.teamId];
+      if (team)
+        Object.assign(team, {
+          city: event.city,
+          name: event.name,
+          abbreviation: event.abbreviation,
+        });
+      return;
+    }
+    case 'team.relocated': {
+      const team = state.teams[event.teamId];
+      if (!team) return;
+      Object.assign(team, {
+        city: event.city,
+        name: event.name,
+        abbreviation: event.abbreviation,
+        market: event.market,
+      });
+      const fans = state.fans[event.teamId] ?? NEW_FANS;
+      state.fans[event.teamId] = { ...fans, interest: Math.max(0, fans.interest - event.fanLoss) };
+      return;
+    }
+    case 'team.expanded': {
+      state.teams[event.team.id] = structuredClone(event.team);
+      state.teamStatus[event.team.id] = 'bubble';
+      const gone = new Set(event.taken);
+      state.tradeBlock = state.tradeBlock.filter((id) => !gone.has(id));
+      for (const id of event.taken) {
+        const p = state.players[id];
+        if (!p) throw new Error(`unknown player ${id}`);
+        p.teamId = event.team.id;
+        p.joined = capYearOf(state);
+        endRequest(state, id);
+      }
+      return;
+    }
+    case 'player.moved': {
+      const p = state.players[event.playerId];
+      if (!p) throw new Error(`unknown player ${event.playerId}`);
+      p.teamId = event.toTeamId;
+      if (event.toTeamId) p.joined = capYearOf(state);
+      else {
+        delete p.contract;
+        delete p.joined;
+      }
+      delete p.extension;
+      state.tradeBlock = state.tradeBlock.filter((id) => id !== p.id);
+      endRequest(state, p.id);
+      return;
+    }
     case 'team.controlChanged': {
       const team = state.teams[event.teamId];
       if (team) team.userControlled = event.userControlled;
@@ -268,9 +335,15 @@ export function applyEvent(state: LeagueState, event: LeagueEvent): void {
       }
       return;
     }
-    case 'series.started':
+    case 'series.started': {
       state.playoffSeries[event.series.id] = { ...event.series };
+      const season = event.date.season;
+      for (const [k, last] of Object.entries(state.playoffPairs)) {
+        if (last < season - 1) delete state.playoffPairs[k];
+      }
+      state.playoffPairs[pairKey(event.series.higherTeamId, event.series.lowerTeamId)] = season;
       return;
+    }
     case 'series.won':
       state.playoffSeries[event.seriesId]!.winnerTeamId = event.winnerTeamId;
       return;
@@ -380,6 +453,9 @@ export function applyEvent(state: LeagueState, event: LeagueEvent): void {
     case 'player.disputeStarted':
       state.disputes.push({ playerId: event.playerId, teamId: event.teamId });
       return;
+    case 'player.rolePromiseDue':
+      state.rolePromises = state.rolePromises.filter((r) => r.playerId !== event.playerId);
+      return;
     case 'player.disputeListed': {
       const d = state.disputes.find((x) => x.playerId === event.playerId);
       if (d) d.listed = true;
@@ -441,6 +517,14 @@ export function applyEvent(state: LeagueState, event: LeagueEvent): void {
       const p = state.players[event.playerId];
       if (!p) throw new Error(`unknown player ${event.playerId}`);
       if (p.teamId !== event.teamId && !event.staying) p.joined = capYearOf(state);
+      if (event.promiseRole) {
+        state.rolePromises.push({
+          playerId: p.id,
+          teamId: event.teamId,
+          season: capYearOf(state),
+          day: state.championTeamId ? 0 : Math.max(0, state.date.day),
+        });
+      }
       p.teamId = event.teamId;
       p.contract = { ...event.contract };
       delete p.extension;
@@ -473,6 +557,9 @@ export function applyEvent(state: LeagueState, event: LeagueEvent): void {
     case 'freeAgency.dayPassed':
       state.marketDay = event.day;
       return;
+    case 'contract.countered':
+      (state.talks[event.playerId] ??= {})[event.teamId] = event.rounds;
+      return;
     case 'contract.extended': {
       const p = state.players[event.playerId];
       if (!p) throw new Error(`unknown player ${event.playerId}`);
@@ -501,6 +588,7 @@ export function applyEvent(state: LeagueState, event: LeagueEvent): void {
       state.tradeOffers = [];
       state.seasonTrades = [];
       state.faOffers = [];
+      state.talks = {};
       state.rfaRights = {};
       state.formerTeams = {};
       state.rfaSheets = [];
@@ -516,6 +604,7 @@ export function applyEvent(state: LeagueState, event: LeagueEvent): void {
       state.freeAgencyOpen = true;
       state.draftPicksMade = null;
       state.marketDay = 0;
+      state.talks = {};
       return;
     case 'team.statusChanged':
       state.teamStatus[event.teamId] = event.to;

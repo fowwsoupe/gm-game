@@ -25,8 +25,17 @@ export {
   prospectSeason,
 } from './draft';
 export { scoutReport } from './scouting';
-export { signingInterest, signFreeAgent, sheetCompensation } from './signing';
-export { acceptSheet, marketDay, raceFor, roomFor, walkAway } from './market';
+export {
+  counterOffer,
+  counterSalary,
+  lineOf,
+  NOT_INTERESTED,
+  signingInterest,
+  signFreeAgent,
+  sheetCompensation,
+  talksLeft,
+} from './signing';
+export { acceptSheet, MARKET_DAYS, marketDay, raceFor, roomFor, walkAway } from './market';
 export { aiHoldouts, resignOffers, resignContract, isExpiring, resignWindowOpen } from './resign';
 export { stayChance, prospectDeal, prospectsOf } from './freeAgency';
 export { freeAgents, wantedYears } from './roster';

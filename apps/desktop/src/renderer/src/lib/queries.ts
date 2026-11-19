@@ -1,5 +1,6 @@
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
-import type { Command, TeamId, TradeProposal } from '@gm/shared';
+import type { Command, GmApi, Importance, TeamId, TradeProposal } from '@gm/shared';
+import { useUi } from '@/stores/ui';
 
 /** All data hooks in one place so query keys stay consistent. */
 export const keys = {
@@ -19,6 +20,13 @@ export const keys = {
 
 export const useTeams = () =>
   useQuery({ queryKey: keys.teams, queryFn: () => window.gm.league.listTeams() });
+/** The team "you" run: the hot-seat GM's human team, else the first human team. */
+export function useMine() {
+  const { data: teams = [] } = useTeams();
+  const seat = useUi((s) => s.seat);
+  const humans = teams.filter((x) => x.userControlled);
+  return humans.find((x) => x.id === seat) ?? humans[0];
+}
 export const useStandings = () =>
   useQuery({ queryKey: keys.standings, queryFn: () => window.gm.league.standings() });
 export const usePlayoffs = () =>
@@ -153,29 +161,22 @@ export const useHistory = (playerId: string | undefined) =>
 export const useStatus = () =>
   useQuery({ queryKey: ['league', 'status'] as const, queryFn: () => window.gm.league.status() });
 export const useSigningInterest = (
-  input:
-    | {
-        playerId: string;
-        teamId: TeamId;
-        salary: number;
-        years: number;
-        noTrade?: true;
-        bonusPct?: number;
-      }
-    | undefined,
+  input: Parameters<GmApi['league']['signingInterest']>[0] | undefined,
 ) =>
   useQuery({
     queryKey: ['league', 'signingInterest', input] as const,
     queryFn: () => window.gm.league.signingInterest(input!),
     enabled: !!input,
   });
-/** `null` = free agents. */
-export const usePlayers = (teamId: TeamId | null | undefined) =>
-  useQuery({
-    queryKey: ['league', 'players', teamId ?? 'fa'] as const,
-    queryFn: () => window.gm.league.players({ teamId: teamId ?? null }),
+/** `null` = free agents. Seen through the analytics department of the GM at the controls. */
+export function usePlayers(teamId: TeamId | null | undefined) {
+  const viewer = useMine()?.id;
+  return useQuery({
+    queryKey: ['league', 'players', teamId ?? 'fa', viewer] as const,
+    queryFn: () => window.gm.league.players({ teamId: teamId ?? null, ...(viewer && { viewer }) }),
     enabled: teamId !== undefined,
   });
+}
 /** Every player in the league: one read per team, plus free agents. */
 export const useAllPlayers = (teamIds: readonly TeamId[]) =>
   useQuery({
@@ -219,10 +220,10 @@ export function useNewLeagueFromRoster() {
   });
 }
 
-export const useFeed = (limit = 20) =>
+export const useFeed = (limit = 20, minImportance: Importance = 'notable') =>
   useQuery({
-    queryKey: [...keys.feed, limit],
-    queryFn: () => window.gm.feed.list({ limit, minImportance: 'notable' }),
+    queryKey: [...keys.feed, limit, minImportance],
+    queryFn: () => window.gm.feed.list({ limit, minImportance }),
   });
 
 /**

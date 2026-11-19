@@ -6,9 +6,10 @@ import type {
   LeagueEvent,
   Player,
   Team,
+  TeamId,
   TradeProposal,
 } from '@gm/shared';
-import { GOALIE_ROTATIONS, STOP_CATEGORIES, TICKET_STEPS } from '@gm/shared';
+import { GOALIE_ROTATIONS, MARKET_SIZES, STOP_CATEGORIES, TICKET_STEPS } from '@gm/shared';
 import {
   Rng,
   applyEvent,
@@ -19,11 +20,13 @@ import {
   type LeagueState,
 } from './core';
 import { buyoutCharges, capYearIssues, capYearOf, teamCapTotal } from './cba';
-import { pickLabel } from './league';
+import { expansionDraft, pickLabel, thinnestDivision } from './league';
 import {
   departmentsOf,
   moraleOf,
+  newCoach,
   PROMISE_DAYS,
+  randomGm,
   staffOf,
   talkedDown,
   talkedRound,
@@ -33,6 +36,11 @@ import {
   isExpiring,
   acceptSheet,
   continueDraft,
+  counterOffer,
+  lineOf,
+  NOT_INTERESTED,
+  signingInterest,
+  talksLeft,
   draftPlayer,
   onTheClock,
   startDraft,
@@ -46,7 +54,7 @@ import {
   staffCandidates,
   interimHead,
 } from './offseason';
-import { evaluateTrade, planRetention } from './trades';
+import { evaluateTrade, offerExpires, planRetention } from './trades';
 import { pressQuestion } from './owner';
 import { overall } from './players';
 import { advance } from './advance';
@@ -63,6 +71,23 @@ const invalid = (message: string): CommandResult => ({
   ok: false,
   error: { code: 'invalid', message },
 });
+const TALKS_OFF = 'he has broken off talks with you';
+/** A trimmed, valid city, name and abbreviation (unique among the other teams), or the reason it is not. */
+function checkIdentity(
+  state: LeagueState,
+  c: { city: string; name: string; abbreviation: string },
+  exceptId?: TeamId,
+) {
+  const city = c.city.trim();
+  const name = c.name.trim();
+  const abbreviation = c.abbreviation.trim().toUpperCase();
+  if (!city || !name || city.length > 24 || name.length > 24)
+    return 'city and name: 1–24 characters';
+  if (!/^[A-Z]{2,4}$/.test(abbreviation)) return 'abbreviation: 2–4 letters';
+  if (Object.values(state.teams).some((t) => t.id !== exceptId && t.abbreviation === abbreviation))
+    return 'abbreviation already taken';
+  return { city, name, abbreviation };
+}
 /** Applies one event and returns it as the command's result. */
 const applied = (state: LeagueState, ev: LeagueEvent): CommandResult => {
   applyEvent(state, ev);
@@ -103,6 +128,80 @@ export function handleCommand(
         userControlled: command.userControlled,
       });
       return applied(state, ev);
+    }
+
+    case 'league.expand': {
+      if (actor.id !== 'local') return notYours;
+      if (!state.freeAgencyOpen) return invalid('expansion happens once free agency is open');
+      const { maxTeams } = ctx.ruleset.expansion;
+      if (Object.keys(state.teams).length >= maxTeams) return invalid(`at most ${maxTeams} teams`);
+      const identity = checkIdentity(state, command);
+      if (typeof identity === 'string') return invalid(identity);
+      if (!(MARKET_SIZES as readonly number[]).includes(command.market))
+        return invalid('unknown market size');
+      const rng = new Rng(state.rngState).fork(`expansion${state.eventSeq}`);
+      let n = Object.keys(state.teams).length;
+      while (state.teams[`t${n}` as TeamId]) n++;
+      const team: Team = {
+        id: `t${n}` as TeamId,
+        ...identity,
+        ...thinnestDivision(Object.values(state.teams)),
+        market: command.market,
+        userControlled: false,
+        gm: randomGm(rng.fork('gm')),
+        coach: newCoach(rng.fork('coach'), state.date.season + 1, ctx.ruleset.finance.coach),
+      };
+      return applied(
+        state,
+        makeEvent(state, 'major', [team.id], {
+          kind: 'team.expanded',
+          team,
+          taken: expansionDraft(state, ctx.ruleset),
+        }),
+      );
+    }
+
+    case 'commissioner.move': {
+      if (actor.id !== 'local') return notYours;
+      const player = state.players[command.playerId];
+      if (!player?.teamId || !player.contract) return invalid('not a rostered player');
+      if (command.teamId === player.teamId) return invalid('already there');
+      if (command.teamId && !state.teams[command.teamId]) return invalid('unknown team');
+      return applied(
+        state,
+        makeEvent(state, 'notable', [player.teamId, ...(command.teamId ? [command.teamId] : [])], {
+          kind: 'player.moved',
+          playerId: player.id,
+          toTeamId: command.teamId,
+        }),
+      );
+    }
+
+    case 'team.rename':
+    case 'team.relocate': {
+      const team = state.teams[command.teamId];
+      if (!team) return invalid('unknown team');
+      // The local player edits any team's identity (sandbox); a remote player only his own.
+      if (actor.id !== 'local' && !actor.controls.includes(team.id)) return notYours;
+      const checked = checkIdentity(state, command, team.id);
+      if (typeof checked === 'string') return invalid(checked);
+      const identity = { teamId: team.id, ...checked };
+      if (command.kind === 'team.rename')
+        return applied(
+          state,
+          makeEvent(state, 'minor', [team.id], { kind: 'team.renamed', ...identity }),
+        );
+      if (!(MARKET_SIZES as readonly number[]).includes(command.market))
+        return invalid('unknown market size');
+      return applied(
+        state,
+        makeEvent(state, 'notable', [team.id], {
+          kind: 'team.relocated',
+          ...identity,
+          market: command.market,
+          fanLoss: ctx.ruleset.finance.relocationFanLoss,
+        }),
+      );
     }
 
     case 'contract.buyout': {
@@ -146,9 +245,17 @@ export function handleCommand(
       if (!resignWindowOpen(state, ctx) || !isExpiring(state, player)) {
         return invalid('only expiring contracts, outside the playoffs');
       }
-      const deal = resignContract(state, ctx, player, command.years);
+      if (talksLeft(state, ctx, player.id, team.id) === 0) return invalid(TALKS_OFF);
+      const deal = resignContract(state, ctx, player, command);
       if ('issues' in deal) {
         return invalid(`illegal contract: ${deal.issues[0]!.code}`);
+      }
+      const offer = { ...command, resign: true as const };
+      if (signingInterest(state, ctx, player, team.id, offer).interest < lineOf(ctx, player.id)) {
+        return applied(
+          state,
+          makeEvent(state, 'minor', [team.id], counterOffer(state, ctx, player, team.id, offer)),
+        );
       }
       // In season it is an extension: the current deal still runs to the end of the year.
       const ev = makeEvent(state, 'notable', [team.id], {
@@ -165,8 +272,6 @@ export function handleCommand(
       const from = state.teams[proposal.fromTeamId];
       if (!from) return invalid('unknown team');
       if (!controls(actor, from)) return notYours;
-      const to = state.teams[proposal.toTeamId];
-      if (to?.userControlled && !controls(actor, to)) return notYours;
       const asked = proposal.give
         .map((id) => state.players[id])
         .filter((p) => p?.teamId === from.id && p.contract?.noTrade) as Player[];
@@ -209,7 +314,7 @@ export function handleCommand(
         ok: true,
         events: [
           ...events.flatMap((r) => (r.ok ? r.events : [])),
-          ...completeTrade(state, ctx, proposal),
+          ...tradeOrOffer(state, ctx, proposal),
         ],
       };
     }
@@ -219,14 +324,11 @@ export function handleCommand(
       const from = state.teams[proposal.fromTeamId];
       if (!from) return invalid('unknown team');
       if (!controls(actor, from)) return notYours;
-      // A human partner accepts any legal trade, so only someone who runs it may propose one.
-      const to = state.teams[proposal.toTeamId];
-      if (to?.userControlled && !controls(actor, to)) return notYours;
       const verdict = evaluateTrade(state, ctx, proposal);
       if (!verdict.accepted) {
         return invalid(`trade refused: ${verdict.reasons.map((r) => r.code).join(', ')}`);
       }
-      return { ok: true, events: completeTrade(state, ctx, proposal) };
+      return { ok: true, events: tradeOrOffer(state, ctx, proposal) };
     }
 
     case 'trade.respond': {
@@ -253,9 +355,11 @@ export function handleCommand(
         ...(offer.proposal.getPicks && { givePicks: offer.proposal.getPicks }),
         ...(offer.proposal.givePicks && { getPicks: offer.proposal.givePicks }),
       };
+      // Another human GM's offer is judged as he wrote it (with his retention), legality only.
+      const caller = state.teams[offer.proposal.fromTeamId]!;
+      const deal = caller.userControlled ? offer.proposal : mirror;
       // A draft-day call stands while the pick is on the clock: the caller wants a player there,
       // not the pick's value, so only the trade's legality is checked.
-      const caller = state.teams[offer.proposal.fromTeamId]!;
       const clock = onTheClock(state, ctx)?.id;
       const judged =
         clock && offer.proposal.getPicks?.includes(clock)
@@ -264,7 +368,7 @@ export function handleCommand(
               teams: { ...state.teams, [caller.id]: { ...caller, userControlled: true } },
             }
           : state;
-      const verdict = evaluateTrade(judged, ctx, mirror);
+      const verdict = evaluateTrade(judged, ctx, deal);
       if (!verdict.accepted) {
         return invalid(
           `the offer is off the table: ${verdict.reasons.map((r) => r.code).join(', ')}`,
@@ -272,7 +376,7 @@ export function handleCommand(
       }
       // Closed first: a live draft that runs on closes offers for the picks it uses.
       const closed = close(true);
-      return { ok: true, events: [closed, ...completeTrade(state, ctx, mirror)] };
+      return { ok: true, events: [closed, ...completeTrade(state, ctx, deal)] };
     }
 
     case 'tradeRequest.talk': {
@@ -713,7 +817,29 @@ export function handleCommand(
         return invalid('unknown player or team');
       }
       if (!controls(actor, team)) return notYours;
+      if (talksLeft(state, ctx, player.id, team.id) === 0) return invalid(TALKS_OFF);
+      // Only one player can be first at a position: one open promise (signed or on offer) per position.
+      if (
+        command.promiseRole &&
+        [
+          ...state.rolePromises,
+          ...[...state.faOffers, ...state.rfaSheets].filter((o) => o.promiseRole),
+        ].some(
+          (x) =>
+            x.teamId === team.id &&
+            x.playerId !== player.id &&
+            state.players[x.playerId]?.position === player.position,
+        )
+      ) {
+        return invalid('you have promised that role to another player');
+      }
       const deal = signFreeAgent(state, ctx, player, team.id, command);
+      if ('error' in deal && deal.error === NOT_INTERESTED) {
+        return applied(
+          state,
+          makeEvent(state, 'minor', [team.id], counterOffer(state, ctx, player, team.id, command)),
+        );
+      }
       if ('error' in deal) return invalid(deal.error);
       // With AI offers on the table he weighs them all tomorrow; otherwise he decides now.
       // A restricted free agent's own team gets to match first: an offer sheet is never instant.
@@ -731,6 +857,7 @@ export function handleCommand(
               years: command.years,
               ...(command.noTrade && { noTrade: true as const }),
               ...(command.bonusPct && { bonusPct: command.bonusPct }),
+              ...(command.promiseRole && { promiseRole: true as const }),
             },
           })
         : makeEvent(state, 'notable', [team.id], {
@@ -738,6 +865,7 @@ export function handleCommand(
             playerId: player.id,
             teamId: team.id,
             contract: deal.contract,
+            ...(command.promiseRole && { promiseRole: true as const }),
           });
       return applied(state, ev);
     }
@@ -759,6 +887,26 @@ export function handleCommand(
       };
     }
   }
+}
+
+/**
+ * Hot-seat: a trade with another human GM's team needs both, so it is sent to him as an offer
+ * (he answers with `trade.respond` when he has the seat). Any other accepted trade goes through.
+ */
+function tradeOrOffer(state: LeagueState, ctx: SimContext, proposal: TradeProposal): LeagueEvent[] {
+  const { fromTeamId, toTeamId } = proposal;
+  if (!state.teams[toTeamId]?.userControlled) return completeTrade(state, ctx, proposal);
+  const { season, day } = state.date;
+  const ev = makeEvent(state, 'notable', [toTeamId, fromTeamId], {
+    kind: 'trade.offered',
+    offer: {
+      id: `h${season}_${day}_${fromTeamId}_${toTeamId}_${state.tradeOffers.length}`,
+      proposal: structuredClone(proposal),
+      expiresDay: offerExpires(state, ctx),
+    },
+  });
+  applyEvent(state, ev);
+  return [ev];
 }
 
 /** Applies an accepted trade: the trade itself (with any retained salary) and its headline. */

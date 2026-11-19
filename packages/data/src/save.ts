@@ -65,10 +65,12 @@ const JSON_META = {
   pickProtection: '{}',
   tradeOffers: '[]',
   seasonTrades: '[]',
+  playoffPairs: '{}',
   tradeRequests: '[]',
   holdouts: '[]',
   breakouts: '{}',
   disputes: '[]',
+  rolePromises: '[]',
   linemates: '{}',
   cash: '{}',
   fans: '{}',
@@ -82,6 +84,7 @@ const JSON_META = {
   stopOn: '["league","yours","offers","injuries"]',
   faOffers: '[]',
   marketDay: '0',
+  talks: '{}',
   rfaRights: '{}',
   formerTeams: '{}',
   goalieRotation: '{}',
@@ -144,28 +147,13 @@ export class SaveFile {
   // ---------- whole league ----------
 
   saveNewLeague(state: LeagueState) {
-    const insertTeam = this.db.prepare(
-      'INSERT INTO teams (id, city, name, abbreviation, user_controlled, status, conference, division, gm_json, plan_json, coach_json, staff_json) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)',
-    );
+    const insertTeam = this.insertTeam();
     const insertPlayer = this.insertPlayer();
     const insertGame = this.insertGame();
     const insertCharge = this.insertCapCharge();
     this.db.transaction(() => {
       for (const t of Object.values(state.teams)) {
-        insertTeam.run(
-          t.id,
-          t.city,
-          t.name,
-          t.abbreviation,
-          t.userControlled ? 1 : 0,
-          state.teamStatus[t.id] ?? 'bubble',
-          t.conference ?? null,
-          t.division ?? null,
-          t.gm ? JSON.stringify(t.gm) : null,
-          t.plan ? JSON.stringify(t.plan) : null,
-          t.coach ? JSON.stringify(t.coach) : null,
-          t.staff ? JSON.stringify(t.staff) : null,
-        );
+        insertTeam(t, state.teamStatus[t.id] ?? 'bubble');
       }
       for (const p of Object.values(state.players)) insertPlayer(p);
       for (const g of state.schedule) insertGame(g);
@@ -270,6 +258,28 @@ export class SaveFile {
     };
   }
 
+  private insertTeam() {
+    const stmt = this.db.prepare(
+      'INSERT INTO teams (id, city, name, abbreviation, user_controlled, status, conference, division, gm_json, plan_json, coach_json, staff_json, market) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)',
+    );
+    return (t: Team, status: TeamStatus) =>
+      stmt.run(
+        t.id,
+        t.city,
+        t.name,
+        t.abbreviation,
+        t.userControlled ? 1 : 0,
+        status,
+        t.conference ?? null,
+        t.division ?? null,
+        t.gm ? JSON.stringify(t.gm) : null,
+        t.plan ? JSON.stringify(t.plan) : null,
+        t.coach ? JSON.stringify(t.coach) : null,
+        t.staff ? JSON.stringify(t.staff) : null,
+        t.market ?? null,
+      );
+  }
+
   private insertPlayer() {
     const stmt = this.db.prepare(
       `INSERT INTO players (id, team_id, first_name, last_name, birth_year, position, potential, ratings_json, contract_json)
@@ -347,6 +357,11 @@ export class SaveFile {
       'INSERT OR REPLACE INTO awards (season, award, team_id, player_id) VALUES (?, ?, ?, ?)',
     );
     const setStatus = this.db.prepare('UPDATE teams SET status = ? WHERE id = ?');
+    const setIdentity = this.db.prepare(
+      'UPDATE teams SET city = ?, name = ?, abbreviation = ? WHERE id = ?',
+    );
+    const insertTeam = this.insertTeam();
+    const setMarket = this.db.prepare('UPDATE teams SET market = ? WHERE id = ?');
     const setControl = this.db.prepare('UPDATE teams SET user_controlled = ? WHERE id = ?');
     const setGm = this.db.prepare('UPDATE teams SET gm_json = ? WHERE id = ?');
     const setPlan = this.db.prepare('UPDATE teams SET plan_json = ? WHERE id = ?');
@@ -462,6 +477,11 @@ export class SaveFile {
             if (p) insertPlayer(p);
             break;
           }
+          case 'player.moved':
+            moved.add(e.playerId);
+            if (e.toTeamId) setTeam.run(e.toTeamId, e.playerId);
+            else setContract.run(null, null, e.playerId);
+            break;
           case 'player.signed':
             moved.add(e.playerId);
             setContract.run(e.teamId, JSON.stringify(e.contract), e.playerId);
@@ -477,6 +497,19 @@ export class SaveFile {
           case 'team.statusChanged':
             setStatus.run(e.to, e.teamId);
             break;
+          case 'team.relocated': // a new identity too; the fans are stored with the clock
+          case 'team.renamed':
+            if (e.kind === 'team.relocated') setMarket.run(e.market, e.teamId);
+            setIdentity.run(e.city, e.name, e.abbreviation, e.teamId);
+            break;
+          case 'team.expanded': {
+            insertTeam(e.team, 'bubble');
+            for (const id of e.taken) {
+              moved.add(id);
+              setTeam.run(e.team.id, id);
+            }
+            break;
+          }
           case 'team.controlChanged':
             setControl.run(e.userControlled ? 1 : 0, e.teamId);
             break;
@@ -536,11 +569,13 @@ export class SaveFile {
           case 'trade.offered':
           case 'freeAgency.offered':
           case 'freeAgency.dayPassed':
+          case 'contract.countered':
           case 'freeAgency.sheetReceived':
           case 'freeAgency.sheetDropped':
           case 'player.tradeRequested':
           case 'player.tradeRequestEnded':
           case 'player.disputeStarted':
+          case 'player.rolePromiseDue':
           case 'player.disputePromised':
           case 'player.disputeListed':
           case 'player.disputeEnded':
@@ -650,6 +685,7 @@ export class SaveFile {
       city: string;
       name: string;
       abbreviation: string;
+      market: number | null;
       user_controlled: number;
       conference: string | null;
       division: string | null;
@@ -663,6 +699,7 @@ export class SaveFile {
       city: r.city,
       name: r.name,
       abbreviation: r.abbreviation,
+      ...(r.market != null ? { market: r.market } : {}),
       ...(r.conference ? { conference: r.conference } : {}),
       ...(r.division ? { division: r.division } : {}),
       userControlled: r.user_controlled === 1,

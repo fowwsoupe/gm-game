@@ -4,7 +4,13 @@ import type { SimContext } from '../context';
 import { overall } from '../players';
 import { buyoutCharges, capYearIssues, capYearOf, deadCap, teamCapTotal } from '../cba';
 import { GM_LEAN, gmOf, seenBy } from '../people';
-import { compensationFor, signFreeAgent, signingInterest } from './signing';
+import {
+  compensationFor,
+  counterSalary,
+  NOT_INTERESTED,
+  signFreeAgent,
+  signingInterest,
+} from './signing';
 import { capRoom, countAt, drawYears, freeAgents, rosterOf, neededPosition } from './roster';
 import { CORE } from './gms';
 
@@ -165,6 +171,7 @@ export function acceptSheet(
     teamId: sheet.teamId,
     contract: deal.contract,
     ...compensationFor(state, ctx.ruleset, player, sheet.teamId, deal.contract.capHit),
+    ...(sheet.promiseRole && { promiseRole: true as const }),
   });
 }
 
@@ -239,6 +246,7 @@ export function decideOffers(
         teamId: o.teamId,
         contract: deal.contract,
         ...compensationFor(state, ctx.ruleset, player, o.teamId, deal.contract.capHit),
+        ...(o.promiseRole && { promiseRole: true as const }),
       });
       if (offers.length >= BIDDING_WAR) {
         emit('notable', [o.teamId, ...losers], {
@@ -300,14 +308,26 @@ function makeOffers(state: LeagueState, ctx: SimContext, rng: Rng, emit: Emit): 
       if (state.faOffers.some((o) => o.playerId === p.id && o.teamId === teamId)) continue;
       const ask = ctx.models.contractDemand.ask(ruleset, p);
       const premium = PREMIUMS[rng.int(0, PREMIUMS.length - 1)]! + tilt(team);
-      const salary = Math.round(ask * Math.max(1, premium));
+      let salary = Math.round(ask * Math.max(1, premium));
       const years = Math.min(
         drawYears(season - p.birthYear, rng),
         ruleset.contracts.maxYearsNewTeam,
       );
-      const room = roomFor(state, ctx, teamId, p, salary);
+      let room = roomFor(state, ctx, teamId, p, salary);
       if (!room) continue;
-      if ('error' in signFreeAgent(state, ctx, p, teamId, { salary, years }, room.freed)) continue;
+      let deal = signFreeAgent(state, ctx, p, teamId, { salary, years }, room.freed);
+      // Under his line: an AI team never haggles; it pays his agent's counter if it would.
+      const counter =
+        'error' in deal && deal.error === NOT_INTERESTED
+          ? counterSalary(state, ctx, p, teamId, { salary, years })
+          : null;
+      if (counter !== null && counter <= walkAway(state, ctx, teamId, ask)) {
+        salary = counter;
+        room = roomFor(state, ctx, teamId, p, salary);
+        if (!room) continue;
+        deal = signFreeAgent(state, ctx, p, teamId, { salary, years }, room.freed);
+      }
+      if ('error' in deal) continue;
       emit('minor', [teamId], {
         kind: 'freeAgency.offered',
         offer: { playerId: p.id, teamId, salary, years },
@@ -337,7 +357,7 @@ function raiseOffers(state: LeagueState, ctx: SimContext, emit: Emit): void {
       if (!room || 'error' in signFreeAgent(state, ctx, player, o.teamId, offer, room.freed)) {
         continue;
       }
-      emit('minor', [o.teamId], { kind: 'freeAgency.offered', offer });
+      emit('minor', [o.teamId], { kind: 'freeAgency.offered', offer, raise: true });
     }
   }
 }

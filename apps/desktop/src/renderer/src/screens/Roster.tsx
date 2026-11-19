@@ -1,8 +1,9 @@
 import { useEffect, useState } from 'react';
 import { useUi } from '@/stores/ui';
-import type { PlayerId, PlayerProfile, TeamId } from '@gm/shared';
+import type { LeagueEvent, PlayerId, PlayerProfile, RosterPlayer, TeamId } from '@gm/shared';
 import {
   useCareer,
+  useFeed,
   useHistory,
   useDispatch,
   useOfferSheets,
@@ -11,6 +12,7 @@ import {
   useSigningInterest,
   useStatus,
   useTeams,
+  useMine,
 } from '@/lib/queries';
 import { useT, type MessageKey } from '@/i18n';
 import {
@@ -33,6 +35,7 @@ const FREE_AGENTS = 'fa';
 export function Roster({ freeAgents = false }: { freeAgents?: boolean }) {
   const t = useT();
   const { data: teams = [] } = useTeams();
+  const mine = useMine()?.id;
   const focus = useUi((s) => s.focus);
   const [picked, setPicked] = useState<string | undefined>(focus?.teamId);
   const [selected, setSelected] = useState<string | undefined>(focus?.playerId);
@@ -43,8 +46,7 @@ export function Roster({ freeAgents = false }: { freeAgents?: boolean }) {
   }, [focus]);
   const value = freeAgents
     ? FREE_AGENTS
-    : ((picked && picked !== FREE_AGENTS ? picked : undefined) ??
-      (teams.find((x) => x.userControlled) ?? teams[0])?.id);
+    : ((picked && picked !== FREE_AGENTS ? picked : undefined) ?? mine ?? teams[0]?.id);
   const teamId = value === FREE_AGENTS ? null : (value as TeamId | undefined);
   const { data: players = [] } = usePlayers(value === undefined ? undefined : teamId);
   if (value === undefined) return <p className="text-muted">{t('roster.empty')}</p>;
@@ -75,6 +77,7 @@ export function Roster({ freeAgents = false }: { freeAgents?: boolean }) {
       )}
       <div className="grid gap-4 lg:grid-cols-[1fr_20rem]">
         <div className="space-y-4">
+          {freeAgents && <Room players={players} onSelect={setSelected} />}
           {players.length === 0 && <p className="text-sm text-muted">{t('roster.none')}</p>}
           {[...groups.values()].map((group) => (
             <PlayerTable
@@ -84,14 +87,106 @@ export function Roster({ freeAgents = false }: { freeAgents?: boolean }) {
               onSelect={setSelected}
             />
           ))}
-          {teamId && (
-            <Prospects teamId={teamId} mine={teamId === teams.find((x) => x.userControlled)?.id} />
-          )}
+          {teamId && <Prospects teamId={teamId} mine={teamId === mine} />}
         </div>
-        {freeAgents && <Sheets teamId={teams.find((x) => x.userControlled)?.id} />}
-        {card && <Profile player={card} signFor={teams.find((x) => x.userControlled)?.id} />}
+        {freeAgents && <Sheets teamId={mine} />}
+        {card && <Profile player={card} signFor={mine} />}
       </div>
     </div>
+  );
+}
+
+/**
+ * The free-agency room while the market is open: the free agents with offers on the table, best
+ * first (his agent's word: who is bidding, the leading interest, days to his decision, where you
+ * stand), and the day's signings and raises from its events.
+ */
+function Room({ players, onSelect }: { players: PlayerProfile[]; onSelect: (id: string) => void }) {
+  const t = useT();
+  const { data: status } = useStatus();
+  const { data: teams = [] } = useTeams();
+  const { data: feed } = useFeed(200, 'minor');
+  if (!status?.market) return null;
+  const abbr = (id: string) => teams.find((x) => x.id === id)?.abbreviation ?? '';
+  const name = (id: string) => feed?.names[id] ?? '';
+  const board = players
+    .flatMap((p) => (p.bids ? [{ p, b: p.bids }] : []))
+    .sort((x, y) => y.p.ask - x.p.ask);
+  // The feed is newest first: today is everything since the day turned (or free agency opened).
+  const events = feed?.events ?? [];
+  const start = events.findIndex(
+    (e) => e.kind === 'freeAgency.dayPassed' || e.kind === 'freeAgency.opened',
+  );
+  const today = events.slice(0, Math.max(0, start)).flatMap((e) =>
+    e.kind === 'player.signed'
+      ? [
+          t('event.signed', {
+            player: name(e.playerId),
+            team: teamName(teams, e.teamId),
+            amount: money(e.contract.capHit),
+            season: e.contract.expiresAfterSeason,
+          }),
+        ]
+      : e.kind === 'freeAgency.offered' && e.raise
+        ? [
+            t('room.raise', {
+              team: teamName(teams, e.offer.teamId),
+              player: name(e.offer.playerId),
+            }),
+          ]
+        : [],
+  );
+  return (
+    <Card title={t('room.title', { n: status.market.day })}>
+      <p className="mb-2 text-xs text-muted">{t('room.note', { n: status.market.closing })}</p>
+      {board.length === 0 ? (
+        <p className="text-sm text-muted">{t('room.empty')}</p>
+      ) : (
+        <table className="tabular w-full text-sm">
+          <thead>
+            <tr className="border-b border-line text-right text-muted">
+              <Th left>{t('roster.player')}</Th>
+              <Th left>{t('roster.pos')}</Th>
+              <Th>{t('resign.ask')}</Th>
+              <Th left>{t('room.bidding')}</Th>
+              <Th>{t('room.leading')}</Th>
+              <Th>{t('room.days')}</Th>
+              <Th>{t('room.you')}</Th>
+            </tr>
+          </thead>
+          <tbody>
+            {board.map(({ p, b }) => (
+              <tr
+                key={p.id}
+                onClick={() => onSelect(p.id)}
+                className="cursor-pointer border-b border-line/50 text-right hover:bg-panel-2"
+              >
+                <Td left>
+                  <Face seed={p.id} age={p.age} size={22} />
+                  {fullName(p)}
+                </Td>
+                <Td left>{p.position}</Td>
+                <Td>{money(p.ask)}</Td>
+                <Td left>{b.teams.map(abbr).join(', ')}</Td>
+                <Td>{Math.max(b.best, b.mine?.interest ?? 0)}</Td>
+                <Td>{b.days}</Td>
+                <Td className={b.mine?.leads ? 'text-good' : 'text-bad'}>
+                  {b.mine && t(b.mine.leads ? 'room.leads' : 'room.trails', { n: b.mine.interest })}
+                </Td>
+              </tr>
+            ))}
+          </tbody>
+        </table>
+      )}
+      {today.length > 0 && (
+        <div className="mt-3 space-y-0.5 border-t border-line pt-2 text-xs text-muted">
+          <p className="font-medium text-ink">{t('room.today')}</p>
+          {today.map((line, i) => (
+            <p key={i}>{line}</p>
+          ))}
+        </div>
+      )}
+    </Card>
   );
 }
 
@@ -309,15 +404,20 @@ export function Profile({
   );
 }
 
-/** Offer a free agent a contract; his interest meter answers before you send it. */
-function Offer({
+/**
+ * Offer a free agent a contract, or with `resign` one of your players whose deal ends; his
+ * interest meter moves as you type, and under his (hidden) line his agent answers with a counter.
+ */
+export function Offer({
   player,
   teamId,
   onSigned,
+  resign,
 }: {
-  player: PlayerProfile;
+  player: RosterPlayer & Pick<PlayerProfile, 'ask' | 'rightsTeamId' | 'bids'>;
   teamId: TeamId;
-  onSigned: (text: string) => void;
+  onSigned?: (text: string) => void;
+  resign?: boolean;
 }) {
   const t = useT();
   const { data: teams = [] } = useTeams();
@@ -328,15 +428,28 @@ function Offer({
   const [message, setMessage] = useState<string | null>(null);
   const [noTrade, setNoTrade] = useState(false);
   const [bonusPct, setBonusPct] = useState(0);
-  const { data: view } = useSigningInterest({
+  const [promiseRole, setPromiseRole] = useState(false);
+  const terms = {
     playerId: player.id,
-    teamId,
     salary,
     years,
     ...(noTrade && { noTrade: true as const }),
     ...(bonusPct > 0 && { bonusPct }),
+  };
+  const pitch = !resign && promiseRole ? { promiseRole: true as const } : {};
+  const { data: view } = useSigningInterest({
+    ...terms,
+    ...pitch,
+    teamId,
+    ...(resign && { resign: true as const }),
   });
   const dispatch = useDispatch();
+  const reply = (ev: Extract<LeagueEvent, { kind: 'contract.countered' }>) =>
+    ev.counter
+      ? t('sign.counter', { amount: money(ev.counter) })
+      : ev.holdsBack
+        ? t(`sign.holdsBack.${ev.holdsBack}`)
+        : t('sign.talksOff');
   return (
     <Card title={t('sign.title')}>
       <p className="mb-2 text-sm text-muted">{t('sign.ask', { amount: money(player.ask) })}</p>
@@ -420,6 +533,16 @@ function Offer({
           <input type="checkbox" checked={noTrade} onChange={(e) => setNoTrade(e.target.checked)} />
           {t('sign.noTrade')}
         </label>
+        {!resign && (
+          <label className="flex items-center gap-1 text-muted">
+            <input
+              type="checkbox"
+              checked={promiseRole}
+              onChange={(e) => setPromiseRole(e.target.checked)}
+            />
+            {t('sign.promise', { position: player.position })}
+          </label>
+        )}
       </div>
       {view && (
         <div className="space-y-1.5">
@@ -434,40 +557,43 @@ function Offer({
               value={f.score}
             />
           ))}
-          <p className="text-xs text-muted">{t('sign.threshold', { n: view.threshold })}</p>
+          <p className={`text-xs ${view.talks > 0 ? 'text-muted' : 'text-bad'}`}>
+            {view.talks > 0 ? t('sign.talks', { n: view.talks }) : t('sign.talksOff')}
+          </p>
         </div>
       )}
       <div className="mt-3 flex items-center gap-3">
         <Button
           variant="primary"
-          disabled={!view || view.interest < view.threshold || dispatch.isPending}
+          disabled={!view || view.talks === 0 || dispatch.isPending}
           onClick={() =>
             dispatch.mutate(
-              {
-                kind: 'contract.sign',
-                playerId: player.id,
-                teamId,
-                salary,
-                years,
-                ...(noTrade && { noTrade: true as const }),
-                ...(bonusPct > 0 && { bonusPct }),
-              },
+              resign
+                ? { kind: 'contract.resign', ...terms }
+                : { kind: 'contract.sign', teamId, ...terms, ...pitch },
               {
                 onSuccess: (res) => {
+                  const ev = res.ok ? res.events[0] : undefined;
                   if (res.ok && res.events.some((e) => e.kind === 'player.signed')) {
-                    onSigned(
+                    onSigned?.(
                       t('cutscene.signing', {
                         player: fullName(player),
                         team: teamName(teams, teamId),
                       }),
                     );
                   }
+                  // His agent's counter goes in the box, ready to send back.
+                  if (ev?.kind === 'contract.countered' && ev.counter) {
+                    setText((ev.counter / 1e6).toFixed(2));
+                  }
                   setMessage(
                     !res.ok
                       ? res.error.message
-                      : res.events[0]?.kind === 'freeAgency.offered'
-                        ? t('sign.pending')
-                        : t('sign.done'),
+                      : ev?.kind === 'contract.countered'
+                        ? reply(ev)
+                        : ev?.kind === 'freeAgency.offered'
+                          ? t('sign.pending')
+                          : t('sign.done'),
                   );
                 },
               },

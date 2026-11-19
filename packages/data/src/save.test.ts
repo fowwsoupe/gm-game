@@ -16,6 +16,90 @@ describe('SaveFile', () => {
     save.close();
   });
 
+  it('persists a renamed team', () => {
+    const save = openSave(':memory:');
+    const state = createLeague(4, ctx);
+    save.saveNewLeague(state);
+    const teamId = Object.keys(state.teams)[0] as TeamId;
+    const res = handleCommand(
+      state,
+      { kind: 'team.rename', teamId, city: 'Québec', name: 'Fleuves', abbreviation: 'QBF' },
+      local,
+      ctx,
+    );
+    if (!res.ok) throw new Error(res.error.message);
+    save.persist(res.events, state);
+    expect(save.loadState()).toEqual(state);
+    save.close();
+  });
+
+  it('hot-seat: a second human GM shares the save and both teams stay human', () => {
+    const save = openSave(':memory:');
+    const state = createLeague(4, ctx);
+    save.saveNewLeague(state);
+    const second = Object.values(state.teams).find((t) => !t.userControlled)!.id;
+    const res = handleCommand(
+      state,
+      { kind: 'team.setUserControlled', teamId: second, userControlled: true },
+      local,
+      ctx,
+    );
+    if (!res.ok) throw new Error(res.error.message);
+    save.persist(res.events, state);
+    const sim = handleCommand(state, { kind: 'sim.advance', days: 3 }, local, ctx);
+    if (!sim.ok) throw new Error(sim.error.message);
+    save.persist(sim.events, state);
+    const loaded = save.loadState();
+    expect(Object.values(loaded.teams).filter((t) => t.userControlled)).toHaveLength(2);
+    expect(loaded).toEqual(state);
+    save.close();
+  });
+
+  it('persists a relocated team', () => {
+    const save = openSave(':memory:');
+    const state = createLeague(4, ctx);
+    save.saveNewLeague(state);
+    const teamId = Object.keys(state.teams)[0] as TeamId;
+    const res = handleCommand(
+      state,
+      {
+        kind: 'team.relocate',
+        teamId,
+        city: 'Houston',
+        name: 'Comets',
+        abbreviation: 'HOU',
+        market: 1.4,
+      },
+      local,
+      ctx,
+    );
+    if (!res.ok) throw new Error(res.error.message);
+    save.persist(res.events, state);
+    expect(save.loadState()).toEqual(state);
+    save.close();
+  });
+
+  it('persists an expansion team and the players it drafted', () => {
+    const save = openSave(':memory:');
+    const state = createLeague(4, ctx);
+    save.saveNewLeague(state);
+    const open = handleCommand(state, { kind: 'sim.advance', days: 400 }, local, ctx);
+    if (!open.ok) throw new Error(open.error.message);
+    const fa = handleCommand(state, { kind: 'offseason.openFreeAgency' }, local, ctx);
+    if (!fa.ok) throw new Error(fa.error.message);
+    save.persist([...open.events, ...fa.events], state);
+    const res = handleCommand(
+      state,
+      { kind: 'league.expand', city: 'Houston', name: 'Comets', abbreviation: 'HOU', market: 1.4 },
+      local,
+      ctx,
+    );
+    if (!res.ok) throw new Error(res.error.message);
+    save.persist(res.events, state);
+    expect(save.loadState()).toEqual(state);
+    save.close();
+  });
+
   it('persists events so a reopened save matches the live state', () => {
     const save = openSave(':memory:');
     const state = createLeague(8, ctx);
@@ -120,14 +204,20 @@ describe('SaveFile', () => {
     const expiring = Object.values(state.players).find(
       (p) => p.teamId === mine && p.contract!.expiresAfterSeason === state.date.season,
     )!;
-    const res = handleCommand(
-      state,
-      { kind: 'contract.resign', playerId: expiring.id, years: 2 },
-      local,
-      ctx,
-    );
-    if (!res.ok) throw new Error(res.error.message);
-    save.persist(res.events, state);
+    // At his current salary, then (if his agent counters, kept in the save as talks) his counter.
+    let salary = expiring.contract!.capHit;
+    for (let round = 0; round < 2 && !state.players[expiring.id]!.extension; round++) {
+      const res = handleCommand(
+        state,
+        { kind: 'contract.resign', playerId: expiring.id, salary, years: 2 },
+        local,
+        ctx,
+      );
+      if (!res.ok) throw new Error(res.error.message);
+      save.persist(res.events, state);
+      const ev = res.events[0]!;
+      if (ev.kind === 'contract.countered') salary = ev.counter ?? salary;
+    }
     expect(save.loadState().players[expiring.id]!.extension).toBeDefined();
     expect(save.loadState()).toEqual(state);
     save.close();

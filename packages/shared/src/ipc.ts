@@ -87,8 +87,11 @@ export interface GmApi {
     roster(input: { teamId: TeamId }): Promise<RosterPlayer[]>;
     /** Expiring players a team may re-sign now (empty until the champion is crowned). */
     resignOffers(input: { teamId: TeamId }): Promise<ResignOffer[]>;
-    /** Player cards for a team's players, or the free agents (`teamId: null`). */
-    players(input: { teamId: TeamId | null }): Promise<PlayerProfile[]>;
+    /**
+     * Player cards for a team's players, or the free agents (`teamId: null`), as `viewer`'s GM
+     * sees them (hot-seat: the one at the controls; default the first human team).
+     */
+    players(input: { teamId: TeamId | null; viewer?: TeamId }): Promise<PlayerProfile[]>;
     /** The lineup a team would dress tonight (healthy players, its depth order), as named units. */
     lines(input: { teamId: TeamId }): Promise<{
       units: { unit: string; playerIds: string[] }[];
@@ -168,7 +171,10 @@ export interface GmApi {
     pulse(): Promise<PulseRow[]>;
     /** Date, phase and which windows (trades, free agency) are open. */
     status(): Promise<LeagueStatus>;
-    /** How a free agent feels about an offer from `teamId` (null if he is not a free agent). */
+    /**
+     * How a free agent feels about an offer from `teamId`, or with `resign` one of its own players
+     * whose deal ends (null if he is neither).
+     */
     signingInterest(input: {
       playerId: string;
       teamId: TeamId;
@@ -176,14 +182,20 @@ export interface GmApi {
       years: number;
       noTrade?: true;
       bonusPct?: number;
+      promiseRole?: true;
+      resign?: true;
     }): Promise<SigningInterest | null>;
   };
   feed: {
-    /** Newest first, with the names and ages of the players they mention (retired ones included). */
+    /**
+     * Newest first, with the names and ages of the players they mention (retired ones included)
+     * and the story each event belongs to, by event id (`storyOf`).
+     */
     list(input: { limit: number; minImportance?: Importance }): Promise<{
       events: LeagueEvent[];
       names: Record<string, string>;
       ages: Record<string, number>;
+      stories: Record<string, string>;
     }>;
   };
   commands: {

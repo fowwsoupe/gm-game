@@ -1,6 +1,6 @@
 import { useCallback, useEffect, useRef, useState } from 'react';
 import type { PlayerId } from '@gm/shared';
-import { useDispatch, useDraftClass, useTeams, useTradeOffers } from '@/lib/queries';
+import { useDispatch, useDraftClass, useTeams, useTradeOffers, useMine } from '@/lib/queries';
 import { useT, type MessageKey } from '@/i18n';
 import { Button, Card, Cutscene, Face, RangeBar, Td, Th } from '@/ui';
 import { fullName, leagueLineText, pickParams, teamName } from '@/lib/format';
@@ -13,7 +13,7 @@ import { useUi } from '@/stores/ui';
 export function Draft() {
   const t = useT();
   const { data: teams = [] } = useTeams();
-  const mine = teams.find((x) => x.userControlled)?.id;
+  const mine = useMine()?.id;
   const { data } = useDraftClass(mine);
   const { data: offers = [] } = useTradeOffers(mine);
   const dispatch = useDispatch();
