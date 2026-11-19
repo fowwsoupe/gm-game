@@ -183,6 +183,7 @@ export const fr: Record<MessageKey, string> = {
   'award.topDefender': 'Meilleur défenseur',
   'award.topRookie': 'Meilleure recrue',
   'award.playoffMvp': 'Joueur par excellence des séries',
+  'award.legendTrophy': 'Trophée {name}',
   'history.empty': 'Aucune saison terminée. Jouez jusqu’à la fin des séries.',
   'history.season': 'Saison {season}',
   'leaders.empty': 'Aucun match joué.',

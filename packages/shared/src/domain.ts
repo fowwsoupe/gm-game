@@ -502,6 +502,8 @@ export interface AwardEntry {
   /** Absent for team awards (champion). */
   playerId?: PlayerId;
   playerName?: string;
+  /** Surname of the legend this award is named after that season ("<Surname> Trophy"), if any. */
+  trophy?: string;
 }
 
 /** A stat table: the top players for one stat ('points', 'goals', 'savePct' in hockey). */
