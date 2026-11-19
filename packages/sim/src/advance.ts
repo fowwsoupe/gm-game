@@ -19,14 +19,22 @@ import {
   type LeagueState,
   type ScheduledGame,
 } from './core';
-import { classifyTeams, leagueStandings, nextRound, seedPlayoffs, worstFirst } from './league';
+import {
+  classifyTeams,
+  leagueStandings,
+  nextRound,
+  playoffOdds,
+  seedPlayoffs,
+  worstFirst,
+  type PulseInput,
+} from './league';
 import { giveSeasonAwards } from './awards';
 import { aiHoldouts, announceDraftClass } from './offseason';
 import { aiOffers, aiTrades } from './trades';
 import { disputesWeek, holdoutsWeek, staffOf, startHoldouts, tradeRequests } from './people';
 import { sitsOut, strengthFor } from './tonight';
-import { byOverall } from './players';
-import { payBonuses } from './cba';
+import { byOverall, overall } from './players';
+import { payBonuses, payroll } from './cba';
 import { settleMonth, settlePlayoffs, settlesOn } from './finance';
 import {
   aiGmFired,
@@ -391,7 +399,30 @@ export function advance(
     // League pulse once a week.
     if (phaseOf(cal, today) === 'regular' && today.day % 7 === 6) {
       const rows = leagueStandings(state, ctx.ruleset);
-      const next = classifyTeams(rows);
+      const odds = playoffOdds({
+        teams: Object.values(state.teams),
+        schedule: state.schedule,
+        results: Object.values(state.results),
+        ruleset: ctx.ruleset,
+        season: today.season,
+        exponent: sport.pythagoreanExponent,
+        rng: rng.fork(`pulse${today.day}`),
+        sims: PULSE_SIMS,
+      });
+      const cap = ctx.ruleset.cap.upperLimit;
+      const inputs = new Map<TeamId, PulseInput>(
+        rows.map(({ teamId }) => {
+          const roster = rosters.get(teamId) ?? [];
+          const core = roster
+            .map((p) => ({ rating: overall(p), age: today.season - p.birthYear }))
+            .sort((a, b) => b.rating - a.rating)
+            .slice(0, PULSE_CORE);
+          const age = core.reduce((s, x) => s + x.age, 0) / Math.max(1, core.length);
+          const capRoom = (cap - payroll(roster)) / cap;
+          return [teamId, { odds: odds.get(teamId) ?? 0, age, capRoom }];
+        }),
+      );
+      const next = classifyTeams(rows, inputs);
       // In crisis: losing, and the owner has lost faith in the GM (the brief's job 1, first part).
       for (const id of Object.keys(next) as TeamId[]) {
         // AI teams only: a human GM's owner has his own, lower hot-seat lines.
@@ -464,6 +495,11 @@ export function advance(
   }
   return events;
 }
+
+/** Runs of the rest of the season behind the weekly pulse's playoff odds. */
+const PULSE_SIMS = 100;
+/** The best players whose average age is a team's age in the pulse. */
+const PULSE_CORE = 8;
 
 /** Win or losing streaks of these lengths make the news. */
 const STREAK_MILESTONES = [6, 9, 12];

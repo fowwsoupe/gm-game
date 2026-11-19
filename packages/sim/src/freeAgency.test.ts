@@ -184,7 +184,7 @@ describe('AI offers in free agency', () => {
     const { maxActive } = ctx.ruleset.roster;
     const size = (id: TeamId) => Object.values(state.players).filter((x) => x.teamId === id).length;
     const team = Object.values(state.teams).find(
-      (t) => !t.userControlled && size(t.id) < maxActive,
+      (t) => !t.userControlled && size(t.id) <= maxActive,
     )!;
     // Fill the roster from the pool (cheap deals) and free a star from another team.
     for (const p of freeAgents(state)) {
