@@ -9,6 +9,8 @@ import {
   defaultContext,
   evaluateTrade,
   handleCommand,
+  inDeadlineWeek,
+  pickValue,
   surplusValuator,
   type PlayerValuator,
   type LeagueState,
@@ -233,6 +235,26 @@ describe('surplus value', () => {
     );
   });
 
+  it('prices a top-six rental at the deadline near a late first for a contender, under a 2nd for a seller', () => {
+    // A top-six forward in a generated league is about 70 overall; $3M is a typical cap hit.
+    const rental = player({
+      birthYear: 2027 - 29,
+      ratings: { a: 70, b: 70 },
+      contract: { capHit: 3 * M, expiresAfterSeason: 2027 },
+    });
+    const cal = rules.season.calendar;
+    const left = 1 - cal.tradeDeadlineDay / cal.regularSeasonDays;
+    const v = (status: TeamContext['status']) =>
+      surplusValuator.value(rental, team(status, left), rules).surplus;
+    const pick = (slot: number, round: number, status: TeamContext['status']) =>
+      pickValue(rules, { slot, teams: 16, round, yearsAway: 0 }, status);
+    // A contender pays a late first for him, not a mid first (the playoff run is what it buys).
+    expect(v('contender')).toBeGreaterThan(pick(16, 1, 'contender'));
+    expect(v('contender')).toBeLessThan(pick(8, 1, 'contender'));
+    // To a seller he is worth less than a mid second.
+    expect(v('seller')).toBeLessThan(pick(8, 2, 'seller'));
+  });
+
   it('counts an extension he signed: not a rental, and the new cap hit is what he costs', () => {
     const contract = { capHit: 3 * M, expiresAfterSeason: 2027 };
     const rental = player({ birthYear: 2027 - 30, ratings: { a: 72, b: 72 }, contract });
@@ -271,6 +293,42 @@ describe('AI-to-AI trades', () => {
         expect(state.teams[e.toTeamId]!.userControlled).toBe(false);
         expect(e.date.day).toBeLessThanOrEqual(base.ruleset.season.calendar.tradeDeadlineDay);
       }
+    }
+  }, 60_000);
+
+  it('make deadline week a market: daily talks, offers gone at the deadline, a recap', () => {
+    const cal = base.ruleset.season.calendar;
+    const runs = [2, 4].map((seed) => {
+      const state = createLeague(seed, base);
+      const res = handleCommand(
+        state,
+        { kind: 'sim.advance', days: cal.tradeDeadlineDay + 2 - state.date.day },
+        local,
+        base,
+      );
+      if (!res.ok) throw new Error(res.error.message);
+      return { state, events: res.events };
+    });
+    // Trades on deadline-week days that are not the weekly pulse's.
+    const daily = runs.flatMap(({ events }) =>
+      events.filter(
+        (e) =>
+          e.kind === 'trade.completed' && inDeadlineWeek(cal, e.date.day) && e.date.day % 7 !== 6,
+      ),
+    );
+    expect(daily.length).toBeGreaterThan(0);
+    for (const { state, events } of runs) {
+      expect(state.tradeOffers).toEqual([]);
+      for (const e of events) {
+        if (e.kind === 'trade.offered')
+          expect(e.offer.expiresDay).toBeLessThanOrEqual(cal.tradeDeadlineDay);
+      }
+      const recap = events.filter(
+        (e) => e.kind === 'news.posted' && e.headline.startsWith('event.deadline'),
+      );
+      expect(recap.map((e) => e.date.day)).toEqual([cal.tradeDeadlineDay]);
+      const week = state.seasonTrades.filter((t) => inDeadlineWeek(cal, t.day)).length;
+      expect(recap[0]).toMatchObject({ params: { n: week } });
     }
   }, 60_000);
 

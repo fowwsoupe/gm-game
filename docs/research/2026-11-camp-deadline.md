@@ -90,6 +90,11 @@ closes the door the NHL closes with eligibility).
    a contender and under a 2nd for a seller (the cited tiers); the lab shows the deadline-week
    share up and every other check flat on seeds 1, 101 and 201, before and after pasted in the
    PR.
+   _Done._ The share is in the valuator's horizon table (`HORIZON.playoffs`); deadline week is
+   the seven days up to and including the deadline (`inDeadlineWeek`). No offer is made on
+   deadline day itself (it would close the same night). The recap's biggest buyer is the team
+   whose incoming players' overall most beats its outgoing players' that week; a new
+   `seasonTrades` list (cleared each season) keeps the day of each trade for it.
 
 Not in scope: exhibition games, camp battles for roster spots, professional tryouts, waivers,
 playoff eligibility, a deadline-day show (that is cutscenes and media). The lab's real-NHL

@@ -63,6 +63,7 @@ const JSON_META = {
   pickOwners: '{}',
   pickProtection: '{}',
   tradeOffers: '[]',
+  seasonTrades: '[]',
   tradeRequests: '[]',
   holdouts: '[]',
   breakouts: '{}',

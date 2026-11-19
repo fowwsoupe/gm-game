@@ -1,5 +1,12 @@
-import type { Player, TeamId, TeamStatus } from '@gm/shared';
-import { playerName, teamName, type Emit, type LeagueState, type Rng } from '../core';
+import type { Player, PlayerId, TeamId, TeamStatus } from '@gm/shared';
+import {
+  playerName,
+  teamName,
+  type CalendarConfig,
+  type Emit,
+  type LeagueState,
+  type Rng,
+} from '../core';
 import type { SimContext } from '../context';
 import {
   cachedContext,
@@ -9,6 +16,7 @@ import {
   type TradeCache,
 } from './evaluate';
 import { draftPicks, pickLabel } from '../league';
+import { overall } from '../players';
 import { GM_LEAN, gmOf, planStatus, seenBy } from '../people';
 
 /** Chance the league makes a trade in a given week (when a deal both sides like exists). */
@@ -19,6 +27,11 @@ const PAIRS_TRIED = 12;
 const BLOCK_PAIRS = 6;
 /** The buyer's own players it considers sending back, cheapest-to-it first. */
 const OFFERS_TRIED = 8;
+
+/** Deadline week: its last days, up to and including the deadline, when AI GMs talk every day. */
+const DEADLINE_WEEK = 7;
+export const inDeadlineWeek = (cal: CalendarConfig, day: number) =>
+  day > cal.tradeDeadlineDay - DEADLINE_WEEK && day <= cal.tradeDeadlineDay;
 
 const BUYING: readonly TeamStatus[] = ['contender', 'buyer'];
 const SELLING: readonly TeamStatus[] = ['seller', 'rebuilder', 'crisis'];
@@ -47,7 +60,8 @@ function valuer(state: LeagueState, ctx: SimContext, cache: TradeCache) {
  * than it does (or a draft pick when no player works). The trade happens only if both sides accept under the same rules as a human
  * offer (`evaluateTrade`), so the AI cannot make a trade a human could not.
  * Players on an AI team's trade block (a fire sale) come first: buyers call those teams first
- * and ask only for listed players. One trade a week at most. Human teams are never involved.
+ * and ask only for listed players. One trade a call at most: weekly, and daily in deadline week.
+ * Human teams are never involved.
  */
 export function aiTrades(state: LeagueState, ctx: SimContext, rng: Rng, emit: Emit): void {
   if (!tradeWindowOpen(state, ctx) || !rng.chance(WEEKLY_TRADE_CHANCE)) return;
@@ -163,7 +177,8 @@ const OFFER_DAYS = 7;
  * AI GMs make offers to human teams: one AI team picks the human's player it values most above
  * what he is worth to his own team, and offers a player of its own the human team should value
  * at least as much (by the same valuator, from the human team's situation). The AI must accept
- * its own offer under `evaluateTrade`. One open offer per human team; offers expire after a week.
+ * its own offer under `evaluateTrade`. One open offer per human team; offers expire after a week,
+ * or at the trade deadline if that comes first (none is made on deadline day itself).
  */
 export function aiOffers(state: LeagueState, ctx: SimContext, rng: Rng, emit: Emit): void {
   for (const o of state.tradeOffers.filter((x) => x.expiresDay <= state.date.day)) {
@@ -173,7 +188,12 @@ export function aiOffers(state: LeagueState, ctx: SimContext, rng: Rng, emit: Em
       accepted: false,
     });
   }
-  if (!tradeWindowOpen(state, ctx)) return;
+  const cal = ctx.ruleset.season.calendar;
+  const { day } = state.date;
+  const expiresDay = state.championTeamId
+    ? day + OFFER_DAYS
+    : Math.min(day + OFFER_DAYS, cal.tradeDeadlineDay);
+  if (!tradeWindowOpen(state, ctx) || expiresDay <= day) return;
   const teams = Object.values(state.teams).sort((a, b) => a.id.localeCompare(b.id));
   const ai = teams.filter((t) => !t.userControlled).map((t) => t.id);
   if (!ai.length) return;
@@ -214,10 +234,42 @@ export function aiOffers(state: LeagueState, ctx: SimContext, rng: Rng, emit: Em
     emit('notable', [human, caller], {
       kind: 'trade.offered',
       offer: {
-        id: `o${state.date.season}_${state.date.day}_${human}`,
+        id: `o${state.date.season}_${day}_${human}`,
         proposal: { fromTeamId: caller, toTeamId: human, give: [offer.id], get: [target.id] },
-        expiresDay: state.date.day + OFFER_DAYS,
+        expiresDay,
       },
     });
   }
+}
+
+/**
+ * Deadline day's recap in the feed: the trades of deadline week, and the biggest buyer (the team
+ * whose incoming players' overall most beats its outgoing players').
+ */
+export function deadlineRecap(state: LeagueState, ctx: SimContext, emit: Emit): void {
+  const cal = ctx.ruleset.season.calendar;
+  const week = state.seasonTrades.filter((t) => inDeadlineWeek(cal, t.day));
+  const added = new Map<TeamId, number>();
+  const move = (ids: readonly PlayerId[], to: TeamId, from: TeamId) => {
+    for (const id of ids) {
+      const p = state.players[id];
+      if (!p) continue;
+      added.set(to, (added.get(to) ?? 0) + overall(p));
+      added.set(from, (added.get(from) ?? 0) - overall(p));
+    }
+  };
+  for (const t of week) {
+    move(t.give, t.toTeamId, t.fromTeamId);
+    move(t.get, t.fromTeamId, t.toTeamId);
+  }
+  const buyer = [...added].sort((a, b) => b[1] - a[1] || a[0].localeCompare(b[0]))[0]?.[0];
+  emit('notable', buyer ? [buyer] : [], {
+    kind: 'news.posted',
+    ...(buyer
+      ? {
+          headline: 'event.deadlineRecap',
+          params: { n: week.length, team: teamName(state.teams[buyer]!) },
+        }
+      : { headline: 'event.deadlineQuiet', params: { n: week.length } }),
+  });
 }
