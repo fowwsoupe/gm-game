@@ -196,6 +196,8 @@ export interface FreeAgentOffer {
   bonusPct?: number;
   /** The market day this team first bid for him, kept when it raises (set by the reducer; absent = 0). */
   since?: number;
+  /** The pitch: the top role at his position on this team's depth chart. */
+  promiseRole?: true;
 }
 
 export interface Player {
@@ -688,6 +690,8 @@ export interface LeagueStatus {
   canBeFired: boolean;
   /** The save option: what stops "sim until it matters" (the sim bar's filter). */
   stopOn: StopCategory[];
+  /** While free agency is open: market days played, and the days starting the season still plays. */
+  market?: { day: number; closing: number };
 }
 
 /**
