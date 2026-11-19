@@ -13,8 +13,8 @@ export const available = (state: LeagueState, teamId: TeamId, day: number): Play
 
 /**
  * A team's strength with these players, as the games play it: chemistry, the GM's lines and
- * units, time together, and the head coach (`frontOffice.coaching.points` either way at the
- * extremes, around an average coach of 0.5).
+ * units, time together, the head coach (`frontOffice.coaching.points` either way at the
+ * extremes, around an average coach of 0.5) and the team's form this season.
  */
 export function strengthFor(
   state: LeagueState,
@@ -28,7 +28,7 @@ export function strengthFor(
     chemistry(players, state.date.season).value,
     state.specialUnits[teamId],
     state.linemates[teamId],
-    coachingPoints(state, ctx, teamId),
+    coachingPoints(state, ctx, teamId) + (state.teamForm[teamId] ?? 0),
   );
 }
 

@@ -1,6 +1,6 @@
 import type { Player, Team, TeamId, TeamStatus } from '@gm/shared';
 import { Rng, type LeagueState } from './core';
-import { makeSchedule } from './league';
+import { drawForm, makeSchedule } from './league';
 import { newCoach, randomGm } from './people';
 import type { SimContext } from './context';
 
@@ -80,6 +80,11 @@ export function createLeague(
     goalieRotation: {},
     tradeBlock: [],
     rfaSheets: [],
+    teamForm: drawForm(
+      teams.map((t) => t.id),
+      ctx.ruleset.season.form,
+      rng.fork('form'),
+    ),
     eventSeq: 0,
   };
 }

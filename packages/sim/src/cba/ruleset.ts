@@ -20,6 +20,11 @@ export interface Ruleset {
     calendar: CalendarConfig;
     /** Points for a win, and for an overtime / shootout loss. */
     points: { win: number; overtimeLoss: number };
+    /**
+     * SD of a team's season form: rating points it plays above or below its roster in every game
+     * of one season, drawn fresh when the season starts (nothing carries over).
+     */
+    form: number;
   };
 
   playoffs: {

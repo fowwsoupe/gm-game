@@ -201,6 +201,8 @@ export type LeagueEvent =
       season: number;
       schedule: ScheduledGame[];
       rngState: number;
+      /** Each team's form this season, rating points (absent in old saves: none). */
+      form?: Record<TeamId, number>;
     })
   /** A trade went through: `give` moved from `fromTeamId` to `toTeamId`, `get` the other way. */
   | (EventBase & {

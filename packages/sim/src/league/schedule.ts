@@ -132,3 +132,16 @@ export function makeSchedule(
     awayTeamId: m.away,
   }));
 }
+
+/**
+ * Each team's form for a new season: rating points (SD `sd`, to a tenth) it plays above or below
+ * its roster. Drawn fresh each season, so it spreads teams out without carrying over.
+ */
+export const drawForm = (
+  teamIds: readonly string[],
+  sd: number,
+  rng: Rng,
+): Record<TeamId, number> =>
+  Object.fromEntries(
+    [...teamIds].sort().map((id) => [id, Math.round(rng.fork(id).normal(0, sd) * 10) / 10]),
+  ) as Record<TeamId, number>;

@@ -108,6 +108,8 @@ export interface LeagueState {
   career: Career | null;
   /** Save option: owners may fire a human GM. */
   canBeFired: boolean;
+  /** Each team's form this season: rating points added in games (absent: none). */
+  teamForm: Record<TeamId, number>;
   /** Count of events applied so far; the next event's id is built from it. */
   eventSeq: number;
 }
@@ -388,6 +390,7 @@ export function applyEvent(state: LeagueState, event: LeagueEvent): void {
     case 'season.started':
       state.date = { season: event.season, day: 0 };
       state.rngState = event.rngState;
+      state.teamForm = { ...event.form };
       state.schedule = event.schedule.map((g) => ({ ...g, date: { ...g.date } }));
       state.results = {};
       state.holdouts = [];
