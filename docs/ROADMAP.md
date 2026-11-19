@@ -27,7 +27,7 @@ Ready now (code can start):
 Front office (also the lasting-team-edge fix): all jobs in
 [research/2026-11-front-office.md](research/2026-11-front-office.md) done; the points % spread
 gap narrowed (0.077-0.080 to 0.079-0.082) but is still open. League & events:
-jobs 2-5 of [research/2026-11-league-events.md](research/2026-11-league-events.md) done, job 1 in part (crisis; odds, age and cap in the pulse to do).
+all five jobs of [research/2026-11-league-events.md](research/2026-11-league-events.md) done (the pulse ranks by playoff odds; a young team out of it rebuilds, an old bubble team with cap space buys; crisis on top).
 
 Needs a design first (a short brief in `docs/research/`, then jobs):
 
@@ -64,7 +64,7 @@ Build order, owners and "done when" for each step: **[V0.1_PLAN.md](V0.1_PLAN.md
 - [~] Players (`sim/players`): percentiles, builds and role tags (rules), injuries and injury history (shown on the player card) done; re-injury risk done; traits, clustered builds to do
 - [x] Value (`sim/value`): per-team surplus value (can be negative), market value, pick value curve (rules-based; calibrated curve is Azmi's)
 - [x] People (`sim/people`): personalities (from the player id), free-agent priorities by age and personality, AI GM styles and skill, team plans, morale (shown on the player card; no effects yet) done
-- [~] League & events (`sim/league`): calendar, team status (league pulse, crisis when a losing team's owner loses faith), event engine (trade requests, holdouts, disputes, breakouts, AI owners' frustration, AI fire sales), news, a stop filter done; the pulse reading playoff odds, roster age and cap space, and the in-season breakout trigger, to do
+- [~] League & events (`sim/league`): calendar, team status (league pulse from playoff odds, roster age and cap space, crisis when a losing team's owner loses faith), event engine (trade requests, holdouts, disputes, breakouts, AI owners' frustration, AI fire sales), news, a stop filter done; the in-season breakout trigger to do
 - [ ] Minor / junior / European leagues: light stats-only sim for prospects
 
 **Features**
