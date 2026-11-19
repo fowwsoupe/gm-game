@@ -23,7 +23,7 @@ import {
   fansOf,
   marketOf,
   coachOf,
-  DEPARTMENTS,
+  departmentsOf,
   staffOf,
   ownerOf,
   ownerStanding,
@@ -387,11 +387,11 @@ export class LeagueService {
       owner: ownerOf(team),
       coach: coachOf(team, ruleset.finance.coach, state.date.season),
       staff: Object.fromEntries(
-        DEPARTMENTS.map((d) => [
+        departmentsOf(team).map((d) => [
           d,
           staffOf(team, d, ruleset.frontOffice.salary, state.date.season),
         ]),
-      ) as Record<Department, StaffProfile>,
+      ) as Record<Exclude<Department, 'assistant'>, StaffProfile> & { assistant?: StaffProfile },
       market: marketOf(team),
       capacity: seatsOf(state, teamId, ruleset),
       fans: fansOf(state, teamId),
@@ -406,14 +406,14 @@ export class LeagueService {
     const ctx = defaultContext(state.rulesetId);
     const season = capYearOf(state);
     return Object.fromEntries(
-      DEPARTMENTS.map((d) => [
+      departmentsOf(team).map((d) => [
         d,
         {
           candidates: staffCandidates(team, d, ctx, season),
           locked: team.staff?.[d]?.hired === season,
         },
       ]),
-    ) as Record<Department, { candidates: StaffProfile[]; locked: boolean }>;
+    ) as Partial<Record<Department, { candidates: StaffProfile[]; locked: boolean }>>;
   }
 
   ownerReport(teamId: TeamId): OwnerReport {

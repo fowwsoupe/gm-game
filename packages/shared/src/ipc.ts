@@ -110,7 +110,8 @@ export interface GmApi {
     owner(input: { teamId: TeamId }): Promise<{
       owner: OwnerProfile;
       coach: CoachProfile;
-      staff: Record<Department, StaffProfile>;
+      /** The assistant GM only on a human team. */
+      staff: Record<Exclude<Department, 'assistant'>, StaffProfile> & { assistant?: StaffProfile };
       market: number;
       capacity: number;
       fans: TeamFans;
@@ -122,7 +123,7 @@ export interface GmApi {
      */
     staffCandidates(input: {
       teamId: TeamId;
-    }): Promise<Record<Department, { candidates: StaffProfile[]; locked: boolean }>>;
+    }): Promise<Partial<Record<Department, { candidates: StaffProfile[]; locked: boolean }>>>;
     /** The Owner screen for a team (money flow and meetings come from the event log). */
     ownerReport(input: { teamId: TeamId }): Promise<OwnerReport>;
     /** Offer sheets other teams gave this team's restricted free agents (match or decline). */

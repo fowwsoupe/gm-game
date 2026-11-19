@@ -11,7 +11,7 @@ import {
 } from './core';
 import { buyoutCharges, capYearIssues, capYearOf, teamCapTotal } from './cba';
 import { parsePick } from './league';
-import { DEPARTMENTS, PROMISE_DAYS, talkedDown, talkedRound } from './people';
+import { departmentsOf, PROMISE_DAYS, talkedDown, talkedRound } from './people';
 import {
   isExpiring,
   acceptSheet,
@@ -394,7 +394,7 @@ export function handleCommand(
       const team = state.teams[command.teamId];
       if (!team) return invalid('unknown team');
       if (!controls(actor, team)) return notYours;
-      if (!DEPARTMENTS.includes(command.department)) return invalid('unknown department');
+      if (!departmentsOf(team).includes(command.department)) return invalid('unknown department');
       // Next season's once the champion is crowned, so a summer hire counts for the season ahead.
       const season = capYearOf(state);
       const head = staffCandidates(team, command.department, ctx, season)[command.candidate];

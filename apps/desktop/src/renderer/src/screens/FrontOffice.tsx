@@ -4,7 +4,7 @@ import { money, qualityKey } from '@/lib/format';
 import { useT } from '@/i18n';
 import { Button, Card, Td, Th } from '@/ui';
 
-const DEPARTMENTS: readonly Department[] = ['scouting', 'development', 'medical'];
+const DEPARTMENTS: readonly Department[] = ['scouting', 'development', 'medical', 'assistant'];
 
 /** Your front office: each department's head, and who you could hire in his place this season. */
 export function FrontOffice() {
@@ -28,7 +28,9 @@ export function FrontOffice() {
       </Card>
       {DEPARTMENTS.map((d) => {
         const head = owned.staff[d];
-        const hiredNow = candidates[d].locked;
+        const open = candidates[d];
+        if (!head || !open) return null;
+        const hiredNow = open.locked;
         return (
           <Card key={d} title={t(`team.staff.${d}`)}>
             <div className="mb-3 text-sm">
@@ -45,7 +47,7 @@ export function FrontOffice() {
                 </tr>
               </thead>
               <tbody>
-                {candidates[d].candidates.map((c, i) => (
+                {open.candidates.map((c, i) => (
                   <tr key={c.name + i}>
                     <Td>{c.name}</Td>
                     <Td>{t(qualityKey(c.quality))}</Td>
