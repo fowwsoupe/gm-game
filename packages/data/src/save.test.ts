@@ -304,6 +304,15 @@ describe('player history', () => {
     expect(save.playerHistory('nobody')).toEqual({ awards: [], moves: [] });
     const drafted = Object.values(state.players).find((p) => p.id.startsWith('d'))!;
     expect(save.playerHistory(drafted.id).moves[0]).toMatchObject({ kind: 'drafted' });
+    // The draft results: every pick of this summer's draft, in order.
+    const latest = save.latestDraft();
+    expect(latest.season).toBe(state.date.season);
+    expect(latest.picks.map((p) => p.pick)).toEqual(
+      Array.from(
+        { length: Object.keys(state.teams).length * ctx.ruleset.draft.rounds },
+        (_, i) => i + 1,
+      ),
+    );
     save.close();
   });
 });

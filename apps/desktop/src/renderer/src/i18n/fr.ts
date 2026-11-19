@@ -293,6 +293,7 @@ export const fr: Record<MessageKey, string> = {
   'trade.reason.not_on_team': '{player} ne fait pas partie de cette équipe.',
   'event.trade': 'Échange : {from} cèdent {give} à {to} contre {get}',
   'actions.openFreeAgency': 'Ouvrir le marché des joueurs autonomes',
+  'actions.startDraft': 'Lancer le repêchage',
   'actions.freeAgencyDay': 'Jour suivant du marché des joueurs autonomes',
   'home.freeAgencyOpen':
     'Le marché est ouvert : signez des joueurs dans Alignement → Joueurs autonomes, puis lancez la saison suivante.',
@@ -360,6 +361,20 @@ export const fr: Record<MessageKey, string> = {
   'draft.boardNote':
     'À chacun de vos choix, vous prenez le premier joueur encore disponible sur votre liste.',
   'event.draftClass': 'La cuvée du repêchage a été annoncée',
+  'draft.yourPick':
+    'À vous de choisir : choix n° {pick} (ronde {round}). Repêchez un joueur ci-dessous.',
+  'draft.onClock': 'Au tour de {team} : choix n° {pick} (ronde {round}).',
+  'draft.orderTitle': 'Choix à venir',
+  'draft.orderNote':
+    "Montez dans l'ordre en échangeant pour un choix ici; pour céder le vôtre, offrez-le à l'écran Échanges. Si vous échangez le choix en cours, le repêchage continue.",
+  'draft.orderLine': '{pick}. Ronde {round} : {team}',
+  'draft.tradeFor': 'Échanger pour ce choix',
+  'draft.call': 'Les {team} appellent : ils veulent votre choix et offrent {give}.',
+  'draft.pickNumber': 'le choix n° {pick}',
+  'draft.madeTitle': 'Repêchage {season} : choix faits',
+  'draft.madeLine': '{pick}. {team} : {player} ({pos})',
+  'draft.via': '(choix de {team})',
+  'draft.pick': 'Repêcher',
   'standings.team': 'Équipe',
   'standings.gp': 'PJ',
   'standings.w': 'V',
@@ -402,6 +417,20 @@ export const fr: Record<MessageKey, string> = {
   'owner.effect.coach': '{name} prend la relève',
   'owner.card.hotSeat':
     'Votre poste est en jeu : la confiance du propriétaire est tombée à {n}. Sous {fire} à un bilan de saison, il vous congédie.',
+  'owner.card.pressWin': 'La presse veut savoir comment votre équipe a gagné {n} matchs de suite.',
+  'owner.card.pressLoss': 'La presse demande ce qui ne va pas après {n} défaites de suite.',
+  'owner.card.pressSeries':
+    'La presse demande comment votre équipe a gagné la ronde {n} des séries.',
+  'owner.card.pressTrade': 'La presse vous interroge sur votre grosse transaction.',
+  'owner.card.pressOut': 'La presse demande ce qui n’a pas fonctionné à la ronde {n} des séries.',
+  'owner.option.deflect': 'Esquiver',
+  'owner.option.confident': 'Se montrer confiant',
+  'owner.option.honest': 'Être franc',
+  'press.quote.deflect': 'Le DG du {team} esquive la presse : « Un match à la fois. »',
+  'press.quote.confident':
+    'Le DG du {team} dit à la presse : « Nous sommes exactement où nous voulons être. »',
+  'press.quote.honest':
+    'Le DG du {team} dit à la presse : « Il reste du travail, et j’en prends la responsabilité. »',
   'owner.option.noted': 'Compris',
   'owner.option.agree': 'Accepter',
   'owner.option.refuse': 'Refuser',

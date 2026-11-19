@@ -176,6 +176,22 @@ export function App() {
                   {d.label}
                 </Button>
               ))}
+          {status?.championTeamId && !status.freeAgencyOpen && !status.draftLive && (
+            <Button
+              disabled={dispatch.isPending}
+              onClick={() =>
+                dispatch.mutate(
+                  { kind: 'offseason.startDraft' },
+                  {
+                    onSuccess: (res) =>
+                      res.ok ? setScreen('draft') : setLastSim(res.error.message),
+                  },
+                )
+              }
+            >
+              {t('actions.startDraft')}
+            </Button>
+          )}
           {status?.championTeamId && !status.freeAgencyOpen && (
             <Button
               disabled={dispatch.isPending}

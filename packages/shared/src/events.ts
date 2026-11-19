@@ -91,9 +91,16 @@ export type LeagueEvent =
   | (EventBase & { kind: 'contract.expired'; playerId: PlayerId; rightsTeamId?: TeamId })
   /**
    * A new player enters the league through the draft (the event carries the whole player).
-   * `round` and `pick` are 0 for an undrafted free agent signed to fill a roster.
+   * `round` and `pick` are 0 for an undrafted free agent signed to fill a roster. `via`: the
+   * team the pick belonged to, when another team made it (traded or protected).
    */
-  | (EventBase & { kind: 'player.drafted'; player: Player; round: number; pick: number })
+  | (EventBase & {
+      kind: 'player.drafted';
+      player: Player;
+      round: number;
+      pick: number;
+      via?: TeamId;
+    })
   /**
    * Re-signing, free agency or an undrafted free agent: player joins `teamId` on `contract`.
    * `staying`: he re-signs with the team whose contract just expired, so his time there carries on.
@@ -176,6 +183,8 @@ export type LeagueEvent =
     })
   /** A team ranked the prospects it wants; its picks follow this order. */
   | (EventBase & { kind: 'draft.boardSet'; teamId: TeamId; order: PlayerId[] })
+  /** The live draft opens (contracts have run out); picks follow one at a time. */
+  | (EventBase & { kind: 'draft.started' })
   /** End of a regular season: every player's stat line, kept for career stats (sport-defined keys). */
   | (EventBase & {
       kind: 'stats.archived';

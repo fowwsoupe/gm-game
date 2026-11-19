@@ -42,6 +42,7 @@ import {
   coachWeek,
   deadlineCheckIn,
   ownerMonth,
+  pressQuestion,
   preseasonMeeting,
   seasonReview,
 } from './owner';
@@ -239,6 +240,13 @@ export function advance(
               params: { team: teamName(state.teams[id]!), n: Math.abs(next) },
             }),
           );
+          pressQuestion(
+            state,
+            emitter(state, events),
+            id,
+            next > 0 ? 'pressWin' : 'pressLoss',
+            Math.abs(next),
+          );
         }
       }
     }
@@ -361,6 +369,11 @@ export function advance(
               params: { team: teamName(winner), round: series.round },
             }),
           );
+          const loserTeamId =
+            winnerTeamId === series.higherTeamId ? series.lowerTeamId : series.higherTeamId;
+          const ask = emitter(state, events);
+          pressQuestion(state, ask, winnerTeamId, 'pressSeries', series.round);
+          pressQuestion(state, ask, loserTeamId, 'pressOut', series.round);
         }
       }
       const current = Object.values(state.playoffSeries).filter((s) => s.round === round);

@@ -7,6 +7,8 @@ import type {
   Dashboard,
   DraftPick,
   DraftBoardEntry,
+  DraftClock,
+  DraftResult,
   GameDetail,
   GameSummary,
   HallOfFamer,
@@ -140,10 +142,18 @@ export interface GmApi {
     tradeOffers(input: { teamId: TeamId }): Promise<TradeOffer[]>;
     /** What the other team would say to a trade, without making it. */
     evaluateTrade(input: TradeProposal): Promise<TradeEvaluation>;
-    /** Next draft's class (empty until the champion is crowned) and `teamId`'s board. */
-    draftClass(input: {
-      teamId: TeamId;
-    }): Promise<{ prospects: DraftBoardEntry[]; board: string[] }>;
+    /**
+     * Next draft's class (empty until the champion is crowned), `teamId`'s board, the live
+     * draft's picks left (on the clock first) and the latest draft's picks made so far
+     * (`made`, by pick; `madeSeason` is that draft's season, null before the first draft).
+     */
+    draftClass(input: { teamId: TeamId }): Promise<{
+      prospects: DraftBoardEntry[];
+      board: string[];
+      order: DraftClock[];
+      made: DraftResult[];
+      madeSeason: number | null;
+    }>;
     /** Home for a team: the to-do list and the next game. */
     dashboard(input: { teamId: TeamId }): Promise<Dashboard>;
     /** Playoff odds, power rating and status for every team. */

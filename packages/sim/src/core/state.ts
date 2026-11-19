@@ -58,6 +58,8 @@ export interface LeagueState {
   draftOrder: TeamId[];
   /** Each team's ranked wish list for the draft. */
   draftBoards: Record<string, string[]>;
+  /** Picks made so far in the live draft; null when no draft is under way. */
+  draftPicksMade: number | null;
   /** Each human team's depth order for its lines, best first (absent = by rating). */
   depthCharts: Record<string, string[]>;
   /** Each human team's saved power-play / penalty-kill units (absent = auto). */
@@ -313,6 +315,10 @@ export function applyEvent(state: LeagueState, event: LeagueEvent): void {
       state.players[event.player.id] = structuredClone(event.player);
       if (event.player.teamId) state.players[event.player.id]!.joined = capYearOf(state);
       state.draftClass = state.draftClass.filter((d) => d.player.id !== event.player.id);
+      if (event.round > 0 && state.draftPicksMade !== null) state.draftPicksMade = event.pick;
+      return;
+    case 'draft.started':
+      state.draftPicksMade = 0;
       return;
     case 'draft.classAnnounced':
       state.draftClass = structuredClone(event.prospects);
@@ -435,6 +441,7 @@ export function applyEvent(state: LeagueState, event: LeagueEvent): void {
       state.draftClass = [];
       state.draftOrder = [];
       state.draftBoards = {};
+      state.draftPicksMade = null;
       state.tradeOffers = [];
       state.faOffers = [];
       state.rfaRights = {};
@@ -450,6 +457,7 @@ export function applyEvent(state: LeagueState, event: LeagueEvent): void {
       return;
     case 'freeAgency.opened':
       state.freeAgencyOpen = true;
+      state.draftPicksMade = null;
       return;
     case 'team.statusChanged':
       state.teamStatus[event.teamId] = event.to;
