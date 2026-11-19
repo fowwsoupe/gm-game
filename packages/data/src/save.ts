@@ -72,12 +72,14 @@ const JSON_META = {
   arenas: '{}',
   career: 'null',
   canBeFired: 'true',
+  stopOn: '["league","yours","offers","injuries"]',
   faOffers: '[]',
   rfaRights: '{}',
   formerTeams: '{}',
   goalieRotation: '{}',
   tradeBlock: '[]',
   rfaSheets: '[]',
+  lastSeason: '{}',
 } satisfies Partial<Record<keyof LeagueState, string>>;
 
 const IMPORTANCE_RANK: Record<Importance, number> = { minor: 0, notable: 1, major: 2 };
@@ -507,6 +509,7 @@ export class SaveFile {
           case 'finance.ticketPriceSet':
           case 'owner.meeting':
           case 'owner.confidenceMoved':
+          case 'owner.frustrated':
           case 'owner.cardOpened':
           case 'project.finished':
             break; // stored with the clock below
