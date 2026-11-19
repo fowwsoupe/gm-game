@@ -13,6 +13,9 @@ import {
 } from '@gm/shared';
 import { validateContract, type ContractIssue, type Ruleset } from '../../cba';
 import type { RosterImport } from '../sport';
+import { ratingsFromStats } from './ratingsFromStats';
+import { STATS_TO_RATINGS } from './ratingsFromStatsTable';
+import type { GoalieTotals, SkaterTotals } from './stats';
 
 const teamId = (abbreviation: string) => `t_${abbreviation}` as TeamId;
 
@@ -65,7 +68,21 @@ export function importHockeyRoster(json: unknown, rules: Ruleset): RosterImport 
     teamId: p.team === null ? null : teamId(p.team),
     position: p.position,
     potential: p.potential,
-    ratings: { ...(p.position === 'G' ? p.goalie : p.skater) },
+    ratings: {
+      ...(p.position === 'G' ? p.goalie : p.skater),
+      ...((p.goalie ?? p.skater)
+        ? {}
+        : Object.fromEntries(
+            Object.entries(
+              ratingsFromStats(
+                STATS_TO_RATINGS,
+                p.position,
+                p.stats as SkaterTotals | GoalieTotals,
+                rules.season.gamesPerTeam,
+              ),
+            ).map(([k, e]) => [k, e.value]),
+          )),
+    },
     ...(p.contract ? { contract: { ...p.contract } } : {}),
   }));
   const contractErrors = file.players.flatMap((p, i) => {

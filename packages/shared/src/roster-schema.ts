@@ -6,6 +6,7 @@ import { GOALIE_RATINGS, SKATER_RATINGS } from './sports/hockey';
  * so treat every file as untrusted: validate here before anything touches a save.
  * Bump ROSTER_FORMAT_VERSION on breaking changes and upgrade older files in upgradeRosterFile.
  * v2: skaters gained `faceoffs`.
+ * A player may carry one season of `stats` instead of ratings; the sim rates him from them.
  */
 export const ROSTER_FORMAT_VERSION = 2;
 
@@ -15,6 +16,18 @@ const ratingsOf = <K extends string>(keys: readonly K[]) =>
 
 const skaterRatings = ratingsOf(SKATER_RATINGS);
 const goalieRatings = ratingsOf(GOALIE_RATINGS);
+
+const count = z.number().int().min(0).max(5000);
+const skaterStats = z.object({
+  gp: count,
+  goals: count,
+  assists: count,
+  shots: count,
+  plusMinus: z.number().int().min(-500).max(500),
+  /** Minutes on ice. */
+  toi: z.number().min(0).max(10000),
+});
+const goalieStats = z.object({ gp: count, shotsAgainst: count, saves: count });
 
 const rosterPlayer = z
   .object({
@@ -27,6 +40,7 @@ const rosterPlayer = z
     potential: rating,
     skater: skaterRatings.optional(),
     goalie: goalieRatings.optional(),
+    stats: z.union([skaterStats, goalieStats]).optional(),
     contract: z
       .object({
         capHit: z.number().int().nonnegative(),
@@ -34,9 +48,13 @@ const rosterPlayer = z
       })
       .optional(),
   })
-  .refine((p) => (p.position === 'G' ? p.goalie !== undefined : p.skater !== undefined), {
-    message: 'Goalies need goalie ratings and skaters need skater ratings',
-  });
+  .refine(
+    (p) =>
+      p.position === 'G'
+        ? p.goalie !== undefined || (p.stats !== undefined && 'saves' in p.stats)
+        : p.skater !== undefined || (p.stats !== undefined && 'toi' in p.stats),
+    { message: 'Goalies need goalie ratings (or goalie stats), skaters skater ratings (or stats)' },
+  );
 
 const rosterTeam = z.object({
   abbreviation: z.string().min(2).max(4),

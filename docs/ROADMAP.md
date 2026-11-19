@@ -36,6 +36,42 @@ Needs a design first (a short brief in `docs/research/`, then jobs):
 - Minor / junior leagues; camp and a trade deadline that matters; player traits and clustered builds.
 - Every other Phase 2 headline below.
 
+## Queue (model · effort)
+
+Work these in order; one PR each. Sonnet = UI or plumbing on existing engines, Opus = balance,
+calibration or a new engine, Fable = the largest, least bounded jobs. Tick a line in its PR.
+
+A. Leftovers (Sonnet 5.5, medium)
+
+- [ ] Assistant GM's other jobs (the front-office brief lists them)
+- [ ] Steam Workshop for roster import (release prep)
+
+B. Balance and calibration (Opus 5.5 unless noted)
+
+- [ ] Points % spread, seed 1 still short (high; compare seeds 1/101/201)
+- [ ] "Better team wins a best-of-7" back in range (high)
+- [ ] Trained stats-to-ratings and development models (xhigh, 2-3 PRs)
+- [ ] Playtest analysis (Sonnet 5.5, medium)
+- [ ] Player traits and clustered builds (high, brief first)
+
+C. Design brief first, then jobs (Opus 5.5)
+
+- [ ] Minor / junior / European leagues (xhigh, 4-6 PRs)
+- [ ] Camp and a trade deadline that matters (high, 2-3 PRs)
+
+D. Phase 2 headlines
+
+- [ ] Live draft room with trading (Opus, high, 3-4 PRs)
+- [ ] Free-agency bidding war and contract negotiation (Opus, xhigh, brief first)
+- [ ] League news tab (Opus for storylines, Sonnet for UI; high, brief first)
+- [ ] Media and press conferences, text (Sonnet, medium, 2-3 PRs)
+- [ ] Summer training, camp battles, international tournament (Opus, high, 3 PRs)
+- [ ] Cutscenes (Sonnet, medium, 3 PRs)
+- [ ] Match viewer (2D) with coach from the bench (Fable 5.2, xhigh, 6+ PRs)
+- [ ] League sandbox (Sonnet, high, 4 PRs)
+- [ ] Multiplayer step 1, hot-seat (Opus, high, 2 PRs)
+- [ ] Multiplayer step 2, hosted online (Fable 5.2, max, 8+ PRs)
+
 ---
 
 ## Phase 0 — Foundation (now)
@@ -49,7 +85,7 @@ Builds the engines everything else depends on.
 - [x] CBA ruleset as data (`sim/cba`): cap, contract rules, 84-game season
 - [x] Data pipeline (`ml/`): NHL play-by-play and player seasons prototyped; junior/European, draft and contract inputs deferred past v0.1 (community rosters instead)
 - [x] NHL-only held-out study done ([report](M1_PROTOTYPE_REPORT.md)); rating list v2 in code ([RATINGS.md](RATINGS.md)); `faceoffs` effect measured and calibrated (`ml/src/faceoffs.py`); M1 signed off on the NHL-only prototype
-- [x] Hidden ratings (list v2) + stats-to-ratings model v1 (`ratingsFromStats`, fitted on the sim by `pnpm ratings:fit`, with uncertainty); roster import does not use it yet (M4)
+- [x] Hidden ratings (list v2) + stats-to-ratings model v1 (`ratingsFromStats`, fitted on the sim by `pnpm ratings:fit`, with uncertainty); a roster file can carry one season of stats instead of ratings and is rated from them on import
 - [x] Line-by-line game sim (`sports/hockey/game.ts`) + "result only" mode; shot quality is a rules table behind `GoalModel` (`gm-xg-table`), tuned in the lab
 - [x] Balance lab: league-health report (`pnpm lab`) with multi-year checks (talent drift, dynasties, cap, playoff turnover, goalie save % repeatability, faceoff effect, goals vs expected, points % spread and repeatability against real NHL seasons); green apart from the long-run known gaps it lists ([why](research/2026-11-long-run-spread.md))
 - [x] Speed test in CI: day, season and year-20 budgets, plus year-20 screen data (standings, leaders, cap sheet)
@@ -92,7 +128,7 @@ Build order, owners and "done when" for each step: **[V0.1_PLAN.md](V0.1_PLAN.md
 **Rosters**
 
 - [x] Fictional default league
-- [~] Community roster import (versioned JSON, validated) works; Steam Workshop remains for release prep
+- [~] Community roster import (versioned JSON, validated; ratings, or one season of stats to rate from) works; Steam Workshop remains for release prep
 
 **Before launch**
 
@@ -106,6 +142,7 @@ Build order, owners and "done when" for each step: **[V0.1_PLAN.md](V0.1_PLAN.md
 - [~] Front office: scouting, analytics, medical, coaching, development staff. Department heads with a quality and a salary, coach quality in games, development staff (replacing GM skill), per-team draft reads, medical injury days, the staff market (leave, poaching, owner budgets), the Front Office screen with three candidates a season, tuned against the long-run benchmarks (all jobs of [the brief](research/2026-11-front-office.md); the price curve was tried and dropped), an assistant GM for human teams whose advice on Home (extend first, take or turn down an offer) is as accurate as his quality (the best-value free agent for your cap room, who would help on the top line, and a guess at a trade's answer), done; department returns (what each department added against an average one, on the Front Office screen) and firing a head without a replacement (an interim, severance) done; hired head coaches drawn from the owner-tilted market (coaching measured around the league's average coach) and medical scaling re-injury risk done; an analytics department (a fourth head; a weak one blurs what you see of other teams' players, a fixed amount per player, view only) done; the assistant's other jobs to do
 - [ ] Live draft trade room
 - [ ] Free-agency live bidding war + full contract negotiation
+- [ ] League news tab, social-media style: a feed page of posts with the generated face of the player and of the AI GM (or coach, owner) in each one, built on the existing `news.posted` events and the news-feed faces. Storylines that run over weeks and seasons (a holdout becoming a trade, a breakout and his extension ask, a GM's fire sale, a contender clearing cap for a star, a rivalry, a coach on the hot seat), each told as a short thread of linked posts; generated GM faces; likes and follows only if they carry a use. Needs a design first (a short brief in `docs/research/`).
 - [ ] Media & press conferences (text)
 - [ ] Match viewer (2D) + coach from the bench
 - [ ] Cutscenes (trophy lift, draft pick, signing)
