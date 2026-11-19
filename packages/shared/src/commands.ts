@@ -86,6 +86,8 @@ export type Command =
   | { kind: 'offseason.startDraft' }
   /** Your team is on the clock in the live draft: take this prospect; the draft runs to the next human pick. */
   | { kind: 'draft.pick'; teamId: TeamId; playerId: PlayerId }
+  /** Sign one of your prospects to his entry deal (any time outside the playoffs, cap allowing). */
+  | { kind: 'prospect.sign'; teamId: TeamId; playerId: PlayerId }
   /** One day of free agency: free agents answer the offers they have, then AI teams make new ones. */
   | { kind: 'freeAgency.advanceDay' }
   /** Match the offer sheet another team gave your restricted free agent: he signs with you on its terms. */

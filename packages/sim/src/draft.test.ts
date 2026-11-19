@@ -92,7 +92,7 @@ describe('draft', () => {
       ctx,
     );
     if (!pick.ok) throw new Error(pick.error.message);
-    expect(state.players[sleeper]?.teamId).toBe(mine);
+    expect(state.prospects[sleeper]?.player.teamId).toBe(mine);
     expect(onTheClock(state, ctx)?.teamId).toBe(mine);
 
     // Opening free agency finishes the draft for you, by your board.

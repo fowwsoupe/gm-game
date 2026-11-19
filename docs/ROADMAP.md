@@ -37,8 +37,9 @@ the playoff run in rental value, daily talks in deadline week, a deadline recap,
 after it).
 
 Minor / junior / European leagues: brief in
-[research/2026-11-minor-leagues.md](research/2026-11-minor-leagues.md); its four jobs (the
-prospect pool, lines, prospects in trades, the farm team) are ready, in that order.
+[research/2026-11-minor-leagues.md](research/2026-11-minor-leagues.md); job 1, the prospect pool,
+done (picks wait unsigned with their rights, AI GMs sign them when ready, the rookie award goes to
+a first main-league season); lines, prospects in trades and the farm team are next, in that order.
 
 Summer training, camp battles, international tournament: brief in
 [research/2026-11-summer-training.md](research/2026-11-summer-training.md); summer training plans
@@ -66,6 +67,7 @@ A. Leftovers (Sonnet 5.5, medium)
 B. Balance and calibration (Opus 5.5 unless noted)
 
 - [ ] Points % spread, seed 1 still short (high; compare seeds 1/101/201)
+- [ ] Lasting edges after the prospect pool (high; seeds 1/101/201): the points % spread is in range (0.095-0.096) but playoff turnover fell under its floor (27.5-28.6%) and goalie SV% r over its ceiling (0.30-0.33). Season form 4.5 raised turnover a point and cut titles in a trial, but it also moves the single-season checks and seed-pinned tests
 - [x] "Better team wins a best-of-7" back in range (high)
 - [ ] Trained stats-to-ratings and development models (xhigh, 2-3 PRs): stats to ratings v2 done (beats v1 on every key); penalty-kill time and penalty minutes in roster stats, and the development model, to do
 - [ ] Playtest analysis (Sonnet 5.5, medium)

@@ -173,9 +173,10 @@ export function interimHead(
  * What a team's departments return against the league's average one, worked out from their
  * quality and the ruleset (nothing is recorded, so it is the head in the job now): development's
  * points a year for a player 24 or younger, medical's share of injury days saved, and how far
- * the scouts' read of the picks of the newest draft class still on the team was off the truth,
- * and how far the assistant's read of the roster is off (he reads players as an AI GM of his
- * skill would, so a poor one is wrong about the same players until replaced).
+ * the scouts' read of the picks of the newest draft class still with the team (signed or in its
+ * prospect pool) was off the truth, and how far the assistant's read of the roster is off (he
+ * reads players as an AI GM of his skill would, so a poor one is wrong about the same players
+ * until replaced).
  */
 export function departmentReturns(
   state: LeagueState,
@@ -190,12 +191,15 @@ export function departmentReturns(
   const avg = (d: Department) => mean(teams.map((t) => q(t, d)));
   const mine = state.teams[teamId]!;
   const draftOf = (p: { id: string }) => Number(/^d(\d+)_/.exec(p.id)?.[1] ?? 0);
-  const players = Object.values(state.players).filter((p) => p.teamId && draftOf(p));
+  const players = [
+    ...Object.values(state.players),
+    ...Object.values(state.prospects).map((x) => x.player),
+  ].filter((p) => p.teamId && draftOf(p));
   const newest = Math.max(0, ...players.map(draftOf));
   const missOf = (t: Team) => {
     const picks = players.filter((p) => p.teamId === t.id && draftOf(p) === newest);
     const miss = picks.map((p) => {
-      const r = teamRange(t, { player: p, low: 0, high: 0 }, ctx, season);
+      const r = teamRange(t, { player: p }, ctx, season);
       return Math.abs((r.low + r.high) / 2 - p.potential);
     });
     return { n: miss.length, error: mean(miss) };

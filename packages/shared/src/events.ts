@@ -93,7 +93,8 @@ export type LeagueEvent =
   /**
    * A new player enters the league through the draft (the event carries the whole player).
    * `round` and `pick` are 0 for an undrafted free agent signed to fill a roster. `via`: the
-   * team the pick belonged to, when another team made it (traded or protected).
+   * team the pick belonged to, when another team made it (traded or protected). With
+   * `prospect`, a pick: he goes to his team's prospect pool unsigned (`Prospect`).
    */
   | (EventBase & {
       kind: 'player.drafted';
@@ -101,7 +102,17 @@ export type LeagueEvent =
       round: number;
       pick: number;
       via?: TeamId;
+      prospect?: { league: string; rightsEnd: number };
     })
+  /** A prospect signs his entry deal: he leaves the pool and joins his team. */
+  | (EventBase & {
+      kind: 'prospect.signed';
+      playerId: PlayerId;
+      teamId: TeamId;
+      contract: Contract;
+    })
+  /** His team's rights ran out unsigned: he leaves the pool and is a free agent. */
+  | (EventBase & { kind: 'prospect.released'; playerId: PlayerId })
   /**
    * Re-signing, free agency or an undrafted free agent: player joins `teamId` on `contract`.
    * `staying`: he re-signs with the team whose contract just expired, so his time there carries on.

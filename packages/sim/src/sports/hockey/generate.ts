@@ -75,9 +75,11 @@ const DRAFT_POSITIONS: HockeyPosition[] = [
  * Prospect tuning: potential = base + two dice of 0-15; today's rating is potential minus a gap.
  * The base and the fictional league's starting ages (20-34) are set together so that a league
  * 20 years on, built only from prospects, has the average rating it started with (balance lab,
- * "League avg rating drift").
+ * "League avg rating drift"). 52 until picks waited in the prospect pool: with the teenagers off
+ * the rosters the rostered average drifted up 3.5 by year 15 (4 leagues); 48 keeps the largest
+ * drift at 2.3-2.7 (seeds 1, 101, 201).
  */
-const PROSPECT = { potentialBase: 52, gap: [12, 26] as const };
+const PROSPECT = { potentialBase: 48, gap: [12, 26] as const };
 
 /** One value per rating key, drawn in the order the keys are listed. */
 const rate = (keys: readonly string[], r: () => number) =>
@@ -157,9 +159,22 @@ function fitPayroll(roster: Player[], ruleset: Ruleset, rng: Rng) {
 }
 
 /**
+ * Where a draft prospect comes from: most from Canadian junior, the rest from European men's
+ * leagues. ponytail: about two to one from general knowledge (college is out of scope); a share
+ * per league from real draft classes when the data rights allow.
+ */
+const JUNIOR_SHARE = 0.65;
+
+export const hockeyProspectOrigin = (rng: Rng) => (rng.chance(JUNIOR_SHARE) ? 'junior' : 'europe');
+
+/** A junior past the junior age plays in a European men's league until he signs. */
+export const hockeyProspectLeague = (origin: string, age: number, rules: Ruleset) =>
+  origin === 'junior' && age > rules.draft.juniorMaxAge ? 'europe' : origin;
+
+/**
  * A new, teamless 18-19 year old: the draft class and undrafted free agents.
  * Rated well below his potential; development closes the gap by his mid-twenties.
- * TODO(M4): position-specific rating profiles, junior/Europe origins.
+ * TODO(M4): position-specific rating profiles.
  */
 export function generateProspect(
   rng: Rng,

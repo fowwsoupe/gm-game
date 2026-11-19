@@ -1,12 +1,11 @@
-import type { DraftClock, DraftProspect, Player, Team, TeamId, TradeProposal } from '@gm/shared';
+import type { DraftClock, DraftProspect, Team, TeamId, TradeProposal } from '@gm/shared';
 import { Rng, teamName, type Emit, type LeagueState } from '../core';
 import type { SimContext } from '../context';
-import { deadCap } from '../cba';
+import { rightsYears } from '../cba';
 import { draftPicks, draftSlot, parsePick, pickLabel, worstFirst } from '../league';
 import { evaluateTrade, newTradeCache } from '../trades';
 import { hash, staffOf } from '../people';
 import { clampRating } from '../players';
-import { entryContract, rosterOf } from './roster';
 
 /** How far a scout's read of a prospect's potential is off, on average (rating points). */
 const SCOUT_SD = 4;
@@ -22,7 +21,7 @@ const scouted = (d: DraftProspect) => (d.low + d.high) / 2;
  */
 export function teamRange(
   team: Team,
-  d: DraftProspect,
+  d: Pick<DraftProspect, 'player'>,
   ctx: SimContext,
   season: number,
 ): { low: number; high: number } {
@@ -55,6 +54,7 @@ function aiPick(team: Team, pool: readonly DraftProspect[], ctx: SimContext, sea
 export function draftClass(state: LeagueState, ctx: SimContext, rng: Rng): DraftProspect[] {
   const season = state.date.season + 1;
   const count = Object.keys(state.teams).length * ctx.ruleset.draft.rounds;
+  const origins = rng.fork('origins'); // a fork, so the players drawn stay the same
   return Array.from({ length: count }, (_, i) => {
     const player = ctx.sport.generateProspect(rng, { id: `d${season}_${i}`, season });
     const read = player.potential + rng.normal(0, SCOUT_SD);
@@ -62,6 +62,7 @@ export function draftClass(state: LeagueState, ctx: SimContext, rng: Rng): Draft
       player,
       low: clampRating(read - SCOUT_HALF_RANGE),
       high: clampRating(read + SCOUT_HALF_RANGE),
+      league: ctx.sport.prospectOrigin(origins),
     };
   }).sort((a, b) => scouted(b) - scouted(a) || a.player.id.localeCompare(b.player.id));
 }
@@ -273,9 +274,8 @@ export function draftUntil(
 }
 
 /**
- * `clock`'s team drafts `playerId`, who signs an entry-level contract; a pick the team cannot fit
- * under the cap goes to the free-agent pool instead.
- * TODO(feature): draft rights and prospects kept off the roster.
+ * `clock`'s team drafts `playerId` into its prospect pool, unsigned, in the league he came from;
+ * it holds his rights for `draft.rightsYears` summers.
  */
 export function draftPlayer(
   state: LeagueState,
@@ -284,34 +284,17 @@ export function draftPlayer(
   clock: DraftClock,
   playerId: string,
 ) {
-  const season = state.date.season + 1;
   const { teamId, round, pick } = clock;
-  const prospect = state.draftClass.find((d) => d.player.id === playerId)!.player;
-  const contract = entryContract(
-    ctx.ruleset,
-    rosterOf(state, teamId),
-    prospect,
-    season,
-    deadCap(state, teamId, season),
-  );
-  // First-rounders sign with the most the rules allow in performance bonuses.
-  const player: Player = contract
-    ? {
-        ...prospect,
-        teamId,
-        contract:
-          round === 1
-            ? { ...contract, perfBonus: ctx.ruleset.contracts.maxPerformanceBonus }
-            : contract,
-      }
-    : prospect;
+  const d = state.draftClass.find((x) => x.player.id === playerId)!;
+  const age = state.date.season + 1 - d.player.birthYear;
   const via = parsePick(clock.id)?.originalTeamId;
   emit(pick === 1 ? 'notable' : 'minor', [teamId], {
     kind: 'player.drafted',
-    player,
+    player: { ...d.player, teamId },
     round,
     pick,
     ...(via && via !== teamId && { via }),
+    prospect: { league: d.league, rightsEnd: state.date.season + rightsYears(ctx.ruleset, age) },
   });
   // A trade offer for a pick lasts while it is on the clock.
   for (const o of state.tradeOffers) {

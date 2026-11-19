@@ -107,3 +107,7 @@ export function elcYears(rules: Ruleset, signingAge: number): number | null {
   );
   return row ? row.years : null;
 }
+
+/** Summers a team holds the rights of a pick drafted at `draftAge` (0: none). */
+export const rightsYears = (rules: Ruleset, draftAge: number): number =>
+  rules.draft.rightsYears.find((r) => draftAge <= r.maxAge)?.years ?? 0;

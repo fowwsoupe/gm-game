@@ -90,11 +90,20 @@ export interface Ruleset {
      * chance (in %) of winning a draw. `draws` teams jump to the front of round one. Null = worst picks first.
      */
     lottery: { draws: number; odds: number[] } | null;
+    /**
+     * Summers a team holds an unsigned pick's rights, by his age at the draft: the first row whose
+     * `maxAge` he is at or under.
+     */
+    rightsYears: { maxAge: number; years: number }[];
+    /** The oldest an unsigned prospect plays in junior; older, he plays in a men's league. */
+    juniorMaxAge: number;
   };
 
   awards: {
-    /** Players this age or younger are rookie-award eligible. */
+    /** Players in their first main-league season (`Player.debut`) this age or younger are rookie-award eligible. */
     rookieMaxAge: number;
+    /** Players with no debut (in the league from before the prospect pool): this age or younger. */
+    rookieMaxAgeNoDebut: number;
   };
 
   trades: {

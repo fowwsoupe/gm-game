@@ -1,9 +1,9 @@
 /**
  * Offseason engine (shared by all sports): the yearly rollover after the champion is crowned.
  * Owns the order of the steps and each step, every one a plain rule that reads `ctx.ruleset`:
- *   1 development  2 retirements  3 contract expiries  4 draft
- *   5 re-signing  6 free agency  7 reaching the cap floor  8 the international tournament (some
- *   summers)  9 next season's schedule and clock
+ *   1 development  2 retirements  3 contract expiries  4 draft (into the prospect pool)
+ *   5 re-signing and signing prospects  6 free agency  7 reaching the cap floor  8 the
+ *   international tournament (some summers)  9 next season's schedule and clock
  * Every change goes out as an event through `emit`, so replays and saves stay identical.
  * The summer runs in two halves so a human GM can shop free agency in between:
  * `openFreeAgency` (steps 1-5), then `finishRollover` (6-9). A human GM can hold the draft live
@@ -27,12 +27,19 @@ export { scoutReport } from './scouting';
 export { signingInterest, signFreeAgent, sheetCompensation } from './signing';
 export { acceptSheet, marketDay, raceFor, roomFor, walkAway } from './market';
 export { aiHoldouts, resignOffers, resignContract, isExpiring, resignWindowOpen } from './resign';
-export { stayChance } from './freeAgency';
+export { stayChance, prospectDeal, prospectsOf } from './freeAgency';
 export { freeAgents, wantedYears } from './roster';
 export { developPlayers, trainFocus } from './progression';
 export { playInternational } from './international';
 export { changeStaff, staffCandidates, departmentReturns, interimHead } from './staff';
-import { expireContracts, fillRosters, meetCapFloor, reSignPlayers } from './freeAgency';
+import {
+  expireContracts,
+  fillRosters,
+  meetCapFloor,
+  releaseProspects,
+  reSignPlayers,
+  signProspects,
+} from './freeAgency';
 import { MARKET_DAYS, decideOffers, marketDay } from './market';
 import { breakoutNews, developPlayers, retirePlayers } from './progression';
 import { changeStaff } from './staff';
@@ -84,7 +91,10 @@ export function startDraft(
   continueDraft(state, ctx, emit, stopForHumans);
 }
 
-/** The live draft goes on (see `draftUntil`); once every pick is made, step 5 and free agency opens. */
+/**
+ * The live draft goes on (see `draftUntil`); once every pick is made, step 5 and free agency
+ * opens, with prospects whose rights end still unsigned among the free agents.
+ */
 export function continueDraft(
   state: LeagueState,
   ctx: SimContext,
@@ -94,7 +104,9 @@ export function continueDraft(
   draftUntil(state, ctx, emit, stopForHumans);
   if (onTheClock(state, ctx)) return;
   const rng = new Rng(state.rngState);
+  signProspects(state, ctx, emit, state.date.season + 1);
   reSignPlayers(state, ctx, rng.fork('resign'), emit, state.date.season + 1);
+  releaseProspects(state, emit);
   emit('notable', [], { kind: 'freeAgency.opened' });
 }
 

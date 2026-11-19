@@ -40,6 +40,13 @@ export function dashboard(state: LeagueState, ctx: SimContext, teamId: TeamId): 
       todo.push({ code: 'adviceResign', params: { player: playerName(first) }, screen: 'cap' });
     }
   }
+  // Prospects still unsigned when free agency opens leave as free agents.
+  const lastSummer = Object.values(state.prospects).filter(
+    (x) => x.player.teamId === teamId && x.rightsEnd <= state.date.season,
+  ).length;
+  if (state.championTeamId && !state.freeAgencyOpen && lastSummer > 0) {
+    todo.push({ code: 'prospectRights', params: { count: lastSummer }, screen: 'roster' });
+  }
   // A young player who broke out and is in his last year: his price only rises, so talk extension now.
   if (!state.championTeamId && resignWindowOpen(state, ctx)) {
     for (const p of roster.filter(

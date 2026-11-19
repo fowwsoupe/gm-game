@@ -56,6 +56,7 @@ export function createLeague(
     capCharges: [],
     freeAgencyOpen: false,
     draftClass: [],
+    prospects: {},
     draftOrder: [],
     draftBoards: {},
     draftPicksMade: null,

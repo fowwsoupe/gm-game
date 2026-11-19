@@ -42,6 +42,7 @@ export {
   teamRange,
   onTheClock,
   picksLeft,
+  prospectsOf,
 } from './offseason';
 export { giveSeasonAwards, legendTrophies } from './awards';
 export { ownerStanding } from './owner';

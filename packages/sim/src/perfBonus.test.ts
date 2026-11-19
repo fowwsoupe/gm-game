@@ -54,12 +54,20 @@ describe('performance bonuses', () => {
     if (!res.ok) throw new Error(res.error.message);
     const open = handleCommand(state, { kind: 'offseason.openFreeAgency' }, local, ctx);
     if (!open.ok) throw new Error(open.error.message);
-    const drafted = open.events.flatMap((e) => (e.kind === 'player.drafted' ? [e] : []));
-    expect(drafted.length).toBeGreaterThan(0);
-    for (const d of drafted) {
-      if (!d.player.contract) continue;
-      expect(d.player.contract.perfBonus).toBe(
-        d.round === 1 ? ctx.ruleset.contracts.maxPerformanceBonus : undefined,
+    // Your two picks wait in the pool; signed, the first-rounder gets the bonus.
+    const mine = Object.values(state.teams).find((t) => t.userControlled)!.id;
+    const picks = Object.values(state.prospects).filter((x) => x.player.teamId === mine);
+    expect(picks.map((x) => x.round).sort()).toEqual([1, 2]);
+    for (const pr of picks) {
+      const signed = handleCommand(
+        state,
+        { kind: 'prospect.sign', teamId: mine, playerId: pr.player.id },
+        local,
+        ctx,
+      );
+      if (!signed.ok) throw new Error(signed.error.message);
+      expect(state.players[pr.player.id]!.contract!.perfBonus).toBe(
+        pr.round === 1 ? ctx.ruleset.contracts.maxPerformanceBonus : undefined,
       );
     }
   }, 60_000);

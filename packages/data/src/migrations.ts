@@ -171,4 +171,9 @@ export const migrations: readonly string[] = [
   `
   ALTER TABLE teams ADD COLUMN staff_json TEXT;
   `,
+  // 20: a player's first main-league season (the rookie award). NULL = in the league from before
+  // the prospect pool. Unsigned prospects have no row yet: they live in the meta table.
+  `
+  ALTER TABLE players ADD COLUMN debut_season INTEGER;
+  `,
 ];
