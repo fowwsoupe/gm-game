@@ -1,5 +1,6 @@
 import type {
   Player,
+  Prospect,
   RetainedSalary,
   TeamId,
   TradeEvaluation,
@@ -7,7 +8,14 @@ import type {
   TradeReason,
 } from '@gm/shared';
 import { pct, phaseOf, playerName, type LeagueState } from '../core';
-import { capYearIssues, capYearOf, retentionIssues, teamCapTotal } from '../cba';
+import {
+  capYearIssues,
+  capYearOf,
+  prospectDeal,
+  retentionIssues,
+  teamCapTotal,
+  type Ruleset,
+} from '../cba';
 import { pickValue, type TeamContext } from '../value';
 import { draftPicks, nextDraftSeason, worstFirst } from '../league';
 import {
@@ -47,6 +55,12 @@ export function tradeWindowOpen(state: LeagueState, ctx: SimContext): boolean {
 
 const count = (players: readonly Player[], teamId: TeamId, position: string) =>
   players.filter((p) => p.teamId === teamId && p.position === position).length;
+
+/** A prospect as trades value him: on the entry deal he would sign for `season`. */
+export function signedProspect(rules: Ruleset, pr: Prospect, season: number): Player {
+  const contract = prospectDeal(rules, pr, season);
+  return contract ? { ...pr.player, contract } : pr.player;
+}
 
 /**
  * The salary `fromTeamId` keeps on players it gives (`proposal.retain`), checked against the
@@ -174,9 +188,11 @@ export function evaluateTrade(
   if (from === to || !state.teams[from] || !state.teams[to]) return refuse('not_on_team');
   const givePicks = proposal.givePicks ?? [];
   const getPicks = proposal.getPicks ?? [];
+  const giveProspects = proposal.giveProspects ?? [];
+  const getProspects = proposal.getProspects ?? [];
   const protectTop = proposal.protectTop ?? 0;
   if (!Number.isInteger(protectTop) || protectTop < 0) return refuse('empty');
-  const assets = [...give, ...get, ...givePicks, ...getPicks];
+  const assets = [...give, ...get, ...givePicks, ...getPicks, ...giveProspects, ...getProspects];
   if (assets.length === 0 || new Set(assets).size !== assets.length) return refuse('empty');
   // Built only when picks are in the deal (AI trade talks call this hundreds of times a week).
   const picks = new Map(
@@ -196,12 +212,16 @@ export function evaluateTrade(
       if (pick.ownerTeamId !== owner) return refuse('not_your_pick', { pick: label(id) });
     }
   }
-  for (const [ids, owner] of [
-    [give, from],
-    [get, to],
+  const player = (id: Player['id']) => state.players[id];
+  const prospect = (id: Player['id']) => state.prospects[id]?.player;
+  for (const [ids, owner, find] of [
+    [give, from, player],
+    [get, to, player],
+    [giveProspects, from, prospect],
+    [getProspects, to, prospect],
   ] as const) {
     for (const id of ids) {
-      const p = state.players[id];
+      const p = find(id);
       if (p?.teamId !== owner) return refuse('not_on_team', { player: p ? playerName(p) : id });
       if (p.contract?.noTrade) return refuse('no_trade', { player: playerName(p) });
     }
@@ -251,6 +271,11 @@ export function evaluateTrade(
     const p = afterById.get(id)!;
     return { p, ...ctx.models.valuation.value(see(p), team, ruleset) };
   };
+  // Prospects are off the cap and the roster: only their value counts.
+  const prospectOf = (id: Player['id']) => {
+    const p = signedProspect(ruleset, state.prospects[id]!, team.season);
+    return { p, ...ctx.models.valuation.value(see(p), team, ruleset) };
+  };
   // A pick in the next draft lands where its original team finishes (worst first, from today's
   // standings), trusted more as the season is played: an empty table is all ties broken by team
   // id. Later drafts are guessed at the middle of the round.
@@ -291,10 +316,12 @@ export function evaluateTrade(
       reasons: [] as const,
     };
   };
-  const incoming = [...give.map(valueOf), ...givePicks.map((id) => pickOf(id, protectTop))].sort(
-    (a, b) => b.surplus - a.surplus,
-  );
-  const outgoing = [...get.map(valueOf), ...getPicks.map(pickOf)];
+  const incoming = [
+    ...give.map(valueOf),
+    ...giveProspects.map(prospectOf),
+    ...givePicks.map((id) => pickOf(id, protectTop)),
+  ].sort((a, b) => b.surplus - a.surplus);
+  const outgoing = [...get.map(valueOf), ...getProspects.map(prospectOf), ...getPicks.map(pickOf)];
   let rank = 0;
   let received = 0;
   let positive = 0;

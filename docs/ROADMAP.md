@@ -41,7 +41,9 @@ Minor / junior / European leagues: brief in
 done (picks wait unsigned with their rights, AI GMs sign them when ready, the rookie award goes to
 a first main-league season); job 2, lines, done (every prospect and the draft class get a season
 in junior or Europe drawn from ratings at the sim's rates over an NHLe factor, with a career row
-per league); prospects in trades and the farm team are next, in that order.
+per league); job 3, prospects in trades, done (either side can include them, valued on the entry
+deal each would sign; an AI buyer pays with one when no player or pick works); the farm team is
+next.
 
 Summer training, camp battles, international tournament: brief in
 [research/2026-11-summer-training.md](research/2026-11-summer-training.md); summer training plans

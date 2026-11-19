@@ -5,6 +5,7 @@ import type {
   HallOfFamer,
   LeagueEvent,
   Player,
+  PlayerId,
   Team,
   TeamId,
   TradeProposal,
@@ -19,7 +20,7 @@ import {
   teamName,
   type LeagueState,
 } from './core';
-import { buyoutCharges, capYearIssues, capYearOf, teamCapTotal } from './cba';
+import { buyoutCharges, capYearIssues, capYearOf, prospectDeal, teamCapTotal } from './cba';
 import { expansionDraft, pickLabel, thinnestDivision } from './league';
 import {
   departmentsOf,
@@ -46,7 +47,6 @@ import {
   startDraft,
   marketDay,
   openFreeAgency,
-  prospectDeal,
   resignContract,
   resignWindowOpen,
   rolloverSeason,
@@ -354,6 +354,8 @@ export function handleCommand(
         get: offer.proposal.give,
         ...(offer.proposal.getPicks && { givePicks: offer.proposal.getPicks }),
         ...(offer.proposal.givePicks && { getPicks: offer.proposal.givePicks }),
+        ...(offer.proposal.getProspects && { giveProspects: offer.proposal.getProspects }),
+        ...(offer.proposal.giveProspects && { getProspects: offer.proposal.giveProspects }),
       };
       // Another human GM's offer is judged as he wrote it (with his retention), legality only.
       const caller = state.teams[offer.proposal.fromTeamId]!;
@@ -522,7 +524,7 @@ export function handleCommand(
       const pr = state.prospects[command.playerId];
       if (pr?.player.teamId !== team.id) return invalid('not one of your prospects');
       if (!resignWindowOpen(state, ctx)) return invalid('signings are closed in the playoffs');
-      const deal = prospectDeal(ctx, pr, capYearOf(state));
+      const deal = prospectDeal(ctx.ruleset, pr, capYearOf(state));
       if (!deal) return invalid('no entry deal at his age');
       const total = teamCapTotal(state, team.id) + deal.capHit;
       if (capYearIssues(ctx.ruleset, state, total).length) return invalid('no cap room');
@@ -926,20 +928,25 @@ function completeTrade(
     ...(retained.length > 0 && { retained }),
     ...(proposal.givePicks?.length && { givePicks: [...proposal.givePicks] }),
     ...(proposal.getPicks?.length && { getPicks: [...proposal.getPicks] }),
+    ...(proposal.giveProspects?.length && { giveProspects: [...proposal.giveProspects] }),
+    ...(proposal.getProspects?.length && { getProspects: [...proposal.getProspects] }),
     ...(proposal.protectTop && proposal.givePicks?.length && { protectTop: proposal.protectTop }),
   });
   applyEvent(state, ev);
-  const picks = (ids: readonly string[] = []) => ids.map((id) => pickLabel(state, id));
-  const names = (ids: readonly string[]) =>
-    ids.map((id) => playerName(state.players[id]!)).join(', ');
+  const side = (ids: PlayerId[], prospects: PlayerId[] = [], pickIds: string[] = []) =>
+    [
+      ...ids.map((id) => playerName(state.players[id]!)),
+      ...prospects.map((id) => playerName(state.prospects[id]!.player)),
+      ...pickIds.map((id) => pickLabel(state, id)),
+    ].join(', ') || '-';
   const news = makeEvent(state, 'notable', [proposal.fromTeamId, proposal.toTeamId], {
     kind: 'news.posted',
     headline: 'event.trade',
     params: {
       from: teamName(state.teams[proposal.fromTeamId]!),
       to: teamName(state.teams[proposal.toTeamId]!),
-      give: [names(proposal.give), ...picks(proposal.givePicks)].filter(Boolean).join(', ') || '-',
-      get: [names(proposal.get), ...picks(proposal.getPicks)].filter(Boolean).join(', ') || '-',
+      give: side(proposal.give, proposal.giveProspects, proposal.givePicks),
+      get: side(proposal.get, proposal.getProspects, proposal.getPicks),
     },
   });
   applyEvent(state, news);

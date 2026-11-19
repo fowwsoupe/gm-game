@@ -163,8 +163,8 @@ export interface GmApi {
       made: DraftResult[];
       madeSeason: number | null;
     }>;
-    /** A team's prospects (rights held, unsigned), with its scouts' read of each. */
-    prospects(input: { teamId: TeamId }): Promise<ProspectEntry[]>;
+    /** A team's prospects (rights held, unsigned), with the scouts' read of `by` (default: his team). */
+    prospects(input: { teamId: TeamId; by?: TeamId }): Promise<ProspectEntry[]>;
     /** Home for a team: the to-do list and the next game. */
     dashboard(input: { teamId: TeamId }): Promise<Dashboard>;
     /** Playoff odds, power rating and status for every team. */

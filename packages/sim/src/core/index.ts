@@ -11,6 +11,7 @@ export {
   capYearOf,
   linemateKey,
   pairKey,
+  prospectsOf,
   type LeagueState,
   type ScheduledGame,
 } from './state';
