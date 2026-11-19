@@ -455,7 +455,16 @@ export function handleCommand(
         option: chosen.key,
         effects: chosen.effects,
       });
-      return applied(state, ev);
+      applyEvent(state, ev);
+      if (card.kind !== 'pressWin' && card.kind !== 'pressLoss') return { ok: true, events: [ev] };
+      // Your answer becomes a headline.
+      const quote = makeEvent(state, 'notable', [card.teamId], {
+        kind: 'news.posted',
+        headline: `press.quote.${chosen.key}`,
+        params: { team: teamName(state.teams[card.teamId]!) },
+      });
+      applyEvent(state, quote);
+      return { ok: true, events: [ev, quote] };
     }
 
     case 'finance.setTicketPrice': {
