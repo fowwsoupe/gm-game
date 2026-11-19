@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest';
-import type { Actor, Command, Player, PlayerId, TeamId } from '@gm/shared';
+import type { Actor, Command, LeagueEvent, Player, PlayerId, TeamId } from '@gm/shared';
 import {
   Rng,
   applyEvent,
@@ -7,11 +7,13 @@ import {
   createLeague,
   dashboard,
   defaultContext,
+  emitter,
   handleCommand,
   hockeySeasonStats,
   prospectsOf,
   type LeagueState,
 } from './index';
+import { prospectSeason } from './offseason';
 
 const local: Actor = { id: 'local', controls: [] };
 const ctx = defaultContext();
@@ -139,5 +141,59 @@ describe('prospect pool', () => {
       championTeamId: null,
     });
     expect(awards.find((a) => a.award === 'topRookie')?.playerId).toBe(rookie.id);
+  });
+});
+
+describe('lower-league lines', () => {
+  /** A made-up player at `position`, every rating `rating`. */
+  const rated = (rating: number, position = 'C'): Player => {
+    const base = ctx.sport.generateProspect(new Rng(2), { id: 'x', season: 2030, position });
+    const ratings = Object.fromEntries(Object.keys(base.ratings).map((k) => [k, rating]));
+    return { ...base, ratings };
+  };
+  /** Points a game over many seasons. */
+  const ppg = (p: Player, league: string) => {
+    let points = 0;
+    let gp = 0;
+    for (let i = 0; i < 300; i++) {
+      const line = ctx.sport.leagueLine(p, league, new Rng(i));
+      points += line.points!;
+      gp += line.gp!;
+    }
+    return points / gp;
+  };
+
+  it('a better prospect outscores a worse one, and the same one scores more in junior than in Europe', () => {
+    expect(ppg(rated(60), 'junior')).toBeGreaterThan(1.5 * ppg(rated(40), 'junior'));
+    expect(ppg(rated(50), 'junior')).toBeGreaterThan(2 * ppg(rated(50), 'europe'));
+    const goalie = ctx.sport.leagueLine(rated(50, 'G'), 'junior', new Rng(1));
+    expect(Object.keys(goalie).sort()).toEqual(['gp', 'savePct']);
+    expect(goalie.savePct).toBeGreaterThan(0.85);
+    expect(goalie.savePct).toBeLessThan(0.95);
+  });
+
+  it('the same seed gives the same lines; the class and the pool get theirs', () => {
+    const p = rated(55);
+    expect(ctx.sport.leagueLine(p, 'junior', new Rng(7))).toEqual(
+      ctx.sport.leagueLine(p, 'junior', new Rng(7)),
+    );
+    const { state, mine } = seasonOver(61);
+    for (const d of state.draftClass) {
+      expect(d.line).toMatchObject({ season: state.date.season, league: d.league });
+    }
+    addProspect(state, mine, 'kid', 50, state.date.season + 2);
+    addProspect(state, mine, 'old', 50, state.date.season + 2);
+    // A junior past the junior age plays in Europe.
+    state.prospects['old' as PlayerId]!.player.birthYear = state.date.season - 21;
+    const replica = structuredClone(state);
+    const events: LeagueEvent[] = [];
+    prospectSeason(state, ctx, new Rng(3), emitter(state, events));
+    events.forEach((e) => applyEvent(replica, e));
+    expect(replica).toEqual(state);
+    expect(state.prospects['kid' as PlayerId]!.line).toMatchObject({
+      season: state.date.season,
+      league: 'junior',
+    });
+    expect(state.prospects['old' as PlayerId]!.line?.league).toBe('europe');
   });
 });

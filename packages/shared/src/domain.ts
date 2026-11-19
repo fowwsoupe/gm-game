@@ -725,6 +725,18 @@ export interface DraftProspect {
   high: number;
   /** The lower league he comes from (`SportModule.prospectOrigin`; hockey: 'junior' or 'europe'). */
   league: string;
+  /** His draft-year season there. Absent in a class announced before lines existed. */
+  line?: LowerLeagueLine;
+}
+
+/**
+ * One season in a lower league, in a few numbers (`SportModule.leagueLine`): no games are played
+ * below the main league, so the line is drawn from his ratings when its regular season ends.
+ */
+export interface LowerLeagueLine {
+  season: number;
+  league: string;
+  stats: Record<string, number>;
 }
 
 /**
@@ -740,6 +752,8 @@ export interface Prospect {
   round: number;
   /** His team's rights end the summer after this season: still unsigned then, he is a free agent. */
   rightsEnd: number;
+  /** His latest season in a lower league (the draft year, then each one he waits). */
+  line?: LowerLeagueLine;
 }
 
 /** A team's prospect as its Prospects list shows him: no hidden ratings. */
@@ -755,6 +769,7 @@ export interface ProspectEntry {
   low: number;
   high: number;
   rightsEnd: number;
+  line?: LowerLeagueLine;
 }
 
 /** What the scouts say about a prospect: rating keys they like and dislike, and if he could play soon. */
@@ -797,6 +812,8 @@ export interface DraftBoardEntry {
   low: number;
   high: number;
   report: ScoutReport;
+  /** His draft-year season in the league he comes from. */
+  line?: LowerLeagueLine;
 }
 
 /** One team's league pulse: playoff odds, power rating and status. */
@@ -846,10 +863,14 @@ export interface Dashboard {
   raceNight?: { ifWin: number; ifLose: number };
 }
 
-/** One season of a player's career: his team at the end of it and his regular-season line. */
+/**
+ * One season of a player's career: his team at the end of it and his regular-season line. With
+ * `league`, a season in that lower league instead (no team); one season can have both.
+ */
 export interface CareerLine {
   season: number;
   teamId: TeamId | null;
+  league?: string;
   stats: Record<string, number>;
 }
 

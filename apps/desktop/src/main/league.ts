@@ -584,6 +584,7 @@ export class LeagueService {
           low,
           high,
           report: scoutReport(ctx, d),
+          ...(pd.line && { line: pd.line }),
         };
       }),
       board: state.draftBoards[teamId] ?? [],
@@ -599,7 +600,7 @@ export class LeagueService {
     if (!team) throw new Error(`No team ${teamId}`);
     const ctx = defaultContext(state.rulesetId);
     const season = state.date.season;
-    return prospectsOf(state, teamId).map(({ player: p, league, rightsEnd }) => ({
+    return prospectsOf(state, teamId).map(({ player: p, league, rightsEnd, line }) => ({
       id: p.id,
       firstName: p.firstName,
       lastName: p.lastName,
@@ -608,6 +609,7 @@ export class LeagueService {
       league: ctx.sport.prospectLeague(league, season - p.birthYear, ctx.ruleset),
       ...teamRange(team, { player: p }, ctx, season),
       rightsEnd,
+      ...(line && { line }),
     }));
   }
 

@@ -406,7 +406,11 @@ export function applyEvent(state: LeagueState, event: LeagueEvent): void {
     case 'player.drafted': {
       const player = structuredClone(event.player);
       if (event.prospect) {
-        state.prospects[player.id] = { player, round: event.round, ...event.prospect };
+        state.prospects[player.id] = {
+          player,
+          round: event.round,
+          ...structuredClone(event.prospect),
+        };
       } else {
         state.players[player.id] = player;
         if (player.teamId) player.joined = player.debut = capYearOf(state);
@@ -722,6 +726,13 @@ export function applyEvent(state: LeagueState, event: LeagueEvent): void {
       for (const l of event.lines) {
         const { gp, points } = l.stats;
         if (gp && points !== undefined) state.lastSeason[l.playerId] = { gp, points };
+      }
+      return;
+    case 'prospects.played':
+      for (const l of event.lines) {
+        const pr = state.prospects[l.playerId];
+        if (!pr) throw new Error(`unknown prospect ${l.playerId}`);
+        pr.line = { season: event.season, league: l.league, stats: { ...l.stats } };
       }
       return;
     case 'award.given':

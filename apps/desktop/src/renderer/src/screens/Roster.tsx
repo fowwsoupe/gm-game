@@ -27,7 +27,7 @@ import {
   Td,
   Th,
 } from '@/ui';
-import { fullName, money, statValue, teamName } from '@/lib/format';
+import { fullName, leagueLineText, money, statValue, teamName } from '@/lib/format';
 
 const FREE_AGENTS = 'fa';
 
@@ -208,6 +208,7 @@ function Prospects({ teamId, mine }: { teamId: TeamId; mine: boolean }) {
             <Th>{t('roster.age')}</Th>
             <Th left>{t('prospects.league')}</Th>
             <Th className="w-1/4">{t('draft.range')}</Th>
+            <Th left>{t('prospects.lastLine')}</Th>
             <Th>{t('prospects.rightsEnd')}</Th>
             {mine && <Th />}
           </tr>
@@ -224,6 +225,9 @@ function Prospects({ teamId, mine }: { teamId: TeamId; mine: boolean }) {
               <Td left>{t(`league.${p.league}` as MessageKey)}</Td>
               <Td>
                 <RangeBar low={p.low} high={p.high} />
+              </Td>
+              <Td left className="text-xs text-muted">
+                {p.line && `${p.line.season}: ${leagueLineText(p.line, (k) => t(k as MessageKey))}`}
               </Td>
               <Td>{p.rightsEnd}</Td>
               {mine && (
@@ -604,27 +608,33 @@ export function Offer({
   );
 }
 
-/** Finished regular seasons, then this one so far. */
+/** Finished regular seasons (a row per league: junior and Europe too), then this one so far. */
 function Career({ player }: { player: PlayerProfile }) {
   const t = useT();
   const { data: past = [] } = useCareer(player.id);
   const { data: teams = [] } = useTeams();
   const { data: status } = useStatus();
   // Once a season is archived (playoffs over) its line is in `past`; "Now" would repeat it.
-  const archived = past.some((l) => l.season === status?.season);
+  const archived = past.some((l) => !l.league && l.season === status?.season);
   const rows = [
-    ...past.map((l) => ({ label: String(l.season), teamId: l.teamId, stats: l.stats })),
+    ...past.map((l) => ({
+      label: String(l.season),
+      teamId: l.teamId,
+      league: l.league,
+      stats: l.stats,
+    })),
     ...(Object.keys(player.stats).length && !archived
-      ? [{ label: t('career.now'), teamId: player.teamId, stats: player.stats }]
+      ? [{ label: t('career.now'), teamId: player.teamId, league: undefined, stats: player.stats }]
       : []),
   ];
   if (rows.length === 0) return null;
   const keys = [...new Set(rows.flatMap((r) => Object.keys(r.stats)))];
   const abbr = (id: string | null) => teams.find((x) => x.id === id)?.abbreviation ?? '–';
-  // Counting stats add up; a rate (save %) does not.
+  // Counting stats add up, main league only; a rate (save %) does not.
+  const main = rows.filter((r) => !r.league);
   const totals: Record<string, number> = {};
   for (const k of keys.filter((k) => k !== 'savePct')) {
-    totals[k] = rows.reduce((sum, r) => sum + (r.stats[k] ?? 0), 0);
+    totals[k] = main.reduce((sum, r) => sum + (r.stats[k] ?? 0), 0);
   }
   return (
     <Card title={t('career.title')}>
@@ -640,16 +650,19 @@ function Career({ player }: { player: PlayerProfile }) {
         </thead>
         <tbody>
           {rows.map((r) => (
-            <tr key={r.label} className="border-b border-line/50 text-right">
+            <tr
+              key={`${r.label}-${r.league ?? ''}`}
+              className={`border-b border-line/50 text-right ${r.league ? 'text-muted' : ''}`}
+            >
               <Td left>{r.label}</Td>
-              <Td left>{abbr(r.teamId)}</Td>
+              <Td left>{r.league ? t(`league.${r.league}` as MessageKey) : abbr(r.teamId)}</Td>
               {keys.map((k) => (
                 <Td key={k}>{r.stats[k] === undefined ? '' : statValue(k, r.stats[k])}</Td>
               ))}
             </tr>
           ))}
         </tbody>
-        {rows.length > 1 && (
+        {main.length > 1 && (
           <tfoot>
             <tr className="border-t border-line text-right font-medium">
               <Td left>{t('career.totals')}</Td>

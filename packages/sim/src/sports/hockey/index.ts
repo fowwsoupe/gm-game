@@ -25,6 +25,7 @@ import {
   hockeyPlayerLines,
 } from './stats';
 import { hockeyRole } from './builds';
+import { hockeyLeagueLine } from './leagueLines';
 
 const SKATER_FOCUS = {
   skating: ['skating'],
@@ -54,6 +55,7 @@ export function hockeySport(goalModel: GoalModel = rulesGoalModel): SportModule<
     generateProspect,
     prospectOrigin: hockeyProspectOrigin,
     prospectLeague: hockeyProspectLeague,
+    leagueLine: hockeyLeagueLine,
     pickAwards,
     importRoster: importHockeyRoster,
     teamStrength,
@@ -107,4 +109,5 @@ export {
   type StatsToRatingsTable,
 } from './ratingsFromStats';
 export { STATS_TO_RATINGS } from './ratingsFromStatsTable';
+export { HOCKEY_LEAGUES, type RatingsToStatsTable } from './leagueLines';
 export { HOCKEY_DEVELOPMENT } from './aging';
