@@ -142,6 +142,16 @@ export function onTheClock(
   return draftSlot(state, order, made);
 }
 
+/** The live draft's picks still to make, the one on the clock first; empty when no draft is under way. */
+export function picksLeft(state: LeagueState, ctx: SimContext): DraftClock[] {
+  const first = onTheClock(state, ctx);
+  if (!first) return [];
+  const order = worstFirst(state, ctx.ruleset);
+  return Array.from({ length: order.length * ctx.ruleset.draft.rounds - first.pick + 1 }, (_, i) =>
+    draftSlot(state, order, first.pick - 1 + i),
+  );
+}
+
 /**
  * The live draft from the pick on the clock until every pick is made or, with `stopForHumans`, a
  * human team is on the clock. Each team takes the first player still on its board, else (AI) the
