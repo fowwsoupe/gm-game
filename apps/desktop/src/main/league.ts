@@ -27,6 +27,7 @@ import {
   departmentsOf,
   staffOf,
   ownerOf,
+  gmOf,
   ownerStanding,
   ticketPctOf,
   dashboard,
@@ -408,6 +409,7 @@ export class LeagueService {
     const { ruleset } = defaultContext(state.rulesetId);
     return {
       owner: ownerOf(team),
+      gm: team.userControlled ? null : gmOf(team).name,
       coach: coachOf(team, ruleset.finance.coach, state.date.season),
       staff: Object.fromEntries(
         departmentsOf(team).map((d) => [

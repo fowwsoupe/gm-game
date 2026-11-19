@@ -318,6 +318,8 @@ export type LeagueEvent =
       headline: string;
       /** The player the line is about (set whenever `params.player` names one), for his face. */
       playerId?: PlayerId;
+      /** The person speaking (his name kept on the post, so a fired coach keeps his face). */
+      by?: { role: 'gm' | 'coach' | 'owner'; name: string };
       body?: string;
       params?: Record<string, string | number>;
     });

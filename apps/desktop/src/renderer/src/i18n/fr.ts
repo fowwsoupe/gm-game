@@ -72,6 +72,7 @@ export const fr: Record<MessageKey, string> = {
   'team.owner.patience': 'Patience',
   'team.owner.market': 'Taille du marché',
   'team.coach': 'Entraîneur-chef',
+  'team.gm': 'Directeur général',
   'team.coach.since': 'En poste depuis',
   'team.coach.salary': 'Salaire',
   'team.staff': 'Personnel hockey',

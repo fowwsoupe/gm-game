@@ -31,6 +31,23 @@ describe('AI GMs', () => {
     expect(gmOf(team)).toEqual(gmOf(team));
   });
 
+  it('every GM has a name: drawn when hired, the same on a replay, derived for an old save', () => {
+    const names = () => Object.values(createLeague(1, ctx).teams).map((t) => t.gm?.name);
+    expect(names().every(Boolean)).toBe(true);
+    expect(names()).toEqual(names());
+    const old = {
+      id: 't1',
+      city: 'A',
+      name: 'B',
+      abbreviation: 'AB',
+      userControlled: false,
+      gm: { style: 'balanced', skill: 0.5 },
+    } as Team;
+    expect(gmOf(old).name).toBeTruthy();
+    expect(gmOf(old)).toEqual(gmOf(old));
+    expect(gmOf(old).skill).toBe(0.5);
+  });
+
   it('a better GM misreads players by less, and always the same way', () => {
     const spread = (skill: number) => {
       const reads = Array.from({ length: 400 }, (_, i) =>

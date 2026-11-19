@@ -15,6 +15,17 @@ function hash(text: string): number {
   return h >>> 0;
 }
 
+/** A front-office face (GM, coach, owner): seeded by role and name, a stable age 40-70. */
+export const PersonFace = ({
+  role,
+  name,
+  size = 64,
+}: {
+  role: string;
+  name: string;
+  size?: number;
+}) => <Face seed={`${role}:${name}`} age={40 + (hash(name) % 31)} size={size} />;
+
 export function Face({ seed, age, size = 64 }: { seed: string; age: number; size?: number }) {
   const h = hash(seed);
   const pick = (n: number, shift: number) => Math.floor((((h >>> shift) % 997) / 997) * n);
