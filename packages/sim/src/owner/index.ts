@@ -22,7 +22,7 @@ import {
   randomGm,
   ticketPctOf,
 } from '../people';
-import { fansOf, seatsOf } from '../finance';
+import { fansOf, pointsPct, seatsOf } from '../finance';
 import { leagueStandings } from '../league';
 import type { SimContext } from '../context';
 
@@ -106,11 +106,14 @@ const honeymoon = (patience: number) => 1 + Math.round(2 * patience);
 /** A drop in confidence, made bigger by an impatient owner (x0.5 to x1.5). */
 const drop = (amount: number, patience: number) => amount * (1.5 - patience);
 
+/** The lowest confidence can go: `HONEYMOON_FLOOR` in a new GM's honeymoon, else 0. */
+const floorOf = (standing: OwnerStanding, patience: number, season: number) =>
+  season < standing.since + honeymoon(patience) ? HONEYMOON_FLOOR : 0;
+
 /** Confidence after a change: losses scaled by patience, never under the honeymoon floor. */
 function moved(standing: OwnerStanding, delta: number, patience: number, season: number) {
   const next = standing.confidence + (delta < 0 ? drop(delta, patience) : delta);
-  const floor = season < standing.since + honeymoon(patience) ? HONEYMOON_FLOOR : 0;
-  return clamp(Math.max(floor, next));
+  return clamp(Math.max(floorOf(standing, patience, season), next));
 }
 
 /** Whether an AI GM's owner has lost confidence in him (asked in the summer, after the review). */
@@ -135,14 +138,6 @@ export function ownerStanding(state: LeagueState, ctx: SimContext, teamId: TeamI
       payrollBudget: baseBudget(ctx, ownerOf(state.teams[teamId]!).budget),
       cashAtStart: state.cash[teamId] ?? 0,
     }
-  );
-}
-
-/** Each team's points % this regular season. */
-function pointsPct(state: LeagueState, ctx: SimContext): Map<TeamId, number> {
-  const win = ctx.ruleset.season.points.win;
-  return new Map(
-    leagueStandings(state, ctx.ruleset).map((r) => [r.teamId, r.gp ? r.pts / (win * r.gp) : 0.5]),
   );
 }
 
@@ -421,15 +416,15 @@ export function deadlineCheckIn(state: LeagueState, ctx: SimContext, emit: Emit)
   const step = pct(ctx.ruleset.cap.upperLimit, BUDGET_STEP_PCT);
   for (const teamId of (Object.keys(state.teams) as TeamId[]).sort()) {
     const team = state.teams[teamId]!;
+    const standing = ownerStanding(state, ctx, teamId);
     emit('minor', [teamId], {
       kind: 'owner.meeting',
       teamId,
       meeting: 'deadline',
-      owner: ownerStanding(state, ctx, teamId),
+      owner: standing,
     });
     const status = state.teamStatus[teamId];
     const winFirst = ownerOf(team).priority >= 0.5;
-    const standing = ownerStanding(state, ctx, teamId);
     const room = ctx.ruleset.cap.upperLimit - standing.payrollBudget;
     if ((status === 'contender' || status === 'buyer') && winFirst && room > 0) {
       offer(
@@ -651,8 +646,9 @@ export function seasonReview(state: LeagueState, ctx: SimContext, emit: Emit, rn
     if (profit < 0) delta -= drop(LOST_MONEY, owner.patience);
     delta += FAN_MOOD * (fansOf(state, teamId).interest - 50);
     // Patience is already in the drops above, so the floor is the only rule left to apply.
-    const floor = season < prev.since + honeymoon(owner.patience) ? HONEYMOON_FLOOR : 0;
-    const confidence = clamp(Math.max(floor, prev.confidence + delta));
+    const confidence = clamp(
+      Math.max(floorOf(prev, owner.patience, season), prev.confidence + delta),
+    );
     const payrollBudget = baseBudget(ctx, owner.budget);
     const heat = (prev.coachHeat ?? 0) + prev.expected - lastPct;
     emit(team.userControlled ? 'major' : 'minor', [teamId], {

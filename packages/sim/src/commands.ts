@@ -313,19 +313,12 @@ export function handleCommand(
           }),
         );
       }
-      const events = asked.map((p) =>
-        applied(
-          state,
-          makeEvent(state, 'notable', [from.id], { kind: 'player.noTradeWaived', playerId: p.id }),
-        ),
-      );
-      return {
-        ok: true,
-        events: [
-          ...events.flatMap((r) => (r.ok ? r.events : [])),
-          ...tradeOrOffer(state, ctx, proposal),
-        ],
-      };
+      const events: LeagueEvent[] = [];
+      const emit = emitter(state, events);
+      for (const p of asked) {
+        emit('notable', [from.id], { kind: 'player.noTradeWaived', playerId: p.id });
+      }
+      return { ok: true, events: [...events, ...tradeOrOffer(state, ctx, proposal)] };
     }
 
     case 'trade.propose': {
@@ -345,16 +338,17 @@ export function handleCommand(
       if (!offer) return invalid('no such offer');
       const human = state.teams[offer.proposal.toTeamId]!;
       if (!controls(actor, human)) return notYours;
-      const close = (accepted: boolean) => {
-        const ev = makeEvent(state, 'minor', [human.id, offer.proposal.fromTeamId], {
+      const events: LeagueEvent[] = [];
+      const close = (accepted: boolean) =>
+        emitter(state, events)('minor', [human.id, offer.proposal.fromTeamId], {
           kind: 'trade.offerClosed',
           offerId: offer.id,
           accepted,
         });
-        applyEvent(state, ev);
-        return ev;
-      };
-      if (!command.accept) return { ok: true, events: [close(false)] };
+      if (!command.accept) {
+        close(false);
+        return { ok: true, events };
+      }
       // Seen from your side: you give what they asked for. It must still pass today.
       const mirror = {
         fromTeamId: human.id,
@@ -386,8 +380,8 @@ export function handleCommand(
         );
       }
       // Closed first: a live draft that runs on closes offers for the picks it uses.
-      const closed = close(true);
-      return { ok: true, events: [closed, ...completeTrade(state, ctx, deal)] };
+      close(true);
+      return { ok: true, events: [...events, ...completeTrade(state, ctx, deal)] };
     }
 
     case 'tradeRequest.talk': {
@@ -423,49 +417,34 @@ export function handleCommand(
       // Promises are checked once a week in the regular season: one due later is due at the last check.
       const days = ctx.ruleset.season.calendar.regularSeasonDays;
       const lastWeek = days - 1 - ((days - 7) % 7);
-      const ends = (outcome: 'settled' | 'request' | 'listed') =>
-        makeEvent(state, 'notable', [team.id], {
-          kind: 'player.disputeEnded',
-          playerId: p.id,
-          outcome,
-        });
       const events: LeagueEvent[] = [];
-      const push = (ev: LeagueEvent) => {
-        applyEvent(state, ev);
-        events.push(ev);
-      };
+      const emit = emitter(state, events);
+      const end = (outcome: 'settled' | 'request') =>
+        emit('notable', [team.id], { kind: 'player.disputeEnded', playerId: p.id, outcome });
       if (command.answer === 'promise') {
-        push(
-          makeEvent(state, 'notable', [team.id], {
-            kind: 'player.disputePromised',
-            playerId: p.id,
-            until: Math.min(state.date.day + PROMISE_DAYS, lastWeek),
-          }),
-        );
+        emit('notable', [team.id], {
+          kind: 'player.disputePromised',
+          playerId: p.id,
+          until: Math.min(state.date.day + PROMISE_DAYS, lastWeek),
+        });
       } else if (command.answer === 'block') {
-        push(
-          makeEvent(state, 'minor', [team.id], {
-            kind: 'trade.blockSet',
-            teamId: team.id,
-            playerId: p.id,
-            onBlock: true,
-          }),
-        );
-        push(
-          makeEvent(state, 'notable', [team.id], { kind: 'player.disputeListed', playerId: p.id }),
-        );
+        emit('minor', [team.id], {
+          kind: 'trade.blockSet',
+          teamId: team.id,
+          playerId: p.id,
+          onBlock: true,
+        });
+        emit('notable', [team.id], { kind: 'player.disputeListed', playerId: p.id });
       } else if (talkedDown(p.id)) {
-        push(ends('settled'));
+        end('settled');
       } else {
-        push(ends('request'));
+        end('request');
         if (!state.tradeRequests.some((r) => r.playerId === p.id)) {
-          push(
-            makeEvent(state, 'major', [team.id], {
-              kind: 'player.tradeRequested',
-              playerId: p.id,
-              teamId: team.id,
-            }),
-          );
+          emit('major', [team.id], {
+            kind: 'player.tradeRequested',
+            playerId: p.id,
+            teamId: team.id,
+          });
         }
       }
       return { ok: true, events };
@@ -681,7 +660,9 @@ export function handleCommand(
       if (!controls(actor, state.teams[card.teamId]!)) return notYours;
       const chosen = card.options.find((o) => o.key === command.option);
       if (!chosen) return invalid('no such option');
-      const ev = makeEvent(state, 'minor', [card.teamId], {
+      const events: LeagueEvent[] = [];
+      const emit = emitter(state, events);
+      emit('minor', [card.teamId], {
         kind: 'owner.cardAnswered',
         teamId: card.teamId,
         cardId: card.id,
@@ -689,16 +670,15 @@ export function handleCommand(
         option: chosen.key,
         effects: chosen.effects,
       });
-      applyEvent(state, ev);
-      if (!card.kind.startsWith('press')) return { ok: true, events: [ev] };
-      // Your answer becomes a headline.
-      const quote = makeEvent(state, 'notable', [card.teamId], {
-        kind: 'news.posted',
-        headline: `press.quote.${chosen.key}`,
-        params: { team: teamName(state.teams[card.teamId]!) },
-      });
-      applyEvent(state, quote);
-      return { ok: true, events: [ev, quote] };
+      // Your answer to the press becomes a headline.
+      if (card.kind.startsWith('press')) {
+        emit('notable', [card.teamId], {
+          kind: 'news.posted',
+          headline: `press.quote.${chosen.key}`,
+          params: { team: teamName(state.teams[card.teamId]!) },
+        });
+      }
+      return { ok: true, events };
     }
 
     case 'finance.setTicketPrice': {
@@ -937,7 +917,8 @@ function tradeOrOffer(state: LeagueState, ctx: SimContext, proposal: TradePropos
   const { fromTeamId, toTeamId } = proposal;
   if (!state.teams[toTeamId]?.userControlled) return completeTrade(state, ctx, proposal);
   const { season, day } = state.date;
-  const ev = makeEvent(state, 'notable', [toTeamId, fromTeamId], {
+  const events: LeagueEvent[] = [];
+  emitter(state, events)('notable', [toTeamId, fromTeamId], {
     kind: 'trade.offered',
     offer: {
       id: `h${season}_${day}_${fromTeamId}_${toTeamId}_${state.tradeOffers.length}`,
@@ -945,8 +926,7 @@ function tradeOrOffer(state: LeagueState, ctx: SimContext, proposal: TradePropos
       expiresDay: offerExpires(state, ctx),
     },
   });
-  applyEvent(state, ev);
-  return [ev];
+  return events;
 }
 
 /** Applies an accepted trade: the trade itself (with any retained salary) and its headline. */
@@ -957,7 +937,9 @@ function completeTrade(
 ): LeagueEvent[] {
   const plan = planRetention(state, ctx, proposal);
   const retained = 'retained' in plan ? plan.retained : [];
-  const ev = makeEvent(state, 'major', [proposal.fromTeamId, proposal.toTeamId], {
+  const events: LeagueEvent[] = [];
+  const emit = emitter(state, events);
+  emit('major', [proposal.fromTeamId, proposal.toTeamId], {
     kind: 'trade.completed',
     fromTeamId: proposal.fromTeamId,
     toTeamId: proposal.toTeamId,
@@ -970,14 +952,13 @@ function completeTrade(
     ...(proposal.getProspects?.length && { getProspects: [...proposal.getProspects] }),
     ...(proposal.protectTop && proposal.givePicks?.length && { protectTop: proposal.protectTop }),
   });
-  applyEvent(state, ev);
   const side = (ids: PlayerId[], prospects: PlayerId[] = [], pickIds: string[] = []) =>
     [
       ...ids.map((id) => playerName(state.players[id]!)),
       ...prospects.map((id) => playerName(state.prospects[id]!.player)),
       ...pickIds.map((id) => pickLabel(state, id)),
     ].join(', ') || '-';
-  const news = makeEvent(state, 'notable', [proposal.fromTeamId, proposal.toTeamId], {
+  emit('notable', [proposal.fromTeamId, proposal.toTeamId], {
     kind: 'news.posted',
     headline: 'event.trade',
     params: {
@@ -987,10 +968,8 @@ function completeTrade(
       get: side(proposal.get, proposal.getProspects, proposal.getPicks),
     },
   });
-  applyEvent(state, news);
-  const events = [ev, news];
   // A pick on the clock traded to an AI team: the live draft runs on to the next human pick.
-  if (state.draftPicksMade !== null) continueDraft(state, ctx, emitter(state, events), true);
+  if (state.draftPicksMade !== null) continueDraft(state, ctx, emit, true);
   // A human GM is asked about a blockbuster: a traded player among his team's top three.
   const traded = new Set([...proposal.give, ...proposal.get]);
   for (const teamId of [proposal.fromTeamId, proposal.toTeamId]) {
@@ -1000,7 +979,7 @@ function completeTrade(
       .sort((a, b) => overall(b) - overall(a))
       .slice(0, 3);
     if (top.some((p) => traded.has(p.id))) {
-      pressQuestion(state, emitter(state, events), teamId, 'pressTrade', 0);
+      pressQuestion(state, emit, teamId, 'pressTrade', 0);
     }
   }
   return events;

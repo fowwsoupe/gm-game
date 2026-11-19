@@ -39,6 +39,12 @@ export const inDeadlineWeek = (cal: CalendarConfig, day: number) =>
 const BUYING: readonly TeamStatus[] = ['contender', 'buyer'];
 const SELLING: readonly TeamStatus[] = ['seller', 'rebuilder', 'crisis'];
 
+/** A team's players, by id. */
+const roster = (state: LeagueState, id: TeamId) =>
+  Object.values(state.players)
+    .filter((p) => p.teamId === id)
+    .sort((a, b) => a.id.localeCompare(b.id));
+
 /**
  * Player values for one week's trade talks, memoized: contexts scan the whole league and values
  * run the valuator, so each is computed once per player and team.
@@ -86,10 +92,6 @@ export function aiTrades(state: LeagueState, ctx: SimContext, rng: Rng, emit: Em
   const buyers = ai.filter(buys);
   const sellers = ai.filter((id) => sells(id) || blocks.includes(id));
   if (!buyers.length || !sellers.length) return;
-  const roster = (id: TeamId) =>
-    Object.values(state.players)
-      .filter((p) => p.teamId === id)
-      .sort((a, b) => a.id.localeCompare(b.id));
   const cache = newTradeCache();
   const value = valuer(state, ctx, cache);
 
@@ -98,8 +100,8 @@ export function aiTrades(state: LeagueState, ctx: SimContext, rng: Rng, emit: Em
     // Buyers look at the block first: the first calls go to teams with listed players.
     const seller = i < BLOCK_PAIRS && blocks.length ? rng.pick(blocks) : rng.pick(sellers);
     const gap = (p: Player, to: TeamId, from: TeamId) => value(p, to) - value(p, from);
-    const listed = roster(seller).filter((p) => state.tradeBlock.includes(p.id));
-    const target = (listed.length ? listed : roster(seller)).sort(
+    const listed = roster(state, seller).filter((p) => state.tradeBlock.includes(p.id));
+    const target = (listed.length ? listed : roster(state, seller)).sort(
       (a, b) => gap(b, buyer, seller) - gap(a, buyer, seller),
     )[0];
     if (!target) continue;
@@ -113,7 +115,7 @@ export function aiTrades(state: LeagueState, ctx: SimContext, rng: Rng, emit: Em
       prospects: PlayerId[];
       label: string;
     }[] = [
-      ...roster(buyer)
+      ...roster(state, buyer)
         .filter(wanted)
         .sort(byGap)
         .slice(0, OFFERS_TRIED)
@@ -225,21 +227,17 @@ export function aiOffers(state: LeagueState, ctx: SimContext, rng: Rng, emit: Em
   if (!ai.length) return;
   const cache = newTradeCache();
   const value = valuer(state, ctx, cache);
-  const roster = (id: TeamId) =>
-    Object.values(state.players)
-      .filter((p) => p.teamId === id)
-      .sort((a, b) => a.id.localeCompare(b.id));
   for (const human of teams.filter((t) => t.userControlled).map((t) => t.id)) {
     if (state.tradeOffers.some((o) => o.proposal.toTeamId === human)) continue;
-    const listed = roster(human).filter((p) => state.tradeBlock.includes(p.id));
+    const listed = roster(state, human).filter((p) => state.tradeBlock.includes(p.id));
     if (!rng.chance(listed.length ? BLOCK_OFFER_CHANCE : WEEKLY_OFFER_CHANCE)) continue;
     const caller = rng.pick(ai);
     const gap = (p: Player, to: TeamId, from: TeamId) => value(p, to) - value(p, from);
-    const target = (listed.length ? listed : roster(human)).sort(
+    const target = (listed.length ? listed : roster(state, human)).sort(
       (a, b) => gap(b, caller, human) - gap(a, caller, human),
     )[0];
     if (!target) continue;
-    const offer = roster(caller)
+    const offer = roster(state, caller)
       .filter((p) => value(p, human) >= value(target, human))
       .sort((a, b) => gap(b, human, caller) - gap(a, human, caller))
       .find(
