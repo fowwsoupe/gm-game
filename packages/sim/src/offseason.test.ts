@@ -234,13 +234,13 @@ describe('offseason steps', () => {
   });
 
   it('the lottery is drawn at the crown, a lottery team drafts first, draftees get entry-level deals', () => {
-    const state = seasonOver(9);
+    const state = seasonOver(12);
     // The lottery is drawn when the champion is crowned and the draft follows it.
     expect(state.draftOrder).toHaveLength(Object.keys(state.teams).length);
     const order = [...state.draftOrder];
     // Who makes each first-round pick: its owner, if it was traded.
     const owner = new Map(
-      draftPicks(state, 1)
+      draftPicks(state, ruleset)
         .filter((p) => p.season === nextDraftSeason(state))
         .map((p) => [p.originalTeamId, p.ownerTeamId]),
     );
