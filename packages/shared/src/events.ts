@@ -9,6 +9,7 @@ import type {
   GameResult,
   Department,
   GmProfile,
+  InternationalTournament,
   StaffProfile,
   OwnerCard,
   OwnerStanding,
@@ -175,6 +176,8 @@ export type LeagueEvent =
       teamId: TeamId;
       playerId?: PlayerId;
     })
+  /** Late in the summer of a tournament season: the international tournament was played. */
+  | (EventBase & { kind: 'international.played'; tournament: InternationalTournament })
   /** The playoffs are over: next draft's class, with scouted ranges, and the lottery's round-one order. */
   | (EventBase & {
       kind: 'draft.classAnnounced';

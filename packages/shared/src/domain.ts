@@ -511,6 +511,24 @@ export interface PlayoffSeries {
   winnerTeamId?: TeamId;
 }
 
+/** An international tournament (nations are the sport's keys, e.g. 'canada'), as the History screen lists it. */
+export interface InternationalTournament {
+  season: number;
+  /** The two groups' tables, best first. */
+  groups: {
+    nation: string;
+    wins: number;
+    points: number;
+    goalsFor: number;
+    goalsAgainst: number;
+  }[][];
+  /** Every game in order: the group games, the two semi-finals, the final. */
+  games: { home: string; away: string; homeScore: number; awayScore: number; overtime: boolean }[];
+  champion: string;
+  /** The tournament's leader on the sport's first leaderboard (hockey: points), if any. */
+  best?: { playerId: PlayerId; name: string; nation: string; key: string; value: number };
+}
+
 /** One award a season (sport-defined keys like 'mvp', plus 'champion'), as the History screen lists it. */
 export interface AwardEntry {
   season: number;

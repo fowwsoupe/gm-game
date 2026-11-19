@@ -12,6 +12,7 @@ export {
   personalityOf,
   notableTraits,
   hometownOf,
+  nationOf,
   hash,
   TRAITS,
   PRIORITIES,

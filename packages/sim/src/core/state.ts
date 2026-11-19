@@ -8,6 +8,7 @@ import type {
   FreeAgentOffer,
   GoalieRotation,
   GameResult,
+  InternationalTournament,
   LeagueEvent,
   OwnerCard,
   OwnerProject,
@@ -64,6 +65,8 @@ export interface LeagueState {
   depthCharts: Record<string, string[]>;
   /** Summer training focus by player (a key of the sport's `trainingFocus`); only human teams' count. */
   trainingPlans: Record<PlayerId, string>;
+  /** International tournaments played so far, oldest first. */
+  international: InternationalTournament[];
   /** Each human team's saved power-play / penalty-kill units (absent = auto). */
   specialUnits: Record<string, Partial<Record<SpecialUnit, PlayerId[]>>>;
   /** Owners of traded draft picks, by pick id (`season-round-originalTeam`). Untraded picks are absent. */
@@ -379,6 +382,9 @@ export function applyEvent(state: LeagueState, event: LeagueEvent): void {
     case 'training.planSet':
       if (event.focus === null) delete state.trainingPlans[event.playerId];
       else state.trainingPlans[event.playerId] = event.focus;
+      return;
+    case 'international.played':
+      state.international.push({ ...event.tournament });
       return;
     case 'trade.blockSet':
       state.tradeBlock = state.tradeBlock.filter((id) => id !== event.playerId);

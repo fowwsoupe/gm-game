@@ -181,6 +181,10 @@ export class LeagueService {
     });
   }
 
+  international() {
+    return [...this.open().state.international].reverse();
+  }
+
   hallOfFame(): HallOfFamer[] {
     const { save, state } = this.open();
     const { sport } = defaultContext(state.rulesetId);

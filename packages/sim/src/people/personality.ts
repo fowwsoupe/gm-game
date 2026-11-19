@@ -52,6 +52,14 @@ export const personalityOf = (playerId: string): Personality =>
 export const hometownOf = (playerId: string, teamIds: readonly string[]): string | undefined =>
   [...teamIds].sort()[hash(`home:${playerId}`) % Math.max(1, teamIds.length)];
 
+/** His nation (a key of the sport's `nations`, by their shares): stable from his id, like his personality. */
+export function nationOf(playerId: string, nations: Readonly<Record<string, number>>): string {
+  const keys = Object.keys(nations);
+  const total = keys.reduce((a, k) => a + nations[k]!, 0);
+  let x = new Rng(hash(`nation:${playerId}`)).next() * total;
+  return keys.find((k) => (x -= nations[k]!) < 0) ?? keys[keys.length - 1]!;
+}
+
 /** Traits strong (or, for temperament, weak) enough to mention, strongest first, at most two. */
 export function notableTraits(p: Personality): string[] {
   const out: [string, number][] = [];
