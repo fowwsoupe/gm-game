@@ -9,7 +9,12 @@ import type { SportModule } from '../sport';
 import { simGame } from './game';
 import { rulesGoalModel, type GoalModel } from './tuning';
 import { lineupUnits, specialUnitsView, teamStrength, unitOk, type TeamStrength } from './strength';
-import { generateFictionalLeague, generateProspect } from './generate';
+import {
+  generateFictionalLeague,
+  generateProspect,
+  hockeyProspectLeague,
+  hockeyProspectOrigin,
+} from './generate';
 import { hockeyLegendAward, pickAwards } from './awards';
 import { importHockeyRoster } from './roster';
 import {
@@ -47,6 +52,8 @@ export function hockeySport(goalModel: GoalModel = rulesGoalModel): SportModule<
     pythagoreanExponent: 2,
     generateLeague: generateFictionalLeague,
     generateProspect,
+    prospectOrigin: hockeyProspectOrigin,
+    prospectLeague: hockeyProspectLeague,
     pickAwards,
     importRoster: importHockeyRoster,
     teamStrength,

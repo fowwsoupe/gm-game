@@ -1,6 +1,6 @@
 import { describe, expect, it } from 'vitest';
-import type { Actor, TeamId } from '@gm/shared';
-import { createLeague, defaultContext, handleCommand } from '@gm/sim';
+import type { Actor, Command, PlayerId, TeamId } from '@gm/shared';
+import { Rng, createLeague, defaultContext, handleCommand } from '@gm/sim';
 import { openSave } from './index';
 import { migrations } from './migrations';
 
@@ -166,6 +166,37 @@ describe('SaveFile', () => {
     save.close();
   });
 
+  it('saves the prospect pool: picks wait in it, then sign or walk and get their row', () => {
+    const save = openSave(':memory:');
+    const state = createLeague(13, ctx);
+    save.saveNewLeague(state);
+    const step = (command: Command) => {
+      const res = handleCommand(state, command, local, ctx);
+      if (!res.ok) throw new Error(res.error.message);
+      save.persist(res.events, state);
+    };
+    step({ kind: 'sim.advance', days: 300 });
+    const mine = Object.values(state.teams).find((t) => t.userControlled)!.id;
+    // A prospect of yours whose rights end this summer: he walks when free agency opens.
+    const player = ctx.sport.generateProspect(new Rng(1), {
+      id: 'gone',
+      season: state.date.season + 1,
+    });
+    state.prospects['gone' as PlayerId] = {
+      player: { ...player, teamId: mine },
+      league: 'junior',
+      round: 2,
+      rightsEnd: state.date.season,
+    };
+    step({ kind: 'offseason.openFreeAgency' });
+    expect(state.players['gone' as PlayerId]?.teamId).toBeNull();
+    const pick = Object.values(state.prospects).find((x) => x.player.teamId === mine)!;
+    step({ kind: 'prospect.sign', teamId: mine, playerId: pick.player.id });
+    expect(state.players[pick.player.id]?.debut).toBeDefined();
+    expect(save.loadState()).toEqual(state);
+    save.close();
+  });
+
   it('resumes a playoff series and saves the champion', () => {
     const save = openSave(':memory:');
     const state = createLeague(17, ctx);
@@ -303,7 +334,8 @@ describe('player history', () => {
     const history = save.playerHistory(mvp.playerId!);
     expect(history.awards).toContainEqual({ season: mvp.season, award: 'mvp' });
     expect(save.playerHistory('nobody')).toEqual({ awards: [], moves: [] });
-    const drafted = Object.values(state.players).find((p) => p.id.startsWith('d'))!;
+    // A pick, signed or still in the prospect pool.
+    const drafted = Object.values(state.prospects)[0]!.player;
     expect(save.playerHistory(drafted.id).moves[0]).toMatchObject({ kind: 'drafted' });
     // The draft results: every pick of this summer's draft, in order.
     const latest = save.latestDraft();

@@ -260,6 +260,14 @@ export const fr: Record<MessageKey, string> = {
   'roster.contract': '{amount} par année jusqu’en {season}',
   'roster.noContract': 'Sans contrat (joueur autonome)',
   'roster.strengths': 'Points forts : {list}',
+  'prospects.title': 'Espoirs',
+  'prospects.note':
+    'Repêchés, non signés, hors de l’effectif et du plafond. Signez-en un à son contrat d’entrée en tout temps hors des séries ; celui qui n’est toujours pas signé à l’ouverture du marché après la fin de ses droits part comme joueur autonome.',
+  'prospects.league': 'Ligue',
+  'prospects.rightsEnd': 'Droits jusqu’en',
+  'prospects.sign': 'Signer',
+  'league.junior': 'Junior',
+  'league.europe': 'Europe',
   'rating.skating': 'Patinage',
   'rating.shooting': 'Tir',
   'rating.passing': 'Passe',
@@ -483,6 +491,8 @@ export const fr: Record<MessageKey, string> = {
   'todo.breakoutExtend':
     '{player} éclate : discutez d’une prolongation maintenant, son prix ne fera que monter',
   'todo.dispute': '{player} veut un plus grand rôle',
+  'todo.prospectRights':
+    '{count} espoir(s) dont les droits prennent fin : signez-les avant le marché ou ils partent',
   'event.disputeStarted': '{player} veut un plus grand rôle',
   'event.disputeSettled': '{player} est de nouveau satisfait de son rôle',
   'lines.disputes': 'Insatisfaits de leur rôle',
@@ -513,6 +523,8 @@ export const fr: Record<MessageKey, string> = {
   'event.signed': '{player} signe avec les {team} : {amount} par année jusqu’en {season}',
   'event.extended': '{player} prolonge avec les {team} : {amount} par année jusqu’en {season}',
   'event.firstPick': 'Les {team} choisissent {player} au premier rang',
+  'event.prospectSigned': '{player} signe son contrat d’entrée avec les {team}',
+  'event.prospectReleased': 'Les droits sur {player} ont expiré : il est joueur autonome',
   'nav.lines': 'Trios',
   'lines.auto': 'Trios automatiques',
   'lines.note':

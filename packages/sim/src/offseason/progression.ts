@@ -44,11 +44,12 @@ export function trainFocus(
 }
 
 /**
- * Step 1: every player (free agents too) ages a year and develops, in one event. Players on a team
- * also get its development staff's effect: up to `frontOffice.development.points` a year from the
- * best department, against the league's average one. Then a player on a human team with a summer
- * focus (`trainingPlans`) moves `training.points` onto it from his other ratings, scaled by age like
- * the staff and by his professionalism; a focus key at his potential gains nothing.
+ * Step 1: every player (free agents and prospects too) ages a year and develops, in one event.
+ * Players on a team, and prospects, also get its development staff's effect: up to
+ * `frontOffice.development.points` a year from the best department, against the league's average.
+ * Then a player on a human team with a summer focus (`trainingPlans`) moves `training.points` onto
+ * it from his other ratings, scaled by age like the staff and by his professionalism; a focus key
+ * at his potential gains nothing.
  */
 export function developPlayers(
   state: LeagueState,
@@ -73,7 +74,11 @@ export function developPlayers(
     ]),
   );
   const avg = quality.size ? [...quality.values()].reduce((a, b) => a + b, 0) / quality.size : 0.5;
-  for (const p of allPlayers(state)) {
+  // Prospects after the players, so adding them leaves every player's draws as they were.
+  const pool = Object.values(state.prospects)
+    .map((x) => x.player)
+    .sort((a, b) => a.id.localeCompare(b.id));
+  for (const p of [...allPlayers(state), ...pool]) {
     const age = ageIn(p, season);
     let next = model.developOneYear(p, age, rng);
     const q = p.teamId ? quality.get(p.teamId) : undefined;

@@ -256,6 +256,14 @@ export const en = {
   'roster.contract': '{amount} a year through {season}',
   'roster.noContract': 'No contract (free agent)',
   'roster.strengths': 'Best at: {list}',
+  'prospects.title': 'Prospects',
+  'prospects.note':
+    'Drafted, unsigned, off the roster and the cap. Sign one to his entry deal any time outside the playoffs; one still unsigned when free agency opens after his rights end leaves as a free agent.',
+  'prospects.league': 'League',
+  'prospects.rightsEnd': 'Rights through',
+  'prospects.sign': 'Sign',
+  'league.junior': 'Junior',
+  'league.europe': 'Europe',
   'rating.skating': 'Skating',
   'rating.shooting': 'Shooting',
   'rating.passing': 'Passing',
@@ -471,6 +479,8 @@ export const en = {
   'todo.holdout': '{player} is holding out',
   'todo.breakoutExtend': '{player} is breaking out: talk extension now, his price only rises',
   'todo.dispute': '{player} wants a bigger role',
+  'todo.prospectRights':
+    '{count} prospect(s) whose rights end: sign them before free agency or they leave',
   'event.disputeStarted': '{player} wants a bigger role',
   'event.disputeSettled': '{player} is happy with his role again',
   'lines.disputes': 'Unhappy with their role',
@@ -502,6 +512,8 @@ export const en = {
   'event.extended':
     '{player} signed an extension with the {team}: {amount} a year through {season}',
   'event.firstPick': 'The {team} take {player} first overall',
+  'event.prospectSigned': '{player} signed his entry deal with the {team}',
+  'event.prospectReleased': 'Rights to {player} ran out: he is a free agent',
   'nav.lines': 'Lines',
   'lines.auto': 'Auto lines',
   'lines.note':

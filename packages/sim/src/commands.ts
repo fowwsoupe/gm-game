@@ -38,6 +38,7 @@ import {
   startDraft,
   marketDay,
   openFreeAgency,
+  prospectDeal,
   resignContract,
   resignWindowOpen,
   rolloverSeason,
@@ -408,6 +409,28 @@ export function handleCommand(
       draftPlayer(state, ctx, emit, clock, command.playerId);
       continueDraft(state, ctx, emit, true);
       return { ok: true, events };
+    }
+
+    case 'prospect.sign': {
+      const team = state.teams[command.teamId];
+      if (!team) return invalid('unknown team');
+      if (!controls(actor, team)) return notYours;
+      const pr = state.prospects[command.playerId];
+      if (pr?.player.teamId !== team.id) return invalid('not one of your prospects');
+      if (!resignWindowOpen(state, ctx)) return invalid('signings are closed in the playoffs');
+      const deal = prospectDeal(ctx, pr, capYearOf(state));
+      if (!deal) return invalid('no entry deal at his age');
+      const total = teamCapTotal(state, team.id) + deal.capHit;
+      if (capYearIssues(ctx.ruleset, state, total).length) return invalid('no cap room');
+      return applied(
+        state,
+        makeEvent(state, 'notable', [team.id], {
+          kind: 'prospect.signed',
+          playerId: pr.player.id,
+          teamId: team.id,
+          contract: deal,
+        }),
+      );
     }
 
     case 'freeAgency.advanceDay': {

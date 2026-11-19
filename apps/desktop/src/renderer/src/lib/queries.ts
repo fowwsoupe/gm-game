@@ -70,6 +70,12 @@ export const useDraftClass = (teamId: TeamId | undefined) =>
     queryFn: () => window.gm.league.draftClass({ teamId: teamId! }),
     enabled: !!teamId,
   });
+export const useProspects = (teamId: TeamId | undefined) =>
+  useQuery({
+    queryKey: ['league', 'prospects', teamId] as const,
+    queryFn: () => window.gm.league.prospects({ teamId: teamId! }),
+    enabled: !!teamId,
+  });
 export const useDashboard = (teamId: TeamId | undefined) =>
   useQuery({
     queryKey: ['league', 'dashboard', teamId] as const,

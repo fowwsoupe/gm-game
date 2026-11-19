@@ -34,6 +34,7 @@ import {
   raceNight,
   draftPicks,
   picksLeft,
+  prospectsOf,
   playoffOdds,
   teamRatings,
   assistantGuess,
@@ -65,6 +66,8 @@ import type {
   Importance,
   LeagueStatus,
   OwnerReport,
+  PlayerId,
+  ProspectEntry,
   PulseRow,
   RosterPlayer,
   StaffProfile,
@@ -587,6 +590,24 @@ export class LeagueService {
     };
   }
 
+  prospects(teamId: TeamId): ProspectEntry[] {
+    const { state } = this.open();
+    const team = state.teams[teamId];
+    if (!team) throw new Error(`No team ${teamId}`);
+    const ctx = defaultContext(state.rulesetId);
+    const season = state.date.season;
+    return prospectsOf(state, teamId).map(({ player: p, league, rightsEnd }) => ({
+      id: p.id,
+      firstName: p.firstName,
+      lastName: p.lastName,
+      position: p.position,
+      age: season - p.birthYear,
+      league: ctx.sport.prospectLeague(league, season - p.birthYear, ctx.ruleset),
+      ...teamRange(team, { player: p }, ctx, season),
+      rightsEnd,
+    }));
+  }
+
   signingInterest(
     playerId: string,
     teamId: TeamId,
@@ -610,7 +631,7 @@ export class LeagueService {
     const ages: Record<string, number> = {};
     const missing: string[] = [];
     for (const id of ids) {
-      const p = state.players[id];
+      const p = state.players[id] ?? state.prospects[id as PlayerId]?.player;
       if (p) {
         names[id] = `${p.firstName} ${p.lastName}`;
         ages[id] = state.date.season - p.birthYear;

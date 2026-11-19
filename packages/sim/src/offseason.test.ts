@@ -162,8 +162,9 @@ describe('awards', () => {
     expect(points(byAward.mvp!.id)).toBe(Math.max(...[...skaters.keys()].map(points)));
     expect(byAward.topGoalie!.position).toBe('G');
     expect(byAward.topDefender!.position).toBe('D');
+    // Nobody has a debut in a new league: the age rule.
     expect(live.date.season - byAward.topRookie!.birthYear).toBeLessThanOrEqual(
-      ruleset.awards.rookieMaxAge,
+      ruleset.awards.rookieMaxAgeNoDebut,
     );
     // Playoff MVP: a champion, the best by goals (skater) or goals saved above average (goalie).
     expect(byAward.playoffMvp!.teamId).toBe(live.championTeamId);
@@ -237,7 +238,7 @@ describe('offseason steps', () => {
     checkLeagueIsLegal(state);
   });
 
-  it('the lottery is drawn at the crown, a lottery team drafts first, draftees get entry-level deals', () => {
+  it('the lottery is drawn at the crown, a lottery team drafts first, draftees go to the prospect pool', () => {
     const state = seasonOver(12);
     // The lottery is drawn when the champion is crowned and the draft follows it.
     expect(state.draftOrder).toHaveLength(Object.keys(state.teams).length);
@@ -269,10 +270,16 @@ describe('offseason steps', () => {
     if (first.kind !== 'player.drafted') throw new Error();
     expect(first.pick).toBe(1);
     expect(pool).toContain(first.teamIds[0]);
-    expect(first.player.contract?.capHit).toBe(ruleset.contracts.elcSalary);
-    expect(elcYears(ruleset, state.date.season - first.player.birthYear)).toBe(
-      first.player.contract!.expiresAfterSeason - state.date.season + 1,
-    );
+    // Unsigned; if his team signed him this summer, to an entry-level deal.
+    expect(first.player.contract).toBeUndefined();
+    expect(first.prospect).toBeDefined();
+    const signed = state.players[first.player.id]?.contract;
+    if (signed) {
+      expect(signed.capHit).toBe(ruleset.contracts.elcSalary);
+      expect(elcYears(ruleset, state.date.season - first.player.birthYear)).toBe(
+        signed.expiresAfterSeason - state.date.season + 1,
+      );
+    } else expect(state.prospects[first.player.id]?.player.teamId).toBe(first.teamIds[0]);
   });
 
   it('players age, develop and retire: nobody ends up older than the retirement age', () => {

@@ -61,6 +61,12 @@ export function usePosts(limit: number) {
           amount: money(e.contract.capHit),
           season: e.contract.expiresAfterSeason,
         });
+      case 'prospect.signed':
+        return t('event.prospectSigned', { player: names[e.playerId] ?? '', team: team(e.teamId) });
+      case 'prospect.released':
+        return yours(e.teamIds)
+          ? t('event.prospectReleased', { player: names[e.playerId] ?? '' })
+          : null;
       case 'contract.extended':
         return t('event.extended', {
           player: names[e.playerId] ?? '',

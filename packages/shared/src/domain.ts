@@ -215,6 +215,11 @@ export interface Player {
   extension?: Contract;
   /** Season he joined his current team (chemistry). Absent: since before the league began. */
   joined?: number;
+  /**
+   * His first main-league season (he left the prospect pool, or signed undrafted): his rookie
+   * season. Absent: in the league from before the pool, so the rookie award goes by age.
+   */
+  debut?: number;
   /** Injured: first day (of the current season) he can play again. Absent = healthy. Heals over the summer. */
   injuredUntil?: number;
   /** Career injuries and days missed. Absent = never hurt. */
@@ -708,6 +713,38 @@ export interface DraftProspect {
   player: Player;
   low: number;
   high: number;
+  /** The lower league he comes from (`SportModule.prospectOrigin`; hockey: 'junior' or 'europe'). */
+  league: string;
+}
+
+/**
+ * A drafted player his team holds the rights to, unsigned and off the roster, in a lower league
+ * (docs/research/2026-11-minor-leagues.md). `player.teamId` is the team holding his rights; he
+ * has no contract. Nothing that reads `LeagueState.players` sees him until he signs.
+ */
+export interface Prospect {
+  player: Player;
+  /** The league he came from; where he plays at an age is `SportModule.prospectLeague`. */
+  league: string;
+  /** The draft round he went in (first-rounders sign with the most performance bonus allowed). */
+  round: number;
+  /** His team's rights end the summer after this season: still unsigned then, he is a free agent. */
+  rightsEnd: number;
+}
+
+/** A team's prospect as its Prospects list shows him: no hidden ratings. */
+export interface ProspectEntry {
+  id: PlayerId;
+  firstName: string;
+  lastName: string;
+  position: string;
+  age: number;
+  /** Where he plays this season. */
+  league: string;
+  /** His team's scouts' read of his potential. */
+  low: number;
+  high: number;
+  rightsEnd: number;
 }
 
 /** What the scouts say about a prospect: rating keys they like and dislike, and if he could play soon. */
@@ -777,6 +814,7 @@ export interface TodoItem {
     | 'holdout'
     | 'dispute'
     | 'breakoutExtend'
+    | 'prospectRights'
     // The assistant GM's advice: who to extend first, take or turn down an offer, who to sign,
     // who would help on the top line.
     | 'adviceResign'

@@ -1,13 +1,15 @@
-import type { Player, PlayerId, TeamId, TeamStatus } from '@gm/shared';
+import type { Contract, Player, PlayerId, Prospect, TeamId, TeamStatus } from '@gm/shared';
 import type { Emit, LeagueState, Rng } from '../core';
 import type { SimContext } from '../context';
-import { deadCap, payroll } from '../cba';
+import { deadCap, elcYears, payroll } from '../cba';
 import { byOverall, overall } from '../players';
 import { personalityOf, planStatus, seenBy } from '../people';
+import { teamRange } from './draft';
 import {
   ageIn,
   resignAsk,
   allPlayers,
+  capRoom,
   countAt,
   drawYears,
   entryContract,
@@ -145,10 +147,100 @@ export function reSignPlayers(
   }
 }
 
+/** A team's prospects (docs/research/2026-11-minor-leagues.md), by id. */
+export const prospectsOf = (state: LeagueState, teamId: TeamId): Prospect[] =>
+  Object.values(state.prospects)
+    .filter((x) => x.player.teamId === teamId)
+    .sort((a, b) => a.player.id.localeCompare(b.player.id));
+
+/**
+ * The entry deal a prospect signs for `season` (first-rounders with the most performance bonus
+ * the rules allow), or null if his age has none.
+ */
+export function prospectDeal(ctx: SimContext, pr: Prospect, season: number): Contract | null {
+  const { contracts } = ctx.ruleset;
+  const years = elcYears(ctx.ruleset, ageIn(pr.player, season));
+  if (years === null) return null;
+  return {
+    capHit: contracts.elcSalary,
+    expiresAfterSeason: season + years - 1,
+    ...(pr.round === 1 && { perfBonus: contracts.maxPerformanceBonus }),
+  };
+}
+
+/** An AI or fill-in signing: he signs if his team has the room (`capRoom`). Whether he signed. */
+function signIfRoom(
+  state: LeagueState,
+  ctx: SimContext,
+  emit: Emit,
+  pr: Prospect,
+  season: number,
+): boolean {
+  const teamId = pr.player.teamId!;
+  const deal = prospectDeal(ctx, pr, season);
+  const roster = rosterOf(state, teamId);
+  if (
+    !deal ||
+    deal.capHit > capRoom(ctx.ruleset, roster, pr.player, deadCap(state, teamId, season))
+  )
+    return false;
+  emit('minor', [teamId], {
+    kind: 'prospect.signed',
+    playerId: pr.player.id,
+    teamId,
+    contract: deal,
+  });
+  return true;
+}
+
+/**
+ * Step 5, first: an AI GM signs prospects on his read, before he re-signs anyone (his own kids
+ * take the spots first, as draft picks did when they joined the roster on draft day): one who
+ * would make the roster now (read overall at least the bar he re-signs his own players at), or
+ * one whose rights end this summer and whose read potential (his scouts') clears it. Best first,
+ * while he has a roster spot and the cap room. The rest wait, or walk when free agency opens
+ * (`releaseProspects`).
+ */
+export function signProspects(state: LeagueState, ctx: SimContext, emit: Emit, season: number) {
+  const bar = typicalRating(state) - RESIGN_SLACK;
+  for (const team of Object.values(state.teams).sort((a, b) => a.id.localeCompare(b.id))) {
+    if (team.userControlled) continue;
+    const seen = (p: Player) => overall(seenBy(team, p));
+    const potential = (p: Player) => {
+      const r = teamRange(team, { player: p }, ctx, season);
+      return (r.low + r.high) / 2;
+    };
+    const wanted = prospectsOf(state, team.id)
+      .filter(
+        (x) =>
+          seen(x.player) >= bar || (x.rightsEnd <= state.date.season && potential(x.player) >= bar),
+      )
+      .sort((a, b) => seen(b.player) - seen(a.player) || a.player.id.localeCompare(b.player.id));
+    for (const pr of wanted) {
+      if (rosterOf(state, team.id).length >= ctx.ruleset.roster.maxActive) break;
+      signIfRoom(state, ctx, emit, pr, season);
+    }
+  }
+}
+
+/** Free agency opens: prospects whose rights end this summer, still unsigned, become free agents. */
+export function releaseProspects(state: LeagueState, emit: Emit) {
+  for (const pr of Object.values(state.prospects).sort((a, b) =>
+    a.player.id.localeCompare(b.player.id),
+  )) {
+    if (pr.rightsEnd > state.date.season) continue;
+    const team = state.teams[pr.player.teamId!];
+    emit(team?.userControlled ? 'notable' : 'minor', team ? [team.id] : [], {
+      kind: 'prospect.released',
+      playerId: pr.player.id,
+    });
+  }
+}
+
 /**
  * Step 6: free agency. In rounds, each team below its position or roster minimum signs the
- * best free agent it can afford for what it needs; if the pool has nobody it can afford, it
- * signs a freshly generated undrafted player instead, so a team is never left short.
+ * best free agent it can afford for what it needs; if the pool has nobody it can afford, its own
+ * best prospect there, else a freshly generated undrafted player, so a team is never left short.
  * Teams only fill to the minimum. Worst teams go first.
  * TODO(M6): interest meter, player preferences, AI priorities beyond "best available".
  */
@@ -184,7 +276,11 @@ export function fillRosters(
         return true;
       }
     }
-    // Nobody in the pool fits: sign an undrafted rookie (generated, so the pool never runs dry).
+    const own = prospectsOf(state, teamId)
+      .filter((x) => position === null || x.player.position === position)
+      .sort((a, b) => seen(b.player) - seen(a.player) || a.player.id.localeCompare(b.player.id));
+    if (own.some((x) => signIfRoom(state, ctx, emit, x, season))) return true;
+    // Nobody fits: sign an undrafted rookie (generated, so the pool never runs dry).
     const rookie = ctx.sport.generateProspect(rng, {
       id: `u${season}_${undrafted++}`,
       season,
@@ -209,8 +305,8 @@ export function fillRosters(
 /**
  * Step 7: a team below the cap floor signs the best free agent it can, paying at least what
  * it is short of the floor (real teams overpay to get there). Usually one signing does it.
- * Worst teams go first. Like the draft, this can take a roster past the maximum: until
- * prospects and minor leagues exist, every signed player counts as rostered.
+ * Worst teams go first. This can take a roster past the maximum: until the farm team exists,
+ * every signed player counts as rostered.
  */
 export function meetCapFloor(
   state: LeagueState,
