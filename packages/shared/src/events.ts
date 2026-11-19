@@ -209,8 +209,10 @@ export type LeagueEvent =
   | (EventBase & { kind: 'trade.blockSet'; teamId: TeamId; playerId: PlayerId; onBlock: boolean })
   /** A team changed how its goalies share starts. */
   | (EventBase & { kind: 'goalies.rotationSet'; teamId: TeamId; rotation: GoalieRotation })
-  /** A team made a free agent an offer (replaces its earlier one); he answers next day. */
+  /** A team made a free agent an offer (replaces its earlier one, a raise); he answers on his decision day. */
   | (EventBase & { kind: 'freeAgency.offered'; offer: FreeAgentOffer })
+  /** A new market day in the summer's free agency (1 on the first after it opens). */
+  | (EventBase & { kind: 'freeAgency.dayPassed'; day: number })
   /** An offer sheet to a restricted free agent: the team holding his rights may match it or not. */
   | (EventBase & { kind: 'freeAgency.sheetReceived'; offer: FreeAgentOffer })
   /** A sheet that cannot be signed any more (cap room moved): it is gone. */
