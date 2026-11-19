@@ -115,6 +115,7 @@ export const NHL_2026: Ruleset = {
     poach: 0.6,
     spend: 0.6,
     hireSd: 0.2,
+    interim: 0.3, // the brief's interim quality
   },
   roster: {
     maxActive: 23,

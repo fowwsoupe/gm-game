@@ -9,7 +9,13 @@ import {
   strengthFor,
   type LeagueState,
 } from './index';
-import { changeStaff, developPlayers, staffCandidates, teamRange } from './offseason';
+import {
+  changeStaff,
+  departmentReturns,
+  developPlayers,
+  staffCandidates,
+  teamRange,
+} from './offseason';
 import { DEPARTMENTS, ownerOf } from './people';
 import { playerProfiles } from './profiles';
 import { overall } from './players';
@@ -162,9 +168,19 @@ describe('the head coach in games', () => {
       return strengthFor(state, ctx, teamId, players) as { offense: number; defense: number };
     };
     const [great, poor] = [strength(1), strength(0)];
-    const points = 2 * ctx.ruleset.frontOffice.coaching.points;
+    // Measured around the league's average coach, which this team's own quality moves a little.
+    const n = Object.keys(state.teams).length;
+    const points = (2 * ctx.ruleset.frontOffice.coaching.points * (n - 1)) / n;
     expect(great.offense - poor.offense).toBeCloseTo(points);
     expect(great.defense - poor.defense).toBeCloseTo(points);
+    // A league of equal coaches is a league of average ones.
+    const equal = (quality: number) => {
+      for (const t of Object.values(state.teams)) {
+        t.coach = { name: 'A B', hired: 2026, salary: 1, years: 3, quality };
+      }
+      return (strengthFor(state, ctx, teamId, players) as { offense: number }).offense;
+    };
+    expect(equal(0.9)).toBeCloseTo(equal(0.1));
   });
 });
 
@@ -193,5 +209,38 @@ describe('hiring through commands', () => {
     expect(hire(mine, 0).ok).toBe(false);
     const [cheap, , dear] = staffCandidates(state.teams[theirs]!, 'medical', ctx, 2030);
     expect(cheap!.quality).toBeLessThanOrEqual(dear!.quality);
+  });
+});
+
+describe('firing a head and department returns', () => {
+  it('puts an interim in, pays the rest of his salary, locks the department', () => {
+    const state = createLeague(1, ctx);
+    const [mine, theirs] = Object.keys(state.teams).sort() as [TeamId, TeamId];
+    const you = { id: 'you', controls: [mine] };
+    const fire = (teamId: TeamId) =>
+      handleCommand(state, { kind: 'staff.fire', teamId, department: 'medical' }, you, ctx);
+    state.teams[mine]!.staff = { medical: { ...head(0.9), hired: 2020, salary: 2_000_000 } };
+    state.date = { ...state.date, day: ctx.ruleset.season.calendar.regularSeasonDays / 2 };
+    const cash = state.cash[mine] ?? 0;
+    expect(fire(mine).ok).toBe(true);
+    const interim = state.teams[mine]!.staff!.medical!;
+    expect(interim.quality).toBe(ctx.ruleset.frontOffice.interim);
+    expect(interim.hired).toBe(state.date.season);
+    expect(state.cash[mine]).toBe(cash - 1_000_000); // half the season left
+    expect(fire(mine).ok).toBe(false); // changed this season
+    expect(
+      handleCommand(
+        state,
+        { kind: 'staff.hire', teamId: mine, department: 'medical', candidate: 0 },
+        you,
+        ctx,
+      ).ok,
+    ).toBe(false);
+    expect(fire(theirs).ok).toBe(false); // not yours
+    // A good head returns more than an average one; the interim returns less.
+    state.teams[mine]!.staff = { development: head(1), medical: head(1) };
+    const r = departmentReturns(state, ctx, mine);
+    expect(r.development).toBeGreaterThan(0);
+    expect(r.medical).toBeGreaterThan(0);
   });
 });

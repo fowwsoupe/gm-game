@@ -31,3 +31,28 @@ describe('breakouts', () => {
     }
   });
 });
+
+describe('in-season breakouts', () => {
+  it(
+    'fire a few a league-season on average, for players 23 or under only',
+    { timeout: 60_000 },
+    () => {
+      const state = createLeague(3, ctx);
+      const counts: number[] = [];
+      for (let s = 0; s < 3; s++) {
+        const news = run(state, { kind: 'sim.advance', days: cal.regularSeasonDays });
+        const hits = news.filter(
+          (e) => e.kind === 'news.posted' && e.headline === 'event.breakoutPace',
+        );
+        counts.push(hits.length);
+        run(state, { kind: 'sim.advance', days: cal.playoffDays });
+        run(state, { kind: 'season.rollover' });
+      }
+      expect(counts[0]).toBe(0); // no last season yet
+      // One league's season is noisy (3 and 7 here): judge the average.
+      const avg = (counts[1]! + counts[2]!) / 2;
+      expect(avg).toBeGreaterThanOrEqual(1);
+      expect(avg).toBeLessThanOrEqual(5);
+    },
+  );
+});

@@ -1,3 +1,4 @@
+import type { StopCategory } from './commands';
 import type { GoalieRotation, SpecialUnit } from './sports/hockey';
 import type {
   CapCharge,
@@ -136,6 +137,8 @@ export type LeagueEvent =
     })
   /** A month of results moved the owner's confidence in the GM. */
   | (EventBase & { kind: 'owner.confidenceMoved'; teamId: TeamId; confidence: number })
+  /** An AI owner's frustration made the news (once a season). */
+  | (EventBase & { kind: 'owner.frustrated'; teamId: TeamId })
   /** The owner puts a decision to a human GM. */
   | (EventBase & { kind: 'owner.cardOpened'; card: OwnerCard })
   /** A card was answered (by an AI GM, a human, or by default at the next meeting): `effects` apply. */
@@ -250,14 +253,22 @@ export type LeagueEvent =
       head: StaffProfile;
       poached: boolean;
     })
+  /** A human GM fired a department head: `head`, an interim, took over and `severance` left the cash. */
+  | (EventBase & {
+      kind: 'staff.fired';
+      teamId: TeamId;
+      department: Department;
+      head: StaffProfile;
+      severance: number;
+    })
   /** The owner fired a human GM at the review: the team goes to `gm`, an AI GM, and you are out of work. */
   | (EventBase & { kind: 'career.fired'; teamId: TeamId; gm: GmProfile })
   /** Teams with a vacancy that want the GM who is out of work (replaces any earlier ones). */
   | (EventBase & { kind: 'career.offers'; offers: TeamId[] })
   /** The GM out of work took a job: he runs `teamId` now, with a new owner's honeymoon. */
   | (EventBase & { kind: 'career.hired'; teamId: TeamId })
-  /** The save option "can be fired" changed. */
-  | (EventBase & { kind: 'league.optionSet'; canBeFired: boolean })
+  /** A save option changed: "can be fired" or the sim bar's stop filter (only the one that changed). */
+  | (EventBase & { kind: 'league.optionSet'; canBeFired?: boolean; stopOn?: StopCategory[] })
   /** An AI GM sets a new plan for his team (contend, retool, rebuild). */
   | (EventBase & { kind: 'team.planChanged'; teamId: TeamId; plan: TeamPlan })
   | (EventBase & { kind: 'season.phaseChanged'; from: SeasonPhase; to: SeasonPhase })

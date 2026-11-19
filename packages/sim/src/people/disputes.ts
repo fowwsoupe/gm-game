@@ -1,13 +1,15 @@
 import type { Player, TeamId } from '@gm/shared';
 import type { Emit, LeagueState, Rng } from '../core';
 import { byOverall } from '../players';
-import { personalityOf } from './personality';
+import type { SimContext } from '../context';
+import { moraleOf } from './morale';
 
-/** Weekly chance an unhappy, ambitious player goes to the GM about his role. */
+/** Weekly chance an unhappy player goes to the GM about his role. */
 const DISPUTE_CHANCE = 0.08;
 /** He is unhappy when he sits this many places down his position's depth order from his rating's rank. */
 const ROLE_GAP = 2;
-const AMBITIOUS = 0.6;
+/** Below this morale (0-100, as his card shows it) he is unhappy enough to complain. */
+const LOW_MORALE = 45;
 /** Days a promised role has to arrive (about 15 games). */
 export const PROMISE_DAYS = 30;
 
@@ -29,11 +31,11 @@ export function roleGap(state: LeagueState, teamId: TeamId, player: Player): num
 
 /**
  * Disputes (docs/research/2026-11-league-events.md), human teams only, once a week in the
- * regular season: an ambitious player kept well down the depth order for his rating asks for
- * more ice. One open dispute per team. A promised role that has not come by its day turns the
+ * regular season: a player in low spirits (his morale) who is kept well down the depth order for his
+ * rating asks for more ice. One open dispute per team. A promised role that has not come by its day turns the
  * dispute into a trade request. AI teams' players settle it in the room, out of the news.
  */
-export function disputesWeek(state: LeagueState, rng: Rng, emit: Emit): void {
+export function disputesWeek(state: LeagueState, ctx: SimContext, rng: Rng, emit: Emit): void {
   const day = state.date.day;
   for (const d of [...state.disputes]) {
     const p = state.players[d.playerId];
@@ -63,7 +65,7 @@ export function disputesWeek(state: LeagueState, rng: Rng, emit: Emit): void {
     for (const p of roster) {
       // Always draw, so one player's mood never shifts another's.
       const asks = rng.chance(DISPUTE_CHANCE);
-      if (personalityOf(p.id).ambition < AMBITIOUS || roleGap(state, team.id, p) < ROLE_GAP) {
+      if (roleGap(state, team.id, p) < ROLE_GAP || moraleOf(state, ctx, p).value >= LOW_MORALE) {
         continue;
       }
       if (state.tradeRequests.some((r) => r.playerId === p.id) || !asks) continue;

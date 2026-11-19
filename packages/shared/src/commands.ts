@@ -54,12 +54,19 @@ export type Command =
   | { kind: 'career.takeJob'; teamId: TeamId }
   /** The save option: whether owners may fire you. */
   | { kind: 'league.setCanBeFired'; on: boolean }
+  /** The save option: what stops "sim until it matters". */
+  | { kind: 'league.setStopOn'; stopOn: StopCategory[] }
   /** Answer one of your owner's cards with one of its options. */
   | { kind: 'owner.answerCard'; cardId: string; option: string }
   /** Your ticket price policy, `pct` one of `TICKET_STEPS` around the league's reference price. */
   | { kind: 'finance.setTicketPrice'; teamId: TeamId; pct: number }
   /** Replace a department head with one of this season's candidates (`staffCandidates`, by index). */
   | { kind: 'staff.hire'; teamId: TeamId; department: Department; candidate: number }
+  /**
+   * Fire a department head without a replacement: an interim takes over, you pay what is left of
+   * his salary this season, and it counts as the department's change this season (like a hire).
+   */
+  | { kind: 'staff.fire'; teamId: TeamId; department: Department }
   /** How your goalies share starts (see `GoalieRotation`). */
   | { kind: 'goalies.setRotation'; teamId: TeamId; rotation: GoalieRotation }
   /** Rank the draft class for your picks (best first). Players missing from it go by the scouts' order. */
