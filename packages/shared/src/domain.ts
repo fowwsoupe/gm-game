@@ -226,7 +226,7 @@ export interface Team {
   plan?: TeamPlan;
   /** The head coach. Absent: derived from the id. His quality moves the team's strength in games. */
   coach?: CoachProfile;
-  /** Front-office department heads. A department absent: derived from the id. No effects yet. */
+  /** Front-office department heads. A department absent: derived from the id. */
   staff?: Partial<Record<Department, StaffProfile>>;
 }
 
@@ -234,7 +234,7 @@ export interface Team {
  * Front-office departments besides the head coach (docs/research/2026-11-front-office.md). The
  * assistant GM only works for a human GM (docs/research/2026-11-assistant-gm.md).
  */
-export type Department = 'scouting' | 'development' | 'medical' | 'assistant';
+export type Department = 'scouting' | 'development' | 'medical' | 'analytics' | 'assistant';
 
 /** What a team's departments returned against an average one (see `GmApi.departmentReturns`). */
 export interface DepartmentReturns {

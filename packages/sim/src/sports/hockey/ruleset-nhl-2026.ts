@@ -94,9 +94,9 @@ export const NHL_2026: Ruleset = {
     localMedia: dollars(10), // no clean public number: the remainder, tuned in the lab
     leagueShare: dollars(59), // national media, under $1.5B league-wide
     playoffs: { markupPct: 15, playersPct: 35, feePerDate: dollars(0.5) }, // LVSportsBiz
-    // Yearly was $50M with the front office inside it; its three departments now cost about $4M
+    // Yearly was $50M with the front office inside it; its four departments now cost about $5.3M
     // on average (see frontOffice), so total costs hold.
-    operations: { yearly: dollars(46), perHomeDate: dollars(1.9) },
+    operations: { yearly: dollars(44.7), perHomeDate: dollars(1.9) },
     coach: { salary: dollars(2.95), years: 3 }, // ESPN 2024: about $2.5M, usually three-year deals
   },
   // docs/research/2026-11-front-office.md: no public source; unverified, tuned in the lab.
@@ -109,6 +109,7 @@ export const NHL_2026: Ruleset = {
     development: { points: 3 }, // was ORG_DEVELOPMENT 2, from GM skill
     scouting: { best: 2, worst: 6 }, // the GM misread on prospects was 1-6
     medical: { days: 0.4 },
+    analytics: { best: 1, worst: 6 }, // like the AI GMs' misread, 1-6
     coaching: { points: 1.5 }, // at 2 a coach's defence made goalie save % too repeatable
     leave: 0.3,
     poach: 0.6,

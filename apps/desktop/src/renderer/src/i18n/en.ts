@@ -16,7 +16,7 @@ export const en = {
   'nav.frontOffice': 'Front office',
   'frontOffice.empty': 'Take charge of a team to run its front office.',
   'frontOffice.intro':
-    'Scouting reads draft prospects, development grows your young players, medical shortens injuries, and your assistant GM gives advice on Home (a better one is wrong less often). Better people cost more; heads also leave, or are hired away when you win.',
+    "Scouting reads draft prospects, development grows your young players, medical shortens injuries, analytics sharpens what you see of other teams' players, and your assistant GM gives advice on Home (a better one is wrong less often). Better people cost more; heads also leave, or are hired away when you win.",
   'frontOffice.since': 'since {season}',
   'frontOffice.candidate': 'Available this season',
   'frontOffice.quality': 'Quality',
@@ -74,6 +74,7 @@ export const en = {
   'team.staff.scouting': 'Scouting',
   'team.staff.development': 'Player development',
   'team.staff.medical': 'Medical',
+  'team.staff.analytics': 'Analytics',
   'team.staff.assistant': 'Assistant GM',
   'staff.quality.poor': 'Poor',
   'staff.quality.average': 'Average',

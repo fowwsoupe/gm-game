@@ -16,7 +16,8 @@ import {
   staffCandidates,
   teamRange,
 } from './offseason';
-import { ownerOf } from './people';
+import { DEPARTMENTS, ownerOf } from './people';
+import { playerProfiles } from './profiles';
 import { overall } from './players';
 
 const ctx = defaultContext();
@@ -63,8 +64,9 @@ describe('the staff market', () => {
       changeStaff(state, ctx, new Rng(season), emit, 2027 + season);
     }
     const hires = log.flatMap((e) => (e.kind === 'staff.hired' ? [e] : []));
-    // `leave` of 48 heads a summer (no games played, so no poaching).
-    const expected = 30 * 48 * ctx.ruleset.frontOffice.leave;
+    // `leave` of every head a summer (no games played, so no poaching).
+    const heads = Object.keys(state.teams).length * DEPARTMENTS.length;
+    const expected = 30 * heads * ctx.ruleset.frontOffice.leave;
     expect(hires.length).toBeGreaterThan(expected * 0.8);
     expect(hires.length).toBeLessThan(expected * 1.2);
     const last = hires.at(-1)!;
@@ -127,6 +129,31 @@ describe('scouting and medical staff', () => {
     // x0.81 against x1.19 (the league average moves a little with this team's staff).
     expect(best.days / worst.days).toBeGreaterThan(0.5);
     expect(best.days / worst.days).toBeLessThan(0.8);
+  });
+});
+
+describe('analytics staff', () => {
+  it("a poor department sees rivals' players further from the truth; your own are exact", () => {
+    const state = createLeague(1, ctx);
+    const [mine, theirs] = Object.keys(state.teams).sort() as [TeamId, TeamId];
+    for (const t of Object.values(state.teams)) t.userControlled = false; // no human: true ratings
+    const [ownTrue, rivalTrue] = [
+      playerProfiles(state, ctx, mine),
+      playerProfiles(state, ctx, theirs),
+    ];
+    state.teams[mine]!.userControlled = true;
+    const off = (quality: number) => {
+      state.teams[mine]!.staff = { analytics: head(quality) };
+      expect(playerProfiles(state, ctx, mine)).toEqual(ownTrue);
+      const seen = playerProfiles(state, ctx, theirs);
+      const gaps = seen.flatMap((p, i) =>
+        p.percentiles.map((x, k) => Math.abs(x.value - rivalTrue[i]!.percentiles[k]!.value)),
+      );
+      return gaps.reduce((a, b) => a + b, 0) / gaps.length;
+    };
+    const [elite, poor] = [off(1), off(0)];
+    expect(elite).toBeGreaterThan(0);
+    expect(poor).toBeGreaterThan(elite * 2);
   });
 });
 

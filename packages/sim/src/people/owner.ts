@@ -42,7 +42,12 @@ export function coachOf(team: Team, terms: CoachTerms, season: number): CoachPro
 const qualityOf = (c: CoachProfile) =>
   round2(new Rng(hash(`coachQuality:${c.name}:${c.hired}`)).next());
 
-export const DEPARTMENTS: readonly Department[] = ['scouting', 'development', 'medical'];
+export const DEPARTMENTS: readonly Department[] = [
+  'scouting',
+  'development',
+  'medical',
+  'analytics',
+];
 
 /**
  * A team's departments. The assistant GM advises a human GM (docs/research/2026-11-assistant-gm.md);

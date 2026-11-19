@@ -1,13 +1,15 @@
-import type { PlayerProfile, TeamId } from '@gm/shared';
-import type { LeagueState } from './core';
+import type { Player, PlayerProfile, TeamId } from '@gm/shared';
+import { Rng, type LeagueState } from './core';
 import { percentileRank } from './players';
-import { moraleOf, notableTraits, personalityOf } from './people';
+import { hash, moraleOf, notableTraits, personalityOf, staffOf } from './people';
 import type { SimContext } from './context';
 
 /**
  * Player cards for one team (`null` = the free agents): where each hidden rating ranks among
  * rostered players with the same rating keys, and this regular season's stat line.
- * Sorted by the sport's position order, then name.
+ * Sorted by the sport's position order, then name. A player not on a human team is seen through
+ * the human's analytics department: each rating is off by a fixed amount per player, smaller the
+ * better the department. View only; the sim and the AI use true ratings.
  */
 export function playerProfiles(
   state: LeagueState,
@@ -35,6 +37,15 @@ export function playerProfiles(
   };
   const lines = sport.playerLines(Object.values(state.results).filter((g) => !g.playoffSeriesId));
   const order = (position: string) => sport.positions.indexOf(position);
+  const viewer = Object.values(state.teams).find((t) => t.userControlled);
+  const fo = ctx.ruleset.frontOffice;
+  const q = viewer ? staffOf(viewer, 'analytics', fo.salary, state.date.season).quality : 1;
+  const sd = fo.analytics.best + (1 - q) * (fo.analytics.worst - fo.analytics.best);
+  const seen = (p: Player, keys: readonly string[]) => {
+    const exact = !viewer || (p.teamId !== null && state.teams[p.teamId]?.userControlled);
+    const r = new Rng(hash(`analytics:${viewer?.id}:${p.id}`));
+    return keys.map((key) => (p.ratings[key] ?? 0) + (exact ? 0 : r.normal(0, sd)));
+  };
 
   return all
     .filter((p) => p.teamId === teamId)
@@ -46,9 +57,10 @@ export function playerProfiles(
     )
     .map((p) => {
       const keys = sport.ratingKeys(p.position);
-      const percentiles = keys.map((key) => ({
+      const ratings = seen(p, keys);
+      const percentiles = keys.map((key, i) => ({
         key,
-        value: percentileRank(p.ratings[key] ?? 0, population(keys, key)),
+        value: percentileRank(ratings[i]!, population(keys, key)),
       }));
       return {
         id: p.id,
