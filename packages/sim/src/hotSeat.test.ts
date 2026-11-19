@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest';
-import type { Actor, Command, TeamId } from '@gm/shared';
+import type { Actor, Command, OwnerCard, TeamId } from '@gm/shared';
 import { createLeague, defaultContext, handleCommand, type LeagueState } from './index';
 
 const ctx = defaultContext();
@@ -103,5 +103,26 @@ describe('your job on the line', () => {
     expect(firedAt).not.toContain(trusted);
     // The new GM starts afresh with the owner.
     expect(state.owners[doubted!]).toBeUndefined();
+  });
+});
+
+describe('press questions', () => {
+  it('a human GM is asked after a streak; his answer moves the owner and makes a headline', () => {
+    const { state, teamId } = tanking(true);
+    const events = run(state, { kind: 'sim.advance', days: cal.regularSeasonDays });
+    const opened = events.find(
+      (e) =>
+        e.kind === 'owner.cardOpened' && e.card.kind === 'pressLoss' && e.card.teamId === teamId,
+    );
+    expect(opened).toBeDefined();
+    // Later meetings close open cards: answer a fresh copy.
+    const card = { ...(opened as { card: OwnerCard }).card, id: 'press-test' };
+    state.ownerCards.push(card);
+    const before = state.owners[teamId]!.confidence;
+    const out = run(state, { kind: 'owner.answerCard', cardId: card.id, option: 'honest' });
+    expect(state.owners[teamId]!.confidence).toBe(Math.min(100, before + 2));
+    expect(out.some((e) => e.kind === 'news.posted' && e.headline === 'press.quote.honest')).toBe(
+      true,
+    );
   });
 });

@@ -32,6 +32,7 @@ import {
   dashboard,
   raceNight,
   draftPicks,
+  picksLeft,
   playoffOdds,
   teamRatings,
   assistantGuess,
@@ -376,6 +377,7 @@ export class LeagueService {
       phase: phaseOf(cal, state.date),
       championTeamId: state.championTeamId,
       freeAgencyOpen: state.freeAgencyOpen,
+      draftLive: state.draftPicksMade !== null,
       tradeDeadlineDay: cal.tradeDeadlineDay,
       playoffsStartDay: cal.regularSeasonDays,
       playoffsEndDay: cal.regularSeasonDays + cal.playoffDays,
@@ -472,7 +474,7 @@ export class LeagueService {
 
   picks(teamId: TeamId) {
     const { state } = this.open();
-    return draftPicks(state, defaultContext(state.rulesetId).ruleset.draft.rounds, teamId);
+    return draftPicks(state, defaultContext(state.rulesetId).ruleset, teamId);
   }
 
   lines(teamId: TeamId) {
@@ -572,6 +574,7 @@ export class LeagueService {
         };
       }),
       board: state.draftBoards[teamId] ?? [],
+      order: picksLeft(state, ctx),
     };
   }
 

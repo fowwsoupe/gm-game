@@ -30,5 +30,12 @@ export const teamName = (teams: readonly Team[], id: string) => {
   return team ? `${team.city} ${team.name}` : id;
 };
 
+/** A pick id (`2028-1-t3`) as `trade.pick` params: draft season, round, original team. */
+export const pickParams = (teams: readonly Team[], id: string) => {
+  const [season = '', round = '', ...team] = id.split('-');
+  const original = team.join('-');
+  return { season, round, team: teams.find((x) => x.id === original)?.abbreviation ?? original };
+};
+
 export const fullName = (p: { firstName: string; lastName: string }) =>
   `${p.firstName} ${p.lastName}`;

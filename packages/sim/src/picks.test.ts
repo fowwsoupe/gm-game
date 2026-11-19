@@ -59,7 +59,7 @@ describe('trading picks', () => {
     const mine = teams.find((t) => t.userControlled)!.id;
     const partner = teams.find((t) => !t.userControlled)!.id;
     const mineFirst = pickId(state.date.season + 1, 1, mine);
-    expect(draftPicks(state, rules.draft.rounds, mine).map((p) => p.id)).toContain(mineFirst);
+    expect(draftPicks(state, rules, mine).map((p) => p.id)).toContain(mineFirst);
 
     const res = handleCommand(
       state,
@@ -78,7 +78,7 @@ describe('trading picks', () => {
     );
     if (!res.ok) throw new Error(res.error.message);
     expect(state.pickOwners[mineFirst]).toBe(partner);
-    expect(draftPicks(state, rules.draft.rounds, mine).map((p) => p.id)).not.toContain(mineFirst);
+    expect(draftPicks(state, rules, mine).map((p) => p.id)).not.toContain(mineFirst);
     // You can't trade it again; nor a pick that doesn't exist.
     const again = evaluateTrade(state, ctx, {
       fromTeamId: mine,

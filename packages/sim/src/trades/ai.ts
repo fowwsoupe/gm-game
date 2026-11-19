@@ -8,7 +8,7 @@ import {
   tradeWindowOpen,
   type TradeCache,
 } from './evaluate';
-import { draftPicks } from '../league';
+import { draftPicks, pickLabel } from '../league';
 import { GM_LEAN, gmOf, planStatus, seenBy } from '../people';
 
 /** Chance the league makes a trade in a given week (when a deal both sides like exists). */
@@ -92,13 +92,13 @@ export function aiTrades(state: LeagueState, ctx: SimContext, rng: Rng, emit: Em
         .sort((a, b) => gap(b, seller, buyer) - gap(a, seller, buyer))
         .slice(0, OFFERS_TRIED)
         .map((p) => ({ give: [p.id], givePicks: [], label: playerName(p) })),
-      ...draftPicks(state, ctx.ruleset.draft.rounds, buyer)
+      ...draftPicks(state, ctx.ruleset, buyer)
         .sort((a, b) => b.season - a.season || b.round - a.round) // cheapest first
         .slice(0, OFFERS_TRIED)
         .map((pk) => ({
           give: [],
           givePicks: [pk.id],
-          label: `${pk.season} R${pk.round} (${state.teams[pk.originalTeamId]!.abbreviation})`,
+          label: pickLabel(state, pk.id),
         })),
     ];
     for (const offer of offers) {
