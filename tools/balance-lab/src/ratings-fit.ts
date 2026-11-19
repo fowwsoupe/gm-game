@@ -42,7 +42,7 @@ for (let l = 0; l < leagues; l++) {
   const state = createLeague(10_000 + l, ctx);
   const res = handleCommand(
     state,
-    { kind: 'sim.advance', days: ctx.ruleset.season.calendar.regularSeasonDays },
+    { kind: 'sim.advance', days: ctx.ruleset.season.calendar.regularSeasonDays - state.date.day },
     { id: 'lab', controls: [] },
     ctx,
   );

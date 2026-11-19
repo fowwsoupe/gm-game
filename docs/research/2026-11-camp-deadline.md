@@ -78,6 +78,10 @@ closes the door the NHL closes with eligibility).
    _Done when:_ a test opens a season on day -21 in the preseason with no games until day 0, a
    holdout starting on day -21, and an elite coach's camp read right more often than a poor
    one's; the lab is flat on seeds 1, 101 and 201 (camp plays no games).
+   _Done._ The over-roster To do was left out: every team carries 25 players (the generator
+   and free agency fill to that), and nothing can cut a player in camp, so it would show every
+   season with nothing to do about it. It waits for waivers (minor / junior leagues brief).
+   An unhurt player's `injuredUntil` no longer reads as day 0 (camp days are negative).
 2. **The deadline.** `playoffShare` in the valuator; daily AI talks and calls in deadline week;
    offers expire at the deadline; the deadline-day recap; signings closed after the deadline
    (with the position-minimum exception). A report-only lab line for AI trades a team-season and

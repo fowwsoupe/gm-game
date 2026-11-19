@@ -142,7 +142,11 @@ for (let i = 0; i < seasons; i++) {
     state,
     {
       kind: 'sim.advance',
-      days: ctx.ruleset.season.calendar.regularSeasonDays + ctx.ruleset.season.calendar.playoffDays,
+      // From camp's first day (negative) to the end of the playoffs.
+      days:
+        ctx.ruleset.season.calendar.regularSeasonDays +
+        ctx.ruleset.season.calendar.playoffDays -
+        state.date.day,
     },
     actor,
     ctx,
@@ -283,7 +287,7 @@ for (let l = 0; l < leagues; l++) {
     }
     const played = handleCommand(
       state,
-      { kind: 'sim.advance', days: cal.regularSeasonDays + cal.playoffDays },
+      { kind: 'sim.advance', days: cal.regularSeasonDays + cal.playoffDays - state.date.day },
       actor,
       ctx,
     );

@@ -40,7 +40,7 @@ describe('roster files', () => {
     expect(state.date.season).toBe(2031);
     const out = handleCommand(
       state,
-      { kind: 'sim.advance', days: 10 },
+      { kind: 'sim.advance', days: 10 - state.date.day },
       { id: 'local', controls: [] },
       ctx,
     );

@@ -2,6 +2,7 @@ import type { GameId, GameResult, InternationalTournament, Player, TeamId } from
 import { playerName, type Emit, type LeagueState, type Rng } from '../core';
 import { nationOf } from '../people';
 import type { SimContext } from '../context';
+import { hurtOn } from '../tonight';
 
 /**
  * Step 8, in a season divisible by `international.every`: the international tournament
@@ -34,7 +35,7 @@ export function playInternational(
     const s = (sizes.get(unit) ?? [0]).sort((a, b) => a - b);
     return s[s.length >> 1]!;
   };
-  const healthy = rostered.filter((p) => (p.injuredUntil ?? 0) <= state.date.day);
+  const healthy = rostered.filter((p) => !hurtOn(p, state.date.day));
   const byId = new Map(healthy.map((p) => [p.id as string, p]));
   const dress = (pool: Player[], depth: string[] = []) =>
     sport

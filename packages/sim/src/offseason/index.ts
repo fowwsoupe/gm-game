@@ -120,9 +120,12 @@ export function finishRollover(state: LeagueState, ctx: SimContext, emit: Emit):
   meetCapFloor(state, ctx, rng.fork('capFloor'), emit, season, order);
   playInternational(state, ctx, rng.fork('international'), emit, season);
 
+  // The season opens with camp: no games until day 0.
+  const day = -ctx.ruleset.season.calendar.preseasonDays;
   emit('minor', [], {
     kind: 'season.started',
     season,
+    day,
     schedule: makeSchedule(
       season,
       Object.values(state.teams).sort((a, b) => a.id.localeCompare(b.id)),
@@ -133,7 +136,11 @@ export function finishRollover(state: LeagueState, ctx: SimContext, emit: Emit):
     rngState: rng.fork('games').state,
     form: drawForm(Object.keys(state.teams), ctx.ruleset.season.form, rng.fork('form')),
   });
-  emit('major', [], { kind: 'season.phaseChanged', from, to: 'regular' });
+  emit('major', [], {
+    kind: 'season.phaseChanged',
+    from,
+    to: phaseOf(ctx.ruleset.season.calendar, { season, day }),
+  });
 }
 
 /** The whole summer at once (free agency is opened first if a human has not done it). */
