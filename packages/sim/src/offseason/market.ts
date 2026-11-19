@@ -1,4 +1,4 @@
-import type { FreeAgentOffer, Player, TeamId } from '@gm/shared';
+import type { FreeAgentOffer, Player, Team, TeamId } from '@gm/shared';
 import { playerName, teamName, type Emit, type LeagueState, type Rng } from '../core';
 import type { SimContext } from '../context';
 import { overall } from '../players';
@@ -10,9 +10,11 @@ import { CORE } from './gms';
 
 /**
  * The free-agent market: AI teams make offers to free agents (one per team per day), and a free
- * agent picks the offer he likes best (the interest meter) the next day, so you can lose a
- * player you were chasing. Offers are legal when made (`signFreeAgent`) and checked again when
- * he decides, since cap room moves. `fillRosters` still tops up whoever is short afterwards.
+ * agent picks the offer he likes best (the interest meter), so you can lose a player you were
+ * chasing. With one team bidding he answers the next market day; with two or more he waits
+ * `freeAgency.days` market days after his first offer while the trailing AI teams raise (a
+ * bidding war). Offers are legal when made (`signFreeAgent`) and checked again when he decides,
+ * since cap room moves. `fillRosters` still tops up whoever is short afterwards.
  */
 
 /** Days of AI offers in a summer, once the human GM is done (`finishRollover`). */
@@ -30,6 +32,17 @@ const REBUILD_MAX_AGE = 27;
 const PREMIUMS = [1, 1.05, 1.1, 1.15];
 /** A win-now GM pays this much more again; a builder this much less. */
 const LEAN_PREMIUM = 0.08;
+/** On top of any premium: the GM's lean, and more again for a contender. */
+const tilt = (team: Team) =>
+  LEAN_PREMIUM * GM_LEAN[gmOf(team).style] + (team.plan?.kind === 'contend' ? CONTEND_PREMIUM : 0);
+
+/** The most an AI team pays a free agent who asks `ask`: about 1.33x for a win-now contender, 1.12x for a builder. */
+export function walkAway(state: LeagueState, ctx: SimContext, teamId: TeamId, ask: number) {
+  return Math.round(ask * (ctx.ruleset.freeAgency.maxPremium + tilt(state.teams[teamId]!)));
+}
+
+/** A signing after this many teams bid makes the news as a bidding war. */
+const BIDDING_WAR = 3;
 
 /** Depth players a contender lets go, at most, to make room for one free agent. */
 const MAX_LET_GO = 2;
@@ -160,19 +173,39 @@ function settleSheets(state: LeagueState, ctx: SimContext, emit: Emit): void {
   for (const sheet of [...state.rfaSheets]) acceptSheet(state, ctx, emit, sheet);
 }
 
-/** Each free agent with offers signs the best one that still works; the teams that lose are told. */
-export function decideOffers(state: LeagueState, ctx: SimContext, emit: Emit): void {
+/** Free agents with an offer on the table, by id. */
+const bidFor = (state: LeagueState) => [...new Set(state.faOffers.map((o) => o.playerId))].sort();
+
+/**
+ * The offers to `player`, the one he likes best first (ties by team id), and the market day he
+ * decides: the day after his first offer, or `freeAgency.days` after it with two or more teams
+ * bidding (a team has one offer at most; a raise replaces it).
+ */
+export function raceFor(state: LeagueState, ctx: SimContext, player: Player) {
+  const offers = state.faOffers.filter((o) => o.playerId === player.id);
+  const ranked = offers
+    .map((o) => ({ o, interest: signingInterest(state, ctx, player, o.teamId, o).interest }))
+    .sort((a, b) => b.interest - a.interest || a.o.teamId.localeCompare(b.o.teamId));
+  const first = Math.min(...offers.map((o) => o.since ?? 0));
+  return { ranked, decides: first + (offers.length > 1 ? ctx.ruleset.freeAgency.days : 1) };
+}
+
+/**
+ * Each free agent whose decision day has come (every one with `closeAll`, the summer's last call)
+ * signs the best offer that still works; the teams that lose are told.
+ */
+export function decideOffers(
+  state: LeagueState,
+  ctx: SimContext,
+  emit: Emit,
+  closeAll = false,
+): void {
   settleSheets(state, ctx, emit);
-  const byPlayer = new Map<string, typeof state.faOffers>();
-  for (const o of state.faOffers)
-    byPlayer.set(o.playerId, [...(byPlayer.get(o.playerId) ?? []), o]);
-  for (const id of [...byPlayer.keys()].sort()) {
+  for (const id of bidFor(state)) {
     const player = state.players[id];
     if (!player || player.teamId !== null) continue;
-    const offers = byPlayer
-      .get(id)!
-      .map((o) => ({ o, interest: signingInterest(state, ctx, player, o.teamId, o).interest }))
-      .sort((a, b) => b.interest - a.interest || a.o.teamId.localeCompare(b.o.teamId));
+    const { ranked: offers, decides } = raceFor(state, ctx, player);
+    if (!closeAll && state.marketDay < decides) continue;
     for (const { o } of offers) {
       const room = roomFor(state, ctx, o.teamId, player, o.salary);
       if (!room) continue;
@@ -207,6 +240,17 @@ export function decideOffers(state: LeagueState, ctx: SimContext, emit: Emit): v
         contract: deal.contract,
         ...compensationFor(state, ctx.ruleset, player, o.teamId, deal.contract.capHit),
       });
+      if (offers.length >= BIDDING_WAR) {
+        emit('notable', [o.teamId, ...losers], {
+          kind: 'news.posted',
+          headline: 'event.biddingWar',
+          params: {
+            player: playerName(player),
+            team: teamName(state.teams[o.teamId]!),
+            n: offers.length,
+          },
+        });
+      }
       for (const teamId of losers) {
         if (!state.teams[teamId]?.userControlled) continue;
         emit('notable', [teamId], {
@@ -254,10 +298,7 @@ function makeOffers(state: LeagueState, ctx: SimContext, rng: Rng, emit: Emit): 
       if (p.teamId !== null || !wants(p)) continue;
       if (state.faOffers.some((o) => o.playerId === p.id && o.teamId === teamId)) continue;
       const ask = ctx.models.contractDemand.ask(ruleset, p);
-      const premium =
-        PREMIUMS[rng.int(0, PREMIUMS.length - 1)]! +
-        LEAN_PREMIUM * GM_LEAN[gmOf(team).style] +
-        (plan === 'contend' ? CONTEND_PREMIUM : 0);
+      const premium = PREMIUMS[rng.int(0, PREMIUMS.length - 1)]! + tilt(team);
       const salary = Math.round(ask * Math.max(1, premium));
       const years = Math.min(
         drawYears(season - p.birthYear, rng),
@@ -275,8 +316,38 @@ function makeOffers(state: LeagueState, ctx: SimContext, rng: Rng, emit: Emit): 
   }
 }
 
-/** One day on the market: free agents answer yesterday's offers, then AI teams make new ones. */
+/**
+ * Each AI team trailing in an open race raises its offer by `freeAgency.raiseStep` of his ask,
+ * once a day, while that lifts his interest, stays at or under its walk-away and is still legal
+ * (`roomFor`, `signFreeAgent`). No random numbers.
+ */
+function raiseOffers(state: LeagueState, ctx: SimContext, emit: Emit): void {
+  for (const id of bidFor(state)) {
+    const player = state.players[id];
+    if (!player || player.teamId !== null) continue;
+    const ask = ctx.models.contractDemand.ask(ctx.ruleset, player);
+    for (const { o, interest } of raceFor(state, ctx, player).ranked.slice(1)) {
+      if (state.teams[o.teamId]?.userControlled) continue;
+      const salary = o.salary + Math.round(ask * ctx.ruleset.freeAgency.raiseStep);
+      if (salary > walkAway(state, ctx, o.teamId, ask)) continue;
+      const offer = { playerId: player.id, teamId: o.teamId, salary, years: o.years };
+      if (signingInterest(state, ctx, player, o.teamId, offer).interest <= interest) continue;
+      const room = roomFor(state, ctx, o.teamId, player, salary);
+      if (!room || 'error' in signFreeAgent(state, ctx, player, o.teamId, offer, room.freed)) {
+        continue;
+      }
+      emit('minor', [o.teamId], { kind: 'freeAgency.offered', offer });
+    }
+  }
+}
+
+/**
+ * One day on the market: the day turns, free agents whose day has come decide, trailing AI teams
+ * raise, then AI teams make new offers.
+ */
 export function marketDay(state: LeagueState, ctx: SimContext, rng: Rng, emit: Emit): void {
+  emit('minor', [], { kind: 'freeAgency.dayPassed', day: state.marketDay + 1 });
   decideOffers(state, ctx, emit);
+  raiseOffers(state, ctx, emit);
   makeOffers(state, ctx, rng, emit);
 }

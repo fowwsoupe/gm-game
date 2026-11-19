@@ -81,8 +81,10 @@ export interface LeagueState {
     give: PlayerId[];
     get: PlayerId[];
   }[];
-  /** Open offers to free agents (AI teams' and yours); a free agent picks one the next day. */
+  /** Open offers to free agents (AI teams' and yours); a free agent picks one on his decision day. */
   faOffers: FreeAgentOffer[];
+  /** Market days played since free agency last opened (0 when it opens). */
+  marketDay: number;
   /** First-round picks traded with top-N protection: if the pick lands in the top `top`, `keeper` keeps it. */
   pickProtection: Record<string, { top: number; keeper: TeamId }>;
   /** Players human teams listed as available: AI GMs make offers for them more often. */
@@ -432,11 +434,16 @@ export function applyEvent(state: LeagueState, event: LeagueEvent): void {
     case 'freeAgency.sheetDropped':
       state.rfaSheets = state.rfaSheets.filter((o) => o.playerId !== event.playerId);
       return;
-    case 'freeAgency.offered':
-      state.faOffers = state.faOffers.filter(
-        (o) => o.playerId !== event.offer.playerId || o.teamId !== event.offer.teamId,
+    case 'freeAgency.offered': {
+      const earlier = state.faOffers.find(
+        (o) => o.playerId === event.offer.playerId && o.teamId === event.offer.teamId,
       );
-      state.faOffers.push({ ...event.offer });
+      state.faOffers = state.faOffers.filter((o) => o !== earlier);
+      state.faOffers.push({ ...event.offer, since: earlier?.since ?? state.marketDay });
+      return;
+    }
+    case 'freeAgency.dayPassed':
+      state.marketDay = event.day;
       return;
     case 'contract.extended': {
       const p = state.players[event.playerId];
@@ -480,6 +487,7 @@ export function applyEvent(state: LeagueState, event: LeagueEvent): void {
     case 'freeAgency.opened':
       state.freeAgencyOpen = true;
       state.draftPicksMade = null;
+      state.marketDay = 0;
       return;
     case 'team.statusChanged':
       state.teamStatus[event.teamId] = event.to;

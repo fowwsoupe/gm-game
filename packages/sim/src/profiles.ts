@@ -3,6 +3,7 @@ import { Rng, type LeagueState } from './core';
 import { percentileRank } from './players';
 import { hash, moraleOf, notableTraits, personalityOf, staffOf } from './people';
 import { hurtOn } from './tonight';
+import { raceFor } from './offseason';
 import type { SimContext } from './context';
 
 /**
@@ -47,6 +48,21 @@ export function playerProfiles(
     const r = new Rng(hash(`analytics:${viewer?.id}:${p.id}`));
     return keys.map((key) => (p.ratings[key] ?? 0) + (exact ? 0 : r.normal(0, sd)));
   };
+  // His agent tells the bidders the leading interest, not the terms.
+  const bids = (p: Player) => {
+    const { ranked, decides } = raceFor(state, ctx, p);
+    if (!ranked.length) return {};
+    const rivals = ranked.filter((x) => !state.teams[x.o.teamId]?.userControlled);
+    const mine = ranked.find((x) => x.o.teamId === viewer?.id);
+    return {
+      bids: {
+        teams: rivals.map((x) => x.o.teamId),
+        best: rivals[0]?.interest ?? 0,
+        days: Math.max(1, decides - state.marketDay),
+        ...(mine && { mine: { interest: mine.interest, leads: ranked[0] === mine } }),
+      },
+    };
+  };
 
   return all
     .filter((p) => p.teamId === teamId)
@@ -90,9 +106,7 @@ export function playerProfiles(
           }),
         ...(p.teamId !== null && { morale: moraleOf(state, ctx, p) }),
         ...(p.teamId === null && state.rfaRights[p.id] && { rightsTeamId: state.rfaRights[p.id] }),
-        rivalOffers: state.faOffers.filter(
-          (o) => o.playerId === p.id && !state.teams[o.teamId]?.userControlled,
-        ).length,
+        ...(p.teamId === null && bids(p)),
       };
     });
 }

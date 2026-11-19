@@ -25,7 +25,7 @@ export {
 } from './draft';
 export { scoutReport } from './scouting';
 export { signingInterest, signFreeAgent, sheetCompensation } from './signing';
-export { acceptSheet, marketDay, roomFor } from './market';
+export { acceptSheet, marketDay, raceFor, roomFor, walkAway } from './market';
 export { aiHoldouts, resignOffers, resignContract, isExpiring, resignWindowOpen } from './resign';
 export { stayChance } from './freeAgency';
 export { freeAgents, wantedYears } from './roster';
@@ -111,11 +111,12 @@ export function finishRollover(state: LeagueState, ctx: SimContext, emit: Emit):
   const rng = new Rng(state.rngState);
   const order = worstFirst(state, ctx.ruleset);
   const from = phaseOf(ctx.ruleset.season.calendar, state.date);
-  // AI teams bid for free agents over a few days; whoever is still short is filled below.
+  // AI teams bid for free agents over a few days, then every race still open closes; whoever is
+  // still short is filled below.
   for (let day = 0; day < MARKET_DAYS; day++) {
     marketDay(state, ctx, rng.fork(`market${day}`), emit);
   }
-  decideOffers(state, ctx, emit);
+  decideOffers(state, ctx, emit, true);
   fillRosters(state, ctx, rng.fork('freeAgency'), emit, season, order);
   meetCapFloor(state, ctx, rng.fork('capFloor'), emit, season, order);
   playInternational(state, ctx, rng.fork('international'), emit, season);

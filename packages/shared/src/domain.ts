@@ -156,8 +156,17 @@ export interface PlayerProfile extends RosterPlayer {
   stats: Record<string, number>;
   /** What he would ask per year on a new contract today, whole dollars. */
   ask: number;
-  /** Free agents: how many AI teams have an open offer to him (they compete with yours). */
-  rivalOffers: number;
+  /**
+   * Free agents with offers on the table (his agent's word to the bidders): the AI teams bidding,
+   * the best interest among their offers (the meter number, not the terms), market days until he
+   * decides, and your open offer's interest and whether it leads.
+   */
+  bids?: {
+    teams: TeamId[];
+    best: number;
+    days: number;
+    mine?: { interest: number; leads: boolean };
+  };
   /** Rostered players: how happy he is, 0-100, with the four things behind it (each 0-100). */
   morale?: { value: number; factors: { key: string; score: number }[] };
   /** On your trade block: AI GMs call about him more often. */
@@ -168,7 +177,11 @@ export interface PlayerProfile extends RosterPlayer {
   rightsTeamId?: TeamId;
 }
 
-/** An open offer to a free agent; he answers the next day, picking the one he likes best. */
+/**
+ * An open offer to a free agent. With one team bidding he answers the next market day; with two or
+ * more he decides a few market days after his first offer (the ruleset's `freeAgency.days`),
+ * picking the one he likes best.
+ */
 export interface FreeAgentOffer {
   playerId: PlayerId;
   teamId: TeamId;
@@ -178,6 +191,8 @@ export interface FreeAgentOffer {
   noTrade?: true;
   /** Share (whole percent) of the salary paid as a signing bonus. */
   bonusPct?: number;
+  /** The market day this team first bid for him, kept when it raises (set by the reducer; absent = 0). */
+  since?: number;
 }
 
 export interface Player {
