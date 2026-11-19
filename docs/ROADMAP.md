@@ -39,6 +39,11 @@ Minor / junior / European leagues: brief in
 [research/2026-11-minor-leagues.md](research/2026-11-minor-leagues.md); its four jobs (the
 prospect pool, lines, prospects in trades, the farm team) are ready, in that order.
 
+Summer training, camp battles, international tournament: brief in
+[research/2026-11-summer-training.md](research/2026-11-summer-training.md); its first two jobs
+(summer training plans, the international tournament) are ready; camp battles wait for the camp
+job above.
+
 Needs a design first (a short brief in `docs/research/`, then jobs):
 
 - Player traits and clustered builds.
@@ -73,7 +78,7 @@ D. Phase 2 headlines
 - [ ] Free-agency bidding war and contract negotiation (Opus, xhigh, brief first)
 - [ ] League news tab (Opus for storylines, Sonnet for UI; high, brief first)
 - [x] Media and press conferences, text (Sonnet, medium, 2-3 PRs)
-- [ ] Summer training, camp battles, international tournament (Opus, high, 3 PRs)
+- [~] Summer training, camp battles, international tournament (Opus, high, 3 PRs): brief done
 - [ ] Cutscenes (Sonnet, medium, 3 PRs)
 - [ ] Match viewer (2D) with coach from the bench (Fable 5.2, xhigh, 6+ PRs)
 - [ ] League sandbox (Sonnet, high, 4 PRs)
