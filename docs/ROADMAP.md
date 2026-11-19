@@ -68,7 +68,7 @@ D. Phase 2 headlines
 - [ ] Live draft room with trading (Opus, high, 3-4 PRs)
 - [ ] Free-agency bidding war and contract negotiation (Opus, xhigh, brief first)
 - [ ] League news tab (Opus for storylines, Sonnet for UI; high, brief first)
-- [ ] Media and press conferences, text (Sonnet, medium, 2-3 PRs)
+- [x] Media and press conferences, text (Sonnet, medium, 2-3 PRs)
 - [ ] Summer training, camp battles, international tournament (Opus, high, 3 PRs)
 - [ ] Cutscenes (Sonnet, medium, 3 PRs)
 - [ ] Match viewer (2D) with coach from the bench (Fable 5.2, xhigh, 6+ PRs)
@@ -147,7 +147,7 @@ Build order, owners and "done when" for each step: **[V0.1_PLAN.md](V0.1_PLAN.md
 - [ ] Live draft trade room
 - [ ] Free-agency live bidding war + full contract negotiation
 - [ ] League news tab, social-media style: a feed page of posts with the generated face of the player and of the AI GM (or coach, owner) in each one, built on the existing `news.posted` events and the news-feed faces. Storylines that run over weeks and seasons (a holdout becoming a trade, a breakout and his extension ask, a GM's fire sale, a contender clearing cap for a star, a rivalry, a coach on the hot seat), each told as a short thread of linked posts; generated GM faces; likes and follows only if they carry a use. Needs a design first (a short brief in `docs/research/`).
-- [ ] Media & press conferences (text)
+- [x] Media & press conferences (text)
 - [ ] Match viewer (2D) + coach from the bench
 - [ ] Cutscenes (trophy lift, draft pick, signing)
 - [ ] Summer training, camp battles, international tournament
