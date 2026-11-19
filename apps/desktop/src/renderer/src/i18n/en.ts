@@ -318,7 +318,7 @@ export const en = {
   'trade.youGive': 'You give',
   'trade.youGet': 'You get',
   'trade.answerTitle': 'Their answer',
-  'trade.pickPlayers': 'Pick players on either side to ask.',
+  'trade.pickPlayers': 'Pick players, prospects or picks on either side to ask.',
   'trade.yes': 'They would accept.',
   'trade.no': 'They would say no.',
   'trade.guessYes': 'Your assistant GM: they will likely say yes.',

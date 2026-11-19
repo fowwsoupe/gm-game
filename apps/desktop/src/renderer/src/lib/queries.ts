@@ -70,7 +70,16 @@ export const useTradeEvaluation = (proposal: TradeProposal | undefined) =>
   useQuery({
     queryKey: ['league', 'tradeEvaluation', proposal] as const,
     queryFn: () => window.gm.league.evaluateTrade(proposal!),
-    enabled: !!proposal && proposal.give.length + proposal.get.length > 0,
+    enabled:
+      !!proposal &&
+      [
+        proposal.give,
+        proposal.get,
+        proposal.givePicks,
+        proposal.getPicks,
+        proposal.giveProspects,
+        proposal.getProspects,
+      ].some((ids) => ids?.length),
   });
 export const useDraftClass = (teamId: TeamId | undefined) =>
   useQuery({
@@ -78,10 +87,11 @@ export const useDraftClass = (teamId: TeamId | undefined) =>
     queryFn: () => window.gm.league.draftClass({ teamId: teamId! }),
     enabled: !!teamId,
   });
-export const useProspects = (teamId: TeamId | undefined) =>
+/** `teamId`'s prospects, read by `by`'s scouts (default: his own team's). */
+export const useProspects = (teamId: TeamId | undefined, by?: TeamId) =>
   useQuery({
-    queryKey: ['league', 'prospects', teamId] as const,
-    queryFn: () => window.gm.league.prospects({ teamId: teamId! }),
+    queryKey: ['league', 'prospects', teamId, by] as const,
+    queryFn: () => window.gm.league.prospects({ teamId: teamId!, ...(by && { by }) }),
     enabled: !!teamId,
   });
 export const useDashboard = (teamId: TeamId | undefined) =>

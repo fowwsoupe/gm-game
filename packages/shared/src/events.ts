@@ -276,6 +276,9 @@ export type LeagueEvent =
       retained?: RetainedSalary[];
       givePicks?: string[];
       getPicks?: string[];
+      /** Prospects each way: his rights move, he stays in the pool. */
+      giveProspects?: PlayerId[];
+      getProspects?: PlayerId[];
       /** Top-N protection on the picks `fromTeamId` gave (it keeps one that lands that high). */
       protectTop?: number;
     })

@@ -1,6 +1,8 @@
 import type { Player, PlayerId, TeamId, TeamStatus } from '@gm/shared';
 import {
+  capYearOf,
   playerName,
+  prospectsOf,
   teamName,
   type CalendarConfig,
   type Emit,
@@ -12,6 +14,7 @@ import {
   cachedContext,
   evaluateTrade,
   newTradeCache,
+  signedProspect,
   tradeWindowOpen,
   type TradeCache,
 } from './evaluate';
@@ -57,8 +60,9 @@ function valuer(state: LeagueState, ctx: SimContext, cache: TradeCache) {
 /**
  * AI GMs trade with each other: a buyer looks at a seller's roster for the player it values
  * most above what the seller does, and offers one of its own players the seller values more
- * than it does (or a draft pick when no player works). The trade happens only if both sides accept under the same rules as a human
- * offer (`evaluateTrade`), so the AI cannot make a trade a human could not.
+ * than it does (or a draft pick, then a prospect, when no player works). The trade happens only
+ * if both sides accept under the same rules as a human offer (`evaluateTrade`), so the AI cannot
+ * make a trade a human could not.
  * Players on an AI team's trade block (a fire sale) come first: buyers call those teams first
  * and ask only for listed players. One trade a call at most: weekly, and daily in deadline week.
  * Human teams are never involved.
@@ -99,21 +103,36 @@ export function aiTrades(state: LeagueState, ctx: SimContext, rng: Rng, emit: Em
       (a, b) => gap(b, buyer, seller) - gap(a, buyer, seller),
     )[0];
     if (!target) continue;
-    // What the buyer can pay with: players the seller values more than it does, then its picks.
-    const offers: { give: string[]; givePicks: string[]; label: string }[] = [
+    // What the buyer can pay with: players the seller values more than it does, then its picks,
+    // then its prospects the seller values more (as the entry deal each would sign).
+    const wanted = (p: Player) => gap(p, seller, buyer) > 0;
+    const byGap = (a: Player, b: Player) => gap(b, seller, buyer) - gap(a, seller, buyer);
+    const offers: {
+      give: PlayerId[];
+      givePicks: string[];
+      prospects: PlayerId[];
+      label: string;
+    }[] = [
       ...roster(buyer)
-        .filter((p) => gap(p, seller, buyer) > 0)
-        .sort((a, b) => gap(b, seller, buyer) - gap(a, seller, buyer))
+        .filter(wanted)
+        .sort(byGap)
         .slice(0, OFFERS_TRIED)
-        .map((p) => ({ give: [p.id], givePicks: [], label: playerName(p) })),
+        .map((p) => ({ give: [p.id], givePicks: [], prospects: [], label: playerName(p) })),
       ...draftPicks(state, ctx.ruleset, buyer)
         .sort((a, b) => b.season - a.season || b.round - a.round) // cheapest first
         .slice(0, OFFERS_TRIED)
         .map((pk) => ({
           give: [],
           givePicks: [pk.id],
+          prospects: [],
           label: pickLabel(state, pk.id),
         })),
+      ...prospectsOf(state, buyer)
+        .map((pr) => signedProspect(ctx.ruleset, pr, capYearOf(state)))
+        .filter(wanted)
+        .sort(byGap)
+        .slice(0, OFFERS_TRIED)
+        .map((p) => ({ give: [], givePicks: [], prospects: [p.id], label: playerName(p) })),
     ];
     for (const offer of offers) {
       const get = [target.id];
@@ -123,9 +142,10 @@ export function aiTrades(state: LeagueState, ctx: SimContext, rng: Rng, emit: Em
         {
           fromTeamId: buyer,
           toTeamId: seller,
-          give: offer.give as Player['id'][],
+          give: offer.give,
           get,
           givePicks: offer.givePicks,
+          giveProspects: offer.prospects,
         },
         cache,
       );
@@ -137,8 +157,9 @@ export function aiTrades(state: LeagueState, ctx: SimContext, rng: Rng, emit: Em
           fromTeamId: seller,
           toTeamId: buyer,
           give: get,
-          get: offer.give as Player['id'][],
+          get: offer.give,
           getPicks: offer.givePicks,
+          getProspects: offer.prospects,
         },
         cache,
       );
@@ -147,9 +168,10 @@ export function aiTrades(state: LeagueState, ctx: SimContext, rng: Rng, emit: Em
         kind: 'trade.completed',
         fromTeamId: buyer,
         toTeamId: seller,
-        give: offer.give as Player['id'][],
+        give: offer.give,
         get,
         ...(offer.givePicks.length && { givePicks: offer.givePicks }),
+        ...(offer.prospects.length && { giveProspects: offer.prospects }),
       });
       emit('notable', [buyer, seller], {
         kind: 'news.posted',
