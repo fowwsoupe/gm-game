@@ -4,6 +4,7 @@ import { useDispatch, useDraftClass, useTeams } from '@/lib/queries';
 import { useT, type MessageKey } from '@/i18n';
 import { Button, Card, Face, RangeBar, Td, Th } from '@/ui';
 import { fullName, teamName } from '@/lib/format';
+import { useUi } from '@/stores/ui';
 
 /**
  * Draft board: the class as the scouts see it (a potential range, not the truth) and your
@@ -15,13 +16,14 @@ export function Draft() {
   const mine = teams.find((x) => x.userControlled)?.id;
   const { data } = useDraftClass(mine);
   const dispatch = useDispatch();
+  const openTrade = useUi((s) => s.openTrade);
   const [error, setError] = useState<string | null>(null);
   if (!mine) return <p className="text-muted">{t('common.noTeam')}</p>;
   if (!data || data.prospects.length === 0) {
     return <p className="text-muted">{t('draft.empty')}</p>;
   }
 
-  const { clock } = data;
+  const clock = data.order[0];
   const myTurn = clock?.teamId === mine;
   const board = data.board as PlayerId[];
   const byId = new Map(data.prospects.map((p) => [p.id as string, p]));
@@ -111,44 +113,70 @@ export function Draft() {
           </tbody>
         </table>
       </Card>
-      <Card title={t('draft.boardTitle')}>
-        {board.length === 0 ? (
-          <p className="text-sm text-muted">{t('draft.boardEmpty')}</p>
-        ) : (
-          <ol className="space-y-1 text-sm">
-            {board.map((id, i) => {
-              const p = byId.get(id);
-              return (
-                <li key={id} className="flex items-center justify-between gap-2">
+      <div className="space-y-4">
+        <Card title={t('draft.boardTitle')}>
+          {board.length === 0 ? (
+            <p className="text-sm text-muted">{t('draft.boardEmpty')}</p>
+          ) : (
+            <ol className="space-y-1 text-sm">
+              {board.map((id, i) => {
+                const p = byId.get(id);
+                return (
+                  <li key={id} className="flex items-center justify-between gap-2">
+                    <span>
+                      <span className="mr-2 text-muted">{i + 1}</span>
+                      {p ? `${fullName(p)} (${p.position})` : id}
+                    </span>
+                    <span className="flex gap-1">
+                      <Button disabled={i === 0 || dispatch.isPending} onClick={() => move(i, -1)}>
+                        ↑
+                      </Button>
+                      <Button
+                        disabled={i === board.length - 1 || dispatch.isPending}
+                        onClick={() => move(i, 1)}
+                      >
+                        ↓
+                      </Button>
+                      <Button
+                        disabled={dispatch.isPending}
+                        onClick={() => save(board.filter((x) => x !== id))}
+                      >
+                        {t('draft.remove')}
+                      </Button>
+                    </span>
+                  </li>
+                );
+              })}
+            </ol>
+          )}
+          <p className="mt-3 text-xs text-muted">{t('draft.boardNote')}</p>
+          {error && <p className="mt-2 text-sm text-bad">{error}</p>}
+        </Card>
+        {clock && (
+          <Card title={t('draft.orderTitle')}>
+            <p className="mb-2 text-xs text-muted">{t('draft.orderNote')}</p>
+            <ol className="max-h-96 space-y-1 overflow-y-auto text-sm">
+              {data.order.map((o) => (
+                <li
+                  key={o.id}
+                  className={`flex items-center justify-between gap-2 ${o.teamId === mine ? 'text-accent' : ''}`}
+                >
                   <span>
-                    <span className="mr-2 text-muted">{i + 1}</span>
-                    {p ? `${fullName(p)} (${p.position})` : id}
+                    {t('draft.orderLine', {
+                      pick: o.pick,
+                      round: o.round,
+                      team: teamName(teams, o.teamId),
+                    })}
                   </span>
-                  <span className="flex gap-1">
-                    <Button disabled={i === 0 || dispatch.isPending} onClick={() => move(i, -1)}>
-                      ↑
-                    </Button>
-                    <Button
-                      disabled={i === board.length - 1 || dispatch.isPending}
-                      onClick={() => move(i, 1)}
-                    >
-                      ↓
-                    </Button>
-                    <Button
-                      disabled={dispatch.isPending}
-                      onClick={() => save(board.filter((x) => x !== id))}
-                    >
-                      {t('draft.remove')}
-                    </Button>
-                  </span>
+                  {o.teamId !== mine && (
+                    <Button onClick={() => openTrade(o.teamId, o.id)}>{t('draft.tradeFor')}</Button>
+                  )}
                 </li>
-              );
-            })}
-          </ol>
+              ))}
+            </ol>
+          </Card>
         )}
-        <p className="mt-3 text-xs text-muted">{t('draft.boardNote')}</p>
-        {error && <p className="mt-2 text-sm text-bad">{error}</p>}
-      </Card>
+      </div>
     </div>
   );
 }

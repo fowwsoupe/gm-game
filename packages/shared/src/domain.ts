@@ -687,6 +687,8 @@ export interface DraftClock {
   pick: number;
   round: number;
   teamId: TeamId;
+  /** The pick's id (`DraftPick.id`), to trade it. */
+  id: string;
 }
 
 export interface DraftBoardEntry {

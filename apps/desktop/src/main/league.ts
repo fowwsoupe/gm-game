@@ -32,7 +32,7 @@ import {
   dashboard,
   raceNight,
   draftPicks,
-  onTheClock,
+  picksLeft,
   playoffOdds,
   teamRatings,
   assistantGuess,
@@ -574,7 +574,7 @@ export class LeagueService {
         };
       }),
       board: state.draftBoards[teamId] ?? [],
-      clock: onTheClock(state, ctx),
+      order: picksLeft(state, ctx),
     };
   }
 
