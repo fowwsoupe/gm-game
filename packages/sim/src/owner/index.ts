@@ -476,7 +476,7 @@ function coachOnTheSeat(
         {
           key: 'agree',
           effects: {
-            cash: -args.payout,
+            cash: 0 - args.payout, // not -args.payout: a free firing would store -0 (lost in a save)
             confidence: COACH.fired,
             coach: { hire, heat: args.startHeat },
           },
