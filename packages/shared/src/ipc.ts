@@ -33,6 +33,7 @@ import type {
   TradeEvaluation,
   FreeAgentOffer,
   PlayerHistory,
+  ProspectEntry,
   TradeOffer,
   TradeProposal,
 } from './domain';
@@ -159,6 +160,8 @@ export interface GmApi {
       made: DraftResult[];
       madeSeason: number | null;
     }>;
+    /** A team's prospects (rights held, unsigned), with its scouts' read of each. */
+    prospects(input: { teamId: TeamId }): Promise<ProspectEntry[]>;
     /** Home for a team: the to-do list and the next game. */
     dashboard(input: { teamId: TeamId }): Promise<Dashboard>;
     /** Playoff odds, power rating and status for every team. */
@@ -180,11 +183,15 @@ export interface GmApi {
     }): Promise<SigningInterest | null>;
   };
   feed: {
-    /** Newest first, with the names and ages of the players they mention (retired ones included). */
+    /**
+     * Newest first, with the names and ages of the players they mention (retired ones included)
+     * and the story each event belongs to, by event id (`storyOf`).
+     */
     list(input: { limit: number; minImportance?: Importance }): Promise<{
       events: LeagueEvent[];
       names: Record<string, string>;
       ages: Record<string, number>;
+      stories: Record<string, string>;
     }>;
   };
   commands: {
@@ -231,6 +238,7 @@ export const IPC = {
   pulse: 'league:pulse',
   dashboard: 'league:dashboard',
   draftClass: 'league:draftClass',
+  prospects: 'league:prospects',
   signingInterest: 'league:signingInterest',
   feedList: 'feed:list',
   dispatch: 'commands:dispatch',

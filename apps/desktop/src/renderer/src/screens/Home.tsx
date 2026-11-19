@@ -9,6 +9,7 @@ import {
   useStandings,
   useStatus,
   useTeams,
+  useMine,
 } from '@/lib/queries';
 import { useUi } from '@/stores/ui';
 import { money, moneyParams, pct, teamName } from '@/lib/format';
@@ -26,9 +27,8 @@ export function Home({
   lastSim: string | null;
 }) {
   const t = useT();
-  const { data: teams = [] } = useTeams();
   const { data: status } = useStatus();
-  const mine = teams.find((x) => x.userControlled);
+  const mine = useMine();
   if (!hasLeague) return <p className="text-muted">{t('home.empty')}</p>;
   return (
     <div className="grid max-w-5xl gap-4 md:grid-cols-2">
@@ -74,29 +74,60 @@ function CareerCard({ career }: { career: Career }) {
   );
 }
 
-/** Pick the team you run: control moves to it (the old one goes back to its AI GM). */
+/**
+ * Pick the team you run: control moves to it (the old one goes back to its AI GM). Hot-seat:
+ * add a GM for another team in the same save; the GMs take turns in the sidebar's seat.
+ */
 function TeamPicker() {
   const t = useT();
   const { data: teams = [] } = useTeams();
   const dispatch = useDispatch();
-  const mine = teams.find((x) => x.userControlled);
+  const setSeat = useUi((s) => s.setSeat);
+  const mine = useMine();
+  const control = (id: TeamId, userControlled: boolean) =>
+    dispatch.mutate({ kind: 'team.setUserControlled', teamId: id, userControlled });
   const choose = (id: TeamId) => {
     if (mine?.id === id) return;
-    dispatch.mutate({ kind: 'team.setUserControlled', teamId: id, userControlled: true });
-    if (mine) {
-      dispatch.mutate({ kind: 'team.setUserControlled', teamId: mine.id, userControlled: false });
-    }
+    control(id, true);
+    if (mine) control(mine.id, false);
+    setSeat(id);
   };
+  const open = teams.filter((x) => !x.userControlled);
+  const gms = teams.length - open.length;
   return (
-    <label className="flex items-center gap-2 text-sm text-muted md:col-span-2">
-      {t('home.yourTeam')}
-      <TeamSelect
-        teams={teams}
-        value={mine?.id ?? ''}
-        onChange={(id) => id && choose(id)}
-        {...(!mine && { empty: t('home.noTeam') })}
-      />
-    </label>
+    <div className="flex flex-wrap items-center gap-4 text-sm text-muted md:col-span-2">
+      <label className="flex items-center gap-2">
+        {t('home.yourTeam')}
+        <TeamSelect
+          teams={teams.filter((x) => x.id === mine?.id || !x.userControlled)}
+          value={mine?.id ?? ''}
+          onChange={(id) => id && choose(id)}
+          {...(!mine && { empty: t('home.noTeam') })}
+        />
+      </label>
+      {mine && (
+        <TeamSelect
+          teams={open}
+          value=""
+          empty={t('home.addGm')}
+          onChange={(id) => {
+            if (!id) return;
+            control(id, true);
+            setSeat(id);
+          }}
+        />
+      )}
+      {mine && gms > 1 && (
+        <Button
+          onClick={() => {
+            control(mine.id, false);
+            setSeat(undefined);
+          }}
+        >
+          {t('home.removeGm')}
+        </Button>
+      )}
+    </div>
   );
 }
 

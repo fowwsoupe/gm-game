@@ -8,6 +8,7 @@ import {
   useTradeEvaluation,
   useTradeOffers,
   useTradeRequests,
+  useMine,
 } from '@/lib/queries';
 import { useT, type MessageKey } from '@/i18n';
 import { Button, Card, Face, TeamLink, TeamSelect, Td, Th } from '@/ui';
@@ -18,7 +19,7 @@ import { fullName, money, moneyParams, pickParams, statValue, teamName } from '@
 export function Trades() {
   const t = useT();
   const { data: teams = [] } = useTeams();
-  const mine = teams.find((x) => x.userControlled);
+  const mine = useMine();
   const others = teams.filter((x) => x.id !== mine?.id);
   const ask = useUi((s) => s.tradeAsk);
   const [partnerPick, setPartner] = useState(ask?.teamId as TeamId | undefined);

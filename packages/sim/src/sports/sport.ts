@@ -50,6 +50,12 @@ export interface SportModule<Strength = unknown> {
   /** A new teamless 18-19 year old, for the draft and undrafted free agents. `season` = the season he joins. */
   generateProspect(rng: Rng, opts: { id: string; season: number; position?: string }): Player;
 
+  /** The lower league a new draft prospect comes from (hockey: 'junior' or 'europe'). */
+  prospectOrigin(rng: Rng): string;
+
+  /** Where an unsigned prospect from `origin` plays at `age` (hockey: a junior past the junior age plays in Europe). */
+  prospectLeague(origin: string, age: number, rules: Ruleset): string;
+
   /**
    * Picks the player award winners (not the champion) from the finished season: the box scores
    * of its regular-season games (`results`) and of its playoffs (`playoffResults`, with the

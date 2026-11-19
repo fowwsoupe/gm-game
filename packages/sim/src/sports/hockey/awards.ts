@@ -7,7 +7,8 @@ import { hockeySeasonStats } from './stats';
  *   mvp         most points; goals, then plus-minus, break ties
  *   topGoalie   best save percentage among goalies with a quarter of the busiest goalie's games
  *   topDefender defenceman with the most points plus half his plus-minus
- *   topRookie   rookie-aged player with the most points
+ *   topRookie   player in his first main-league season (or, with no debut on record, rookie
+ *               aged) with the most points
  *   playoffMvp  the champion's best playoff performer, skater or goalie, scored in goals: a
  *               skater's goals plus half his assists; a goalie's goals saved above the league's
  *               playoff save % (with at least a quarter of his team's playoff games), weighted
@@ -68,7 +69,11 @@ export const pickAwards: SportModule['pickAwards'] = ({
     [
       'topRookie',
       best(
-        rostered.filter((p) => season - p.birthYear <= rules.awards.rookieMaxAge),
+        rostered.filter((p) =>
+          p.debut === undefined
+            ? season - p.birthYear <= rules.awards.rookieMaxAgeNoDebut
+            : p.debut === season && season - p.birthYear <= rules.awards.rookieMaxAge,
+        ),
         pointsOf,
       ),
     ],

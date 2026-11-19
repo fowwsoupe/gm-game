@@ -23,6 +23,21 @@ export type Command =
   /** `stopOn`: 'major' stops on every category, a list on just those (`STOP_CATEGORIES`). */
   | { kind: 'sim.advance'; days: number; stopOn?: 'never' | 'major' | readonly StopCategory[] }
   | { kind: 'team.setUserControlled'; teamId: TeamId; userControlled: boolean }
+  /** The identity editor: give a team a new city, name and abbreviation (it keeps its id, players and history). */
+  | { kind: 'team.rename'; teamId: TeamId; city: string; name: string; abbreviation: string }
+  /** Move a franchise: a new identity and market size; its fans cool by the ruleset's `relocationFanLoss`. */
+  | {
+      kind: 'team.relocate';
+      teamId: TeamId;
+      city: string;
+      name: string;
+      abbreviation: string;
+      market: number;
+    }
+  /** Add a team to the league (free agency is open): it takes unprotected players from the others in an expansion draft. */
+  | { kind: 'league.expand'; city: string; name: string; abbreviation: string; market: number }
+  /** Commissioner mode: put a player on any team, or out to free agency (`teamId` null), whatever the cap and trade rules say. */
+  | { kind: 'commissioner.move'; playerId: PlayerId; teamId: TeamId | null }
   /** After the champion is crowned: age, retire, draft, re-sign and sign, then start next season. */
   | { kind: 'season.rollover' }
   /** Buy out a player's contract (offseason only, once the champion is crowned). */
@@ -97,6 +112,8 @@ export type Command =
   | { kind: 'offseason.startDraft' }
   /** Your team is on the clock in the live draft: take this prospect; the draft runs to the next human pick. */
   | { kind: 'draft.pick'; teamId: TeamId; playerId: PlayerId }
+  /** Sign one of your prospects to his entry deal (any time outside the playoffs, cap allowing). */
+  | { kind: 'prospect.sign'; teamId: TeamId; playerId: PlayerId }
   /** One day of free agency: free agents answer the offers they have, then AI teams make new ones. */
   | { kind: 'freeAgency.advanceDay' }
   /** Match the offer sheet another team gave your restricted free agent: he signs with you on its terms. */

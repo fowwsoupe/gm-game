@@ -4,6 +4,7 @@ import type {
   LeagueEvent,
   Player,
   PlayerId,
+  PlayoffSeries,
   StopCategory,
   TeamId,
 } from '@gm/shared';
@@ -12,6 +13,7 @@ import {
   applyEvent,
   emitter,
   makeEvent,
+  pairKey,
   phaseOf,
   playerName,
   Rng,
@@ -72,6 +74,21 @@ export function advance(
   const emit = (e: LeagueEvent) => {
     applyEvent(state, e);
     events.push(e);
+  };
+  // A series starts; a rematch of last season's playoffs is a rivalry renewed (news only).
+  const startSeries = (series: PlayoffSeries) => {
+    const { higherTeamId: a, lowerTeamId: b } = series;
+    const renewed = state.playoffPairs[pairKey(a, b)] === state.date.season - 1;
+    emit(makeEvent(state, 'notable', [a, b], { kind: 'series.started', series }));
+    if (renewed) {
+      emit(
+        makeEvent(state, 'notable', [a, b], {
+          kind: 'news.posted',
+          headline: 'event.rivalry',
+          params: { a: teamName(state.teams[a]!), b: teamName(state.teams[b]!) },
+        }),
+      );
+    }
   };
   const rng = new Rng(state.rngState);
   const stops = new Set<StopCategory>(
@@ -420,14 +437,7 @@ export function advance(
             worstFirst(state, ctx.ruleset),
           );
         } else {
-          for (const series of nextRound(current)) {
-            emit(
-              makeEvent(state, 'notable', [series.higherTeamId, series.lowerTeamId], {
-                kind: 'series.started',
-                series,
-              }),
-            );
-          }
+          for (const series of nextRound(current)) startSeries(series);
         }
       }
     }
@@ -513,12 +523,7 @@ export function advance(
           today.season,
           Object.values(state.teams),
         )) {
-          emit(
-            makeEvent(state, 'notable', [series.higherTeamId, series.lowerTeamId], {
-              kind: 'series.started',
-              series,
-            }),
-          );
+          startSeries(series);
         }
       }
     }

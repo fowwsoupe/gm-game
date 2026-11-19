@@ -7,12 +7,25 @@ import {
   useDispatch,
   useOfferSheets,
   usePlayers,
+  useProspects,
   useSigningInterest,
   useStatus,
   useTeams,
+  useMine,
 } from '@/lib/queries';
 import { useT, type MessageKey } from '@/i18n';
-import { Button, Card, Cutscene, Face, PercentileBar, PlayerCard, TeamSelect, Td, Th } from '@/ui';
+import {
+  Button,
+  Card,
+  Cutscene,
+  Face,
+  PercentileBar,
+  PlayerCard,
+  RangeBar,
+  TeamSelect,
+  Td,
+  Th,
+} from '@/ui';
 import { fullName, money, statValue, teamName } from '@/lib/format';
 
 const FREE_AGENTS = 'fa';
@@ -21,6 +34,7 @@ const FREE_AGENTS = 'fa';
 export function Roster({ freeAgents = false }: { freeAgents?: boolean }) {
   const t = useT();
   const { data: teams = [] } = useTeams();
+  const mine = useMine()?.id;
   const focus = useUi((s) => s.focus);
   const [picked, setPicked] = useState<string | undefined>(focus?.teamId);
   const [selected, setSelected] = useState<string | undefined>(focus?.playerId);
@@ -31,8 +45,7 @@ export function Roster({ freeAgents = false }: { freeAgents?: boolean }) {
   }, [focus]);
   const value = freeAgents
     ? FREE_AGENTS
-    : ((picked && picked !== FREE_AGENTS ? picked : undefined) ??
-      (teams.find((x) => x.userControlled) ?? teams[0])?.id);
+    : ((picked && picked !== FREE_AGENTS ? picked : undefined) ?? mine ?? teams[0]?.id);
   const teamId = value === FREE_AGENTS ? null : (value as TeamId | undefined);
   const { data: players = [] } = usePlayers(value === undefined ? undefined : teamId);
   if (value === undefined) return <p className="text-muted">{t('roster.empty')}</p>;
@@ -72,11 +85,75 @@ export function Roster({ freeAgents = false }: { freeAgents?: boolean }) {
               onSelect={setSelected}
             />
           ))}
+          {teamId && <Prospects teamId={teamId} mine={teamId === mine} />}
         </div>
-        {freeAgents && <Sheets teamId={teams.find((x) => x.userControlled)?.id} />}
-        {card && <Profile player={card} signFor={teams.find((x) => x.userControlled)?.id} />}
+        {freeAgents && <Sheets teamId={mine} />}
+        {card && <Profile player={card} signFor={mine} />}
       </div>
     </div>
+  );
+}
+
+/** A team's prospects: rights held, unsigned, off the roster. You sign yours to an entry deal. */
+function Prospects({ teamId, mine }: { teamId: TeamId; mine: boolean }) {
+  const t = useT();
+  const { data: prospects = [] } = useProspects(teamId);
+  const dispatch = useDispatch();
+  const [message, setMessage] = useState<string | null>(null);
+  if (prospects.length === 0) return null;
+  return (
+    <Card title={t('prospects.title')}>
+      <p className="mb-2 text-xs text-muted">{t('prospects.note')}</p>
+      <table className="tabular w-full text-sm">
+        <thead>
+          <tr className="border-b border-line text-right text-muted">
+            <Th left>{t('roster.player')}</Th>
+            <Th left>{t('roster.pos')}</Th>
+            <Th>{t('roster.age')}</Th>
+            <Th left>{t('prospects.league')}</Th>
+            <Th className="w-1/4">{t('draft.range')}</Th>
+            <Th>{t('prospects.rightsEnd')}</Th>
+            {mine && <Th />}
+          </tr>
+        </thead>
+        <tbody>
+          {prospects.map((p) => (
+            <tr key={p.id} className="border-b border-line/50 text-right">
+              <Td left>
+                <Face seed={p.id} age={p.age} size={22} />
+                {fullName(p)}
+              </Td>
+              <Td left>{p.position}</Td>
+              <Td>{p.age}</Td>
+              <Td left>{t(`league.${p.league}` as MessageKey)}</Td>
+              <Td>
+                <RangeBar low={p.low} high={p.high} />
+              </Td>
+              <Td>{p.rightsEnd}</Td>
+              {mine && (
+                <Td>
+                  <Button
+                    disabled={dispatch.isPending}
+                    onClick={() =>
+                      dispatch.mutate(
+                        { kind: 'prospect.sign', teamId, playerId: p.id },
+                        {
+                          onSuccess: (res) =>
+                            setMessage(res.ok ? t('sign.done') : res.error.message),
+                        },
+                      )
+                    }
+                  >
+                    {t('prospects.sign')}
+                  </Button>
+                </Td>
+              )}
+            </tr>
+          ))}
+        </tbody>
+      </table>
+      {message && <p className="mt-2 text-sm text-muted">{message}</p>}
+    </Card>
   );
 }
 

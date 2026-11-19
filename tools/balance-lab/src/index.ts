@@ -231,6 +231,9 @@ let maxPool = 0;
 let playoffTeamsNew = 0;
 let playoffSpotsCompared = 0;
 const goalieSvPairs: [number, number][] = [];
+/** From the fourth season on, at its start: rostered players 20 or under a league, prospects a team. */
+const youngRostered: number[] = [];
+const prospectsATeam: number[] = [];
 /** Per team-season money ($): revenue, gate (regular and playoff), operating profit. */
 const money = { revenue: [] as number[], gate: 0, profit: [] as number[], spread: [] as number[] };
 /** Regular-season home dates: fans in and seats there were. */
@@ -286,6 +289,14 @@ for (let l = 0; l < leagues; l++) {
   let lastPct: Map<string, number> | null = null;
   for (let y = 0; y < years; y++) {
     const longRun = y >= LONG_RUN_FROM;
+    if (y >= 3) {
+      youngRostered.push(
+        Object.values(state.players).filter(
+          (p) => p.teamId !== null && state.date.season - p.birthYear <= 20,
+        ).length,
+      );
+      prospectsATeam.push(Object.keys(state.prospects).length / Object.keys(state.teams).length);
+    }
     if (y === 0 || longRun) {
       const nets = Object.keys(state.teams).map((id) =>
         netStrength(teamStrength(rosterOf(state, id))),
@@ -580,6 +591,14 @@ const checks: Check[] = [
     max: 33,
     unit: '%',
   },
+  // docs/research/2026-11-minor-leagues.md: report only (69-78 a league before the prospect pool).
+  {
+    name: 'Rostered players 20 or under, a league (report)',
+    value: mean(youngRostered),
+    min: 0,
+    max: 150,
+  },
+  { name: 'Prospects a team (report)', value: mean(prospectsATeam), min: 0, max: 20 },
   // Money, per team-season (docs/research/2026-11-owner-finance.md): Forbes 2024-25 x the cap ratio.
   { name: 'Revenue a team, mean', value: mean(money.revenue) / 1e6, min: 265, max: 320, unit: 'M' },
   { name: 'Revenue, top team / bottom team', value: mean(money.spread), min: 2, max: 3, unit: 'x' },

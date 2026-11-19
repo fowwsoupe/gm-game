@@ -6,5 +6,12 @@ export { teamName, playerName } from './names';
 export { FIRST, LAST } from './namePools';
 export { dollars, pct, type Dollars } from './money';
 export { phaseOf, type CalendarConfig } from './calendar';
-export { applyEvent, capYearOf, linemateKey, type LeagueState, type ScheduledGame } from './state';
+export {
+  applyEvent,
+  capYearOf,
+  linemateKey,
+  pairKey,
+  type LeagueState,
+  type ScheduledGame,
+} from './state';
 export { makeEvent, emitter, type Emit, type EventBody } from './emit';

@@ -12,6 +12,8 @@ export interface Post {
   text: string;
   player: string | null;
   by: NonNullable<Extract<LeagueEvent, { kind: 'news.posted' }>['by']> | null;
+  /** The story it belongs to (`storyOf`), if any. */
+  story: string | null;
 }
 
 /**
@@ -32,6 +34,15 @@ export function usePosts(limit: number) {
     switch (e.kind) {
       case 'team.statusChanged':
         return t('event.statusChanged', { team: team(e.teamId), status: t(`status.${e.to}`) });
+      case 'player.moved':
+        return t('event.moved', {
+          player: names[e.playerId] ?? '',
+          team: e.toTeamId ? team(e.toTeamId) : t('roster.freeAgents'),
+        });
+      case 'team.expanded':
+        return t('event.expanded', { team: `${e.team.city} ${e.team.name}`, n: e.taken.length });
+      case 'team.relocated':
+        return t('event.relocated', { team: `${e.city} ${e.name}` });
       case 'draft.classAnnounced':
         return t('event.draftClass');
       case 'player.injured':
@@ -61,6 +72,12 @@ export function usePosts(limit: number) {
           amount: money(e.contract.capHit),
           season: e.contract.expiresAfterSeason,
         });
+      case 'prospect.signed':
+        return t('event.prospectSigned', { player: names[e.playerId] ?? '', team: team(e.teamId) });
+      case 'prospect.released':
+        return yours(e.teamIds)
+          ? t('event.prospectReleased', { player: names[e.playerId] ?? '' })
+          : null;
       case 'contract.extended':
         return t('event.extended', {
           player: names[e.playerId] ?? '',
@@ -151,6 +168,7 @@ export function usePosts(limit: number) {
       text,
       player,
       by: event.kind === 'news.posted' ? (event.by ?? null) : null,
+      story: data?.stories[event.id] ?? null,
     });
   }
   return { posts, names, ages };

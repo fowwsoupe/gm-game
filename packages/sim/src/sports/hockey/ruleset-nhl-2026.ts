@@ -66,8 +66,9 @@ export const NHL_2026: Ruleset = {
       { minCapHit: dollars(12.74), rounds: [1, 1, 1, 1] },
     ],
   },
-  // The real draft has 7 rounds, but most picks stay in junior or college and never take an NHL
-  // roster spot. Until prospects exist as a separate pool, only the picks that sign are drafted.
+  // The real draft has 7 rounds. Picks now wait unsigned in the prospect pool, but more rounds
+  // change the talent supply and the pick value curve: a balance job of its own
+  // (docs/research/2026-11-minor-leagues.md).
   draft: {
     rounds: 2,
     // Odds for the 16 non-playoff teams, worst first (the league's 2021 lottery). Two draws, so a team
@@ -76,8 +77,18 @@ export const NHL_2026: Ruleset = {
       draws: 2,
       odds: [18.5, 13.5, 11.5, 9.5, 8.5, 7.5, 6.5, 6, 5, 3.5, 3, 2.5, 2, 1.5, 0.5, 0.5],
     },
+    // From 2027: four years for a pick drafted at 18, three at 19 or older (Sound of Hockey, in the
+    // Sports GM research rules table).
+    rightsYears: [
+      { maxAge: 18, years: 4 },
+      { maxAge: 99, years: 3 },
+    ],
+    // TODO(verify): the CHL-NHL agreement (general knowledge, unsourced).
+    juniorMaxAge: 20,
   },
-  awards: { rookieMaxAge: 20 },
+  // A rookie: his first season, 26 or under (the real limit, general knowledge). Players in the
+  // league from before the prospect pool keep the old rule: 20 or under.
+  awards: { rookieMaxAge: 26, rookieMaxAgeNoDebut: 20 },
   trades: {
     maxRetentionPct: 50,
     maxRetainedContracts: 3,
@@ -102,7 +113,10 @@ export const NHL_2026: Ruleset = {
     // on average (see frontOffice), so total costs hold.
     operations: { yearly: dollars(44.7), perHomeDate: dollars(1.9) },
     coach: { salary: dollars(2.95), years: 3 }, // ESPN 2024: about $2.5M, usually three-year deals
+    relocationFanLoss: 15, // game design: a move costs fans, a market change is a fresh start
   },
+  // The 2021 Seattle draft: 11 protected a team (7 F, 3 D, 1 G), one player from each of the others.
+  expansion: { maxTeams: 32, protect: 11, picks: 18, maxLossPerTeam: 2 },
   // docs/research/2026-11-front-office.md: no public source; unverified, tuned in the lab.
   frontOffice: {
     salary: { min: dollars(0.5), max: dollars(3) },

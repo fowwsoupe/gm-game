@@ -1,4 +1,5 @@
-import { TICKET_STEPS } from '@gm/shared';
+import { useState } from 'react';
+import { MARKET_SIZES, TICKET_STEPS, type Team } from '@gm/shared';
 import { useCapSheet, useDispatch, useLines, useOwner, useRoster, useTeams } from '@/lib/queries';
 import { useUi } from '@/stores/ui';
 import { useT, type MessageKey } from '@/i18n';
@@ -30,6 +31,7 @@ export function TeamPage() {
         <Button onClick={() => setScreen('standings')}>{t('team.back')}</Button>
         <h1 className="text-lg font-semibold">{teamName(teams, team.id)}</h1>
       </div>
+      <IdentityCard key={team.id} team={team} />
       {owned && (
         <Card title={t('team.owner')}>
           <div className="grid gap-4 text-sm md:grid-cols-4">
@@ -185,3 +187,64 @@ export function TeamPage() {
 }
 
 const signedPct = (pct: number) => `${pct > 0 ? '+' : ''}${pct}%`;
+
+/** The identity editor: a team's city, name and abbreviation, and relocating it to a new market. The sim validates; an error shows beside Save. */
+function IdentityCard({ team }: { team: Team }) {
+  const t = useT();
+  const dispatch = useDispatch();
+  const [draft, setDraft] = useState({
+    city: team.city,
+    name: team.name,
+    abbreviation: team.abbreviation,
+  });
+  const [size, setSize] = useState<number>(team.market ?? 1);
+  const fields = ['city', 'name', 'abbreviation'] as const;
+  const error = dispatch.data && !dispatch.data.ok ? dispatch.data.error.message : null;
+  return (
+    <Card title={t('team.identity')}>
+      <div className="flex flex-wrap items-end gap-3 text-sm">
+        {fields.map((f) => (
+          <label key={f} className="flex flex-col gap-1">
+            <span className="text-muted">{t(`team.identity.${f}`)}</span>
+            <input
+              value={draft[f]}
+              maxLength={f === 'abbreviation' ? 4 : 24}
+              onChange={(e) => setDraft({ ...draft, [f]: e.target.value })}
+              className="rounded-md border border-line bg-panel px-2 py-1"
+            />
+          </label>
+        ))}
+        <Button
+          variant="primary"
+          disabled={dispatch.isPending}
+          onClick={() => dispatch.mutate({ kind: 'team.rename', teamId: team.id, ...draft })}
+        >
+          {t('team.identity.save')}
+        </Button>
+        <label className="flex flex-col gap-1">
+          <span className="text-muted">{t('team.relocate.market')}</span>
+          <select
+            value={size}
+            onChange={(e) => setSize(Number(e.target.value))}
+            className="rounded-md border border-line bg-panel px-2 py-1"
+          >
+            {MARKET_SIZES.map((m) => (
+              <option key={m} value={m}>
+                {t(`team.relocate.market.${m}`)}
+              </option>
+            ))}
+          </select>
+        </label>
+        <Button
+          disabled={dispatch.isPending}
+          onClick={() =>
+            dispatch.mutate({ kind: 'team.relocate', teamId: team.id, ...draft, market: size })
+          }
+        >
+          {t('team.relocate')}
+        </Button>
+        {error && <span className="text-xs text-red-500">{error}</span>}
+      </div>
+    </Card>
+  );
+}

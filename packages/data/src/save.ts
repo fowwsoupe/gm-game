@@ -53,6 +53,7 @@ export function migrate(db: Db): void {
  */
 const JSON_META = {
   draftClass: '[]',
+  prospects: '{}',
   draftOrder: '[]',
   draftBoards: '{}',
   draftPicksMade: 'null',
@@ -64,6 +65,7 @@ const JSON_META = {
   pickProtection: '{}',
   tradeOffers: '[]',
   seasonTrades: '[]',
+  playoffPairs: '{}',
   tradeRequests: '[]',
   holdouts: '[]',
   breakouts: '{}',
@@ -105,6 +107,7 @@ interface PlayerRow {
   contract_json: string | null;
   extension_json: string | null;
   joined_season: number | null;
+  debut_season: number | null;
   injured_until: number | null;
   injury_count: number;
   injury_days: number;
@@ -143,28 +146,13 @@ export class SaveFile {
   // ---------- whole league ----------
 
   saveNewLeague(state: LeagueState) {
-    const insertTeam = this.db.prepare(
-      'INSERT INTO teams (id, city, name, abbreviation, user_controlled, status, conference, division, gm_json, plan_json, coach_json, staff_json) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)',
-    );
+    const insertTeam = this.insertTeam();
     const insertPlayer = this.insertPlayer();
     const insertGame = this.insertGame();
     const insertCharge = this.insertCapCharge();
     this.db.transaction(() => {
       for (const t of Object.values(state.teams)) {
-        insertTeam.run(
-          t.id,
-          t.city,
-          t.name,
-          t.abbreviation,
-          t.userControlled ? 1 : 0,
-          state.teamStatus[t.id] ?? 'bubble',
-          t.conference ?? null,
-          t.division ?? null,
-          t.gm ? JSON.stringify(t.gm) : null,
-          t.plan ? JSON.stringify(t.plan) : null,
-          t.coach ? JSON.stringify(t.coach) : null,
-          t.staff ? JSON.stringify(t.staff) : null,
-        );
+        insertTeam(t, state.teamStatus[t.id] ?? 'bubble');
       }
       for (const p of Object.values(state.players)) insertPlayer(p);
       for (const g of state.schedule) insertGame(g);
@@ -269,6 +257,28 @@ export class SaveFile {
     };
   }
 
+  private insertTeam() {
+    const stmt = this.db.prepare(
+      'INSERT INTO teams (id, city, name, abbreviation, user_controlled, status, conference, division, gm_json, plan_json, coach_json, staff_json, market) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)',
+    );
+    return (t: Team, status: TeamStatus) =>
+      stmt.run(
+        t.id,
+        t.city,
+        t.name,
+        t.abbreviation,
+        t.userControlled ? 1 : 0,
+        status,
+        t.conference ?? null,
+        t.division ?? null,
+        t.gm ? JSON.stringify(t.gm) : null,
+        t.plan ? JSON.stringify(t.plan) : null,
+        t.coach ? JSON.stringify(t.coach) : null,
+        t.staff ? JSON.stringify(t.staff) : null,
+        t.market ?? null,
+      );
+  }
+
   private insertPlayer() {
     const stmt = this.db.prepare(
       `INSERT INTO players (id, team_id, first_name, last_name, birth_year, position, potential, ratings_json, contract_json)
@@ -346,6 +356,11 @@ export class SaveFile {
       'INSERT OR REPLACE INTO awards (season, award, team_id, player_id) VALUES (?, ?, ?, ?)',
     );
     const setStatus = this.db.prepare('UPDATE teams SET status = ? WHERE id = ?');
+    const setIdentity = this.db.prepare(
+      'UPDATE teams SET city = ?, name = ?, abbreviation = ? WHERE id = ?',
+    );
+    const insertTeam = this.insertTeam();
+    const setMarket = this.db.prepare('UPDATE teams SET market = ? WHERE id = ?');
     const setControl = this.db.prepare('UPDATE teams SET user_controlled = ? WHERE id = ?');
     const setGm = this.db.prepare('UPDATE teams SET gm_json = ? WHERE id = ?');
     const setPlan = this.db.prepare('UPDATE teams SET plan_json = ? WHERE id = ?');
@@ -354,7 +369,9 @@ export class SaveFile {
     const setTeam = this.db.prepare('UPDATE players SET team_id = ? WHERE id = ?');
     // Who joined a new team (or left one) in these events; written from the final state below.
     const moved = new Set<string>();
-    const setJoined = this.db.prepare('UPDATE players SET joined_season = ? WHERE id = ?');
+    const setJoined = this.db.prepare(
+      'UPDATE players SET joined_season = ?, debut_season = ? WHERE id = ?',
+    );
     const setContractOnly = this.db.prepare('UPDATE players SET contract_json = ? WHERE id = ?');
     const archiveLine = this.db.prepare(
       'INSERT OR REPLACE INTO player_seasons (player_id, season, team_id, stats_json) VALUES (?, ?, ?, ?)',
@@ -442,11 +459,25 @@ export class SaveFile {
             setContract.run(null, null, e.playerId);
             break;
           case 'player.drafted': {
-            const p = e.player;
-            moved.add(p.id);
-            insertPlayer(p);
+            // A pick waits in the prospect pool (meta, with the clock) until he signs or walks.
+            if (e.prospect) break;
+            moved.add(e.player.id);
+            insertPlayer(e.player);
             break;
           }
+          case 'prospect.signed':
+          case 'prospect.released': {
+            // He gets his row now, as the state has him (gone already if he left in this batch).
+            const p = state.players[e.playerId];
+            moved.add(e.playerId);
+            if (p) insertPlayer(p);
+            break;
+          }
+          case 'player.moved':
+            moved.add(e.playerId);
+            if (e.toTeamId) setTeam.run(e.toTeamId, e.playerId);
+            else setContract.run(null, null, e.playerId);
+            break;
           case 'player.signed':
             moved.add(e.playerId);
             setContract.run(e.teamId, JSON.stringify(e.contract), e.playerId);
@@ -462,6 +493,19 @@ export class SaveFile {
           case 'team.statusChanged':
             setStatus.run(e.to, e.teamId);
             break;
+          case 'team.relocated': // a new identity too; the fans are stored with the clock
+          case 'team.renamed':
+            if (e.kind === 'team.relocated') setMarket.run(e.market, e.teamId);
+            setIdentity.run(e.city, e.name, e.abbreviation, e.teamId);
+            break;
+          case 'team.expanded': {
+            insertTeam(e.team, 'bubble');
+            for (const id of e.taken) {
+              moved.add(id);
+              setTeam.run(e.team.id, id);
+            }
+            break;
+          }
           case 'team.controlChanged':
             setControl.run(e.userControlled ? 1 : 0, e.teamId);
             break;
@@ -560,7 +604,7 @@ export class SaveFile {
       }
       for (const id of moved) {
         const p = state.players[id];
-        if (p) setJoined.run(p.joined ?? null, id);
+        if (p) setJoined.run(p.joined ?? null, p.debut ?? null, id);
       }
       for (const s of Object.values(state.playoffSeries)) {
         updateSeries.run(s.higherWins, s.lowerWins, s.winnerTeamId ?? null, s.id);
@@ -626,6 +670,7 @@ export class SaveFile {
       city: string;
       name: string;
       abbreviation: string;
+      market: number | null;
       user_controlled: number;
       conference: string | null;
       division: string | null;
@@ -639,6 +684,7 @@ export class SaveFile {
       city: r.city,
       name: r.name,
       abbreviation: r.abbreviation,
+      ...(r.market != null ? { market: r.market } : {}),
       ...(r.conference ? { conference: r.conference } : {}),
       ...(r.division ? { division: r.division } : {}),
       userControlled: r.user_controlled === 1,
@@ -668,6 +714,7 @@ export class SaveFile {
       if (r.contract_json) p.contract = JSON.parse(r.contract_json);
       if (r.extension_json) p.extension = JSON.parse(r.extension_json);
       if (r.joined_season !== null) p.joined = r.joined_season;
+      if (r.debut_season !== null) p.debut = r.debut_season;
       if (r.injured_until !== null) p.injuredUntil = r.injured_until;
       if (r.injury_count > 0) p.injuryHistory = { count: r.injury_count, days: r.injury_days };
       return p;
@@ -795,8 +842,8 @@ export class SaveFile {
     const rows = this.db
       .prepare(
         `SELECT season, payload_json FROM events
-         WHERE kind IN ('player.drafted', 'player.signed', 'contract.extended', 'trade.completed',
-                        'contract.boughtOut', 'contract.expired')
+         WHERE kind IN ('player.drafted', 'player.signed', 'prospect.signed', 'contract.extended',
+                        'trade.completed', 'contract.boughtOut', 'contract.expired')
            AND payload_json LIKE ? ORDER BY seq`,
       )
       .all(`%"${id}"%`) as { season: number; payload_json: string }[];
@@ -811,6 +858,7 @@ export class SaveFile {
           }
           break;
         case 'player.signed':
+        case 'prospect.signed':
           if (e.playerId === playerId) {
             moves.push({ season, kind: 'signed', teamId: e.teamId, capHit: e.contract.capHit });
           }

@@ -10,6 +10,7 @@ export {
   payroll,
   maxPlayerCapHit,
   elcYears,
+  rightsYears,
   type ContractTerms,
   type ContractIssue,
 } from './contracts';

@@ -117,4 +117,5 @@ export const ticketPctOf = (team: Team, set: Record<string, number>): number =>
  * mid-market and a few are big cities (mean about 1): the balance lab's revenue spread and mean.
  */
 export const marketOf = (team: Team): number =>
+  team.market ??
   round2(MARKET.min + new Rng(hash(`market:${team.id}`)).next() ** 2 * (MARKET.max - MARKET.min));

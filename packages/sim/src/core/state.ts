@@ -16,6 +16,7 @@ import type {
   PlayoffSeries,
   Player,
   PlayerId,
+  Prospect,
   SpecialUnit,
   ScheduledGame,
   Sport,
@@ -55,6 +56,8 @@ export interface LeagueState {
   freeAgencyOpen: boolean;
   /** Next draft's class, announced when the champion is crowned; drafted players leave it. */
   draftClass: DraftProspect[];
+  /** Drafted players whose rights a team holds, unsigned and off its roster (not in `players`). */
+  prospects: Record<PlayerId, Prospect>;
   /** Round-one order (first pick first), drawn when the class is announced; empty before. */
   draftOrder: TeamId[];
   /** Each team's ranked wish list for the draft. */
@@ -81,6 +84,8 @@ export interface LeagueState {
     give: PlayerId[];
     get: PlayerId[];
   }[];
+  /** Pairs of teams that met in the playoffs this season or last (`pairKey`): the season they last met. */
+  playoffPairs: Record<string, number>;
   /** Open offers to free agents (AI teams' and yours); a free agent picks one on his decision day. */
   faOffers: FreeAgentOffer[];
   /** Market days played since free agency last opened (0 when it opens). */
@@ -148,6 +153,9 @@ export interface LeagueState {
  * once the champion is crowned (expiring deals are then off the books), else the current one.
  */
 export const capYearOf = (state: LeagueState) => state.date.season + (state.championTeamId ? 1 : 0);
+
+/** Two teams as one key, the same whichever is named first. */
+export const pairKey = (a: TeamId, b: TeamId) => [a, b].sort().join(':');
 
 /** His trade request is settled: withdrawn, or he left the team (it would block new ones). */
 const endRequest = (state: LeagueState, playerId: string) => {
@@ -245,6 +253,57 @@ export function applyEvent(state: LeagueState, event: LeagueEvent): void {
       if (event.canBeFired !== undefined) state.canBeFired = event.canBeFired;
       if (event.stopOn) state.stopOn = [...event.stopOn];
       return;
+    case 'team.renamed': {
+      const team = state.teams[event.teamId];
+      if (team)
+        Object.assign(team, {
+          city: event.city,
+          name: event.name,
+          abbreviation: event.abbreviation,
+        });
+      return;
+    }
+    case 'team.relocated': {
+      const team = state.teams[event.teamId];
+      if (!team) return;
+      Object.assign(team, {
+        city: event.city,
+        name: event.name,
+        abbreviation: event.abbreviation,
+        market: event.market,
+      });
+      const fans = state.fans[event.teamId] ?? NEW_FANS;
+      state.fans[event.teamId] = { ...fans, interest: Math.max(0, fans.interest - event.fanLoss) };
+      return;
+    }
+    case 'team.expanded': {
+      state.teams[event.team.id] = structuredClone(event.team);
+      state.teamStatus[event.team.id] = 'bubble';
+      const gone = new Set(event.taken);
+      state.tradeBlock = state.tradeBlock.filter((id) => !gone.has(id));
+      for (const id of event.taken) {
+        const p = state.players[id];
+        if (!p) throw new Error(`unknown player ${id}`);
+        p.teamId = event.team.id;
+        p.joined = capYearOf(state);
+        endRequest(state, id);
+      }
+      return;
+    }
+    case 'player.moved': {
+      const p = state.players[event.playerId];
+      if (!p) throw new Error(`unknown player ${event.playerId}`);
+      p.teamId = event.toTeamId;
+      if (event.toTeamId) p.joined = capYearOf(state);
+      else {
+        delete p.contract;
+        delete p.joined;
+      }
+      delete p.extension;
+      state.tradeBlock = state.tradeBlock.filter((id) => id !== p.id);
+      endRequest(state, p.id);
+      return;
+    }
     case 'team.controlChanged': {
       const team = state.teams[event.teamId];
       if (team) team.userControlled = event.userControlled;
@@ -270,9 +329,15 @@ export function applyEvent(state: LeagueState, event: LeagueEvent): void {
       }
       return;
     }
-    case 'series.started':
+    case 'series.started': {
       state.playoffSeries[event.series.id] = { ...event.series };
+      const season = event.date.season;
+      for (const [k, last] of Object.entries(state.playoffPairs)) {
+        if (last < season - 1) delete state.playoffPairs[k];
+      }
+      state.playoffPairs[pairKey(event.series.higherTeamId, event.series.lowerTeamId)] = season;
       return;
+    }
     case 'series.won':
       state.playoffSeries[event.seriesId]!.winnerTeamId = event.winnerTeamId;
       return;
@@ -281,7 +346,7 @@ export function applyEvent(state: LeagueState, event: LeagueEvent): void {
       return;
     case 'players.developed':
       for (const c of event.changes) {
-        const p = state.players[c.playerId];
+        const p = state.players[c.playerId] ?? state.prospects[c.playerId]?.player;
         if (!p) throw new Error(`unknown player ${c.playerId}`);
         p.ratings = { ...c.ratings };
         p.potential = c.potential;
@@ -332,12 +397,33 @@ export function applyEvent(state: LeagueState, event: LeagueEvent): void {
       endRequest(state, p.id);
       return;
     }
-    case 'player.drafted':
-      state.players[event.player.id] = structuredClone(event.player);
-      if (event.player.teamId) state.players[event.player.id]!.joined = capYearOf(state);
+    case 'player.drafted': {
+      const player = structuredClone(event.player);
+      if (event.prospect) {
+        state.prospects[player.id] = { player, round: event.round, ...event.prospect };
+      } else {
+        state.players[player.id] = player;
+        if (player.teamId) player.joined = player.debut = capYearOf(state);
+      }
       state.draftClass = state.draftClass.filter((d) => d.player.id !== event.player.id);
       if (event.round > 0 && state.draftPicksMade !== null) state.draftPicksMade = event.pick;
       return;
+    }
+    case 'prospect.signed':
+    case 'prospect.released': {
+      const player = state.prospects[event.playerId]?.player;
+      if (!player) throw new Error(`unknown prospect ${event.playerId}`);
+      delete state.prospects[event.playerId];
+      state.players[player.id] = player;
+      player.debut = capYearOf(state);
+      if (event.kind === 'prospect.released') player.teamId = null;
+      else {
+        player.teamId = event.teamId;
+        player.contract = { ...event.contract };
+        player.joined = player.debut;
+      }
+      return;
+    }
     case 'draft.started':
       state.draftPicksMade = 0;
       return;

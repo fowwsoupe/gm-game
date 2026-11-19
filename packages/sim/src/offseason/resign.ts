@@ -1,5 +1,5 @@
 import type { Contract, Player, ResignOffer, TeamId } from '@gm/shared';
-import { phaseOf, type Emit, type LeagueState, type Rng } from '../core';
+import { phaseOf, playerName, type Emit, type LeagueState, type Rng } from '../core';
 import {
   capIssues,
   capSheet,
@@ -113,7 +113,7 @@ export function aiHoldouts(state: LeagueState, ctx: SimContext, rng: Rng, emit: 
   for (const h of [...state.holdouts].sort((a, b) => a.playerId.localeCompare(b.playerId))) {
     const team = state.teams[h.teamId]!;
     if (team.userControlled) continue;
-    const { style, skill } = gmOf(team);
+    const { style, skill, name } = gmOf(team);
     if (style === 'builder' || (style === 'balanced' && skill < 0.5)) {
       if (!state.tradeBlock.includes(h.playerId)) {
         emit('minor', [team.id], {
@@ -121,6 +121,14 @@ export function aiHoldouts(state: LeagueState, ctx: SimContext, rng: Rng, emit: 
           teamId: team.id,
           playerId: h.playerId,
           onBlock: true,
+        });
+        // The GM's answer, in his own words: the holdout's story goes on to the trade.
+        emit('notable', [team.id], {
+          kind: 'news.posted',
+          headline: 'event.holdoutShopped',
+          playerId: h.playerId,
+          params: { player: playerName(state.players[h.playerId]!) },
+          by: { role: 'gm', name },
         });
       }
       continue;
