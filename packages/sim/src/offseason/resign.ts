@@ -21,7 +21,8 @@ import { ageIn, capRoom, drawYears, rosterOf, resignAsk } from './roster';
  * to each season; only CBA contract rules (term, minimum, maximum) can refuse a deal, never the cap.
  */
 
-const expiring = (state: LeagueState, p: Player) =>
+/** His contract ends this season and no extension follows it. */
+export const isExpiring = (state: LeagueState, p: Player) =>
   p.contract !== undefined && p.contract.expiresAfterSeason <= state.date.season && !p.extension;
 
 /** Re-signing is open: in season (extensions) and once the champion is crowned, not in the playoffs. */
@@ -44,7 +45,7 @@ export function resignOffers(state: LeagueState, ctx: SimContext, teamId: TeamId
   return (
     rosterOf(state, teamId)
       // A player who asked out will not re-sign until that is settled.
-      .filter((p) => expiring(state, p) && !state.tradeRequests.some((r) => r.playerId === p.id))
+      .filter((p) => isExpiring(state, p) && !state.tradeRequests.some((r) => r.playerId === p.id))
       .map((p) => {
         const ask = resignAsk(ctx, p, season);
         return {
@@ -99,8 +100,6 @@ export function resignContract(
         },
       };
 }
-
-export { expiring as isExpiring };
 
 /**
  * An AI GM settles a holdout by paying him: the extension he asks for, once his deal is in its

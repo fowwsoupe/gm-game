@@ -122,7 +122,7 @@ export function buyoutCharges(
   }));
 }
 
-export type RetentionIssue =
+type RetentionIssue =
   | { code: 'retention_too_high'; max: number }
   | { code: 'too_many_retained'; max: number }
   | { code: 'retained_too_recently'; days: number };

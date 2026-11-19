@@ -33,7 +33,8 @@ const clamp = (n: number, lo = 0, hi = 100) => Math.max(lo, Math.min(hi, n));
  * Morale v1, 0-100 and stateless (so nothing to save): how happy a player is right now. Four
  * things move it, each weighted by who he is: winning (ambition), his role (always), his pay
  * against his worth (greed) and time with the team (loyalty). An open trade request caps it.
- * Display only for now; it does not feed back into performance, re-signing or requests yet.
+ * It opens role disputes and moves no-trade waivers; it does not feed back into performance or
+ * re-signing yet.
  */
 export function morale(playerId: string, input: MoraleInput) {
   const { ambition, greed, loyalty } = personalityOf(playerId);

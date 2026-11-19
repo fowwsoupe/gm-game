@@ -23,8 +23,8 @@ const AGE_Z = 1;
 /**
  * League pulse: classify each team's situation. Teams are ranked by playoff odds (the standings
  * break ties), then roster age and cap space shift the call: a young team out of it is a
- * rebuilder rather than a seller, an old bubble team with more cap space than most a buyer. `rows` in standings
- * order; with no `inputs` the standings alone decide. Kept behind this one
+ * rebuilder rather than a seller, an old bubble team with more cap space than most a buyer.
+ * `rows` in standings order; with no `inputs` the standings alone decide. Kept behind this one
  * function so the AI, the feed and the UI all agree (advance.ts adds crisis on top).
  */
 export function classifyTeams(

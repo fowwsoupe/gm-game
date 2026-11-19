@@ -4,7 +4,7 @@ import type { SimContext } from '../context';
 import { deadCap, payroll, prospectDeal } from '../cba';
 import { byOverall, overall } from '../players';
 import { personalityOf, planStatus, seenBy } from '../people';
-import { teamRange } from './draft';
+import { scouted, teamRange } from './draft';
 import {
   ageIn,
   resignAsk,
@@ -193,10 +193,7 @@ export function signProspects(state: LeagueState, ctx: SimContext, emit: Emit, s
   for (const team of Object.values(state.teams).sort((a, b) => a.id.localeCompare(b.id))) {
     if (team.userControlled) continue;
     const seen = (p: Player) => overall(seenBy(team, p));
-    const potential = (p: Player) => {
-      const r = teamRange(team, { player: p }, ctx, season);
-      return (r.low + r.high) / 2;
-    };
+    const potential = (p: Player) => scouted(teamRange(team, { player: p }, ctx, season));
     const wanted = prospectsOf(state, team.id)
       .filter(
         (x) =>

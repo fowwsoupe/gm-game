@@ -11,9 +11,23 @@
  */
 import { Rng, phaseOf, type Emit, type LeagueState } from '../core';
 import { drawForm, makeSchedule, worstFirst } from '../league';
+import { overall } from '../players';
 import type { SimContext } from '../context';
 import { draftUntil, onTheClock, openDraft } from './draft';
+import {
+  expireContracts,
+  fillRosters,
+  meetCapFloor,
+  releaseProspects,
+  reSignPlayers,
+  signProspects,
+} from './freeAgency';
 import { changeGms, setPlans } from './gms';
+import { playInternational } from './international';
+import { MARKET_DAYS, decideOffers, marketDay } from './market';
+import { breakoutNews, developPlayers, retirePlayers } from './progression';
+import { allPlayers } from './roster';
+import { changeStaff } from './staff';
 
 export {
   lotteryOrder,
@@ -42,20 +56,6 @@ export { freeAgents, wantedYears } from './roster';
 export { developPlayers, trainFocus } from './progression';
 export { playInternational } from './international';
 export { changeStaff, staffCandidates, departmentReturns, interimHead } from './staff';
-import {
-  expireContracts,
-  fillRosters,
-  meetCapFloor,
-  releaseProspects,
-  reSignPlayers,
-  signProspects,
-} from './freeAgency';
-import { MARKET_DAYS, decideOffers, marketDay } from './market';
-import { breakoutNews, developPlayers, retirePlayers } from './progression';
-import { changeStaff } from './staff';
-import { playInternational } from './international';
-import { allPlayers } from './roster';
-import { overall } from '../players';
 
 /** Step 0: the season's stat lines go to the record books before anyone ages, moves or retires. */
 function archiveStats(state: LeagueState, ctx: SimContext, emit: Emit) {

@@ -1,11 +1,9 @@
 import type { Player } from '@gm/shared';
-import type { Emit, LeagueState, Rng } from '../core';
-import type { DevelopmentModel } from '../players';
-import { ageIn, allPlayers } from './roster';
+import { playerName, teamName, type Emit, type LeagueState, type Rng } from '../core';
+import { clampRating, overall, type DevelopmentModel } from '../players';
 import { personalityOf, staffOf } from '../people';
 import type { SimContext } from '../context';
-import { clampRating, overall } from '../players';
-import { playerName, teamName } from '../core';
+import { ageIn, allPlayers } from './roster';
 
 const sameRatings = (a: Player, b: Player) =>
   a.potential === b.potential && Object.keys(a.ratings).every((k) => a.ratings[k] === b.ratings[k]);
