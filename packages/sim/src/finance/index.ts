@@ -1,5 +1,5 @@
 /**
- * Owner & finance engine.
+ * Finance engine.
  * Owns: each team's money and fans. Revenue and costs settle once a month (`finance.settled`),
  * with one more settlement for the playoffs; the reducer adds the difference to `state.cash` and
  * keeps the fans the event carries. Fan interest sets the crowd (with the arena's capacity, the
@@ -14,7 +14,7 @@ import { capacityOf, coachOf, departmentsOf, marketOf, staffOf, ticketPctOf } fr
 import type { SimContext } from '../context';
 
 /** Days in a settlement month. */
-export const MONTH_DAYS = 30;
+const MONTH_DAYS = 30;
 
 // Fan behaviour: game feel, not league rules, and none of it is sourced (see the brief).
 /** Share of interest above or below 50 that carries into next season. */
@@ -88,8 +88,8 @@ export const net = (l: FinanceLines) =>
   Object.values(l.revenue).reduce((a, b) => a + b, 0) -
   Object.values(l.costs).reduce((a, b) => a + b, 0);
 
-/** Each team's points % in this season's regular-season games so far (.500 before any). */
-function pointsPct(state: LeagueState, ctx: SimContext): Map<TeamId, number> {
+/** Each team's points % in this season's regular-season games so far (absent before any: .500). */
+export function pointsPct(state: LeagueState, ctx: SimContext): Map<TeamId, number> {
   const { win, overtimeLoss } = ctx.ruleset.season.points;
   const tally = new Map<TeamId, { pts: number; gp: number }>();
   const add = (id: TeamId, pts: number) => {

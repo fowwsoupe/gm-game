@@ -26,7 +26,6 @@ export * from './league';
 export {
   rolloverSeason,
   openFreeAgency,
-  finishRollover,
   lotteryOrder,
   MARKET_DAYS,
   resignOffers,
@@ -47,11 +46,11 @@ export {
   onTheClock,
   picksLeft,
 } from './offseason';
-export { giveSeasonAwards, legendTrophies } from './awards';
+export { legendTrophies } from './awards';
 export { ownerStanding } from './owner';
 export * from './trades';
 export * from './sports';
-export { defaultModels, type Models } from './models';
+export type { Models } from './models';
 export { defaultContext, type ModelOverrides, type SimContext } from './context';
 export { createLeague, START_SEASON } from './create';
 export { handleCommand } from './commands';

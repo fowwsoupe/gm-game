@@ -10,9 +10,7 @@ import type {
 } from '@gm/shared';
 import { STOP_CATEGORIES } from '@gm/shared';
 import {
-  applyEvent,
   emitter,
-  makeEvent,
   pairKey,
   phaseOf,
   playerName,
@@ -72,23 +70,18 @@ export function advance(
   ctx: SimContext,
 ): LeagueEvent[] {
   const events: LeagueEvent[] = [];
-  const emit = (e: LeagueEvent) => {
-    applyEvent(state, e);
-    events.push(e);
-  };
+  const emit = emitter(state, events);
   // A series starts; a rematch of last season's playoffs is a rivalry renewed (news only).
   const startSeries = (series: PlayoffSeries) => {
     const { higherTeamId: a, lowerTeamId: b } = series;
     const renewed = state.playoffPairs[pairKey(a, b)] === state.date.season - 1;
-    emit(makeEvent(state, 'notable', [a, b], { kind: 'series.started', series }));
+    emit('notable', [a, b], { kind: 'series.started', series });
     if (renewed) {
-      emit(
-        makeEvent(state, 'notable', [a, b], {
-          kind: 'news.posted',
-          headline: 'event.rivalry',
-          params: { a: teamName(state.teams[a]!), b: teamName(state.teams[b]!) },
-        }),
-      );
+      emit('notable', [a, b], {
+        kind: 'news.posted',
+        headline: 'event.rivalry',
+        params: { a: teamName(state.teams[a]!), b: teamName(state.teams[b]!) },
+      });
     }
   };
   const rng = new Rng(state.rngState);
@@ -181,25 +174,18 @@ export function advance(
     // it never depends on how many days one call sims.
     strengths.delete(game.homeTeamId);
     strengths.delete(game.awayTeamId);
-    emit(
-      makeEvent(state, 'minor', [game.homeTeamId, game.awayTeamId], {
-        kind: 'game.final',
-        result: game,
-      }),
-    );
+    emit('minor', [game.homeTeamId, game.awayTeamId], { kind: 'game.final', result: game });
     for (const h of sport.highlights(game)) {
       const p = state.players[h.playerId];
       if (!p) continue;
       // Yours make the feed; the league's (a few a week) stay in the log.
       const importance = state.teams[h.teamId]?.userControlled ? 'notable' : 'minor';
-      emit(
-        makeEvent(state, importance, [h.teamId], {
-          kind: 'news.posted',
-          headline: `event.${h.key}`,
-          playerId: p.id,
-          params: { player: playerName(p), team: teamName(state.teams[h.teamId]!) },
-        }),
-      );
+      emit(importance, [h.teamId], {
+        kind: 'news.posted',
+        headline: `event.${h.key}`,
+        playerId: p.id,
+        params: { player: playerName(p), team: teamName(state.teams[h.teamId]!) },
+      });
     }
     // Streaks and slumps: news when a run reaches a milestone (regular season only).
     if (!game.playoffSeriesId) {
@@ -214,23 +200,19 @@ export function advance(
         if (state.date.season - p.birthYear > BREAKOUT_AGE) continue;
         if (last.points < BREAKOUT_MIN_POINTS || last.gp < BREAKOUT_MIN_GAMES) continue;
         if (s.points / s.gp < (last.points / last.gp) * BREAKOUT_PACE) continue;
-        emit(
-          makeEvent(state, team.userControlled ? 'notable' : 'minor', [team.id], {
-            kind: 'news.posted',
-            headline: 'event.breakoutPace',
-            playerId: p.id,
-            params: { player: playerName(p), team: teamName(team), n: s.points, gp: s.gp },
-          }),
-        );
+        emit(team.userControlled ? 'notable' : 'minor', [team.id], {
+          kind: 'news.posted',
+          headline: 'event.breakoutPace',
+          playerId: p.id,
+          params: { player: playerName(p), team: teamName(team), n: s.points, gp: s.gp },
+        });
         if (team.userControlled) {
-          emit(
-            makeEvent(state, 'minor', [team.id], {
-              kind: 'player.brokeOut',
-              playerId: p.id,
-              teamId: team.id,
-              season: state.date.season,
-            }),
-          );
+          emit('minor', [team.id], {
+            kind: 'player.brokeOut',
+            playerId: p.id,
+            teamId: team.id,
+            season: state.date.season,
+          });
         }
       }
       for (const teamId of [game.homeTeamId, game.awayTeamId]) {
@@ -240,18 +222,12 @@ export function advance(
           .slice(0, SLUMP_STARS);
         for (const p of stars) {
           if (droughts.get(p.id) !== SLUMP_GAMES) continue;
-          emit(
-            makeEvent(state, state.teams[teamId]!.userControlled ? 'notable' : 'minor', [teamId], {
-              kind: 'news.posted',
-              headline: 'event.slump',
-              playerId: p.id,
-              params: {
-                player: playerName(p),
-                team: teamName(state.teams[teamId]!),
-                n: SLUMP_GAMES,
-              },
-            }),
-          );
+          emit(state.teams[teamId]!.userControlled ? 'notable' : 'minor', [teamId], {
+            kind: 'news.posted',
+            headline: 'event.slump',
+            playerId: p.id,
+            params: { player: playerName(p), team: teamName(state.teams[teamId]!), n: SLUMP_GAMES },
+          });
         }
       }
       const homeWon = game.homeScore > game.awayScore;
@@ -261,20 +237,12 @@ export function advance(
       ] as const) {
         const next = bump(id, won);
         if (STREAK_MILESTONES.includes(Math.abs(next))) {
-          emit(
-            makeEvent(state, 'notable', [id], {
-              kind: 'news.posted',
-              headline: next > 0 ? 'event.winStreak' : 'event.losingStreak',
-              params: { team: teamName(state.teams[id]!), n: Math.abs(next) },
-            }),
-          );
-          pressQuestion(
-            state,
-            emitter(state, events),
-            id,
-            next > 0 ? 'pressWin' : 'pressLoss',
-            Math.abs(next),
-          );
+          emit('notable', [id], {
+            kind: 'news.posted',
+            headline: next > 0 ? 'event.winStreak' : 'event.losingStreak',
+            params: { team: teamName(state.teams[id]!), n: Math.abs(next) },
+          });
+          pressQuestion(state, emit, id, next > 0 ? 'pressWin' : 'pressLoss', Math.abs(next));
         }
       }
     }
@@ -282,14 +250,12 @@ export function advance(
       const { playerId } = injury;
       const teamId = state.players[playerId]?.teamId;
       const days = healed(teamId, injury.days);
-      emit(
-        makeEvent(state, 'notable', teamId ? [teamId] : [], {
-          kind: 'player.injured',
-          playerId,
-          days,
-          until: day + 1 + days,
-        }),
-      );
+      emit('notable', teamId ? [teamId] : [], {
+        kind: 'player.injured',
+        playerId,
+        days,
+        until: day + 1 + days,
+      });
     }
   };
   // Who plays on which day, so the second night of a back-to-back is known.
@@ -323,19 +289,19 @@ export function advance(
     // to report, and the owner meets his GM, before day 0 settles, so the season's profit counts
     // its bonuses.
     if (today.day <= 0 && !Object.values(state.owners).some((o) => o.season === today.season)) {
-      startHoldouts(state, ctx, rng.fork('holdouts'), emitter(state, events));
-      preseasonMeeting(state, ctx, emitter(state, events));
+      startHoldouts(state, ctx, rng.fork('holdouts'), emit);
+      preseasonMeeting(state, ctx, emit);
     }
     // Camp's last day: the head coach's read of the team.
-    if (today.day === -1) campReport(state, ctx, rng.fork('camp'), emitter(state, events));
+    if (today.day === -1) campReport(state, ctx, rng.fork('camp'), emit);
     if (settlesOn(today.day, cal.regularSeasonDays)) {
-      settleMonth(state, ctx, emitter(state, events), today.day);
-      if (today.day > 0) ownerMonth(state, ctx, emitter(state, events));
+      settleMonth(state, ctx, emit, today.day);
+      if (today.day > 0) ownerMonth(state, ctx, emit);
     }
-    if (checksInOn(today.day, ctx)) deadlineCheckIn(state, ctx, emitter(state, events));
+    if (checksInOn(today.day, ctx)) deadlineCheckIn(state, ctx, emit);
     // From opening night on, AI teams cut to the roster limit and call up for injuries.
     if (today.day >= 0 && !state.championTeamId) {
-      aiFarmMoves(state, ctx, emitter(state, events), today.day);
+      aiFarmMoves(state, ctx, emit, today.day);
     }
     const dayStart = events.length;
 
@@ -389,26 +355,21 @@ export function advance(
         if (series.higherWins === winsNeeded || series.lowerWins === winsNeeded) {
           const winnerTeamId =
             series.higherWins === winsNeeded ? series.higherTeamId : series.lowerTeamId;
-          emit(
-            makeEvent(state, 'major', [series.higherTeamId, series.lowerTeamId], {
-              kind: 'series.won',
-              seriesId: series.id,
-              winnerTeamId,
-            }),
-          );
+          emit('major', [series.higherTeamId, series.lowerTeamId], {
+            kind: 'series.won',
+            seriesId: series.id,
+            winnerTeamId,
+          });
           const winner = state.teams[winnerTeamId]!;
-          emit(
-            makeEvent(state, 'notable', [winnerTeamId], {
-              kind: 'news.posted',
-              headline: 'event.seriesWon',
-              params: { team: teamName(winner), round: series.round },
-            }),
-          );
+          emit('notable', [winnerTeamId], {
+            kind: 'news.posted',
+            headline: 'event.seriesWon',
+            params: { team: teamName(winner), round: series.round },
+          });
           const loserTeamId =
             winnerTeamId === series.higherTeamId ? series.lowerTeamId : series.higherTeamId;
-          const ask = emitter(state, events);
-          pressQuestion(state, ask, winnerTeamId, 'pressSeries', series.round);
-          pressQuestion(state, ask, loserTeamId, 'pressOut', series.round);
+          pressQuestion(state, emit, winnerTeamId, 'pressSeries', series.round);
+          pressQuestion(state, emit, loserTeamId, 'pressOut', series.round);
         }
       }
       const current = Object.values(state.playoffSeries).filter((s) => s.round === round);
@@ -416,29 +377,22 @@ export function advance(
         if (current.length === 1) {
           const championTeamId = current[0]!.winnerTeamId!;
           // Still this season's cap year: bonuses over the cap go to next season's.
-          const paid = payBonuses(state, ctx, emitter(state, events));
-          settlePlayoffs(state, ctx, emitter(state, events), paid);
-          seasonReview(state, ctx, emitter(state, events), rng.fork('review'));
-          emit(
-            makeEvent(state, 'major', [championTeamId], {
-              kind: 'champion.crowned',
-              championTeamId,
-            }),
-          );
+          const paid = payBonuses(state, ctx, emit);
+          settlePlayoffs(state, ctx, emit, paid);
+          seasonReview(state, ctx, emit, rng.fork('review'));
+          emit('major', [championTeamId], { kind: 'champion.crowned', championTeamId });
           const champion = state.teams[championTeamId]!;
-          emit(
-            makeEvent(state, 'major', [championTeamId], {
-              kind: 'news.posted',
-              headline: 'event.championCrowned',
-              params: { team: teamName(champion) },
-            }),
-          );
-          giveSeasonAwards(state, ctx, emitter(state, events));
+          emit('major', [championTeamId], {
+            kind: 'news.posted',
+            headline: 'event.championCrowned',
+            params: { team: teamName(champion) },
+          });
+          giveSeasonAwards(state, ctx, emit);
           announceDraftClass(
             state,
             ctx,
             rng.fork('draftClass'),
-            emitter(state, events),
+            emit,
             worstFirst(state, ctx.ruleset),
           );
         } else {
@@ -485,43 +439,35 @@ export function advance(
       for (const [teamId, to] of Object.entries(next) as [TeamId, (typeof next)[TeamId]][]) {
         const from = state.teamStatus[teamId];
         if (from && from !== to) {
-          emit(
-            makeEvent(state, 'notable', [teamId], { kind: 'team.statusChanged', teamId, from, to }),
-          );
+          emit('notable', [teamId], { kind: 'team.statusChanged', teamId, from, to });
         }
       }
       // Forked, so trade talks never shift the games' random numbers.
       const before = events.length;
-      aiTrades(state, ctx, rng.fork(`trades${today.day}`), emitter(state, events));
-      aiOffers(state, ctx, rng.fork(`offers${today.day}`), emitter(state, events));
-      tradeRequests(state, rng.fork(`requests${today.day}`), emitter(state, events));
-      aiHoldouts(state, ctx, rng.fork(`aiHoldouts${today.day}`), emitter(state, events));
-      holdoutsWeek(state, rng.fork(`holdouts${today.day}`), emitter(state, events));
-      disputesWeek(state, ctx, rng.fork(`disputes${today.day}`), emitter(state, events));
+      aiTrades(state, ctx, rng.fork(`trades${today.day}`), emit);
+      aiOffers(state, ctx, rng.fork(`offers${today.day}`), emit);
+      tradeRequests(state, rng.fork(`requests${today.day}`), emit);
+      aiHoldouts(state, ctx, rng.fork(`aiHoldouts${today.day}`), emit);
+      holdoutsWeek(state, rng.fork(`holdouts${today.day}`), emit);
+      disputesWeek(state, ctx, rng.fork(`disputes${today.day}`), emit);
       if (events.length > before) loadRosters();
-      coachWeek(state, ctx, rng.fork(`coach${today.day}`), emitter(state, events));
+      coachWeek(state, ctx, rng.fork(`coach${today.day}`), emit);
     } else if (inDeadlineWeek(cal, today.day)) {
       // Deadline week is a market: trade talks and calls every day, not once a week.
       const before = events.length;
-      aiTrades(state, ctx, rng.fork(`trades${today.day}`), emitter(state, events));
-      aiOffers(state, ctx, rng.fork(`offers${today.day}`), emitter(state, events));
+      aiTrades(state, ctx, rng.fork(`trades${today.day}`), emit);
+      aiOffers(state, ctx, rng.fork(`offers${today.day}`), emit);
       if (events.length > before) loadRosters();
     }
-    if (today.day === cal.tradeDeadlineDay) deadlineRecap(state, ctx, emitter(state, events));
+    if (today.day === cal.tradeDeadlineDay) deadlineRecap(state, ctx, emit);
 
     const tomorrow = { season: today.season, day: today.day + 1 };
     const fromPhase = phaseOf(cal, today);
     const toPhase = phaseOf(cal, tomorrow);
     if (fromPhase !== toPhase) {
-      emit(
-        makeEvent(state, 'major', [], {
-          kind: 'season.phaseChanged',
-          from: fromPhase,
-          to: toPhase,
-        }),
-      );
+      emit('major', [], { kind: 'season.phaseChanged', from: fromPhase, to: toPhase });
       if (toPhase === 'playoffs') {
-        prospectSeason(state, ctx, rng.fork('prospects'), emitter(state, events));
+        prospectSeason(state, ctx, rng.fork('prospects'), emit);
         const rows = leagueStandings(state, ctx.ruleset);
         for (const series of seedPlayoffs(
           rows,
@@ -534,13 +480,7 @@ export function advance(
       }
     }
 
-    emit(
-      makeEvent(state, 'minor', [], {
-        kind: 'clock.advanced',
-        to: tomorrow,
-        rngState: rng.state,
-      }),
-    );
+    emit('minor', [], { kind: 'clock.advanced', to: tomorrow, rngState: rng.state });
 
     // Any list, even an empty one, still stops when you are fired.
     if (stopOn !== 'never' && events.slice(dayStart).some((e) => matters(state, e, stops))) {

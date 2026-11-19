@@ -13,7 +13,6 @@ export interface SimContext {
   models: Models;
 }
 
-/** Available sports. NBA and NFL get added here when their modules exist. */
 /** Plug-in models the app loads from files (see docs/MODEL_CONTRACTS.md). */
 export interface ModelOverrides {
   /** Hockey: a shot-quality model in place of `rulesGoalModel`. */
@@ -22,6 +21,7 @@ export interface ModelOverrides {
   models?: Partial<Models>;
 }
 
+/** Available sports. NBA and NFL get added here when their modules exist. */
 const SPORTS: Partial<Record<Sport, (o: ModelOverrides) => SportModule>> = {
   nhl: (o) => hockeySport(o.goalModel),
 };
