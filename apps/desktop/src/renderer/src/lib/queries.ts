@@ -1,5 +1,6 @@
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
 import type { Command, TeamId, TradeProposal } from '@gm/shared';
+import { useUi } from '@/stores/ui';
 
 /** All data hooks in one place so query keys stay consistent. */
 export const keys = {
@@ -19,6 +20,13 @@ export const keys = {
 
 export const useTeams = () =>
   useQuery({ queryKey: keys.teams, queryFn: () => window.gm.league.listTeams() });
+/** The team "you" run: the hot-seat GM's human team, else the first human team. */
+export function useMine() {
+  const { data: teams = [] } = useTeams();
+  const seat = useUi((s) => s.seat);
+  const humans = teams.filter((x) => x.userControlled);
+  return humans.find((x) => x.id === seat) ?? humans[0];
+}
 export const useStandings = () =>
   useQuery({ queryKey: keys.standings, queryFn: () => window.gm.league.standings() });
 export const usePlayoffs = () =>

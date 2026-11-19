@@ -1,5 +1,5 @@
 import { useState } from 'react';
-import { useTeams } from '@/lib/queries';
+import { useMine, useTeams } from '@/lib/queries';
 import { usePosts, type Post } from '@/lib/news';
 import { teamName } from '@/lib/format';
 import { useT } from '@/i18n';
@@ -14,13 +14,10 @@ const THREAD_SHOWN = 3;
 /** The league news tab: the feed as posts, all of it or your team's, a story as one thread. */
 export function News() {
   const t = useT();
-  const { data: teams = [] } = useTeams();
   const { posts, names, ages } = usePosts(300);
   const [yoursOnly, setYoursOnly] = useState(false);
-  const yours = new Set(teams.filter((x) => x.userControlled).map((x) => x.id as string));
-  const shown = yoursOnly
-    ? posts.filter((p) => p.event.teamIds.some((id) => yours.has(id)))
-    : posts;
+  const mine = useMine()?.id;
+  const shown = yoursOnly ? posts.filter((p) => mine && p.event.teamIds.includes(mine)) : posts;
   // Each story once, at its newest post, with its posts oldest first.
   const threads = new Map<string, Post[]>();
   for (const p of shown) if (p.story) threads.set(p.story, [p, ...(threads.get(p.story) ?? [])]);

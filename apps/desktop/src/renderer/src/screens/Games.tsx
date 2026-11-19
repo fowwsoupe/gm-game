@@ -1,6 +1,6 @@
 import { useEffect, useMemo, useState } from 'react';
 import type { GameDetail, HockeyBoxScore, HockeyBoxSide, Team, TeamId } from '@gm/shared';
-import { useExhibition, useGames, useOpenGame, useTeams } from '@/lib/queries';
+import { useExhibition, useGames, useOpenGame, useTeams, useMine } from '@/lib/queries';
 import { statValue, teamName } from '@/lib/format';
 import { useT } from '@/i18n';
 import { Button, Card, TeamLink, TeamSelect, SectionHeader, Td, Th } from '@/ui';
@@ -15,7 +15,7 @@ const clockText = (sec: number, ot: number) => {
 export function Games() {
   const t = useT();
   const { data: teams = [] } = useTeams();
-  const mine = teams.find((x) => x.userControlled)?.id;
+  const mine = useMine()?.id;
   const [filter, setFilter] = useState<TeamId | undefined>();
   const [home, setHome] = useState<TeamId | ''>('');
   const [away, setAway] = useState<TeamId | ''>('');

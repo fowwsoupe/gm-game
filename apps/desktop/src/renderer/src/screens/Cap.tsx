@@ -1,6 +1,13 @@
 import { useState } from 'react';
 import type { CapIssue, CapSheet, ResignOffer, RosterPlayer, TeamId } from '@gm/shared';
-import { useCapSheet, useDispatch, useResignOffers, useRoster, useTeams } from '@/lib/queries';
+import {
+  useCapSheet,
+  useDispatch,
+  useResignOffers,
+  useRoster,
+  useTeams,
+  useMine,
+} from '@/lib/queries';
 import { useT } from '@/i18n';
 import { Button, Card, TeamSelect, Td, Th } from '@/ui';
 import { fullName, money } from '@/lib/format';
@@ -11,7 +18,8 @@ export function Cap() {
   const t = useT();
   const { data: teams = [] } = useTeams();
   const [picked, setPicked] = useState<TeamId>();
-  const teamId = picked ?? (teams.find((x) => x.userControlled) ?? teams[0])?.id;
+  const mine = useMine();
+  const teamId = picked ?? (mine ?? teams[0])?.id;
   const { data: sheet } = useCapSheet(teamId);
   const { data: roster = [] } = useRoster(teamId);
   const { data: offers = [] } = useResignOffers(teamId);

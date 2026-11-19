@@ -8,7 +8,7 @@ import {
   type PlayerProfile,
   type SpecialUnit,
 } from '@gm/shared';
-import { useDispatch, useLines, usePlayers, useTeams } from '@/lib/queries';
+import { useDispatch, useLines, usePlayers, useMine } from '@/lib/queries';
 import { useT, type MessageKey } from '@/i18n';
 import { Button, Card } from '@/ui';
 import { fullName } from '@/lib/format';
@@ -19,8 +19,7 @@ import { fullName } from '@/lib/format';
  */
 export function Lines() {
   const t = useT();
-  const { data: teams = [] } = useTeams();
-  const mine = teams.find((x) => x.userControlled)?.id;
+  const mine = useMine()?.id;
   const { data } = useLines(mine);
   const units = data?.units ?? [];
   const { data: players = [] } = usePlayers(mine);

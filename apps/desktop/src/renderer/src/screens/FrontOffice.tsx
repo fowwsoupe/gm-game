@@ -4,7 +4,7 @@ import {
   useDispatch,
   useOwner,
   useStaffCandidates,
-  useTeams,
+  useMine,
 } from '@/lib/queries';
 import { money, qualityKey } from '@/lib/format';
 import { useT } from '@/i18n';
@@ -22,8 +22,7 @@ const DEPARTMENTS: readonly Department[] = [
 /** Your front office: each department's head, and who you could hire in his place this season. */
 export function FrontOffice() {
   const t = useT();
-  const { data: teams = [] } = useTeams();
-  const mine = teams.find((x) => x.userControlled);
+  const mine = useMine();
   const { data: owned } = useOwner(mine?.id);
   const { data: candidates } = useStaffCandidates(mine?.id);
   const { data: returns } = useDepartmentReturns(mine?.id);

@@ -3,6 +3,7 @@ import { CommandK } from '@/CommandK';
 import { Walkthrough, walkthroughSeen } from '@/Walkthrough';
 import {
   useDispatch,
+  useMine,
   useNewLeague,
   useNewLeagueFromRoster,
   usePlayoffs,
@@ -13,7 +14,7 @@ import {
 import type { StopCategory } from '@gm/shared';
 import { useUi, type Screen } from '@/stores/ui';
 import { useT, type MessageKey } from '@/i18n';
-import { Button, TrophyLift } from '@/ui';
+import { Button, TeamSelect, TrophyLift } from '@/ui';
 import { Standings } from '@/screens/Standings';
 import { History } from '@/screens/History';
 import { Leaders } from '@/screens/Leaders';
@@ -49,9 +50,11 @@ const NAV: { id: Screen; label: MessageKey }[] = [
 
 export function App() {
   const t = useT();
-  const { screen, setScreen, locale, setLocale } = useUi();
+  const { screen, setScreen, locale, setLocale, setSeat } = useUi();
   const { data: steam } = useSteam();
   const { data: teams = [], isError } = useTeams();
+  const humans = teams.filter((x) => x.userControlled);
+  const mine = useMine();
   const newLeague = useNewLeague();
   const fromRoster = useNewLeagueFromRoster();
   const dispatch = useDispatch();
@@ -96,6 +99,16 @@ export function App() {
       {searching && <CommandK screens={NAV} onClose={() => setSearching(false)} />}
       <aside className="flex w-56 flex-col gap-1 border-r border-line bg-panel p-3">
         <div className="mb-4 px-2 text-lg font-semibold">{t('app.name')}</div>
+        {humans.length > 1 && (
+          <label className="mb-3 flex flex-col gap-1 px-2 text-xs text-muted">
+            {t('home.seat')}
+            <TeamSelect
+              teams={humans}
+              value={mine?.id ?? ''}
+              onChange={(id) => id && setSeat(id)}
+            />
+          </label>
+        )}
         {NAV.map((n) => (
           <button
             key={n.id}

@@ -1,5 +1,5 @@
 import { useState } from 'react';
-import { useDispatch, usePlayers, useTeams } from '@/lib/queries';
+import { useDispatch, usePlayers, useTeams, useMine } from '@/lib/queries';
 import { useT } from '@/i18n';
 import { useUi } from '@/stores/ui';
 import { Button, Card, Face } from '@/ui';
@@ -14,6 +14,7 @@ export function Player() {
   const setScreen = useUi((s) => s.setScreen);
   const openRoster = useUi((s) => s.openRoster);
   const { data: teams = [] } = useTeams();
+  const mine = useMine()?.id;
   const teamId = focus?.teamId === 'fa' ? null : (focus?.teamId as TeamId | undefined);
   const { data: players = [] } = usePlayers(focus ? teamId : undefined);
   const p = players.find((x) => x.id === focus?.playerId);
@@ -39,7 +40,7 @@ export function Player() {
           <Button onClick={() => openRoster(focus.teamId, p.id)}>{t('player.back')}</Button>
         </div>
       </div>
-      <Profile player={p} signFor={teams.find((x) => x.userControlled)?.id} standalone />
+      <Profile player={p} signFor={mine} standalone />
       {p.teamId && <CommissionerCard key={p.id} playerId={p.id} teamId={p.teamId} />}
     </div>
   );
