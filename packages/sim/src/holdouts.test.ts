@@ -125,7 +125,7 @@ describe('holdouts', () => {
           amount,
         });
       }
-      run(state, { kind: 'sim.advance', days: 6 }); // to the first weekly check
+      run(state, { kind: 'sim.advance', days: 7 - state.date.day }); // through the first weekly check
       expect(state.players[playerId]!.extension !== undefined).toBe(pays);
       // A shopped holdout is on the block, or already traded away (AI buyers call the block first).
       const gone = state.players[playerId]!.teamId !== teamId;

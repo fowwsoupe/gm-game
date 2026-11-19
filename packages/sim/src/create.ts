@@ -31,7 +31,8 @@ export function createLeague(
   return {
     sport: ctx.sport.id,
     rulesetId: ctx.ruleset.id,
-    date: { season, day: 0 },
+    // Opens with camp, like every season after it.
+    date: { season, day: -ctx.ruleset.season.calendar.preseasonDays },
     rngState: rng.fork('games').state,
     teams: Object.fromEntries(
       teams.map((t, i) => {

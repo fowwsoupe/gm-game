@@ -35,7 +35,7 @@ describe('playoff odds', () => {
     expect(sum).toBeCloseTo(ctx.ruleset.playoffs.teamsQualifying, 5);
     for (const p of start.values()) expect(p).toBeGreaterThan(0.05);
 
-    handleCommand(state, { kind: 'sim.advance', days: 120 }, local, ctx);
+    handleCommand(state, { kind: 'sim.advance', days: 120 - state.date.day }, local, ctx);
     const mid = odds(state);
     const rows = computeStandings(
       Object.keys(state.teams) as TeamId[],

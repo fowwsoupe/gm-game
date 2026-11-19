@@ -514,9 +514,12 @@ export function handleCommand(
       const season = capYearOf(state);
       const gone = staffOf(team, command.department, ctx.ruleset.frontOffice.salary, season);
       if (gone.hired === season) return invalid('already changed for this department this season');
-      // The rest of his salary this season; once the champion is crowned, the whole season ahead.
+      // The rest of his salary this season; in camp or once the champion is crowned, the whole
+      // season ahead.
       const days = ctx.ruleset.season.calendar.regularSeasonDays;
-      const left = state.championTeamId ? 1 : Math.max(0, (days - state.date.day) / days);
+      const left = state.championTeamId
+        ? 1
+        : Math.min(1, Math.max(0, (days - state.date.day) / days));
       const ev = makeEvent(state, 'notable', [team.id], {
         kind: 'staff.fired',
         teamId: team.id,

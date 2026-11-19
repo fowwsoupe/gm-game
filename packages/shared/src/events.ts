@@ -198,12 +198,14 @@ export type LeagueEvent =
   | (EventBase & { kind: 'freeAgency.sheetDropped'; playerId: PlayerId })
   /** The offseason's free-agency window opened (closes when the next season starts). */
   | (EventBase & { kind: 'freeAgency.opened' })
-  /** A new season: fresh schedule, clock back to opening night, results cleared. */
+  /** A new season: fresh schedule, clock back to the first day of camp, results cleared. */
   | (EventBase & {
       kind: 'season.started';
       season: number;
       schedule: ScheduledGame[];
       rngState: number;
+      /** The day it opens on, -preseasonDays (absent in old saves: day 0, opening night). */
+      day?: number;
       /** Each team's form this season, rating points (absent in old saves: none). */
       form?: Record<TeamId, number>;
     })

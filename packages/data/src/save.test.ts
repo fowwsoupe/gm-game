@@ -170,7 +170,8 @@ describe('SaveFile', () => {
     const save = openSave(':memory:');
     const state = createLeague(17, ctx);
     save.saveNewLeague(state);
-    for (const days of [ctx.ruleset.season.calendar.regularSeasonDays + 2, 30]) {
+    // From camp into the playoffs, then to the champion.
+    for (const days of [ctx.ruleset.season.calendar.regularSeasonDays + 2 - state.date.day, 30]) {
       const res = handleCommand(state, { kind: 'sim.advance', days }, local, ctx);
       if (!res.ok) throw new Error(res.error.message);
       save.persist(res.events, state);

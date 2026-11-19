@@ -161,6 +161,7 @@ export function App() {
           </Button>
           {status &&
             [
+              { to: 0, label: t('actions.simToOpeningNight') },
               { to: status.tradeDeadlineDay, label: t('actions.simToDeadline') },
               { to: status.playoffsStartDay, label: t('actions.simToPlayoffs') },
               { to: status.playoffsEndDay, label: t('actions.simToSummer') },

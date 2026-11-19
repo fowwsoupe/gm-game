@@ -420,7 +420,7 @@ export function applyEvent(state: LeagueState, event: LeagueEvent): void {
       return;
     }
     case 'season.started':
-      state.date = { season: event.season, day: 0 };
+      state.date = { season: event.season, day: event.day ?? 0 };
       state.rngState = event.rngState;
       state.teamForm = { ...event.form };
       state.schedule = event.schedule.map((g) => ({ ...g, date: { ...g.date } }));

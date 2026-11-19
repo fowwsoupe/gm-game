@@ -35,7 +35,7 @@ function run(state: LeagueState, command: Parameters<typeof handleCommand>[1]): 
 function playSeasonAndRollOver(state: LeagueState) {
   const events = run(state, {
     kind: 'sim.advance',
-    days: calendar.regularSeasonDays + calendar.playoffDays,
+    days: calendar.regularSeasonDays + calendar.playoffDays - state.date.day,
   });
   const champion = state.championTeamId;
   events.push(...run(state, { kind: 'season.rollover' }));
@@ -76,7 +76,11 @@ describe('offseason rollover', () => {
     const state = createLeague(2, ctx);
     const startSeason = state.date.season;
     const { events } = playSeasonAndRollOver(state);
-    expect(state.date).toEqual({ season: startSeason + 1, day: 0 });
+    // It opens with camp, in the preseason.
+    expect(state.date).toEqual({
+      season: startSeason + 1,
+      day: -ctx.ruleset.season.calendar.preseasonDays,
+    });
     expect(state.championTeamId).toBeNull();
     expect(Object.keys(state.results)).toHaveLength(0);
     expect(Object.keys(state.playoffSeries)).toHaveLength(0);
@@ -88,8 +92,8 @@ describe('offseason rollover', () => {
       (e) => e.kind === 'news.posted' && e.headline.startsWith('event.plan'),
     );
     expect(planNews).toEqual([]);
-    // The new season can be played straight away.
-    run(state, { kind: 'sim.advance', days: 10 });
+    // The new season can be played once camp is over.
+    run(state, { kind: 'sim.advance', days: 10 - state.date.day });
     expect(Object.keys(state.results).length).toBeGreaterThan(0);
   });
 

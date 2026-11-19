@@ -32,7 +32,8 @@ describe('the ledger', () => {
       .filter((x) => x.teamId === teamId)
       .reduce((s, x) => s + (x.contract?.bonus ?? 0), 0);
 
-    const [day1] = settled(run(state, { kind: 'sim.advance', days: 1 }), teamId);
+    // Through camp (no settlements) and opening night.
+    const [day1] = settled(run(state, { kind: 'sim.advance', days: 1 - state.date.day }), teamId);
     expect(day1!.date.day).toBe(0);
     expect(day1!.costs.signingBonuses).toBe(bonuses);
     expect(day1!.costs.salaries).toBe(0);
@@ -58,7 +59,10 @@ describe('the ledger', () => {
     expect(owed).toBeGreaterThan(0);
 
     run(state, { kind: 'season.rollover' });
-    const months = settled(run(state, { kind: 'sim.advance', days: days + 1 }), teamId);
+    const months = settled(
+      run(state, { kind: 'sim.advance', days: days + 1 - state.date.day }),
+      teamId,
+    );
     expect(months.reduce((s, m) => s + m.costs.deadCap, 0)).toBe(owed);
   });
 });
@@ -75,7 +79,7 @@ describe('fans and ticket prices', () => {
     const [cheap, dear] = [0, 20].map((pct) => {
       const state = structuredClone(base);
       run(state, { kind: 'finance.setTicketPrice', teamId, pct });
-      return month(run(state, { kind: 'sim.advance', days: 31 }), teamId);
+      return month(run(state, { kind: 'sim.advance', days: 31 - state.date.day }), teamId);
     });
     expect(dear!.fans.attendance).toBeLessThan(cheap!.fans.attendance);
     expect(dear!.revenue.gate).toBeLessThan(cheap!.revenue.gate);
@@ -107,11 +111,11 @@ describe('fans and ticket prices', () => {
     const state = createLeague(3, ctx);
     // Dear tickets everywhere, so no building sells out and every change in demand shows.
     for (const id of Object.keys(state.teams)) state.ticketPrices[id as TeamId] = 20;
-    const first = run(state, { kind: 'sim.advance', days: 220 });
+    const first = run(state, { kind: 'sim.advance', days: 220 - state.date.day });
     const rows = leagueStandings(state, ctx.ruleset);
     const [best, worst] = [rows[0]!.teamId, rows[rows.length - 1]!.teamId];
     run(state, { kind: 'season.rollover' });
-    const second = run(state, { kind: 'sim.advance', days: 31 });
+    const second = run(state, { kind: 'sim.advance', days: 31 - state.date.day });
     expect(month(second, best).fans.attendance).toBeGreaterThan(month(first, best).fans.attendance);
     expect(month(second, worst).fans.attendance).toBeLessThan(month(first, worst).fans.attendance);
   });
