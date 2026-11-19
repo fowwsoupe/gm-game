@@ -40,7 +40,7 @@ export {
   interimHead,
   teamRange,
 } from './offseason';
-export { giveSeasonAwards } from './awards';
+export { giveSeasonAwards, legendTrophies } from './awards';
 export { ownerStanding } from './owner';
 export * from './trades';
 export * from './sports';

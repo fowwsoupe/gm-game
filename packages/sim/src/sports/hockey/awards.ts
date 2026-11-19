@@ -78,6 +78,10 @@ export const pickAwards: SportModule['pickAwards'] = ({
   return winners.flatMap(([award, playerId]) => (playerId ? [{ award, playerId }] : []));
 };
 
+/** A goalie legend lends his name to the goalie award, a defenceman to the defence award, a forward to the MVP. */
+export const hockeyLegendAward: SportModule['legendAward'] = (position) =>
+  position === 'G' ? 'topGoalie' : position === 'D' ? 'topDefender' : 'mvp';
+
 /**
  * A playoff goal saved counts this much more than a goal created, so a goalie wins the Playoff MVP
  * about as often as in the NHL's playoff MVP history (16 of ~59 since 1965, ~27%). At 1.0 goalies

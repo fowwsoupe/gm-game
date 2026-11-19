@@ -340,6 +340,9 @@ export function applyEvent(state: LeagueState, event: LeagueEvent): void {
     case 'player.holdoutEnded':
       state.holdouts = state.holdouts.filter((h) => h.playerId !== event.playerId);
       return;
+    case 'player.noTradeWaived':
+      delete state.players[event.playerId]?.contract?.noTrade;
+      return;
     case 'player.brokeOut':
       for (const [id, season] of Object.entries(state.breakouts)) {
         if (season < event.season) delete state.breakouts[id as PlayerId];

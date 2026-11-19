@@ -12,6 +12,7 @@ import {
   leagueStandings,
   createLeague,
   defaultContext,
+  legendTrophies,
   phaseOf,
   parseXgTable,
   playerProfiles,
@@ -33,6 +34,7 @@ import {
   draftPicks,
   playoffOdds,
   teamRatings,
+  assistantGuess,
   evaluateTrade,
   scoutReport,
   teamRange,
@@ -170,7 +172,12 @@ export class LeagueService {
   }
 
   awards() {
-    return this.open().save.listAwards();
+    const { save, state } = this.open();
+    const trophies = legendTrophies(this.hallOfFame(), defaultContext(state.rulesetId));
+    return save.listAwards().map((a) => {
+      const t = trophies[a.award];
+      return t && a.season >= t.from ? { ...a, trophy: t.surname } : a;
+    });
   }
 
   hallOfFame(): HallOfFamer[] {
@@ -351,7 +358,12 @@ export class LeagueService {
 
   evaluateTrade(proposal: TradeProposal) {
     const { state } = this.open();
-    return evaluateTrade(state, defaultContext(state.rulesetId), proposal);
+    const ctx = defaultContext(state.rulesetId);
+    const guess = assistantGuess(state, ctx, proposal);
+    return {
+      ...evaluateTrade(state, ctx, proposal),
+      ...(guess !== undefined && { assistantGuess: guess }),
+    };
   }
 
   status(): LeagueStatus {

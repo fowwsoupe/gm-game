@@ -31,3 +31,23 @@ export function giveSeasonAwards(state: LeagueState, ctx: SimContext, emit: Emit
     });
   }
 }
+
+/**
+ * Awards named after legends: each award takes the surname of the first Hall of Famer (earliest
+ * retirement, then name) whose position maps to it, once, for seasons after he retired. Returns
+ * award key -> { surname, from } (the first season it carries his name). Deterministic.
+ */
+export function legendTrophies(
+  legends: readonly { name: string; position: string; retiredSeason: number }[],
+  ctx: SimContext,
+): Record<string, { surname: string; from: number }> {
+  const out: Record<string, { surname: string; from: number }> = {};
+  const byRetirement = [...legends].sort(
+    (a, b) => a.retiredSeason - b.retiredSeason || a.name.localeCompare(b.name),
+  );
+  for (const l of byRetirement) {
+    const award = ctx.sport.legendAward(l.position);
+    out[award] ??= { surname: l.name.slice(l.name.indexOf(' ') + 1), from: l.retiredSeason + 1 };
+  }
+  return out;
+}

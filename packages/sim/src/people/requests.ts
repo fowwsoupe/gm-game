@@ -17,6 +17,8 @@ const MIN_AGE = 27;
 const AMBITIOUS = 0.7;
 /** He withdraws after a talk if his loyalty and professionalism add up to this. */
 const TALKED_DOWN = 1;
+/** He waives a no-trade clause if his score (see `waivesNoTrade`) reaches this. */
+const WAIVES = 0.5;
 
 /**
  * Trade requests (event engine v1, human teams only): when a human team is struggling, an
@@ -37,6 +39,16 @@ export function tradeRequests(state: LeagueState, rng: Rng, emit: Emit): void {
       break;
     }
   }
+}
+
+/**
+ * Whether he waives his no-trade clause when asked: an unhappy player (morale 0-100) is keen to
+ * go, a loyal one is not, a professional one takes it as part of the job. Who he is, so the same
+ * ask always gets the same answer until his morale moves.
+ */
+export function waivesNoTrade(playerId: string, morale: number): boolean {
+  const { loyalty, professionalism } = personalityOf(playerId);
+  return (100 - morale) / 100 + professionalism / 2 - loyalty / 2 >= WAIVES;
 }
 
 /** Whether a talk changes his mind: it is who he is, so the same talk always ends the same way. */

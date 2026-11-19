@@ -481,6 +481,9 @@ export class SaveFile {
           case 'contract.extended':
             setExtension.run(JSON.stringify(e.contract), e.playerId);
             break;
+          case 'player.noTradeWaived':
+            setContractOnly.run(JSON.stringify(state.players[e.playerId]?.contract), e.playerId);
+            break;
           case 'bonuses.paid':
             for (const c of e.charges) insertCharge(c);
             break;
