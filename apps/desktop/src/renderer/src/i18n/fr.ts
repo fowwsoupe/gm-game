@@ -217,6 +217,8 @@ export const fr: Record<MessageKey, string> = {
   'playoffs.title': 'Séries éliminatoires',
   'playoffs.round': 'Tour {round}',
   'playoffs.champion': 'Champion : {team}',
+  'cutscene.trophy': '{team} remporte la Coupe !',
+  'cutscene.skip': 'Cliquez ou appuyez sur une touche pour passer',
   'status.contender': 'aspirant',
   'status.buyer': 'acheteur',
   'status.bubble': 'équipe dans la course',

@@ -213,6 +213,8 @@ export const en = {
   'playoffs.title': 'Playoffs',
   'playoffs.round': 'Round {round}',
   'playoffs.champion': 'Champion: {team}',
+  'cutscene.trophy': '{team} win the Cup!',
+  'cutscene.skip': 'Click or press any key to skip',
   'status.contender': 'contender',
   'status.buyer': 'buyer',
   'status.bubble': 'bubble team',

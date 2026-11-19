@@ -54,3 +54,29 @@ body {
     animation: none !important;
   }
 }
+
+/* Cutscene: trophy lift. Skippable, and off for reduced motion (above). */
+.trophy-lift {
+  animation: trophy-lift 1.6s ease-out both;
+}
+.trophy-text {
+  animation: trophy-fade 1s 1.2s ease-out both;
+}
+@keyframes trophy-lift {
+  from {
+    transform: translateY(160px) scale(0.6);
+    opacity: 0;
+  }
+  to {
+    transform: translateY(0) scale(1);
+    opacity: 1;
+  }
+}
+@keyframes trophy-fade {
+  from {
+    opacity: 0;
+  }
+  to {
+    opacity: 1;
+  }
+}
