@@ -35,9 +35,13 @@ Camp and a trade deadline that matters: brief in
 [research/2026-11-camp-deadline.md](research/2026-11-camp-deadline.md); its two jobs (camp, the
 deadline) are ready.
 
+Minor / junior / European leagues: brief in
+[research/2026-11-minor-leagues.md](research/2026-11-minor-leagues.md); its four jobs (the
+prospect pool, lines, prospects in trades, the farm team) are ready, in that order.
+
 Needs a design first (a short brief in `docs/research/`, then jobs):
 
-- Minor / junior leagues; player traits and clustered builds.
+- Player traits and clustered builds.
 - Every other Phase 2 headline below.
 
 ## Queue (model · effort)
