@@ -89,8 +89,7 @@ export type LeagueEvent =
       teamId: TeamId;
       contract: Contract;
     })
-  /** Contract ran out: the player becomes a free agent. */
-  /** `rightsTeamId`: a restricted free agent; that team may match another team's offer sheet. */
+  /** Contract ran out: the player becomes a free agent. `rightsTeamId`: a restricted free agent; that team may match another team's offer sheet. */
   | (EventBase & { kind: 'contract.expired'; playerId: PlayerId; rightsTeamId?: TeamId })
   /**
    * A new player enters the league through the draft (the event carries the whole player).

@@ -1,5 +1,5 @@
 import { z } from 'zod';
-import { GOALIE_RATINGS, SKATER_RATINGS } from './sports/hockey';
+import { GOALIE_RATINGS, HOCKEY_POSITIONS, SKATER_RATINGS } from './sports/hockey';
 
 /**
  * Format for community roster files (JSON). Real rosters come from the community,
@@ -36,7 +36,7 @@ const rosterPlayer = z
     lastName: z.string().min(1).max(60),
     birthYear: z.number().int().min(1950).max(2020),
     team: z.string().min(1).nullable(),
-    position: z.enum(['C', 'LW', 'RW', 'D', 'G']),
+    position: z.enum(HOCKEY_POSITIONS),
     potential: rating,
     skater: skaterRatings.optional(),
     goalie: goalieRatings.optional(),
@@ -64,7 +64,7 @@ const rosterTeam = z.object({
   division: z.string().min(1).optional(),
 });
 
-export const rosterFileSchema = z
+const rosterFileSchema = z
   .object({
     formatVersion: z.literal(ROSTER_FORMAT_VERSION),
     sport: z.literal('nhl'),
@@ -107,7 +107,7 @@ const isRecord = (v: unknown): v is Record<string, unknown> =>
  * v1 -> v2: each skater's `faceoffs` starts at the average of his other ratings, so his overall
  * does not move.
  */
-export function upgradeRosterFile(json: unknown): unknown {
+function upgradeRosterFile(json: unknown): unknown {
   if (!isRecord(json) || json.formatVersion !== 1 || !Array.isArray(json.players)) return json;
   return {
     ...json,
