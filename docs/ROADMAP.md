@@ -39,15 +39,17 @@ after it).
 Minor / junior / European leagues: brief in
 [research/2026-11-minor-leagues.md](research/2026-11-minor-leagues.md); job 1, the prospect pool,
 done (picks wait unsigned with their rights, AI GMs sign them when ready, the rookie award goes to
-a first main-league season); lines, prospects in trades and the farm team are next, in that order.
+a first main-league season); job 2, lines, done (every prospect and the draft class get a season
+in junior or Europe drawn from ratings at the sim's rates over an NHLe factor, with a career row
+per league); prospects in trades and the farm team are next, in that order.
 
 Summer training, camp battles, international tournament: brief in
 [research/2026-11-summer-training.md](research/2026-11-summer-training.md); summer training plans
 and the international tournament are done; camp battles wait for the camp job above.
 
-Free-agency bidding war and contract negotiation: brief in
-[research/2026-11-free-agency-bidding.md](research/2026-11-free-agency-bidding.md); jobs 1 and 2
-(the bidding war, negotiation) done, job 3 (the room and the pitch) is ready.
+Free-agency bidding war and contract negotiation: all three jobs of
+[research/2026-11-free-agency-bidding.md](research/2026-11-free-agency-bidding.md) done (the
+bidding war, negotiation, the room and the pitch).
 
 Needs a design first (a short brief in `docs/research/`, then jobs):
 
@@ -71,7 +73,7 @@ B. Balance and calibration (Opus 5.5 unless noted)
 - [x] "Better team wins a best-of-7" back in range (high)
 - [ ] Trained stats-to-ratings and development models (xhigh, 2-3 PRs): stats to ratings v2 done (beats v1 on every key); development targets measured on NHL data (`ml/src/aging.py`, lab "Skater points/60 a year": the decline is in range, growth runs past 24); fitting the aging curves to them, and penalty-kill time and penalty minutes in roster stats, to do
 - [ ] Playtest analysis (Sonnet 5.5, medium)
-- [ ] Player traits and clustered builds (high; brief done: [research/2026-11-player-traits.md](research/2026-11-player-traits.md), its 3 jobs next)
+- [ ] Player traits and clustered builds (high; brief done: [research/2026-11-player-traits.md](research/2026-11-player-traits.md); job 1 done: [clusters and trait evidence](research/2026-11-player-builds-evidence.md), jobs 2-3 next)
 
 C. Design brief first, then jobs (Opus 5.5)
 
@@ -82,7 +84,7 @@ D. Phase 2 headlines
 
 - [x] Live draft room with trading (Opus, high, 3-4 PRs)
 - [x] League news tab (Opus for storylines, Sonnet for UI; high; brief done: [research/2026-11-league-news.md](research/2026-11-league-news.md); the news tab, front-office faces and storylines done)
-- [ ] Free-agency bidding war and contract negotiation (Opus, xhigh; brief done: [research/2026-11-free-agency-bidding.md](research/2026-11-free-agency-bidding.md), jobs 1-2 done, job 3 next)
+- [x] Free-agency bidding war and contract negotiation (Opus, xhigh; brief done: [research/2026-11-free-agency-bidding.md](research/2026-11-free-agency-bidding.md), jobs 1-3 done)
 - [x] Media and press conferences, text (Sonnet, medium, 2-3 PRs)
 - [~] Summer training, camp battles, international tournament (Opus, high, 3 PRs): brief, summer training plans and the international tournament done; camp battles wait for camp
 - [x] Cutscenes (Sonnet, medium, 3 PRs)
@@ -161,7 +163,7 @@ Build order, owners and "done when" for each step: **[V0.1_PLAN.md](V0.1_PLAN.md
 - [~] Front office: scouting, analytics, medical, coaching, development staff. Department heads with a quality and a salary, coach quality in games, development staff (replacing GM skill), per-team draft reads, medical injury days, the staff market (leave, poaching, owner budgets), the Front Office screen with three candidates a season, tuned against the long-run benchmarks (all jobs of [the brief](research/2026-11-front-office.md); the price curve was tried and dropped), an assistant GM for human teams whose advice on Home (extend first, take or turn down an offer) is as accurate as his quality (the best-value free agent for your cap room, who would help on the top line, and a guess at a trade's answer), done; department returns (what each department added against an average one, on the Front Office screen) and firing a head without a replacement (an interim, severance) done; hired head coaches drawn from the owner-tilted market (coaching measured around the league's average coach) and medical scaling re-injury risk done; an analytics department (a fourth head; a weak one blurs what you see of other teams' players, a fixed amount per player, view only) done; his return (how far his read of your roster is off) done; delegation (maybe) to do
 - [x] Live draft trade room: pick by pick, trade for any pick to come, AI teams trade up and call you on the clock, draft results with the picks that changed hands
 - [x] League news tab, social-media style: a feed page of posts with the generated face of the player and of the AI GM (or coach, owner) in each one, built on the existing `news.posted` events and the news-feed faces. Storylines that run over weeks and seasons (a holdout becoming a trade, a breakout and his extension ask, a GM's fire sale, a contender clearing cap for a star, a rivalry, a coach on the hot seat), each told as a short thread of linked posts; generated GM faces; likes and follows only if they carry a use. Brief done: [research/2026-11-league-news.md](research/2026-11-league-news.md) (no likes or follows); the tab (All / Your team, insider and team accounts, a face on every post about a player, on Home too) done; front-office faces (AI GMs get a name; the fired coach, the GM leaving, the frustrated owner and the camp report post as themselves; owner, coach and GM faces on the team page) done; storylines (`storyOf` threads a holdout, a trade request, a breakout, a fire sale, an owner losing patience, a contender clearing room and a rivalry from the log on read; an AI GM shopping his holdout says so himself; a rematch of last season's playoff series is a rivalry renewed) done.
-- [ ] Free-agency live bidding war + full contract negotiation ([brief](research/2026-11-free-agency-bidding.md): the bidding war and negotiation (a hidden line by greed, his agent's counter, patience by temperament, re-signing through the meter) done; the room and the pitch, to do)
+- [x] Free-agency live bidding war + full contract negotiation ([brief](research/2026-11-free-agency-bidding.md): the bidding war and negotiation (a hidden line by greed, his agent's counter, patience by temperament, re-signing through the meter) done; the room (the market board on the Free Agency screen: who is bidding, the leading interest, days to his decision, your standing, and the day's signings and raises) and the pitch (an offer can promise the top role at his position, 100 on the meter; not first at it a month into his first season, he opens a dispute) done)
 - [x] Media & press conferences (text)
 - [ ] Match viewer (2D) + coach from the bench
 - [x] Cutscenes (trophy lift, draft pick, signing): trophy lift (a skippable full-screen Cup lift when your team wins, once per title) done; draft pick (a skippable cutscene when one of your picks lands during the session) done; signing (a skippable cutscene when you sign a free agent) done

@@ -36,6 +36,8 @@ export {
   type RatingFit,
   type RatingEstimate,
   type StatsToRatingsTable,
+  HOCKEY_LEAGUES,
+  type RatingsToStatsTable,
   ICE_TIME,
   importHockeyRoster,
   exportHockeyRoster,

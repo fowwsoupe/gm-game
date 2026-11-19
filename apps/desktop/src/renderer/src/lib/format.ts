@@ -1,4 +1,4 @@
-import { formatMoney, type Team } from '@gm/shared';
+import { formatMoney, type LowerLeagueLine, type Team } from '@gm/shared';
 
 /** Whole dollars as $X.XXM (-$0.50M when negative). */
 export const money = formatMoney;
@@ -20,6 +20,15 @@ export const moneyParams = (params: Record<string, string | number> = {}) =>
 /** A stat value for display: save % as .912, everything else as is. */
 export const statValue = (key: string, v: number) =>
   key === 'savePct' ? v.toFixed(3).replace(/^0/, '') : String(v);
+
+/** A lower-league season in a few numbers: "Junior · 64 GP · 41 PTS" (goalies: save %). */
+export const leagueLineText = (line: LowerLeagueLine, label: (key: string) => string) =>
+  [
+    label(`league.${line.league}`),
+    ...['gp', 'points', 'savePct']
+      .filter((k) => line.stats[k] !== undefined)
+      .map((k) => `${statValue(k, line.stats[k]!)} ${label(`stat.${k}`)}`),
+  ].join(' · ');
 
 /** A 0–1 share as a whole percent: 0.456 → 46%. */
 export const pct = (n: number) => `${Math.round(n * 100)}%`;

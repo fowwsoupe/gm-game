@@ -10,6 +10,7 @@ import type {
   Department,
   GmProfile,
   InternationalTournament,
+  LowerLeagueLine,
   StaffProfile,
   OwnerCard,
   OwnerStanding,
@@ -95,7 +96,8 @@ export type LeagueEvent =
    * A new player enters the league through the draft (the event carries the whole player).
    * `round` and `pick` are 0 for an undrafted free agent signed to fill a roster. `via`: the
    * team the pick belonged to, when another team made it (traded or protected). With
-   * `prospect`, a pick: he goes to his team's prospect pool unsigned (`Prospect`).
+   * `prospect`, a pick: he goes to his team's prospect pool unsigned (`Prospect`), with his
+   * draft-year line.
    */
   | (EventBase & {
       kind: 'player.drafted';
@@ -103,7 +105,7 @@ export type LeagueEvent =
       round: number;
       pick: number;
       via?: TeamId;
-      prospect?: { league: string; rightsEnd: number };
+      prospect?: { league: string; rightsEnd: number; line?: LowerLeagueLine };
     })
   /** A prospect signs his entry deal: he leaves the pool and joins his team. */
   | (EventBase & {
@@ -126,6 +128,8 @@ export type LeagueEvent =
       staying?: true;
       /** An offer sheet signed him away: these draft picks go to the team that held his rights. */
       compensation?: { toTeamId: TeamId; picks: string[] };
+      /** His offer promised him the top role at his position (checked in his first regular season). */
+      promiseRole?: true;
     })
   /**
    * End of the playoffs: performance bonuses earned this season, and the part of each team's
@@ -206,6 +210,12 @@ export type LeagueEvent =
       season: number;
       lines: { playerId: PlayerId; teamId: TeamId | null; stats: Record<string, number> }[];
     })
+  /** End of a regular season: every prospect's line in the lower league he played in. */
+  | (EventBase & {
+      kind: 'prospects.played';
+      season: number;
+      lines: { playerId: PlayerId; league: string; stats: Record<string, number> }[];
+    })
   /** A team's depth order changed (lines). */
   | (EventBase & { kind: 'lines.set'; teamId: TeamId; order: PlayerId[] })
   /** A team's power-play or penalty-kill unit changed (empty = auto). */
@@ -221,8 +231,8 @@ export type LeagueEvent =
   | (EventBase & { kind: 'trade.blockSet'; teamId: TeamId; playerId: PlayerId; onBlock: boolean })
   /** A team changed how its goalies share starts. */
   | (EventBase & { kind: 'goalies.rotationSet'; teamId: TeamId; rotation: GoalieRotation })
-  /** A team made a free agent an offer (replaces its earlier one, a raise); he answers on his decision day. */
-  | (EventBase & { kind: 'freeAgency.offered'; offer: FreeAgentOffer })
+  /** A team made a free agent an offer (replaces its earlier one; `raise`: an AI team trailing in the race); he answers on his decision day. */
+  | (EventBase & { kind: 'freeAgency.offered'; offer: FreeAgentOffer; raise?: true })
   /**
    * His agent's answer to an offer under his line: the lowest salary he signs for at its term,
    * clause and bonus (`counter`) or, when no salary gets him there, the factor holding him back;
@@ -275,6 +285,8 @@ export type LeagueEvent =
   | (EventBase & { kind: 'player.tradeRequestEnded'; playerId: PlayerId; withdrawn: boolean })
   /** A player unhappy with his role (he sits well down the depth order for his rating) asks for more. */
   | (EventBase & { kind: 'player.disputeStarted'; playerId: PlayerId; teamId: TeamId })
+  /** The role promised when he signed came due: `kept` if he is first at his position (else a dispute opens). */
+  | (EventBase & { kind: 'player.rolePromiseDue'; playerId: PlayerId; kept: boolean })
   /** The GM put him on the block: the dispute stays open while he is listed (unlisted: he asks out). */
   | (EventBase & { kind: 'player.disputeListed'; playerId: PlayerId })
   /** The GM promised him a bigger role by day `until` (of this season). */

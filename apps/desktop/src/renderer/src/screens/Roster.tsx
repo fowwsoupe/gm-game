@@ -3,6 +3,7 @@ import { useUi } from '@/stores/ui';
 import type { LeagueEvent, PlayerId, PlayerProfile, RosterPlayer, TeamId } from '@gm/shared';
 import {
   useCareer,
+  useFeed,
   useHistory,
   useDispatch,
   useOfferSheets,
@@ -26,7 +27,7 @@ import {
   Td,
   Th,
 } from '@/ui';
-import { fullName, money, statValue, teamName } from '@/lib/format';
+import { fullName, leagueLineText, money, statValue, teamName } from '@/lib/format';
 
 const FREE_AGENTS = 'fa';
 
@@ -76,6 +77,7 @@ export function Roster({ freeAgents = false }: { freeAgents?: boolean }) {
       )}
       <div className="grid gap-4 lg:grid-cols-[1fr_20rem]">
         <div className="space-y-4">
+          {freeAgents && <Room players={players} onSelect={setSelected} />}
           {players.length === 0 && <p className="text-sm text-muted">{t('roster.none')}</p>}
           {[...groups.values()].map((group) => (
             <PlayerTable
@@ -91,6 +93,100 @@ export function Roster({ freeAgents = false }: { freeAgents?: boolean }) {
         {card && <Profile player={card} signFor={mine} />}
       </div>
     </div>
+  );
+}
+
+/**
+ * The free-agency room while the market is open: the free agents with offers on the table, best
+ * first (his agent's word: who is bidding, the leading interest, days to his decision, where you
+ * stand), and the day's signings and raises from its events.
+ */
+function Room({ players, onSelect }: { players: PlayerProfile[]; onSelect: (id: string) => void }) {
+  const t = useT();
+  const { data: status } = useStatus();
+  const { data: teams = [] } = useTeams();
+  const { data: feed } = useFeed(200, 'minor');
+  if (!status?.market) return null;
+  const abbr = (id: string) => teams.find((x) => x.id === id)?.abbreviation ?? '';
+  const name = (id: string) => feed?.names[id] ?? '';
+  const board = players
+    .flatMap((p) => (p.bids ? [{ p, b: p.bids }] : []))
+    .sort((x, y) => y.p.ask - x.p.ask);
+  // The feed is newest first: today is everything since the day turned (or free agency opened).
+  const events = feed?.events ?? [];
+  const start = events.findIndex(
+    (e) => e.kind === 'freeAgency.dayPassed' || e.kind === 'freeAgency.opened',
+  );
+  const today = events.slice(0, Math.max(0, start)).flatMap((e) =>
+    e.kind === 'player.signed'
+      ? [
+          t('event.signed', {
+            player: name(e.playerId),
+            team: teamName(teams, e.teamId),
+            amount: money(e.contract.capHit),
+            season: e.contract.expiresAfterSeason,
+          }),
+        ]
+      : e.kind === 'freeAgency.offered' && e.raise
+        ? [
+            t('room.raise', {
+              team: teamName(teams, e.offer.teamId),
+              player: name(e.offer.playerId),
+            }),
+          ]
+        : [],
+  );
+  return (
+    <Card title={t('room.title', { n: status.market.day })}>
+      <p className="mb-2 text-xs text-muted">{t('room.note', { n: status.market.closing })}</p>
+      {board.length === 0 ? (
+        <p className="text-sm text-muted">{t('room.empty')}</p>
+      ) : (
+        <table className="tabular w-full text-sm">
+          <thead>
+            <tr className="border-b border-line text-right text-muted">
+              <Th left>{t('roster.player')}</Th>
+              <Th left>{t('roster.pos')}</Th>
+              <Th>{t('resign.ask')}</Th>
+              <Th left>{t('room.bidding')}</Th>
+              <Th>{t('room.leading')}</Th>
+              <Th>{t('room.days')}</Th>
+              <Th>{t('room.you')}</Th>
+            </tr>
+          </thead>
+          <tbody>
+            {board.map(({ p, b }) => (
+              <tr
+                key={p.id}
+                onClick={() => onSelect(p.id)}
+                className="cursor-pointer border-b border-line/50 text-right hover:bg-panel-2"
+              >
+                <Td left>
+                  <Face seed={p.id} age={p.age} size={22} />
+                  {fullName(p)}
+                </Td>
+                <Td left>{p.position}</Td>
+                <Td>{money(p.ask)}</Td>
+                <Td left>{b.teams.map(abbr).join(', ')}</Td>
+                <Td>{Math.max(b.best, b.mine?.interest ?? 0)}</Td>
+                <Td>{b.days}</Td>
+                <Td className={b.mine?.leads ? 'text-good' : 'text-bad'}>
+                  {b.mine && t(b.mine.leads ? 'room.leads' : 'room.trails', { n: b.mine.interest })}
+                </Td>
+              </tr>
+            ))}
+          </tbody>
+        </table>
+      )}
+      {today.length > 0 && (
+        <div className="mt-3 space-y-0.5 border-t border-line pt-2 text-xs text-muted">
+          <p className="font-medium text-ink">{t('room.today')}</p>
+          {today.map((line, i) => (
+            <p key={i}>{line}</p>
+          ))}
+        </div>
+      )}
+    </Card>
   );
 }
 
@@ -112,6 +208,7 @@ function Prospects({ teamId, mine }: { teamId: TeamId; mine: boolean }) {
             <Th>{t('roster.age')}</Th>
             <Th left>{t('prospects.league')}</Th>
             <Th className="w-1/4">{t('draft.range')}</Th>
+            <Th left>{t('prospects.lastLine')}</Th>
             <Th>{t('prospects.rightsEnd')}</Th>
             {mine && <Th />}
           </tr>
@@ -128,6 +225,9 @@ function Prospects({ teamId, mine }: { teamId: TeamId; mine: boolean }) {
               <Td left>{t(`league.${p.league}` as MessageKey)}</Td>
               <Td>
                 <RangeBar low={p.low} high={p.high} />
+              </Td>
+              <Td left className="text-xs text-muted">
+                {p.line && `${p.line.season}: ${leagueLineText(p.line, (k) => t(k as MessageKey))}`}
               </Td>
               <Td>{p.rightsEnd}</Td>
               {mine && (
@@ -328,6 +428,7 @@ export function Offer({
   const [message, setMessage] = useState<string | null>(null);
   const [noTrade, setNoTrade] = useState(false);
   const [bonusPct, setBonusPct] = useState(0);
+  const [promiseRole, setPromiseRole] = useState(false);
   const terms = {
     playerId: player.id,
     salary,
@@ -335,8 +436,10 @@ export function Offer({
     ...(noTrade && { noTrade: true as const }),
     ...(bonusPct > 0 && { bonusPct }),
   };
+  const pitch = !resign && promiseRole ? { promiseRole: true as const } : {};
   const { data: view } = useSigningInterest({
     ...terms,
+    ...pitch,
     teamId,
     ...(resign && { resign: true as const }),
   });
@@ -430,6 +533,16 @@ export function Offer({
           <input type="checkbox" checked={noTrade} onChange={(e) => setNoTrade(e.target.checked)} />
           {t('sign.noTrade')}
         </label>
+        {!resign && (
+          <label className="flex items-center gap-1 text-muted">
+            <input
+              type="checkbox"
+              checked={promiseRole}
+              onChange={(e) => setPromiseRole(e.target.checked)}
+            />
+            {t('sign.promise', { position: player.position })}
+          </label>
+        )}
       </div>
       {view && (
         <div className="space-y-1.5">
@@ -457,7 +570,7 @@ export function Offer({
             dispatch.mutate(
               resign
                 ? { kind: 'contract.resign', ...terms }
-                : { kind: 'contract.sign', teamId, ...terms },
+                : { kind: 'contract.sign', teamId, ...terms, ...pitch },
               {
                 onSuccess: (res) => {
                   const ev = res.ok ? res.events[0] : undefined;
@@ -495,27 +608,33 @@ export function Offer({
   );
 }
 
-/** Finished regular seasons, then this one so far. */
+/** Finished regular seasons (a row per league: junior and Europe too), then this one so far. */
 function Career({ player }: { player: PlayerProfile }) {
   const t = useT();
   const { data: past = [] } = useCareer(player.id);
   const { data: teams = [] } = useTeams();
   const { data: status } = useStatus();
   // Once a season is archived (playoffs over) its line is in `past`; "Now" would repeat it.
-  const archived = past.some((l) => l.season === status?.season);
+  const archived = past.some((l) => !l.league && l.season === status?.season);
   const rows = [
-    ...past.map((l) => ({ label: String(l.season), teamId: l.teamId, stats: l.stats })),
+    ...past.map((l) => ({
+      label: String(l.season),
+      teamId: l.teamId,
+      league: l.league,
+      stats: l.stats,
+    })),
     ...(Object.keys(player.stats).length && !archived
-      ? [{ label: t('career.now'), teamId: player.teamId, stats: player.stats }]
+      ? [{ label: t('career.now'), teamId: player.teamId, league: undefined, stats: player.stats }]
       : []),
   ];
   if (rows.length === 0) return null;
   const keys = [...new Set(rows.flatMap((r) => Object.keys(r.stats)))];
   const abbr = (id: string | null) => teams.find((x) => x.id === id)?.abbreviation ?? '–';
-  // Counting stats add up; a rate (save %) does not.
+  // Counting stats add up, main league only; a rate (save %) does not.
+  const main = rows.filter((r) => !r.league);
   const totals: Record<string, number> = {};
   for (const k of keys.filter((k) => k !== 'savePct')) {
-    totals[k] = rows.reduce((sum, r) => sum + (r.stats[k] ?? 0), 0);
+    totals[k] = main.reduce((sum, r) => sum + (r.stats[k] ?? 0), 0);
   }
   return (
     <Card title={t('career.title')}>
@@ -531,16 +650,19 @@ function Career({ player }: { player: PlayerProfile }) {
         </thead>
         <tbody>
           {rows.map((r) => (
-            <tr key={r.label} className="border-b border-line/50 text-right">
+            <tr
+              key={`${r.label}-${r.league ?? ''}`}
+              className={`border-b border-line/50 text-right ${r.league ? 'text-muted' : ''}`}
+            >
               <Td left>{r.label}</Td>
-              <Td left>{abbr(r.teamId)}</Td>
+              <Td left>{r.league ? t(`league.${r.league}` as MessageKey) : abbr(r.teamId)}</Td>
               {keys.map((k) => (
                 <Td key={k}>{r.stats[k] === undefined ? '' : statValue(k, r.stats[k])}</Td>
               ))}
             </tr>
           ))}
         </tbody>
-        {rows.length > 1 && (
+        {main.length > 1 && (
           <tfoot>
             <tr className="border-t border-line text-right font-medium">
               <Td left>{t('career.totals')}</Td>

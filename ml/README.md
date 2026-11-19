@@ -81,7 +81,12 @@ python3 -m ml.src.study --processed ml/data/processed
 python3 -m ml.src.faceoffs --processed ml/data/processed
 python3 -m ml.src.form --processed ml/data/processed
 python3 -m ml.src.aging --processed ml/data/processed
+python3 -m ml.src.builds --raw ml/data/raw/moneypuck --processed ml/data/processed
 ```
+
+`builds` writes `builds_study.json`: skater shapes clustered by k-means (k by silhouette) and
+the year-to-year r of shot distance and penalties per 60. Its centres and shares are the sim's
+`SKATER_BUILD_CLUSTERS` ([evidence](../docs/research/2026-11-player-builds-evidence.md)).
 
 `faceoffs` writes `faceoff_study.json`: goal diff/game per SD of team faceoff %, raw (an upper
 bound) and after prior-season goal diff. It calibrates the sim's `FACEOFF_WEIGHT`; the balance

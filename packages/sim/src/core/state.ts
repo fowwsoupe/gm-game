@@ -118,6 +118,11 @@ export interface LeagueState {
   /** Players unhappy with their role on a human team; `until`: the day a promised role is due. */
   disputes: { playerId: PlayerId; teamId: TeamId; until?: number; listed?: true }[];
   /**
+   * Free agents signed with the top role at their position promised (`promiseRole`): the season
+   * and day it counts from (0 for a summer signing), checked `PROMISE_DAYS` later.
+   */
+  rolePromises: { playerId: PlayerId; teamId: TeamId; season: number; day: number }[];
+  /**
    * Games each pair of teammates has played in the same unit (a line or a pair), by team and
    * `linemateKey`, capped at `LINEMATE_GAMES_CAP`. A pair goes when either player leaves the team.
    */
@@ -162,6 +167,7 @@ const endRequest = (state: LeagueState, playerId: string) => {
   state.tradeRequests = state.tradeRequests.filter((r) => r.playerId !== playerId);
   state.holdouts = state.holdouts.filter((r) => r.playerId !== playerId);
   state.disputes = state.disputes.filter((r) => r.playerId !== playerId);
+  state.rolePromises = state.rolePromises.filter((r) => r.playerId !== playerId);
 };
 
 /** His holdout is over: an AI GM stops shopping him (a human's block list is his own call). */
@@ -400,7 +406,11 @@ export function applyEvent(state: LeagueState, event: LeagueEvent): void {
     case 'player.drafted': {
       const player = structuredClone(event.player);
       if (event.prospect) {
-        state.prospects[player.id] = { player, round: event.round, ...event.prospect };
+        state.prospects[player.id] = {
+          player,
+          round: event.round,
+          ...structuredClone(event.prospect),
+        };
       } else {
         state.players[player.id] = player;
         if (player.teamId) player.joined = player.debut = capYearOf(state);
@@ -442,6 +452,9 @@ export function applyEvent(state: LeagueState, event: LeagueEvent): void {
       return;
     case 'player.disputeStarted':
       state.disputes.push({ playerId: event.playerId, teamId: event.teamId });
+      return;
+    case 'player.rolePromiseDue':
+      state.rolePromises = state.rolePromises.filter((r) => r.playerId !== event.playerId);
       return;
     case 'player.disputeListed': {
       const d = state.disputes.find((x) => x.playerId === event.playerId);
@@ -504,6 +517,14 @@ export function applyEvent(state: LeagueState, event: LeagueEvent): void {
       const p = state.players[event.playerId];
       if (!p) throw new Error(`unknown player ${event.playerId}`);
       if (p.teamId !== event.teamId && !event.staying) p.joined = capYearOf(state);
+      if (event.promiseRole) {
+        state.rolePromises.push({
+          playerId: p.id,
+          teamId: event.teamId,
+          season: capYearOf(state),
+          day: state.championTeamId ? 0 : Math.max(0, state.date.day),
+        });
+      }
       p.teamId = event.teamId;
       p.contract = { ...event.contract };
       delete p.extension;
@@ -705,6 +726,13 @@ export function applyEvent(state: LeagueState, event: LeagueEvent): void {
       for (const l of event.lines) {
         const { gp, points } = l.stats;
         if (gp && points !== undefined) state.lastSeason[l.playerId] = { gp, points };
+      }
+      return;
+    case 'prospects.played':
+      for (const l of event.lines) {
+        const pr = state.prospects[l.playerId];
+        if (!pr) throw new Error(`unknown prospect ${l.playerId}`);
+        pr.line = { season: event.season, league: l.league, stats: { ...l.stats } };
       }
       return;
     case 'award.given':

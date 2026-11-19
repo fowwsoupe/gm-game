@@ -54,17 +54,35 @@ function aiPick(team: Team, pool: readonly DraftProspect[], ctx: SimContext, sea
 export function draftClass(state: LeagueState, ctx: SimContext, rng: Rng): DraftProspect[] {
   const season = state.date.season + 1;
   const count = Object.keys(state.teams).length * ctx.ruleset.draft.rounds;
-  const origins = rng.fork('origins'); // a fork, so the players drawn stay the same
+  // Forks, so the players drawn stay the same.
+  const origins = rng.fork('origins');
+  const lines = rng.fork('lines');
   return Array.from({ length: count }, (_, i) => {
     const player = ctx.sport.generateProspect(rng, { id: `d${season}_${i}`, season });
     const read = player.potential + rng.normal(0, SCOUT_SD);
+    const league = ctx.sport.prospectOrigin(origins);
+    const stats = ctx.sport.leagueLine(player, league, lines.fork(player.id));
     return {
       player,
       low: clampRating(read - SCOUT_HALF_RANGE),
       high: clampRating(read + SCOUT_HALF_RANGE),
-      league: ctx.sport.prospectOrigin(origins),
+      league,
+      line: { season: state.date.season, league, stats },
     };
   }).sort((a, b) => scouted(b) - scouted(a) || a.player.id.localeCompare(b.player.id));
+}
+
+/** The regular season is over: every prospect gets his line in the league he played in. */
+export function prospectSeason(state: LeagueState, ctx: SimContext, rng: Rng, emit: Emit) {
+  const season = state.date.season;
+  const lines = Object.values(state.prospects)
+    .sort((a, b) => a.player.id.localeCompare(b.player.id))
+    .map(({ player, league: origin }) => {
+      const league = ctx.sport.prospectLeague(origin, season - player.birthYear, ctx.ruleset);
+      const stats = ctx.sport.leagueLine(player, league, rng.fork(player.id));
+      return { playerId: player.id, league, stats };
+    });
+  if (lines.length) emit('minor', [], { kind: 'prospects.played', season, lines });
 }
 
 /** Announces the class once the champion is crowned, so teams can scout and rank it. */
@@ -294,7 +312,11 @@ export function draftPlayer(
     round,
     pick,
     ...(via && via !== teamId && { via }),
-    prospect: { league: d.league, rightsEnd: state.date.season + rightsYears(ctx.ruleset, age) },
+    prospect: {
+      league: d.league,
+      rightsEnd: state.date.season + rightsYears(ctx.ruleset, age),
+      ...(d.line && { line: d.line }),
+    },
   });
   // A trade offer for a pick lasts while it is on the clock.
   for (const o of state.tradeOffers) {

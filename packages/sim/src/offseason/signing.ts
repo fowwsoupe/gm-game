@@ -24,8 +24,15 @@ import { resignAsk, wantedYears } from './roster';
  * loyalty counted for the team he plays for.
  */
 
-/** An offer as the meter weighs it; `resign`: his own team re-signing him. */
-type Offer = { salary: number; years: number; noTrade?: true; bonusPct?: number; resign?: true };
+/** An offer as the meter weighs it; `resign`: his own team re-signing him; `promiseRole`: the top role at his position. */
+type Offer = {
+  salary: number;
+  years: number;
+  noTrade?: true;
+  bonusPct?: number;
+  promiseRole?: true;
+  resign?: true;
+};
 
 /** `signFreeAgent`'s answer to a legal offer under his line. */
 export const NOT_INTERESTED = 'he is not interested';
@@ -113,7 +120,7 @@ function weigh(state: LeagueState, ctx: SimContext, player: Player, teamId: Team
       MAX_MONEY,
     ),
     winning: WINNING[state.teamStatus[teamId] ?? 'bubble'],
-    role: clamp(1 - better / depth, 0.2, 1),
+    role: offer.promiseRole ? 1 : clamp(1 - better / depth, 0.2, 1),
     // A no-trade clause is job security: worth about a quarter of the term he wants.
     term: clamp(offer.years / wantedYears(age) + (offer.noTrade ? 0.25 : 0), 0, 1),
   };
@@ -269,7 +276,7 @@ export function signFreeAgent(
   ctx: SimContext,
   player: Player,
   teamId: TeamId,
-  offer: { salary: number; years: number; noTrade?: true; bonusPct?: number },
+  offer: Omit<Offer, 'resign'>,
   /** Cap the team will free before he signs (a contender making room, `roomFor`). */
   capFreed = 0,
 ): { contract: Contract } | { error: string } {
@@ -314,6 +321,7 @@ export function signFreeAgent(
     years: offer.years,
     ...(offer.noTrade && { noTrade: true as const }),
     ...(offer.bonusPct && { bonusPct: offer.bonusPct }),
+    ...(offer.promiseRole && { promiseRole: true as const }),
   });
   if (view.interest < lineOf(ctx, player.id)) return { error: NOT_INTERESTED };
   return {

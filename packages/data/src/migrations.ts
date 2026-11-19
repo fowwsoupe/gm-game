@@ -180,4 +180,15 @@ export const migrations: readonly string[] = [
   `
   ALTER TABLE teams ADD COLUMN market REAL;
   `,
+  // 22: lower-league seasons (junior, Europe): draft-year lines and prospects' seasons. Apart from
+  // player_seasons, so a season can have both and career totals stay main-league only.
+  `
+  CREATE TABLE IF NOT EXISTS player_league_seasons (
+    player_id TEXT NOT NULL,
+    season INTEGER NOT NULL,
+    league TEXT NOT NULL,
+    stats_json TEXT NOT NULL,
+    PRIMARY KEY (player_id, season, league)
+  );
+  `,
 ];

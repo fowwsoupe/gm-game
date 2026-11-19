@@ -234,6 +234,8 @@ const goalieSvPairs: [number, number][] = [];
 /** From the fourth season on, at its start: rostered players 20 or under a league, prospects a team. */
 const youngRostered: number[] = [];
 const prospectsATeam: number[] = [];
+/** Each season's junior lines (the pool and the new class): the best and the median points a game. */
+const juniorPpg = { best: [] as number[], median: [] as number[] };
 /** Per team-season money ($): revenue, gate (regular and playoff), operating profit. */
 const money = { revenue: [] as number[], gate: 0, profit: [] as number[], spread: [] as number[] };
 /** Regular-season home dates: fans in and seats there were. */
@@ -326,6 +328,19 @@ for (let l = 0; l < leagues; l++) {
       ctx,
     );
     if (!played.ok) throw new Error(played.error.message);
+    const ppg = [...Object.values(state.prospects), ...state.draftClass]
+      .flatMap(({ line }) =>
+        line?.season === state.date.season &&
+        line.league === 'junior' &&
+        line.stats.points !== undefined
+          ? [line.stats.points / Math.max(1, line.stats.gp ?? 0)]
+          : [],
+      )
+      .sort((a, b) => a - b);
+    if (ppg.length) {
+      juniorPpg.best.push(ppg[ppg.length - 1]!);
+      juniorPpg.median.push(ppg[Math.floor(ppg.length / 2)]!);
+    }
     const books = new Map<string, { revenue: number; profit: number }>();
     for (const e of played.events) {
       if (e.kind === 'trade.completed') {
@@ -643,6 +658,9 @@ const checks: Check[] = [
     max: 150,
   },
   { name: 'Prospects a team (report)', value: mean(prospectsATeam), min: 0, max: 20 },
+  // Lower-league lines (the same brief): report only until the NHLe factors are tuned.
+  { name: 'Junior points a game, best (report)', value: mean(juniorPpg.best), min: 0, max: 5 },
+  { name: 'Junior points a game, median (report)', value: mean(juniorPpg.median), min: 0, max: 5 },
   // Money, per team-season (docs/research/2026-11-owner-finance.md): Forbes 2024-25 x the cap ratio.
   { name: 'Revenue a team, mean', value: mean(money.revenue) / 1e6, min: 265, max: 320, unit: 'M' },
   { name: 'Revenue, top team / bottom team', value: mean(money.spread), min: 2, max: 3, unit: 'x' },

@@ -126,7 +126,8 @@ export type Command =
    * decides. Under his line his agent answers with a counter (`contract.countered`). `noTrade`
    * adds a no-trade clause: the player likes it, the CBA caps how many a team may hold.
    * `bonusPct`: share of the salary paid as a signing bonus (CBA-capped): the player likes the cash,
-   * and a buyout never owes it.
+   * and a buyout never owes it. `promiseRole`: the pitch, first at his position on your depth
+   * chart (his role scores 100 on the meter); one open promise per position on a team.
    */
   | {
       kind: 'contract.sign';
@@ -136,6 +137,7 @@ export type Command =
       years: number;
       noTrade?: true;
       bonusPct?: number;
+      promiseRole?: true;
     };
 // Planned (not implemented yet): formations, line tactics ...
 
