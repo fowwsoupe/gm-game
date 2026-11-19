@@ -530,6 +530,7 @@ export const en = {
   'todo.adviceSign': 'Your assistant GM: the best value for your cap room is {player}',
   'todo.adviceTake': 'Your assistant GM: take {give} for {get}',
   'todo.adviceDecline': 'Your assistant GM: turn down {give} for {get}',
+  'todo.adviceLines': 'Your assistant GM: {player} would help on the top line',
   'event.tradeOffered': 'The {team} made you a trade offer',
   'trade.requestsTitle': 'Trade requests',
   'trade.requestLine': "{player} wants out. Until it is settled he won't re-sign with you.",
