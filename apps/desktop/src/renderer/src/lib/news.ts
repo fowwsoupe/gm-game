@@ -34,6 +34,11 @@ export function usePosts(limit: number) {
     switch (e.kind) {
       case 'team.statusChanged':
         return t('event.statusChanged', { team: team(e.teamId), status: t(`status.${e.to}`) });
+      case 'player.moved':
+        return t('event.moved', {
+          player: names[e.playerId] ?? '',
+          team: e.toTeamId ? team(e.toTeamId) : t('roster.freeAgents'),
+        });
       case 'team.expanded':
         return t('event.expanded', { team: `${e.team.city} ${e.team.name}`, n: e.taken.length });
       case 'team.relocated':

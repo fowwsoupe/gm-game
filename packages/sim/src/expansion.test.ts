@@ -81,3 +81,24 @@ describe('league.expand', () => {
     expect(handleCommand(state, expand, local, small).ok).toBe(false);
   });
 });
+
+describe('commissioner.move', () => {
+  it('moves a player to any team or to free agency, local actor only', () => {
+    const state = createLeague(3, ctx);
+    const [a, b] = Object.keys(state.teams) as TeamId[];
+    const p = Object.values(state.players).find((x) => x.teamId === a && x.contract)!;
+    const move = (teamId: TeamId | null): Command => ({
+      kind: 'commissioner.move',
+      playerId: p.id,
+      teamId,
+    });
+    expect(handleCommand(state, move(b!), { id: 'remote', controls: [] }, ctx).ok).toBe(false);
+    expect(handleCommand(state, move(a!), local, ctx).ok).toBe(false);
+    run(state, move(b!));
+    expect(state.players[p.id]?.teamId).toBe(b);
+    run(state, move(null));
+    expect(state.players[p.id]?.teamId).toBeNull();
+    expect(state.players[p.id]?.contract).toBeUndefined();
+    expect(handleCommand(state, move(a!), local, ctx).ok).toBe(false); // not rostered
+  });
+});

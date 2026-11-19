@@ -285,6 +285,20 @@ export function applyEvent(state: LeagueState, event: LeagueEvent): void {
       }
       return;
     }
+    case 'player.moved': {
+      const p = state.players[event.playerId];
+      if (!p) throw new Error(`unknown player ${event.playerId}`);
+      p.teamId = event.toTeamId;
+      if (event.toTeamId) p.joined = capYearOf(state);
+      else {
+        delete p.contract;
+        delete p.joined;
+      }
+      delete p.extension;
+      state.tradeBlock = state.tradeBlock.filter((id) => id !== p.id);
+      endRequest(state, p.id);
+      return;
+    }
     case 'team.controlChanged': {
       const team = state.teams[event.teamId];
       if (team) team.userControlled = event.userControlled;
