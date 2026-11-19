@@ -1,5 +1,6 @@
 import { NEW_FANS } from '@gm/shared';
 import type {
+  StopCategory,
   CapCharge,
   Career,
   DraftProspect,
@@ -110,6 +111,8 @@ export interface LeagueState {
   career: Career | null;
   /** Save option: owners may fire a human GM. */
   canBeFired: boolean;
+  /** Save option: what stops "sim until it matters". */
+  stopOn: StopCategory[];
   /** Count of events applied so far; the next event's id is built from it. */
   eventSeq: number;
 }
@@ -198,7 +201,8 @@ export function applyEvent(state: LeagueState, event: LeagueEvent): void {
       state.career = null;
       return;
     case 'league.optionSet':
-      state.canBeFired = event.canBeFired;
+      if (event.canBeFired !== undefined) state.canBeFired = event.canBeFired;
+      if (event.stopOn) state.stopOn = [...event.stopOn];
       return;
     case 'team.controlChanged': {
       const team = state.teams[event.teamId];
@@ -470,6 +474,11 @@ export function applyEvent(state: LeagueState, event: LeagueEvent): void {
     case 'owner.confidenceMoved': {
       const owner = state.owners[event.teamId];
       if (owner) owner.confidence = event.confidence;
+      return;
+    }
+    case 'owner.frustrated': {
+      const owner = state.owners[event.teamId];
+      if (owner) owner.frustrated = event.date.season;
       return;
     }
     case 'owner.cardOpened': {
