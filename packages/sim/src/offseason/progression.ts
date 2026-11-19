@@ -2,7 +2,7 @@ import type { Player } from '@gm/shared';
 import type { Emit, LeagueState, Rng } from '../core';
 import type { DevelopmentModel } from '../players';
 import { ageIn, allPlayers } from './roster';
-import { staffOf } from '../people';
+import { personalityOf, staffOf } from '../people';
 import type { SimContext } from '../context';
 import { clampRating, overall } from '../players';
 import { playerName, teamName } from '../core';
@@ -14,9 +14,41 @@ const sameRatings = (a: Player, b: Player) =>
 const orgReach = (age: number) => (age <= 24 ? 1 : age >= 30 ? 0.5 : 1 - (age - 24) / 12);
 
 /**
+ * A summer focus: moves up to `n` whole points, one at a time, onto the lowest focus key still under
+ * his potential, each from the next of his other keys in turn (starting at `start`), so his overall
+ * holds. Returns the new ratings and the points the focus gained.
+ */
+export function trainFocus(
+  ratings: Readonly<Record<string, number>>,
+  focus: readonly string[],
+  potential: number,
+  n: number,
+  start = 0,
+) {
+  const next = { ...ratings };
+  const others = Object.keys(next).filter((k) => !focus.includes(k));
+  let gained = 0;
+  for (let i = 0; i < n; i++) {
+    const to = focus
+      .filter((k) => next[k] !== undefined && next[k] < Math.min(potential, 99))
+      .sort((a, b) => next[a]! - next[b]!)[0];
+    const from = others
+      .map((_, j) => others[(start + i + j) % others.length]!)
+      .find((k) => next[k]! > 1);
+    if (!to || !from) break;
+    next[to]!++;
+    next[from]!--;
+    gained++;
+  }
+  return { ratings: next, gained };
+}
+
+/**
  * Step 1: every player (free agents too) ages a year and develops, in one event. Players on a team
  * also get its development staff's effect: up to `frontOffice.development.points` a year from the
- * best department, against the league's average one.
+ * best department, against the league's average one. Then a player on a human team with a summer
+ * focus (`trainingPlans`) moves `training.points` onto it from his other ratings, scaled by age like
+ * the staff and by his professionalism; a focus key at his potential gains nothing.
  */
 export function developPlayers(
   state: LeagueState,
@@ -30,6 +62,8 @@ export function developPlayers(
   const changes: { playerId: Player['id']; ratings: Record<string, number>; potential: number }[] =
     [];
   const orgRng = rng.fork('organization');
+  const trainRng = rng.fork('training');
+  const trained: { player: Player; focus: string; gained: number }[] = [];
   // Measured against the league's average department, so staff move talent between teams and do
   // not raise the league as a whole.
   const quality = new Map(
@@ -54,11 +88,28 @@ export function developPlayers(
         next = { ...next, ratings };
       }
     }
+    const focus = state.trainingPlans[p.id];
+    const keys = focus && ctx.sport.trainingFocus(p.position)[focus];
+    if (keys && p.teamId && state.teams[p.teamId]?.userControlled) {
+      const share =
+        ctx.ruleset.training.points * orgReach(age) * (0.5 + personalityOf(p.id).professionalism);
+      const n = Math.floor(share) + (trainRng.fork(p.id).chance(share % 1) ? 1 : 0);
+      const done = trainFocus(next.ratings, keys, next.potential, n, season);
+      next = { ...next, ratings: done.ratings };
+      if (done.gained) trained.push({ player: p, focus, gained: done.gained });
+    }
     if (!sameRatings(p, next)) {
       changes.push({ playerId: p.id, ratings: next.ratings, potential: next.potential });
     }
   }
   if (changes.length) emit('minor', [], { kind: 'players.developed', changes });
+  for (const { player, focus, gained } of trained) {
+    emit('notable', [player.teamId!], {
+      kind: 'news.posted',
+      headline: 'event.summerTraining',
+      params: { player: playerName(player), focus, n: gained },
+    });
+  }
 }
 
 /** Step 2: older and weaker players retire. Free agents too, so the pool cannot pile up. */

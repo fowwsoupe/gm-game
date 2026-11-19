@@ -144,7 +144,7 @@ describe('analytics staff', () => {
     state.teams[mine]!.userControlled = true;
     const off = (quality: number) => {
       state.teams[mine]!.staff = { analytics: head(quality) };
-      expect(playerProfiles(state, ctx, mine)).toEqual(ownTrue);
+      expect(playerProfiles(state, ctx, mine)).toMatchObject(ownTrue); // plus your training plans
       const seen = playerProfiles(state, ctx, theirs);
       const gaps = seen.flatMap((p, i) =>
         p.percentiles.map((x, k) => Math.abs(x.value - rivalTrue[i]!.percentiles[k]!.value)),

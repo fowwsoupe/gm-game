@@ -21,6 +21,15 @@ import {
 } from './stats';
 import { hockeyRole } from './builds';
 
+const SKATER_FOCUS = {
+  skating: ['skating'],
+  shooting: ['shooting'],
+  playmaking: ['passing', 'puckHandling', 'hockeyIq'],
+  defence: ['defense', 'physical'],
+  faceoffs: ['faceoffs'],
+};
+const GOALIE_FOCUS = { reflexes: ['reflexes'], positioning: ['positioning', 'reboundControl'] };
+
 /**
  * Hockey (NHL-style). Owns everything that only makes sense in hockey: positions and
  * ratings, the game sim and its tuning, the fictional league generator, the NHL ruleset.
@@ -31,6 +40,7 @@ export function hockeySport(goalModel: GoalModel = rulesGoalModel): SportModule<
     id: 'nhl',
     positions: HOCKEY_POSITIONS,
     ratingKeys: (position) => (isGoalie(position) ? GOALIE_RATINGS : SKATER_RATINGS),
+    trainingFocus: (position) => (isGoalie(position) ? GOALIE_FOCUS : SKATER_FOCUS),
     pythagoreanExponent: 2,
     generateLeague: generateFictionalLeague,
     generateProspect,

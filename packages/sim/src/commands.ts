@@ -436,6 +436,27 @@ export function handleCommand(
       return applied(state, ev);
     }
 
+    case 'training.set': {
+      const team = state.teams[command.teamId];
+      const player = state.players[command.playerId];
+      if (!team || !player) return invalid('unknown player or team');
+      if (!controls(actor, team)) return notYours;
+      if (player.teamId !== team.id) return invalid('only your own players');
+      if (
+        command.focus !== null &&
+        !Object.hasOwn(ctx.sport.trainingFocus(player.position), command.focus)
+      ) {
+        return invalid('unknown training focus');
+      }
+      const ev = makeEvent(state, 'minor', [team.id], {
+        kind: 'training.planSet',
+        teamId: team.id,
+        playerId: player.id,
+        focus: command.focus,
+      });
+      return applied(state, ev);
+    }
+
     case 'trade.block': {
       const team = state.teams[command.teamId];
       const player = state.players[command.playerId];

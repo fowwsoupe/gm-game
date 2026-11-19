@@ -28,7 +28,7 @@ export { acceptSheet, marketDay, roomFor } from './market';
 export { aiHoldouts, resignOffers, resignContract, isExpiring, resignWindowOpen } from './resign';
 export { stayChance } from './freeAgency';
 export { freeAgents, wantedYears } from './roster';
-export { developPlayers } from './progression';
+export { developPlayers, trainFocus } from './progression';
 export { changeStaff, staffCandidates, departmentReturns, interimHead } from './staff';
 import { expireContracts, fillRosters, meetCapFloor, reSignPlayers } from './freeAgency';
 import { MARKET_DAYS, decideOffers, marketDay } from './market';

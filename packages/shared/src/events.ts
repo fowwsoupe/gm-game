@@ -195,6 +195,13 @@ export type LeagueEvent =
   | (EventBase & { kind: 'lines.set'; teamId: TeamId; order: PlayerId[] })
   /** A team's power-play or penalty-kill unit changed (empty = auto). */
   | (EventBase & { kind: 'units.set'; teamId: TeamId; unit: SpecialUnit; playerIds: PlayerId[] })
+  /** A human team set (or cleared) a player's summer training focus. */
+  | (EventBase & {
+      kind: 'training.planSet';
+      teamId: TeamId;
+      playerId: PlayerId;
+      focus: string | null;
+    })
   /** A human team listed a player as available (or took him off the block). */
   | (EventBase & { kind: 'trade.blockSet'; teamId: TeamId; playerId: PlayerId; onBlock: boolean })
   /** A team changed how its goalies share starts. */

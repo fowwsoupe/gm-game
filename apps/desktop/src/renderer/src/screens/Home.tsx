@@ -308,6 +308,11 @@ function FeedCard() {
             ...e.params,
             award: t(`award.${e.params?.award}` as MessageKey),
           });
+        if (e.headline === 'event.summerTraining')
+          return t(e.headline, {
+            ...e.params,
+            focus: t(`training.${e.params?.focus}` as MessageKey),
+          });
         if (e.headline === 'event.staffLeft' || e.headline === 'event.staffPoached')
           return t(e.headline, {
             ...e.params,

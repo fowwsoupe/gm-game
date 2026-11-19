@@ -215,6 +215,9 @@ export function Profile({
       <Career player={p} />
       {!standalone && <OpenProfile player={p} />}
       {p.teamId !== null && p.teamId === signFor && <BlockToggle player={p} teamId={signFor} />}
+      {p.training && p.teamId === signFor && (
+        <TrainingPlan player={p} options={p.training.options} teamId={signFor} />
+      )}
       {p.teamId === null && signFor && <Offer key={p.id} player={p} teamId={signFor} />}
     </div>
   );
@@ -514,6 +517,48 @@ function BlockToggle({ player, teamId }: { player: PlayerProfile; teamId: TeamId
         </Button>
         <span className="text-xs text-muted">{t('block.note')}</span>
       </div>
+    </Card>
+  );
+}
+
+/** His summer training focus: reshapes his ratings at development, never past his ceiling. */
+function TrainingPlan({
+  player,
+  options,
+  teamId,
+}: {
+  player: PlayerProfile;
+  options: string[];
+  teamId: TeamId;
+}) {
+  const t = useT();
+  const dispatch = useDispatch();
+  return (
+    <Card>
+      <label className="flex items-center gap-2 text-sm">
+        {t('training.label')}
+        <select
+          value={player.training?.focus ?? ''}
+          disabled={dispatch.isPending}
+          onChange={(e) =>
+            dispatch.mutate({
+              kind: 'training.set',
+              teamId,
+              playerId: player.id as PlayerId,
+              focus: e.target.value || null,
+            })
+          }
+          className="rounded border border-line bg-panel px-2 py-1 text-sm text-ink"
+        >
+          <option value="">{t('training.balanced')}</option>
+          {options.map((o) => (
+            <option key={o} value={o}>
+              {t(`training.${o}` as MessageKey)}
+            </option>
+          ))}
+        </select>
+      </label>
+      <p className="mt-1 text-xs text-muted">{t('training.note')}</p>
     </Card>
   );
 }
