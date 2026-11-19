@@ -23,10 +23,10 @@ export function History() {
           <ul className="space-y-1 text-sm">
             {legends.map((h) => {
               const key = 'points' in h.totals ? 'points' : 'gp';
-              const won = [...new Set(h.awards)].map(
-                (a) =>
-                  `${t(`award.${a}` as MessageKey)}${h.awards.filter((x) => x === a).length > 1 ? ` ×${h.awards.filter((x) => x === a).length}` : ''}`,
-              );
+              const won = [...new Set(h.awards)].map((a) => {
+                const n = h.awards.filter((x) => x === a).length;
+                return `${t(`award.${a}` as MessageKey)}${n > 1 ? ` ×${n}` : ''}`;
+              });
               return (
                 <li key={h.playerId} className="flex justify-between gap-4">
                   <span>
