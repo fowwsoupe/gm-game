@@ -13,8 +13,8 @@ const clamp01 = (n: number) => Math.max(0, Math.min(1, n));
 /**
  * Step 0b of the summer (docs/research/2026-11-front-office.md): department heads move on, good
  * ones on winning teams most often (hired away), and the owner's budget sets how good a
- * replacement the team finds. Every team alike: until the Front Office screen, a human team's
- * vacancy is filled the same way.
+ * replacement the team finds. Every team alike: a human team's vacancy is filled the same way,
+ * and its GM can then replace the head from the Front Office screen (`staff.hire`).
  */
 export function changeStaff(
   state: LeagueState,
