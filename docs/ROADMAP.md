@@ -49,7 +49,7 @@ A. Leftovers (Sonnet 5.5, medium)
 B. Balance and calibration (Opus 5.5 unless noted)
 
 - [ ] Points % spread, seed 1 still short (high; compare seeds 1/101/201)
-- [ ] "Better team wins a best-of-7" back in range (high)
+- [x] "Better team wins a best-of-7" back in range (high)
 - [ ] Trained stats-to-ratings and development models (xhigh, 2-3 PRs)
 - [ ] Playtest analysis (Sonnet 5.5, medium)
 - [ ] Player traits and clustered builds (high, brief first)
@@ -102,7 +102,7 @@ Build order, owners and "done when" for each step: **[V0.1_PLAN.md](V0.1_PLAN.md
 - [~] Players (`sim/players`): percentiles, builds and role tags (rules), injuries and injury history (shown on the player card) done; re-injury risk done; traits, clustered builds to do
 - [x] Value (`sim/value`): per-team surplus value (can be negative), market value, pick value curve (rules-based, tuned in the lab)
 - [x] People (`sim/people`): personalities (from the player id), free-agent priorities by age and personality, AI GM styles and skill, team plans, morale (shown on the player card; no effects yet) done
-- [~] Models and calibration (`ml/`, [ADR 0005](adr/0005-calibrate-first.md): ML only where a fit is needed): faceoff effect and goalie form measured on NHL data, stats-to-ratings v1 fitted on the sim; trained stats-to-ratings and development models, "better team wins a best-of-7" back in range, playtest analysis to do
+- [~] Models and calibration (`ml/`, [ADR 0005](adr/0005-calibrate-first.md): ML only where a fit is needed): faceoff effect and goalie form measured on NHL data, stats-to-ratings v1 fitted on the sim, "better team wins a best-of-7" back in range; trained stats-to-ratings and development models, playtest analysis to do
 - [~] League & events (`sim/league`): calendar, team status (league pulse from playoff odds, roster age and cap space, crisis when a losing team's owner loses faith), event engine (trade requests, holdouts, disputes, breakouts in the summer and in season, AI owners' frustration, AI fire sales), news, a stop filter (saved with the league), a "talk extension" To do for your breakouts done
 - [ ] Minor / junior / European leagues: light stats-only sim for prospects
 
