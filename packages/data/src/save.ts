@@ -5,6 +5,7 @@ import type {
   PlayerMove,
   CareerLine,
   CapCharge,
+  DraftResult,
   GameResult,
   Importance,
   LeagueEvent,
@@ -745,6 +746,38 @@ export class SaveFile {
       }
     }
     return { money, meetings };
+  }
+
+  /**
+   * The picks made in the latest draft, by pick, read back from the log newest first and stopping
+   * at the season before. `season` is the draft's (the class's); null before the first draft.
+   */
+  latestDraft(): { season: number | null; picks: DraftResult[] } {
+    const rows = this.db
+      .prepare(
+        "SELECT season, payload_json FROM events WHERE kind = 'player.drafted' ORDER BY seq DESC",
+      )
+      .iterate() as IterableIterator<{ season: number; payload_json: string }>;
+    let season: number | null = null;
+    const picks: DraftResult[] = [];
+    for (const r of rows) {
+      if (season !== null && r.season !== season) break;
+      const e = JSON.parse(r.payload_json) as Extract<LeagueEvent, { kind: 'player.drafted' }>;
+      if (e.round === 0) continue; // an undrafted free agent
+      season = r.season;
+      const { id, firstName, lastName, position } = e.player;
+      picks.push({
+        pick: e.pick,
+        round: e.round,
+        teamId: e.teamIds[0]!,
+        ...(e.via && { via: e.via }),
+        playerId: id,
+        firstName,
+        lastName,
+        position,
+      });
+    }
+    return { season: season === null ? null : season + 1, picks: picks.reverse() };
   }
 
   /** A player's awards and the contract / team moves recorded in the event log, oldest first. */

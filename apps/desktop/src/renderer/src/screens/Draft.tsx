@@ -20,8 +20,36 @@ export function Draft() {
   const openTrade = useUi((s) => s.openTrade);
   const [error, setError] = useState<string | null>(null);
   if (!mine) return <p className="text-muted">{t('common.noTeam')}</p>;
+  // The latest draft's picks, as they are made and after.
+  const results = data && data.madeSeason !== null && data.made.length > 0 && (
+    <Card title={t('draft.madeTitle', { season: data.madeSeason })}>
+      <ol className="max-h-96 space-y-1 overflow-y-auto text-sm">
+        {data.made.map((r) => (
+          <li key={r.pick} className={r.teamId === mine ? 'text-accent' : ''}>
+            {t('draft.madeLine', {
+              pick: r.pick,
+              team: teamName(teams, r.teamId),
+              player: fullName(r),
+              pos: r.position,
+            })}
+            {r.via && (
+              <span className="text-muted">
+                {' '}
+                {t('draft.via', { team: teamName(teams, r.via) })}
+              </span>
+            )}
+          </li>
+        ))}
+      </ol>
+    </Card>
+  );
   if (!data || data.prospects.length === 0) {
-    return <p className="text-muted">{t('draft.empty')}</p>;
+    return (
+      <div className="max-w-xl space-y-4">
+        <p className="text-muted">{t('draft.empty')}</p>
+        {results}
+      </div>
+    );
   }
 
   const clock = data.order[0];
@@ -211,6 +239,7 @@ export function Draft() {
             </ol>
           </Card>
         )}
+        {results}
       </div>
     </div>
   );
