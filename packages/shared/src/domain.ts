@@ -241,6 +241,8 @@ export interface DepartmentReturns {
   development: number;
   medical: number;
   scouting: { error: number; league: number; picks: number } | null;
+  /** How far his read of your players' overall is off the truth, on average (null: no assistant). */
+  assistant: { error: number; players: number } | null;
 }
 
 /** The head of a front-office department; his salary stands for the whole department's cost. */
