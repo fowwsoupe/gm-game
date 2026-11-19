@@ -271,6 +271,8 @@ export const fr: Record<MessageKey, string> = {
   'trade.pickPlayers': 'Choisissez des joueurs de chaque côté pour demander.',
   'trade.yes': 'Ils accepteraient.',
   'trade.no': 'Ils refuseraient.',
+  'trade.guessYes': 'Votre DG adjoint : ils diront probablement oui.',
+  'trade.guessNo': 'Votre DG adjoint : ils diront probablement non.',
   'trade.propose': 'Conclure l’échange',
   'trade.done': 'Échange conclu.',
   'trade.stat': 'PTS / %ARR',

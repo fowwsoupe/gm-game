@@ -10,7 +10,15 @@ import { pct, phaseOf, playerName, type LeagueState } from '../core';
 import { capYearIssues, capYearOf, retentionIssues, teamCapTotal } from '../cba';
 import { pickValue, type TeamContext } from '../value';
 import { draftPicks, nextDraftSeason, worstFirst } from '../league';
-import { GM_LEAN, gmOf, planStatus, seenBy } from '../people';
+import {
+  GM_LEAN,
+  assistantSees,
+  departmentsOf,
+  gmOf,
+  planStatus,
+  seenBy,
+  staffOf,
+} from '../people';
 import type { SimContext } from '../context';
 
 /** The other team wants to win a trade by at least this share of the cap. */
@@ -151,6 +159,8 @@ export function evaluateTrade(
   ctx: SimContext,
   proposal: TradeProposal,
   cache?: TradeCache,
+  /** How the other team sees a player (default: its own GM's read). */
+  see: (p: Player) => Player = (p) => seenBy(state.teams[proposal.toTeamId]!, p),
 ): TradeEvaluation {
   const { ruleset } = ctx;
   const { fromTeamId: from, toTeamId: to, give, get } = proposal;
@@ -241,7 +251,7 @@ export function evaluateTrade(
   // Incoming players are valued at their cap hit after any retention.
   const valueOf = (id: string) => {
     const p = afterById.get(id)!;
-    return { p, ...ctx.models.valuation.value(seenBy(state.teams[to]!, p), team, ruleset) };
+    return { p, ...ctx.models.valuation.value(see(p), team, ruleset) };
   };
   // A pick in the next draft lands where its original team finishes (worst first, from today's
   // standings), trusted more as the season is played: an empty table is all ties broken by team
@@ -313,4 +323,22 @@ export function evaluateTrade(
     }
   }
   return { accepted, value, reasons: reasons.slice(0, MAX_REASONS) };
+}
+
+/**
+ * A human team's assistant GM's guess at the other team's answer (true: likely yes): the same
+ * evaluation, but with every player as the assistant reads him instead of the other GM, so a
+ * poor assistant is wrong more often (docs/research/2026-11-assistant-gm.md). Undefined when
+ * the proposer is an AI team or has no assistant.
+ */
+export function assistantGuess(
+  state: LeagueState,
+  ctx: SimContext,
+  proposal: TradeProposal,
+): boolean | undefined {
+  const team = state.teams[proposal.fromTeamId];
+  if (!team?.userControlled || !departmentsOf(team).includes('assistant')) return undefined;
+  const head = staffOf(team, 'assistant', ctx.ruleset.frontOffice.salary, state.date.season);
+  return evaluateTrade(state, ctx, proposal, undefined, (p) => assistantSees(head, team.id, p))
+    .accepted;
 }

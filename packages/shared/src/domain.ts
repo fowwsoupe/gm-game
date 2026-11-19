@@ -600,6 +600,8 @@ export interface TradeEvaluation {
   accepted: boolean;
   value: number;
   reasons: TradeReason[];
+  /** Your assistant GM's guess at the answer, on his read of the players (true: likely yes). */
+  assistantGuess?: boolean;
 }
 
 /** Where the league is, for the Home screen and the buttons that depend on it. */
