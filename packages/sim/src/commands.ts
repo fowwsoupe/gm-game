@@ -19,7 +19,7 @@ import {
   type LeagueState,
 } from './core';
 import { buyoutCharges, capYearIssues, capYearOf, teamCapTotal } from './cba';
-import { parsePick } from './league';
+import { pickLabel } from './league';
 import {
   departmentsOf,
   moraleOf,
@@ -251,14 +251,26 @@ export function handleCommand(
         ...(offer.proposal.getPicks && { givePicks: offer.proposal.getPicks }),
         ...(offer.proposal.givePicks && { getPicks: offer.proposal.givePicks }),
       };
-      const verdict = evaluateTrade(state, ctx, mirror);
+      // A draft-day call stands while the pick is on the clock: the caller wants a player there,
+      // not the pick's value, so only the trade's legality is checked.
+      const caller = state.teams[offer.proposal.fromTeamId]!;
+      const clock = onTheClock(state, ctx)?.id;
+      const judged =
+        clock && offer.proposal.getPicks?.includes(clock)
+          ? {
+              ...state,
+              teams: { ...state.teams, [caller.id]: { ...caller, userControlled: true } },
+            }
+          : state;
+      const verdict = evaluateTrade(judged, ctx, mirror);
       if (!verdict.accepted) {
         return invalid(
           `the offer is off the table: ${verdict.reasons.map((r) => r.code).join(', ')}`,
         );
       }
-      const events = completeTrade(state, ctx, mirror);
-      return { ok: true, events: [...events, close(true)] };
+      // Closed first: a live draft that runs on closes offers for the picks it uses.
+      const closed = close(true);
+      return { ok: true, events: [closed, ...completeTrade(state, ctx, mirror)] };
     }
 
     case 'tradeRequest.talk': {
@@ -719,11 +731,7 @@ function completeTrade(
     ...(proposal.protectTop && proposal.givePicks?.length && { protectTop: proposal.protectTop }),
   });
   applyEvent(state, ev);
-  const picks = (ids: readonly string[] = []) =>
-    ids.map((id) => {
-      const pick = parsePick(id)!;
-      return `${pick.season} R${pick.round} (${state.teams[pick.originalTeamId]?.abbreviation})`;
-    });
+  const picks = (ids: readonly string[] = []) => ids.map((id) => pickLabel(state, id));
   const names = (ids: readonly string[]) =>
     ids.map((id) => playerName(state.players[id]!)).join(', ');
   const news = makeEvent(state, 'notable', [proposal.fromTeamId, proposal.toTeamId], {

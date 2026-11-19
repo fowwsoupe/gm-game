@@ -1,9 +1,9 @@
 import { useState } from 'react';
 import type { PlayerId } from '@gm/shared';
-import { useDispatch, useDraftClass, useTeams } from '@/lib/queries';
+import { useDispatch, useDraftClass, useTeams, useTradeOffers } from '@/lib/queries';
 import { useT, type MessageKey } from '@/i18n';
 import { Button, Card, Face, RangeBar, Td, Th } from '@/ui';
-import { fullName, teamName } from '@/lib/format';
+import { fullName, pickParams, teamName } from '@/lib/format';
 import { useUi } from '@/stores/ui';
 
 /**
@@ -15,6 +15,7 @@ export function Draft() {
   const { data: teams = [] } = useTeams();
   const mine = teams.find((x) => x.userControlled)?.id;
   const { data } = useDraftClass(mine);
+  const { data: offers = [] } = useTradeOffers(mine);
   const dispatch = useDispatch();
   const openTrade = useUi((s) => s.openTrade);
   const [error, setError] = useState<string | null>(null);
@@ -26,6 +27,18 @@ export function Draft() {
   const clock = data.order[0];
   const myTurn = clock?.teamId === mine;
   const board = data.board as PlayerId[];
+  // An AI team's call to trade up, open while your pick is on the clock.
+  const call =
+    myTurn && clock ? offers.find((o) => o.proposal.getPicks?.includes(clock.id)) : undefined;
+  const pickName = (id: string) => {
+    const o = data.order.find((x) => x.id === id);
+    return o ? t('draft.pickNumber', { pick: o.pick }) : t('trade.pick', pickParams(teams, id));
+  };
+  const respond = (offerId: string, accept: boolean) =>
+    dispatch.mutate(
+      { kind: 'trade.respond', offerId, accept },
+      { onSuccess: (res) => setError(res.ok ? null : res.error.message) },
+    );
   const byId = new Map(data.prospects.map((p) => [p.id as string, p]));
   const save = (order: PlayerId[]) =>
     dispatch.mutate(
@@ -50,6 +63,28 @@ export function Draft() {
               team: teamName(teams, clock.teamId),
             })}
           </p>
+        )}
+        {call && (
+          <div className="mb-2 flex flex-wrap items-center justify-between gap-2 text-sm">
+            <span>
+              {t('draft.call', {
+                team: teamName(teams, call.proposal.fromTeamId),
+                give: (call.proposal.givePicks ?? []).map(pickName).join(', '),
+              })}
+            </span>
+            <span className="flex gap-2">
+              <Button
+                variant="primary"
+                disabled={dispatch.isPending}
+                onClick={() => respond(call.id, true)}
+              >
+                {t('trade.accept')}
+              </Button>
+              <Button disabled={dispatch.isPending} onClick={() => respond(call.id, false)}>
+                {t('trade.decline')}
+              </Button>
+            </span>
+          </div>
         )}
         <p className="mb-2 text-xs text-muted">{t('draft.scoutNote')}</p>
         <table className="tabular w-full text-sm">
