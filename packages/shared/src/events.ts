@@ -250,6 +250,14 @@ export type LeagueEvent =
       head: StaffProfile;
       poached: boolean;
     })
+  /** A human GM fired a department head: `head`, an interim, took over and `severance` left the cash. */
+  | (EventBase & {
+      kind: 'staff.fired';
+      teamId: TeamId;
+      department: Department;
+      head: StaffProfile;
+      severance: number;
+    })
   /** The owner fired a human GM at the review: the team goes to `gm`, an AI GM, and you are out of work. */
   | (EventBase & { kind: 'career.fired'; teamId: TeamId; gm: GmProfile })
   /** Teams with a vacancy that want the GM who is out of work (replaces any earlier ones). */

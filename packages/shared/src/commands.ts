@@ -60,6 +60,11 @@ export type Command =
   | { kind: 'finance.setTicketPrice'; teamId: TeamId; pct: number }
   /** Replace a department head with one of this season's candidates (`staffCandidates`, by index). */
   | { kind: 'staff.hire'; teamId: TeamId; department: Department; candidate: number }
+  /**
+   * Fire a department head without a replacement: an interim takes over, you pay what is left of
+   * his salary this season, and it counts as the department's change this season (like a hire).
+   */
+  | { kind: 'staff.fire'; teamId: TeamId; department: Department }
   /** How your goalies share starts (see `GoalieRotation`). */
   | { kind: 'goalies.setRotation'; teamId: TeamId; rotation: GoalieRotation }
   /** Rank the draft class for your picks (best first). Players missing from it go by the scouts' order. */

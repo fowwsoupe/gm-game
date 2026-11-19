@@ -22,6 +22,12 @@ export const en = {
   'frontOffice.quality': 'Quality',
   'frontOffice.hire': 'Hire',
   'frontOffice.hiredNow': 'Hired this season: the next change waits for next season.',
+  'frontOffice.fire': 'Fire, interim in his place',
+  'frontOffice.return.development':
+    '{n} rating points a year for players 24 or younger, against an average department',
+  'frontOffice.return.medical': '{n}% of injury days against an average department',
+  'frontOffice.return.scouting': 'Last draft: off by {n} points on {picks} picks (league {league})',
+  'frontOffice.return.none': 'No picks from the last draft to judge.',
   'owner.empty': 'Pick your team on Home to meet its owner.',
   'owner.confidence': 'Confidence in you',
   'owner.cash': 'Cash',
