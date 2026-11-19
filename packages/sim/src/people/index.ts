@@ -19,7 +19,7 @@ export {
   type Trait,
   type Priority,
 } from './personality';
-export { morale, type MoraleInput } from './morale';
+export { morale, moraleOf, type MoraleInput } from './morale';
 export { chemistry } from './chemistry';
 export { talkedDown, tradeRequests } from './requests';
 export { disputesWeek, PROMISE_DAYS, roleGap } from './disputes';
@@ -29,11 +29,22 @@ export {
   coachOf,
   coachSeasonsLeft,
   DEPARTMENTS,
+  departmentsOf,
   marketOf,
+  hireQuality,
   newCoach,
   ownerOf,
   staffOf,
   staffSalary,
   ticketPctOf,
 } from './owner';
-export { GM_LEAN, choosePlan, gmOf, misread, planStatus, randomGm, seenBy } from './gm';
+export {
+  GM_LEAN,
+  assistantSees,
+  choosePlan,
+  gmOf,
+  misread,
+  planStatus,
+  randomGm,
+  seenBy,
+} from './gm';

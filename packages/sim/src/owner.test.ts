@@ -2,6 +2,9 @@ import { describe, expect, it } from 'vitest';
 import {
   coachOf,
   createLeague,
+  hireQuality,
+  newCoach,
+  Rng,
   defaultContext,
   DEPARTMENTS,
   marketOf,
@@ -50,6 +53,21 @@ describe('front-office staff', () => {
     }
     expect(staffSalary(0, salary)).toBe(salary.min);
     expect(staffSalary(1, salary)).toBe(salary.max);
+  });
+
+  it('a new coach is drawn from the owner-tilted market and keeps his quality', () => {
+    const fo = ctx.ruleset.frontOffice;
+    const byBudget = [...teams].sort((a, b) => ownerOf(a).budget - ownerOf(b).budget);
+    const mean = (t: (typeof teams)[number]) => {
+      const rng = new Rng(7);
+      return (
+        Array.from({ length: 300 }, () => hireQuality(rng, t, fo)).reduce((a, b) => a + b) / 300
+      );
+    };
+    expect(mean(byBudget.at(-1)!)).toBeGreaterThan(mean(byBudget[0]!) + 0.05);
+    const coach = newCoach(new Rng(1), 2030, ctx.ruleset.finance.coach, 0.83);
+    const t = { ...teams[0]!, coach };
+    expect(coachOf(t, ctx.ruleset.finance.coach, 2031).quality).toBe(0.83);
   });
 
   it('a stored head is used as is', () => {

@@ -66,13 +66,14 @@ export function TeamPage() {
       )}
       {owned && (
         <Card title={t('team.staff')}>
-          <div className="grid gap-4 text-sm md:grid-cols-4">
+          <div className="grid gap-4 text-sm md:grid-cols-5">
             {(
               [
                 ['team.coach', owned.coach],
                 ['team.staff.scouting', owned.staff.scouting],
                 ['team.staff.development', owned.staff.development],
                 ['team.staff.medical', owned.staff.medical],
+                ['team.staff.analytics', owned.staff.analytics],
               ] as const
             ).map(([key, head]) => (
               <div key={key}>

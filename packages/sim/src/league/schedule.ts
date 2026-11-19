@@ -143,5 +143,6 @@ export const drawForm = (
   rng: Rng,
 ): Record<TeamId, number> =>
   Object.fromEntries(
-    [...teamIds].sort().map((id) => [id, Math.round(rng.fork(id).normal(0, sd) * 10) / 10]),
+    // `+ 0` turns -0 into 0: JSON saves -0 as 0, so a reloaded save would differ.
+    [...teamIds].sort().map((id) => [id, Math.round(rng.fork(id).normal(0, sd) * 10) / 10 + 0]),
   ) as Record<TeamId, number>;

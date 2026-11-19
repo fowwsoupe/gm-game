@@ -36,6 +36,8 @@ export {
   signingInterest,
   stayChance,
   staffCandidates,
+  departmentReturns,
+  interimHead,
   teamRange,
 } from './offseason';
 export { giveSeasonAwards } from './awards';
