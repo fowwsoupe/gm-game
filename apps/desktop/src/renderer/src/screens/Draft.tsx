@@ -3,7 +3,7 @@ import type { PlayerId } from '@gm/shared';
 import { useDispatch, useDraftClass, useTeams } from '@/lib/queries';
 import { useT, type MessageKey } from '@/i18n';
 import { Button, Card, Face, RangeBar, Td, Th } from '@/ui';
-import { fullName } from '@/lib/format';
+import { fullName, teamName } from '@/lib/format';
 
 /**
  * Draft board: the class as the scouts see it (a potential range, not the truth) and your
@@ -21,6 +21,8 @@ export function Draft() {
     return <p className="text-muted">{t('draft.empty')}</p>;
   }
 
+  const { clock } = data;
+  const myTurn = clock?.teamId === mine;
   const board = data.board as PlayerId[];
   const byId = new Map(data.prospects.map((p) => [p.id as string, p]));
   const save = (order: PlayerId[]) =>
@@ -38,6 +40,15 @@ export function Draft() {
   return (
     <div className="grid max-w-6xl gap-4 lg:grid-cols-[1fr_22rem]">
       <Card title={t('draft.classTitle')}>
+        {clock && (
+          <p className={`mb-2 text-sm ${myTurn ? 'text-ink' : 'text-muted'}`}>
+            {t(myTurn ? 'draft.yourPick' : 'draft.onClock', {
+              pick: clock.pick,
+              round: clock.round,
+              team: teamName(teams, clock.teamId),
+            })}
+          </p>
+        )}
         <p className="mb-2 text-xs text-muted">{t('draft.scoutNote')}</p>
         <table className="tabular w-full text-sm">
           <thead>
@@ -74,7 +85,20 @@ export function Draft() {
                   })}
                 </Td>
                 <Td>
-                  {board.includes(p.id) ? (
+                  {myTurn ? (
+                    <Button
+                      variant="primary"
+                      disabled={dispatch.isPending}
+                      onClick={() =>
+                        dispatch.mutate(
+                          { kind: 'draft.pick', teamId: mine, playerId: p.id },
+                          { onSuccess: (res) => setError(res.ok ? null : res.error.message) },
+                        )
+                      }
+                    >
+                      {t('draft.pick')}
+                    </Button>
+                  ) : board.includes(p.id) ? (
                     <span className="text-xs text-muted">{t('draft.onBoard')}</span>
                   ) : (
                     <Button disabled={dispatch.isPending} onClick={() => save([...board, p.id])}>

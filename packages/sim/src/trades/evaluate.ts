@@ -180,9 +180,7 @@ export function evaluateTrade(
   if (assets.length === 0 || new Set(assets).size !== assets.length) return refuse('empty');
   // Built only when picks are in the deal (AI trade talks call this hundreds of times a week).
   const picks = new Map(
-    givePicks.length + getPicks.length > 0
-      ? draftPicks(state, ruleset.draft.rounds).map((p) => [p.id, p])
-      : [],
+    givePicks.length + getPicks.length > 0 ? draftPicks(state, ruleset).map((p) => [p.id, p]) : [],
   );
   const label = (id: string) => {
     const p = picks.get(id);

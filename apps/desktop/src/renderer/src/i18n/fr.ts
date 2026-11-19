@@ -293,6 +293,7 @@ export const fr: Record<MessageKey, string> = {
   'trade.reason.not_on_team': '{player} ne fait pas partie de cette équipe.',
   'event.trade': 'Échange : {from} cèdent {give} à {to} contre {get}',
   'actions.openFreeAgency': 'Ouvrir le marché des joueurs autonomes',
+  'actions.startDraft': 'Lancer le repêchage',
   'actions.freeAgencyDay': 'Jour suivant du marché des joueurs autonomes',
   'home.freeAgencyOpen':
     'Le marché est ouvert : signez des joueurs dans Alignement → Joueurs autonomes, puis lancez la saison suivante.',
@@ -360,6 +361,10 @@ export const fr: Record<MessageKey, string> = {
   'draft.boardNote':
     'À chacun de vos choix, vous prenez le premier joueur encore disponible sur votre liste.',
   'event.draftClass': 'La cuvée du repêchage a été annoncée',
+  'draft.yourPick':
+    'À vous de choisir : choix n° {pick} (ronde {round}). Repêchez un joueur ci-dessous.',
+  'draft.onClock': 'Au tour de {team} : choix n° {pick} (ronde {round}).',
+  'draft.pick': 'Repêcher',
   'standings.team': 'Équipe',
   'standings.gp': 'PJ',
   'standings.w': 'V',

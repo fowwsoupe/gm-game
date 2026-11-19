@@ -62,15 +62,9 @@ const RESIGN_SLACK = 8;
 
 /**
  * Step 3: contracts that ran out make the player a free agent, unless he signed an extension
- * in season: then the extension starts. Returns who expired from which team, so that team can
- * try to re-sign them first.
+ * in season: then the extension starts. The team he left (`formerTeams`) tries to re-sign him first.
  */
-export function expireContracts(
-  state: LeagueState,
-  ctx: SimContext,
-  emit: Emit,
-): Map<TeamId, PlayerId[]> {
-  const expiring = new Map<TeamId, PlayerId[]>();
+export function expireContracts(state: LeagueState, ctx: SimContext, emit: Emit): void {
   for (const p of allPlayers(state)) {
     if (p.teamId === null || !p.contract || p.contract.expiresAfterSeason > state.date.season)
       continue;
@@ -83,7 +77,6 @@ export function expireContracts(
       });
       continue;
     }
-    expiring.set(p.teamId, [...(expiring.get(p.teamId) ?? []), p.id]);
     // Young players are restricted: their team keeps the right to match another team's offer.
     const restricted = ageIn(p, state.date.season + 1) < ctx.ruleset.contracts.ufaAge;
     emit('minor', [p.teamId], {
@@ -92,13 +85,12 @@ export function expireContracts(
       ...(restricted ? { rightsTeamId: p.teamId } : {}),
     });
   }
-  return expiring;
 }
 
 /**
- * Step 5: each team re-signs its own expired players, best first, while it has a roster spot
- * and cap room. Players clearly below the league's typical rostered player walk, unless the
- * team needs that position.
+ * Step 5: each team re-signs its own expired players (this summer's `formerTeams`), best first,
+ * while it has a roster spot and cap room. Players clearly below the league's typical rostered
+ * player walk, unless the team needs that position.
  */
 export function reSignPlayers(
   state: LeagueState,
@@ -106,10 +98,13 @@ export function reSignPlayers(
   rng: Rng,
   emit: Emit,
   season: number,
-  expiring: ReadonlyMap<TeamId, readonly PlayerId[]>,
 ) {
   const { ruleset } = ctx;
   const typical = typicalRating(state);
+  const expiring = new Map<TeamId, PlayerId[]>();
+  for (const [id, teamId] of Object.entries(state.formerTeams)) {
+    expiring.set(teamId, [...(expiring.get(teamId) ?? []), id as PlayerId]);
+  }
 
   for (const teamId of [...expiring.keys()].sort()) {
     // A human GM re-signs his own players in the re-sign window; the rest walk.

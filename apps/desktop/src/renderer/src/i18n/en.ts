@@ -289,6 +289,7 @@ export const en = {
   'trade.reason.not_on_team': '{player} is not on that team.',
   'event.trade': 'Trade: {from} send {give} to {to} for {get}',
   'actions.openFreeAgency': 'Open free agency',
+  'actions.startDraft': 'Start the draft',
   'actions.freeAgencyDay': 'Next day of free agency',
   'home.freeAgencyOpen':
     'Free agency is open: sign players from Roster → Free agents, then start the next season.',
@@ -355,6 +356,9 @@ export const en = {
     "Add prospects to rank them. Without a list your picks go by the scouts' order.",
   'draft.boardNote': 'At each of your picks you take the first player still on your list.',
   'event.draftClass': 'The draft class has been announced',
+  'draft.yourPick': 'You are on the clock: pick {pick} (round {round}). Draft a player below.',
+  'draft.onClock': '{team} is on the clock: pick {pick} (round {round}).',
+  'draft.pick': 'Draft',
   'standings.team': 'Team',
   'standings.gp': 'GP',
   'standings.w': 'W',
