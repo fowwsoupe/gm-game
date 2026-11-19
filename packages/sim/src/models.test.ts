@@ -10,9 +10,43 @@ import {
   simGame,
   teamStrength,
   Rng,
+  rulesDevelopment,
+  overall,
   xgTableFromModel,
 } from './index';
-import type { GameId, TeamId } from '@gm/shared';
+import type { GameId, Player, TeamId } from '@gm/shared';
+
+describe('rules development', () => {
+  it('closes `growth` of the gap a year (or an even share), all of it at the peak, then declines', () => {
+    const curve = { peakAge: 24, declineAge: 26, declineStart: 0.5, declineStep: 0.5, noise: 0 };
+    const dev = rulesDevelopment({
+      curves: { C: { ...curve, growth: 0.7 }, G: { ...curve, growth: 0 } },
+      fallback: { ...curve, growth: 0 },
+      retirement: {
+        startAge: 33,
+        perYear: 0,
+        maxAge: 42,
+        washoutRating: 0,
+        washoutPerPoint: 0,
+        unsignedExtra: 0,
+      },
+    });
+    const ratings = Object.fromEntries('abcdefgh'.split('').map((k) => [k, 60]));
+    const rng = new Rng(3);
+    /** His average gain at `age` with potential 70, over many summers (each key has noise 1). */
+    const gain = (position: string, age: number) => {
+      const p = { id: 'p1', position, ratings, potential: 70 } as unknown as Player;
+      let sum = 0;
+      for (let i = 0; i < 200; i++) sum += overall(dev.developOneYear(p, age, rng)) - 60;
+      return sum / 200;
+    };
+    expect(gain('C', 19)).toBeCloseTo(7, 0); // 70% of the gap
+    expect(gain('G', 19)).toBeCloseTo(10 / 6, 0); // an even share of it over 19-24
+    expect(gain('C', 24)).toBeCloseTo(10, 0); // the rest at the peak
+    expect(gain('C', 25)).toBeCloseTo(0, 0); // holds
+    expect(gain('C', 27)).toBeCloseTo(-1, 0); // then declines
+  });
+});
 
 describe('table shot model', () => {
   const template = xgTableFromModel(rulesGoalModel);

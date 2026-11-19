@@ -1,27 +1,31 @@
 import type { AgingCurve, RulesDevelopmentConfig } from '../../players';
 
 /**
- * Hockey aging, from docs/research/2026-11-sports-gm-research.md: forwards peak around 26-28,
- * defensemen 27-29, decline starts around 30; goalies change little with age and mostly bounce
- * around from year to year. Rough numbers, to be replaced by the trained development model (M4, Azmi; ADR 0005).
- * Targets: the balance lab's "Skater points/60 a year" checks (ml/src/aging.py, NHL 2022-25); the
- * decline meets them, growth to the peak runs too long.
+ * Hockey aging, fitted in the balance lab to the "Skater points/60 a year" targets (ml/src/aging.py,
+ * NHL 2022-25: +3.6% a year to 24, -1.4% at 25-29, -4.0% at 30-34). Skaters close most of the gap
+ * to their potential by 20-21, so regulars gain little after 22; they hold to 24 (forwards) or 25
+ * (defensemen) and lose a little more each year from then on. Goalies keep the research curve
+ * (docs/research/2026-11-sports-gm-research.md: peak 27, decline from 33, mostly year-to-year
+ * bounce): they have no target yet. To be replaced by the trained development model (ADR 0005).
  */
 const forward: AgingCurve = {
-  peakAge: 26,
-  declineAge: 30,
-  declineStart: 0.8,
-  declineStep: 0.4,
+  growth: 0.7,
+  peakAge: 24,
+  declineAge: 25,
+  declineStart: 0.3,
+  declineStep: 0.2,
   noise: 1.2,
 };
 const defense: AgingCurve = {
-  peakAge: 27,
-  declineAge: 31,
-  declineStart: 0.8,
-  declineStep: 0.4,
+  growth: 0.7,
+  peakAge: 25,
+  declineAge: 26,
+  declineStart: 0.3,
+  declineStep: 0.2,
   noise: 1.2,
 };
 const goalie: AgingCurve = {
+  growth: 0,
   peakAge: 27,
   declineAge: 33,
   declineStart: 0.6,
