@@ -4,6 +4,8 @@ import type { AgingCurve, RulesDevelopmentConfig } from '../../players';
  * Hockey aging, from docs/research/2026-11-sports-gm-research.md: forwards peak around 26-28,
  * defensemen 27-29, decline starts around 30; goalies change little with age and mostly bounce
  * around from year to year. Rough numbers, to be replaced by the trained development model (M4, Azmi; ADR 0005).
+ * Targets: the balance lab's "Skater points/60 a year" checks (ml/src/aging.py, NHL 2022-25); the
+ * decline meets them, growth to the peak runs too long.
  */
 const forward: AgingCurve = {
   peakAge: 26,

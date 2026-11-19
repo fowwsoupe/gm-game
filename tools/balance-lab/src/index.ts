@@ -269,6 +269,20 @@ const netStrength = (t: ReturnType<typeof teamStrength>) =>
   HOCKEY_TUNING.goalieSensitivity * t.goaltending;
 /** A starter's season: enough shots that save % means something. */
 const GOALIE_MIN_SHOTS = 800;
+/**
+ * Aging as ml/src/aging.py measures it: skaters with AGING_MIN_TOI+ minutes in two seasons in a
+ * row, points/60 over the league's that season, change weighted by the harmonic mean of the two
+ * seasons' minutes, by age in the later season; per band, the change and the level it is a share of.
+ * Each band: [first age, last age, healthy min, max] in % a year, the study's 95% CIs (NHL 2022-25,
+ * 1,585 pairs: +3.6, -1.4 and -4.0%).
+ */
+const AGING_MIN_TOI = 300;
+const AGE_BANDS = [
+  [18, 24, 1.2, 6],
+  [25, 29, -2.8, 0],
+  [30, 34, -5.9, -2],
+] as const;
+const aging = AGE_BANDS.map(() => ({ change: 0, level: 0 }));
 for (let l = 0; l < leagues; l++) {
   const state = createLeague(firstSeed + l, ctx);
   // The lab measures the AI: with no human GM, every team re-signs its own players.
@@ -286,6 +300,8 @@ for (let l = 0; l < leagues; l++) {
   const titles = new Map<TeamId, number>();
   let lastPlayoffTeams: Set<string> | null = null;
   let lastSv = new Map<string, number>();
+  /** Last season's skaters: [points/60 over the league's, minutes]. */
+  let lastP60 = new Map<string, [number, number]>();
   let lastPct: Map<string, number> | null = null;
   for (let y = 0; y < years; y++) {
     const longRun = y >= LONG_RUN_FROM;
@@ -375,12 +391,30 @@ for (let l = 0; l < leagues; l++) {
     lastPlayoffTeams = playoffTeams;
     const sv = new Map<string, number>();
     const regular = Object.values(state.results).filter((g) => !g.playoffSeriesId);
-    for (const [id, g] of hockeySeasonStats(regular).goalies) {
+    const seasonStats = hockeySeasonStats(regular);
+    for (const [id, g] of seasonStats.goalies) {
       if (g.shotsAgainst < GOALIE_MIN_SHOTS) continue;
       sv.set(id, g.saves / g.shotsAgainst);
       if (lastSv.has(id)) goalieSvPairs.push([lastSv.get(id)!, sv.get(id)!]);
     }
     lastSv = sv;
+    const regulars = [...seasonStats.skaters].filter(([, t]) => t.toi >= AGING_MIN_TOI);
+    const leagueRate =
+      regulars.reduce((s, [, t]) => s + t.goals + t.assists, 0) /
+      regulars.reduce((s, [, t]) => s + t.toi, 0);
+    const p60 = new Map<string, [number, number]>();
+    for (const [id, t] of regulars) {
+      const now = (t.goals + t.assists) / t.toi / leagueRate;
+      p60.set(id, [now, t.toi]);
+      const was = lastP60.get(id);
+      const age = state.date.season - (state.players[id]?.birthYear ?? 0);
+      const band = aging[AGE_BANDS.findIndex(([lo, hi]) => age >= lo && age <= hi)];
+      if (!was || !band) continue;
+      const w = 2 / (1 / was[1] + 1 / t.toi);
+      band.change += w * (now - was[0]);
+      band.level += (w * (now + was[0])) / 2;
+    }
+    lastP60 = p60;
     const rolled = handleCommand(state, { kind: 'season.rollover' }, actor, ctx);
     if (!rolled.ok) throw new Error(rolled.error.message);
     const bidders = new Map<string, Set<string>>();
@@ -569,6 +603,16 @@ const checks: Check[] = [
     min: 0.12,
     max: 0.3,
   },
+  // Development (ml/src/aging.py): how a skater's scoring rate moves with age, NHL vs the sim. The
+  // sim's decline is in range; its growth runs too long (docs/MODEL_CONTRACTS.md, 4).
+  ...AGE_BANDS.map(([lo, hi, min, max], i) => ({
+    name: `Skater points/60 a year, ages ${lo}-${hi}`,
+    value: (100 * aging[i]!.change) / aging[i]!.level,
+    min,
+    max,
+    unit: '%',
+    ...(hi < 30 && { known: 'aging curves grow past 24' }),
+  })),
   { name: 'Free-agent pool, largest (unverified)', value: maxPool, min: 0, max: 150 },
   // Report only (docs/research/2026-11-free-agency-bidding.md): no benchmark. A race's salary is
   // at least the ask and at most an AI team's walk-away (ask x 1.33 at the most).

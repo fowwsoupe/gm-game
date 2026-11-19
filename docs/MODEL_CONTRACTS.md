@@ -60,8 +60,10 @@ Yearly rating and potential changes with age. Default: `rulesDevelopment(HOCKEY_
 (hand-set curves in `sports/hockey/aging.ts`). **Trained model:** fitted on NHL careers with
 player fixed effects (survivor bias), exported in the same `RulesDevelopmentConfig` shape: an
 `AgingCurve` per position (`peakAge`, `declineAge`, `declineStart`, `declineStep`, `noise`)
-plus retirement. Shipping it waits on data rights. Check: lab "league avg rating drift",
-career-shape tests, and rates of peaks, busts and late bloomers.
+plus retirement. Shipping it waits on data rights. Check: lab "Skater points/60 a year" by age
+band, the targets from `ml/src/aging.py` (NHL 2022-25: +3.6% to 24, -1.4% at 25-29, -4.0% at
+30-34; today's curves match the decline but still grow at 25-29, +3.3-3.5%, a known gap), "league
+avg rating drift", career-shape tests, and rates of peaks, busts and late bloomers.
 
 ## 5. Stats to ratings: `ratingsFromStats(table, position, totals, seasonGames)` (hockey)
 
