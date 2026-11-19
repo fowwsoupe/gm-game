@@ -19,7 +19,7 @@ export {
   type Trait,
   type Priority,
 } from './personality';
-export { morale, type MoraleInput } from './morale';
+export { morale, moraleOf, type MoraleInput } from './morale';
 export { chemistry } from './chemistry';
 export { talkedDown, tradeRequests } from './requests';
 export { disputesWeek, PROMISE_DAYS, roleGap } from './disputes';
