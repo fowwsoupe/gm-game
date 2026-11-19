@@ -87,8 +87,11 @@ export interface GmApi {
     roster(input: { teamId: TeamId }): Promise<RosterPlayer[]>;
     /** Expiring players a team may re-sign now (empty until the champion is crowned). */
     resignOffers(input: { teamId: TeamId }): Promise<ResignOffer[]>;
-    /** Player cards for a team's players, or the free agents (`teamId: null`). */
-    players(input: { teamId: TeamId | null }): Promise<PlayerProfile[]>;
+    /**
+     * Player cards for a team's players, or the free agents (`teamId: null`), as `viewer`'s GM
+     * sees them (hot-seat: the one at the controls; default the first human team).
+     */
+    players(input: { teamId: TeamId | null; viewer?: TeamId }): Promise<PlayerProfile[]>;
     /** The lineup a team would dress tonight (healthy players, its depth order), as named units. */
     lines(input: { teamId: TeamId }): Promise<{
       units: { unit: string; playerIds: string[] }[];

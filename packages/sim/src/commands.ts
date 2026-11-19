@@ -54,7 +54,7 @@ import {
   staffCandidates,
   interimHead,
 } from './offseason';
-import { evaluateTrade, planRetention } from './trades';
+import { evaluateTrade, offerExpires, planRetention } from './trades';
 import { pressQuestion } from './owner';
 import { overall } from './players';
 import { advance } from './advance';
@@ -272,8 +272,6 @@ export function handleCommand(
       const from = state.teams[proposal.fromTeamId];
       if (!from) return invalid('unknown team');
       if (!controls(actor, from)) return notYours;
-      const to = state.teams[proposal.toTeamId];
-      if (to?.userControlled && !controls(actor, to)) return notYours;
       const asked = proposal.give
         .map((id) => state.players[id])
         .filter((p) => p?.teamId === from.id && p.contract?.noTrade) as Player[];
@@ -316,7 +314,7 @@ export function handleCommand(
         ok: true,
         events: [
           ...events.flatMap((r) => (r.ok ? r.events : [])),
-          ...completeTrade(state, ctx, proposal),
+          ...tradeOrOffer(state, ctx, proposal),
         ],
       };
     }
@@ -326,14 +324,11 @@ export function handleCommand(
       const from = state.teams[proposal.fromTeamId];
       if (!from) return invalid('unknown team');
       if (!controls(actor, from)) return notYours;
-      // A human partner accepts any legal trade, so only someone who runs it may propose one.
-      const to = state.teams[proposal.toTeamId];
-      if (to?.userControlled && !controls(actor, to)) return notYours;
       const verdict = evaluateTrade(state, ctx, proposal);
       if (!verdict.accepted) {
         return invalid(`trade refused: ${verdict.reasons.map((r) => r.code).join(', ')}`);
       }
-      return { ok: true, events: completeTrade(state, ctx, proposal) };
+      return { ok: true, events: tradeOrOffer(state, ctx, proposal) };
     }
 
     case 'trade.respond': {
@@ -360,9 +355,11 @@ export function handleCommand(
         ...(offer.proposal.getPicks && { givePicks: offer.proposal.getPicks }),
         ...(offer.proposal.givePicks && { getPicks: offer.proposal.givePicks }),
       };
+      // Another human GM's offer is judged as he wrote it (with his retention), legality only.
+      const caller = state.teams[offer.proposal.fromTeamId]!;
+      const deal = caller.userControlled ? offer.proposal : mirror;
       // A draft-day call stands while the pick is on the clock: the caller wants a player there,
       // not the pick's value, so only the trade's legality is checked.
-      const caller = state.teams[offer.proposal.fromTeamId]!;
       const clock = onTheClock(state, ctx)?.id;
       const judged =
         clock && offer.proposal.getPicks?.includes(clock)
@@ -371,7 +368,7 @@ export function handleCommand(
               teams: { ...state.teams, [caller.id]: { ...caller, userControlled: true } },
             }
           : state;
-      const verdict = evaluateTrade(judged, ctx, mirror);
+      const verdict = evaluateTrade(judged, ctx, deal);
       if (!verdict.accepted) {
         return invalid(
           `the offer is off the table: ${verdict.reasons.map((r) => r.code).join(', ')}`,
@@ -379,7 +376,7 @@ export function handleCommand(
       }
       // Closed first: a live draft that runs on closes offers for the picks it uses.
       const closed = close(true);
-      return { ok: true, events: [closed, ...completeTrade(state, ctx, mirror)] };
+      return { ok: true, events: [closed, ...completeTrade(state, ctx, deal)] };
     }
 
     case 'tradeRequest.talk': {
@@ -873,6 +870,26 @@ export function handleCommand(
       };
     }
   }
+}
+
+/**
+ * Hot-seat: a trade with another human GM's team needs both, so it is sent to him as an offer
+ * (he answers with `trade.respond` when he has the seat). Any other accepted trade goes through.
+ */
+function tradeOrOffer(state: LeagueState, ctx: SimContext, proposal: TradeProposal): LeagueEvent[] {
+  const { fromTeamId, toTeamId } = proposal;
+  if (!state.teams[toTeamId]?.userControlled) return completeTrade(state, ctx, proposal);
+  const { season, day } = state.date;
+  const ev = makeEvent(state, 'notable', [toTeamId, fromTeamId], {
+    kind: 'trade.offered',
+    offer: {
+      id: `h${season}_${day}_${fromTeamId}_${toTeamId}_${state.tradeOffers.length}`,
+      proposal: structuredClone(proposal),
+      expiresDay: offerExpires(state, ctx),
+    },
+  });
+  applyEvent(state, ev);
+  return [ev];
 }
 
 /** Applies an accepted trade: the trade itself (with any retained salary) and its headline. */

@@ -178,13 +178,15 @@ export const useSigningInterest = (
     queryFn: () => window.gm.league.signingInterest(input!),
     enabled: !!input,
   });
-/** `null` = free agents. */
-export const usePlayers = (teamId: TeamId | null | undefined) =>
-  useQuery({
-    queryKey: ['league', 'players', teamId ?? 'fa'] as const,
-    queryFn: () => window.gm.league.players({ teamId: teamId ?? null }),
+/** `null` = free agents. Seen through the analytics department of the GM at the controls. */
+export function usePlayers(teamId: TeamId | null | undefined) {
+  const viewer = useMine()?.id;
+  return useQuery({
+    queryKey: ['league', 'players', teamId ?? 'fa', viewer] as const,
+    queryFn: () => window.gm.league.players({ teamId: teamId ?? null, ...(viewer && { viewer }) }),
     enabled: teamId !== undefined,
   });
+}
 /** Every player in the league: one read per team, plus free agents. */
 export const useAllPlayers = (teamIds: readonly TeamId[]) =>
   useQuery({

@@ -155,6 +155,29 @@ describe('analytics staff', () => {
     expect(elite).toBeGreaterThan(0);
     expect(poor).toBeGreaterThan(elite * 2);
   });
+
+  it('hot-seat: each human GM sees through his own department, his own players exact', () => {
+    const state = createLeague(1, ctx);
+    const [a, b, c] = Object.keys(state.teams).sort() as [TeamId, TeamId, TeamId];
+    for (const t of Object.values(state.teams)) t.userControlled = false;
+    const seen = (teamId: TeamId, viewer?: TeamId) =>
+      playerProfiles(state, ctx, teamId, viewer).map((p) => p.percentiles.map((x) => x.value));
+    const [trueB, trueC] = [seen(b), seen(c)];
+    for (const [id, quality] of [
+      [a, 1],
+      [b, 0],
+    ] as const) {
+      state.teams[id]!.userControlled = true;
+      state.teams[id]!.staff = { analytics: head(quality) };
+    }
+    const gap = (viewer: TeamId) => {
+      const gaps = seen(c, viewer).flatMap((p, i) => p.map((v, k) => Math.abs(v - trueC[i]![k]!)));
+      return gaps.reduce((x, y) => x + y, 0) / gaps.length;
+    };
+    expect(gap(b)).toBeGreaterThan(gap(a) * 2);
+    expect(seen(b, b)).toEqual(trueB);
+    expect(seen(b, a)).not.toEqual(trueB); // the other human GM's players are scouted too
+  });
 });
 
 describe('the head coach in games', () => {

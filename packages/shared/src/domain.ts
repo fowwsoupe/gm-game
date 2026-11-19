@@ -888,8 +888,9 @@ export interface HallOfFamer {
 }
 
 /**
- * An AI GM's offer to a human team. `proposal` is written from the AI's side (`fromTeamId` is
- * the AI team, `give` what it sends, `get` what it wants back). Open until `expiresDay`.
+ * An offer to a human team, from an AI GM or (hot-seat) another human GM. `proposal` is written
+ * from the caller's side (`fromTeamId` is his team, `give` what it sends, `get` what it wants
+ * back). Open until `expiresDay`.
  */
 export interface TradeOffer {
   id: string;
