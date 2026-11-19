@@ -5,6 +5,7 @@
  */
 
 import type { StopCategory } from './commands';
+import type { SeasonPhase, TeamStatus } from './events';
 
 export type Sport = 'nhl' | 'nba' | 'nfl';
 
@@ -685,7 +686,7 @@ export interface TradeEvaluation {
 export interface LeagueStatus {
   season: number;
   day: number;
-  phase: 'preseason' | 'regular' | 'playoffs' | 'offseason';
+  phase: SeasonPhase;
   championTeamId: TeamId | null;
   /** Between opening free agency and starting the next season. */
   freeAgencyOpen: boolean;
@@ -792,7 +793,6 @@ export interface ScoutReport {
   ready: boolean;
 }
 
-/** A prospect as the draft board shows him: no hidden ratings. */
 /** The pick on the clock in the live draft, and the team that makes it. */
 export interface DraftClock {
   /** Overall pick number, from 1. */
@@ -816,6 +816,7 @@ export interface DraftResult {
   position: string;
 }
 
+/** A prospect as the draft board shows him: no hidden ratings. */
 export interface DraftBoardEntry {
   id: PlayerId;
   firstName: string;
@@ -836,7 +837,7 @@ export interface PulseRow {
   playoffOdds: number;
   /** Win share from scoring so far, 0–1 (the power ranking orders by it). */
   rating: number;
-  status: 'contender' | 'buyer' | 'bubble' | 'seller' | 'rebuilder' | 'crisis';
+  status: TeamStatus;
 }
 
 /** One thing on the Home "To do" list. The UI translates `code`, fills `params`, and links to `screen`. */

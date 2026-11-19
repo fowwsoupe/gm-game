@@ -3,6 +3,14 @@ import type { Department, PlayerId, TeamId, TradeProposal } from './domain';
 import type { GoalieRotation, SpecialUnit } from './sports/hockey';
 
 /**
+ * What stops "sim until it matters": league-wide moments (phase change, champion), your team's
+ * big moments (its series, its trades), offers waiting on you, and long injuries to your players.
+ * Being fired always stops it.
+ */
+export const STOP_CATEGORIES = ['league', 'yours', 'offers', 'injuries'] as const;
+export type StopCategory = (typeof STOP_CATEGORIES)[number];
+
+/**
  * Every action a human (or, later, a remote player) takes is a Command. Nothing in the UI
  * changes game state directly. This one rule is what makes these possible later without
  * rewrites: multiplayer (send commands over the network, the host validates them),
@@ -11,14 +19,6 @@ import type { GoalieRotation, SpecialUnit } from './sports/hockey';
  * Commands are plain, serializable data. Add new kinds here, then a handler in
  * `packages/sim/src/commands.ts`.
  */
-/**
- * What stops "sim until it matters": league-wide moments (phase change, champion), your team's
- * big moments (its series, its trades), offers waiting on you, and long injuries to your players.
- * Being fired always stops it.
- */
-export const STOP_CATEGORIES = ['league', 'yours', 'offers', 'injuries'] as const;
-export type StopCategory = (typeof STOP_CATEGORIES)[number];
-
 export type Command =
   /** `stopOn`: 'major' stops on every category, a list on just those (`STOP_CATEGORIES`). */
   | { kind: 'sim.advance'; days: number; stopOn?: 'never' | 'major' | readonly StopCategory[] }
@@ -144,7 +144,6 @@ export type Command =
       bonusPct?: number;
       promiseRole?: true;
     };
-// Planned (not implemented yet): formations, line tactics ...
 
 /** Who issued a command. Single-player is always 'local'; multiplayer adds real ids. */
 export interface Actor {
