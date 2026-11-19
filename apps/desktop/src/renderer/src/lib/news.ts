@@ -26,6 +26,7 @@ export function usePosts(limit: number) {
   const { data } = useFeed(limit);
   const names = data?.names ?? {};
   const ages = data?.ages ?? {};
+  const who = (id: string) => names[id] ?? '';
   const team = (id: string) => teamName(teams, id);
   const yours = (ids: readonly string[]) =>
     ids.some((id) => teams.find((x) => x.id === id)?.userControlled);
@@ -36,7 +37,7 @@ export function usePosts(limit: number) {
         return t('event.statusChanged', { team: team(e.teamId), status: t(`status.${e.to}`) });
       case 'player.moved':
         return t('event.moved', {
-          player: names[e.playerId] ?? '',
+          player: who(e.playerId),
           team: e.toTeamId ? team(e.toTeamId) : t('roster.freeAgents'),
         });
       case 'team.expanded':
@@ -49,7 +50,7 @@ export function usePosts(limit: number) {
         // Short knocks elsewhere in the league are noise; yours and long ones are news.
         if (e.days < LONG_INJURY && !yours(e.teamIds)) return null;
         return t('event.injured', {
-          player: names[e.playerId] ?? '',
+          player: who(e.playerId),
           team: team(e.teamIds[0] ?? ''),
           days: e.days,
         });
@@ -67,20 +68,18 @@ export function usePosts(limit: number) {
       }
       case 'player.signed':
         return t('event.signed', {
-          player: names[e.playerId] ?? '',
+          player: who(e.playerId),
           team: team(e.teamId),
           amount: money(e.contract.capHit),
           season: e.contract.expiresAfterSeason,
         });
       case 'prospect.signed':
-        return t('event.prospectSigned', { player: names[e.playerId] ?? '', team: team(e.teamId) });
+        return t('event.prospectSigned', { player: who(e.playerId), team: team(e.teamId) });
       case 'prospect.released':
-        return yours(e.teamIds)
-          ? t('event.prospectReleased', { player: names[e.playerId] ?? '' })
-          : null;
+        return yours(e.teamIds) ? t('event.prospectReleased', { player: who(e.playerId) }) : null;
       case 'contract.extended':
         return t('event.extended', {
-          player: names[e.playerId] ?? '',
+          player: who(e.playerId),
           team: team(e.teamId),
           amount: money(e.contract.capHit),
           season: e.contract.expiresAfterSeason,
@@ -88,34 +87,32 @@ export function usePosts(limit: number) {
       case 'player.drafted':
         return e.pick === 1
           ? t('event.firstPick', {
-              player: names[e.player.id] ?? '',
+              player: who(e.player.id),
               team: team(e.player.teamId ?? ''),
             })
           : null;
       case 'player.tradeRequested':
         return t('event.tradeRequested', {
-          player: names[e.playerId] ?? '',
+          player: who(e.playerId),
           team: team(e.teamId),
         });
       case 'player.holdoutStarted':
         return t('event.holdoutStarted', {
-          player: names[e.playerId] ?? '',
+          player: who(e.playerId),
           team: team(e.teamId),
         });
       case 'player.disputeStarted':
-        return t('event.disputeStarted', { player: names[e.playerId] ?? '' });
+        return t('event.disputeStarted', { player: who(e.playerId) });
       case 'player.disputeEnded':
         return e.outcome === 'kept' || e.outcome === 'settled'
-          ? t('event.disputeSettled', { player: names[e.playerId] ?? '' })
+          ? t('event.disputeSettled', { player: who(e.playerId) })
           : null;
       case 'player.noTradeWaived':
-        return t('event.noTradeWaived', { player: names[e.playerId] ?? '' });
+        return t('event.noTradeWaived', { player: who(e.playerId) });
       case 'player.holdoutEnded':
-        return t('event.holdoutEnded', { player: names[e.playerId] ?? '' });
+        return t('event.holdoutEnded', { player: who(e.playerId) });
       case 'player.tradeRequestEnded':
-        return e.withdrawn
-          ? t('event.requestWithdrawn', { player: names[e.playerId] ?? '' })
-          : null;
+        return e.withdrawn ? t('event.requestWithdrawn', { player: who(e.playerId) }) : null;
       case 'trade.offered':
         return t('event.tradeOffered', { team: team(e.offer.proposal.fromTeamId) });
       case 'freeAgency.opened':
