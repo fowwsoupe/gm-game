@@ -82,6 +82,7 @@ export function createLeague(
     canBeFired: true,
     stopOn: [...STOP_CATEGORIES],
     faOffers: [],
+    marketDay: 0,
     rfaRights: {},
     formerTeams: {},
     goalieRotation: {},

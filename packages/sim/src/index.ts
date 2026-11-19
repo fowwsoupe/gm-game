@@ -30,6 +30,7 @@ export {
   lotteryOrder,
   resignOffers,
   roomFor,
+  walkAway,
   scoutReport,
   sheetCompensation,
   signFreeAgent,

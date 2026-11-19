@@ -265,8 +265,27 @@ function Offer({
           })}
         </p>
       )}
-      {player.rivalOffers > 0 && (
-        <p className="mb-2 text-sm text-bad">{t('sign.rivals', { n: player.rivalOffers })}</p>
+      {player.bids && (
+        <div className="mb-2 space-y-0.5 text-sm">
+          {player.bids.teams.length > 0 && (
+            <p className="text-bad">
+              {t('sign.bidding', {
+                teams: player.bids.teams
+                  .map((id) => teams.find((x) => x.id === id)?.abbreviation ?? '')
+                  .join(', '),
+                n: player.bids.best,
+              })}
+            </p>
+          )}
+          {player.bids.mine && (
+            <p className={player.bids.mine.leads ? 'text-good' : 'text-bad'}>
+              {t(player.bids.mine.leads ? 'sign.leading' : 'sign.trailing', {
+                n: player.bids.mine.interest,
+              })}
+            </p>
+          )}
+          <p className="text-muted">{t('sign.decides', { n: player.bids.days })}</p>
+        </div>
       )}
       {view?.sheet && (
         <p className={`mb-2 text-sm ${view.sheet.owned ? 'text-muted' : 'text-bad'}`}>

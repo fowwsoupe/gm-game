@@ -158,6 +158,16 @@ export interface Ruleset {
     interim: number;
   };
 
+  /** The free-agent market's bidding war (docs/research/2026-11-free-agency-bidding.md). */
+  freeAgency: {
+    /** Market days a free agent with offers from two or more teams waits after his first offer. */
+    days: number;
+    /** A trailing AI team raises its offer by this share of his ask, once a day. */
+    raiseStep: number;
+    /** An AI team pays at most his ask times this, plus its GM's lean and a contender's premium. */
+    maxPremium: number;
+  };
+
   /** Summer training plans (docs/research/2026-11-summer-training.md). */
   training: {
     /** Rating points a year a focus moves onto its keys from his others, before age and professionalism. */

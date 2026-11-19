@@ -1,16 +1,19 @@
 import { describe, expect, it } from 'vitest';
-import type { Actor, Command, Player, TeamId } from '@gm/shared';
+import type { Actor, Command, LeagueEvent, Player, TeamId } from '@gm/shared';
 import {
+  applyEvent,
   createLeague,
   defaultContext,
   handleCommand,
   overall,
   personalityOf,
+  playerProfiles,
   roomFor,
   seenBy,
   signFreeAgent,
   signingInterest,
   stayChance,
+  walkAway,
   type LeagueState,
 } from './index';
 
@@ -167,9 +170,18 @@ describe('AI offers in free agency', () => {
     const [ev] = run(state, sign(target, mine, salary, 2));
     expect(ev!.kind).toBe('freeAgency.offered');
     expect(target.teamId).toBeNull();
+    // His agent tells you who is bidding, where you stand and when he decides.
+    const bids = playerProfiles(state, ctx, null).find((p) => p.id === target.id)!.bids!;
+    expect(bids.teams.length).toBeGreaterThan(0);
+    expect(bids.mine).toBeDefined();
+    expect(bids.days).toBe(ctx.ruleset.freeAgency.days);
 
-    // Next day he signs somewhere; if it was not with you, you are told.
-    const events = run(state, { kind: 'freeAgency.advanceDay' });
+    // He decides once the race's days are up; if it was not with you, you are told.
+    const events: LeagueEvent[] = [];
+    for (let day = 0; day < bids.days; day++) {
+      expect(target.teamId).toBeNull();
+      events.push(...run(state, { kind: 'freeAgency.advanceDay' }));
+    }
     expect(target.teamId).not.toBeNull();
     expect(state.faOffers.some((o) => o.playerId === target.id)).toBe(false);
     const lost = events.some(
@@ -216,6 +228,70 @@ describe('AI offers in free agency', () => {
     // A depth free agent is no reason to make room.
     const weak = freeAgents(state).sort((a, b) => seen(a) - seen(b))[0]!;
     expect(roomFor(state, ctx, team.id, weak, salary)).toBeNull();
+  });
+
+  it('a bidding war: he waits, the trailing team raises within its walk-away, the best interest wins', () => {
+    const { state } = finishedSeason(27);
+    run(state, { kind: 'offseason.openFreeAgency' });
+    const ask = (p: Player) => ctx.models.contractDemand.ask(ctx.ruleset, p);
+    const legal = (p: Player, teamId: TeamId, salary: number) => {
+      const room = roomFor(state, ctx, teamId, p, salary);
+      const deal = room && signFreeAgent(state, ctx, p, teamId, { salary, years: 3 }, room.freed);
+      return !!deal && 'contract' in deal;
+    };
+    const ai = (Object.keys(state.teams) as TeamId[]).filter(
+      (id) => !state.teams[id]!.userControlled,
+    );
+    // The best free agent, with offers at his ask from two AI teams that could pay up to their walk-away.
+    const star = freeAgents(state).sort((a, b) => overall(b) - overall(a))[0]!;
+    const bidders = ai
+      .filter(
+        (id) => legal(star, id, ask(star)) && legal(star, id, walkAway(state, ctx, id, ask(star))),
+      )
+      .slice(0, 2);
+    expect(bidders).toHaveLength(2);
+    // A depth player with one offer, from a third team.
+    const [depth, single] = freeAgents(state)
+      .sort((a, b) => overall(a) - overall(b))
+      .flatMap((p) =>
+        ai.filter((id) => !bidders.includes(id) && legal(p, id, ask(p))).map((id) => [p, id]),
+      )[0] as [Player, TeamId];
+    for (const teamId of bidders) {
+      state.faOffers.push({ playerId: star.id, teamId, salary: ask(star), years: 3, since: 0 });
+    }
+    state.faOffers.push({ playerId: depth.id, teamId: single, salary: ask(depth), years: 3 });
+    const replica = structuredClone(state);
+
+    // Day 1: the depth player signs; the star waits and the trailing team raises.
+    const day1 = run(state, { kind: 'freeAgency.advanceDay' });
+    expect(depth.teamId).toBe(single);
+    expect(star.teamId).toBeNull();
+    const raises = day1.filter(
+      (e) =>
+        e.kind === 'freeAgency.offered' &&
+        e.offer.playerId === star.id &&
+        bidders.includes(e.offer.teamId),
+    );
+    expect(raises.length).toBeGreaterThan(0);
+    for (const o of state.faOffers.filter((x) => x.playerId === star.id)) {
+      expect(o.salary).toBeLessThanOrEqual(walkAway(state, ctx, o.teamId, ask(star)));
+      if (bidders.includes(o.teamId)) expect(o.since).toBe(0);
+    }
+    const best = state.faOffers
+      .filter((o) => o.playerId === star.id)
+      .map((o) => ({ o, interest: signingInterest(state, ctx, star, o.teamId, o).interest }))
+      .sort((a, b) => b.interest - a.interest || a.o.teamId.localeCompare(b.o.teamId))[0]!;
+
+    // Day `freeAgency.days` after his first offer: he signs the offer he likes best.
+    expect(ctx.ruleset.freeAgency.days).toBe(2);
+    const day2 = run(state, { kind: 'freeAgency.advanceDay' });
+    expect(state.marketDay).toBe(2);
+    expect(star.teamId).toBe(best.o.teamId);
+    expect(star.contract!.capHit).toBe(best.o.salary);
+
+    // A replay of the summer's events gives the same league.
+    for (const e of [...day1, ...day2]) applyEvent(replica, e);
+    expect(replica).toEqual(state);
   });
 
   it('advancing a day needs free agency open', () => {

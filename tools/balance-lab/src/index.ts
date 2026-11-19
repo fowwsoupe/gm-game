@@ -238,6 +238,8 @@ const crowds = { fans: 0, seats: 0 };
 const coaches = { changed: 0, inSeason: 0, gms: 0, teamSeasons: 0 };
 /** Front-office department heads: changes, and the quality of the last year's heads by owner budget. */
 const staff = { changed: 0, rich: [] as number[], frugal: [] as number[] };
+/** Free agents signed with two or more teams bidding: each one's salary over his ask (a share). */
+const contested = { overAsk: [] as number[] };
 /**
  * Long-run parity: from this season on a multi-year league has gone through enough offseasons
  * that its teams are built by the AI GMs, not by league generation.
@@ -361,9 +363,18 @@ for (let l = 0; l < leagues; l++) {
     lastSv = sv;
     const rolled = handleCommand(state, { kind: 'season.rollover' }, actor, ctx);
     if (!rolled.ok) throw new Error(rolled.error.message);
+    const bidders = new Map<string, Set<string>>();
     for (const e of rolled.events) {
       if (e.kind === 'team.gmChanged') coaches.gms++;
       if (e.kind === 'staff.hired') staff.changed++;
+      if (e.kind === 'freeAgency.offered') {
+        const teams = bidders.get(e.offer.playerId) ?? new Set();
+        bidders.set(e.offer.playerId, teams.add(e.offer.teamId));
+      }
+      if (e.kind === 'player.signed' && (bidders.get(e.playerId)?.size ?? 0) >= 2) {
+        const ask = ctx.models.contractDemand.ask(ctx.ruleset, state.players[e.playerId]!);
+        contested.overAsk.push(e.contract.capHit / ask - 1);
+      }
     }
     if (y === years - 1) {
       for (const t of Object.values(state.teams)) {
@@ -538,6 +549,21 @@ const checks: Check[] = [
     max: 0.3,
   },
   { name: 'Free-agent pool, largest (unverified)', value: maxPool, min: 0, max: 150 },
+  // Report only (docs/research/2026-11-free-agency-bidding.md): no benchmark. A race's salary is
+  // at least the ask and at most an AI team's walk-away (ask x 1.33 at the most).
+  {
+    name: 'Contested signings a summer (unverified)',
+    value: contested.overAsk.length / (leagues * years),
+    min: 0,
+    max: 50,
+  },
+  {
+    name: 'Contested salary over the ask, mean (unverified)',
+    value: 100 * mean(contested.overAsk),
+    min: 0,
+    max: 33,
+    unit: '%',
+  },
   // Money, per team-season (docs/research/2026-11-owner-finance.md): Forbes 2024-25 x the cap ratio.
   { name: 'Revenue a team, mean', value: mean(money.revenue) / 1e6, min: 265, max: 320, unit: 'M' },
   { name: 'Revenue, top team / bottom team', value: mean(money.spread), min: 2, max: 3, unit: 'x' },
