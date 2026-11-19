@@ -11,6 +11,7 @@ const api: GmApi = {
     playoffs: () => ipcRenderer.invoke(IPC.playoffs),
     awards: () => ipcRenderer.invoke(IPC.awards),
     hallOfFame: () => ipcRenderer.invoke(IPC.hallOfFame),
+    international: () => ipcRenderer.invoke(IPC.international),
     records: () => ipcRenderer.invoke(IPC.records),
     leaders: () => ipcRenderer.invoke(IPC.leaders),
     capSheet: (input) => ipcRenderer.invoke(IPC.capSheet, input),

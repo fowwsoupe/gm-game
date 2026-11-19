@@ -30,6 +30,11 @@ export const useHallOfFame = () =>
     queryKey: ['league', 'hallOfFame'] as const,
     queryFn: () => window.gm.league.hallOfFame(),
   });
+export const useInternational = () =>
+  useQuery({
+    queryKey: ['league', 'international'] as const,
+    queryFn: () => window.gm.league.international(),
+  });
 export const useLeaders = () =>
   useQuery({ queryKey: keys.leaders, queryFn: () => window.gm.league.leaders() });
 export const useRecords = () =>

@@ -122,6 +122,7 @@ export const NHL_2026: Ruleset = {
     interim: 0.3, // the brief's interim quality
   },
   training: { points: 2 }, // the brief's start, a game number for the lab
+  international: { every: 4 },
   roster: {
     maxActive: 23,
     minActive: 20,

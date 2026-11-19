@@ -56,6 +56,7 @@ function registerIpc() {
   ipcMain.handle(IPC.playoffs, () => league.playoffs());
   ipcMain.handle(IPC.awards, () => league.awards());
   ipcMain.handle(IPC.hallOfFame, () => league.hallOfFame());
+  ipcMain.handle(IPC.international, () => league.international());
   ipcMain.handle(IPC.records, () => league.records());
   ipcMain.handle(IPC.leaders, () => league.leaders());
   ipcMain.handle(IPC.capSheet, (_e, input: In<'capSheet'>) => league.capSheet(input.teamId));

@@ -164,6 +164,12 @@ export interface Ruleset {
     points: number;
   };
 
+  /** The international tournament (docs/research/2026-11-summer-training.md). */
+  international: {
+    /** Played late in the summer before every season divisible by this. */
+    every: number;
+  };
+
   roster: {
     maxActive: number;
     minActive: number;

@@ -12,6 +12,7 @@ import type {
   GameDetail,
   GameSummary,
   HallOfFamer,
+  InternationalTournament,
   LeaderboardView,
   PlayerProfile,
   PlayoffSeries,
@@ -60,6 +61,8 @@ export interface GmApi {
     hallOfFame(): Promise<HallOfFamer[]>;
     /** Every award given so far, newest season first. */
     awards(): Promise<AwardEntry[]>;
+    /** Every international tournament played so far, newest first. */
+    international(): Promise<InternationalTournament[]>;
     /** Stat leaders of the season so far. */
     leaders(): Promise<LeaderboardView[]>;
     /** Team records over all finished seasons. */
@@ -196,6 +199,7 @@ export const IPC = {
   playoffs: 'league:playoffs',
   awards: 'league:awards',
   hallOfFame: 'league:hallOfFame',
+  international: 'league:international',
   records: 'league:records',
   leaders: 'league:leaders',
   capSheet: 'league:capSheet',

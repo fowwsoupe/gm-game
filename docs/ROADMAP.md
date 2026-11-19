@@ -41,7 +41,7 @@ prospect pool, lines, prospects in trades, the farm team) are ready, in that ord
 
 Summer training, camp battles, international tournament: brief in
 [research/2026-11-summer-training.md](research/2026-11-summer-training.md); summer training plans
-are done, the international tournament is ready; camp battles wait for the camp job above.
+and the international tournament are done; camp battles wait for the camp job above.
 
 Needs a design first (a short brief in `docs/research/`, then jobs):
 
@@ -77,7 +77,7 @@ D. Phase 2 headlines
 - [ ] Free-agency bidding war and contract negotiation (Opus, xhigh, brief first)
 - [ ] League news tab (Opus for storylines, Sonnet for UI; high, brief first)
 - [x] Media and press conferences, text (Sonnet, medium, 2-3 PRs)
-- [~] Summer training, camp battles, international tournament (Opus, high, 3 PRs): brief and summer training plans done
+- [~] Summer training, camp battles, international tournament (Opus, high, 3 PRs): brief, summer training plans and the international tournament done; camp battles wait for camp
 - [ ] Cutscenes (Sonnet, medium, 3 PRs)
 - [ ] Match viewer (2D) with coach from the bench (Fable 5.2, xhigh, 6+ PRs)
 - [ ] League sandbox (Sonnet, high, 4 PRs)
@@ -158,7 +158,7 @@ Build order, owners and "done when" for each step: **[V0.1_PLAN.md](V0.1_PLAN.md
 - [x] Media & press conferences (text)
 - [ ] Match viewer (2D) + coach from the bench
 - [ ] Cutscenes (trophy lift, draft pick, signing)
-- [~] Summer training, camp battles, international tournament: summer training plans (a focus per player on a human team reshapes his ratings at development, never past his ceiling) done
+- [~] Summer training, camp battles, international tournament: summer training plans (a focus per player on a human team reshapes his ratings at development, never past his ceiling) done; an international tournament every four years (a nation per player, six nations, two groups of three, semi-finals and a final, late in the summer on its own random stream; the champion and top scorer on History, your players' medals in your news) done
 - [~] Hall of Fame, legends return as staff, awards named after legends: Hall of Fame (rule-based induction, History screen), awards named after legends (the first inducted goalie, defenceman and forward lend their surname to the goalie, defence and MVP awards from the next season, on History) and legends as staff (a Hall of Famer is one of a human team's candidates, one a team-season) done
 - [ ] League sandbox: expansion, relocation, identity editor, commissioner mode
 - [ ] Multiplayer step 1: shared save (hot-seat)
