@@ -239,7 +239,7 @@ describe('offseason steps', () => {
   });
 
   it('the lottery is drawn at the crown, a lottery team drafts first, draftees go to the prospect pool', () => {
-    const state = seasonOver(12);
+    const state = seasonOver(13);
     // The lottery is drawn when the champion is crowned and the draft follows it.
     expect(state.draftOrder).toHaveLength(Object.keys(state.teams).length);
     const order = [...state.draftOrder];

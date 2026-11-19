@@ -632,15 +632,14 @@ const checks: Check[] = [
     min: 0.12,
     max: 0.3,
   },
-  // Development (ml/src/aging.py): how a skater's scoring rate moves with age, NHL vs the sim. The
-  // sim's decline is in range; its growth runs too long (docs/MODEL_CONTRACTS.md, 4).
+  // Development (ml/src/aging.py): how a skater's scoring rate moves with age, NHL vs the sim; the
+  // aging curves are fitted to these (sports/hockey/aging.ts, docs/MODEL_CONTRACTS.md 4).
   ...AGE_BANDS.map(([lo, hi, min, max], i) => ({
     name: `Skater points/60 a year, ages ${lo}-${hi}`,
     value: (100 * aging[i]!.change) / aging[i]!.level,
     min,
     max,
     unit: '%',
-    ...(hi < 30 && { known: 'aging curves grow past 24' }),
   })),
   { name: 'Free-agent pool, largest (unverified)', value: maxPool, min: 0, max: 150 },
   // Report only (docs/research/2026-11-free-agency-bidding.md): no benchmark. A race's salary is

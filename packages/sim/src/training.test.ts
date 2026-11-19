@@ -16,17 +16,20 @@ const local: Actor = { id: 'local', controls: [] };
 
 /** A league with one human team and one of its young skaters well under his ceiling on shooting. */
 function league() {
-  const state = createLeague(1, ctx);
-  const [mine, other] = Object.keys(state.teams).sort() as [TeamId, TeamId];
-  state.teams[mine]!.userControlled = true;
-  const player = Object.values(state.players).find(
-    (p) =>
-      p.teamId === mine &&
-      p.ratings.shooting !== undefined &&
-      state.date.season - p.birthYear <= 24 &&
-      p.ratings.shooting < p.potential - 8,
-  )!;
-  return { state, mine, other, player };
+  // The first seed that has such a skater: how many do depends on how prospects are drawn.
+  for (let seed = 1; ; seed++) {
+    const state = createLeague(seed, ctx);
+    const [mine, other] = Object.keys(state.teams).sort() as [TeamId, TeamId];
+    state.teams[mine]!.userControlled = true;
+    const player = Object.values(state.players).find(
+      (p) =>
+        p.teamId === mine &&
+        p.ratings.shooting !== undefined &&
+        state.date.season - p.birthYear <= 24 &&
+        p.ratings.shooting < p.potential - 12,
+    );
+    if (player) return { state, mine, other, player };
+  }
 }
 
 /** One summer's development of a copy of `base` after `setup`: the copy and its events. */

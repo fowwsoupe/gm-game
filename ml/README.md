@@ -130,8 +130,8 @@ with a fixed seed in the lab before switching.
 - **Development** (`RulesDevelopmentConfig`): trained on NHL careers with player fixed
   effects (or imputation) against survivor bias; an `AgingCurve` per position plus
   retirement, with `noise` from the spread between careers. Shipping waits on data rights;
-  until then `aging` sets the hand-set curves' targets (their decline matches, their growth runs
-  past 24).
+  until then `aging` sets the targets the hand-set curves are fitted to in the balance lab
+  (all three age bands in range).
 
 ## Next studies
 - "Better team wins a best-of-7" back above its floor (about half a point under since goalie form)

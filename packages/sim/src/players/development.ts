@@ -24,7 +24,9 @@ export const clampRating = (n: number) => Math.max(1, Math.min(99, Math.round(n)
 
 /** How one kind of player (a position) ages. Ages are the age in the season about to start. */
 export interface AgingCurve {
-  /** Until this age he closes the gap to his potential; the gap is gone by this age. */
+  /** Share of the gap to his potential he closes each year, so growth comes early (0: evenly). */
+  growth: number;
+  /** Until this age he grows; the gap is gone by this age. */
   peakAge: number;
   /** First age of decline; between peakAge and this he holds steady. */
   declineAge: number;
@@ -55,9 +57,10 @@ export interface RulesDevelopmentConfig {
 }
 
 /**
- * Rules-based default: young players close the gap to their potential at a steady pace, hold
- * steady through their peak, then lose a little more each year. Numbers per position come
- * from the sport (hockey: sports/hockey/aging.ts, from docs/research).
+ * Rules-based default: young players close the gap to their potential (`growth` of it a year, at
+ * least an even share of what is left before the peak), hold steady through their peak, then
+ * lose a little more each year. Numbers per position come from the sport (hockey:
+ * sports/hockey/aging.ts, fitted to NHL targets in the balance lab).
  */
 export function rulesDevelopment(config: RulesDevelopmentConfig): DevelopmentModel {
   const curve = (p: Player) => config.curves[p.position] ?? config.fallback;
@@ -67,7 +70,7 @@ export function rulesDevelopment(config: RulesDevelopmentConfig): DevelopmentMod
       let delta: number;
       if (age <= c.peakAge) {
         const gap = Math.max(0, player.potential - overall(player));
-        delta = gap / (c.peakAge - age + 1);
+        delta = Math.max(gap * c.growth, gap / (c.peakAge - age + 1));
       } else if (age < c.declineAge) {
         delta = 0;
       } else {
