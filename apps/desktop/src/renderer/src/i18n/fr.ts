@@ -411,6 +411,7 @@ export const fr: Record<MessageKey, string> = {
   'owner.card.pressLoss': 'La presse demande ce qui ne va pas après {n} défaites de suite.',
   'owner.card.pressSeries':
     'La presse demande comment votre équipe a gagné la ronde {n} des séries.',
+  'owner.card.pressTrade': 'La presse vous interroge sur votre grosse transaction.',
   'owner.card.pressOut': 'La presse demande ce qui n’a pas fonctionné à la ronde {n} des séries.',
   'owner.option.deflect': 'Esquiver',
   'owner.option.confident': 'Se montrer confiant',

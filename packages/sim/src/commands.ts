@@ -46,6 +46,8 @@ import {
   interimHead,
 } from './offseason';
 import { evaluateTrade, planRetention } from './trades';
+import { pressQuestion } from './owner';
+import { overall } from './players';
 import { advance } from './advance';
 import type { SimContext } from './context';
 
@@ -735,5 +737,18 @@ function completeTrade(
     },
   });
   applyEvent(state, news);
-  return [ev, news];
+  const events = [ev, news];
+  // A human GM is asked about a blockbuster: a traded player among his team's top three.
+  const traded = new Set([...proposal.give, ...proposal.get]);
+  for (const teamId of [proposal.fromTeamId, proposal.toTeamId]) {
+    const gone = proposal.fromTeamId === teamId ? proposal.give : proposal.get;
+    const top = Object.values(state.players)
+      .filter((p) => p.teamId === teamId || gone.includes(p.id))
+      .sort((a, b) => overall(b) - overall(a))
+      .slice(0, 3);
+    if (top.some((p) => traded.has(p.id))) {
+      pressQuestion(state, emitter(state, events), teamId, 'pressTrade', 0);
+    }
+  }
+  return events;
 }
