@@ -93,6 +93,11 @@ export const SKATER_BUILD_CLUSTERS = {
     },
   ],
 } as const;
+/**
+ * Rating points per SD of a build's centre, when a skater is generated (generate.ts). At 5 every
+ * key keeps a die: grinders' physical, the largest shape, takes 17 of the key's 24 of variance.
+ */
+export const SHAPE_POINTS = 5;
 
 /** What a goal model sees of a shot. */
 export interface ShotInfo {

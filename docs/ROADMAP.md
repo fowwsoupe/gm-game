@@ -73,7 +73,7 @@ B. Balance and calibration (Opus 5.5 unless noted)
 - [x] "Better team wins a best-of-7" back in range (high)
 - [ ] Trained stats-to-ratings and development models (xhigh, 2-3 PRs): stats to ratings v2 done (beats v1 on every key); development targets measured on NHL data (`ml/src/aging.py`, lab "Skater points/60 a year": the decline is in range, growth runs past 24); fitting the aging curves to them, and penalty-kill time and penalty minutes in roster stats, to do
 - [ ] Playtest analysis (Sonnet 5.5, medium)
-- [ ] Player traits and clustered builds (high; brief done: [research/2026-11-player-traits.md](research/2026-11-player-traits.md); job 1 done: [clusters and trait evidence](research/2026-11-player-builds-evidence.md), jobs 2-3 next)
+- [ ] Player traits and clustered builds (high; brief done: [research/2026-11-player-traits.md](research/2026-11-player-traits.md); job 1 done: [clusters and trait evidence](research/2026-11-player-builds-evidence.md); job 2 done: skaters generated from the clusters, builds by nearest centre; job 3 (play traits) next)
 
 C. Design brief first, then jobs (Opus 5.5)
 
@@ -120,7 +120,7 @@ Build order, owners and "done when" for each step: **[V0.1_PLAN.md](V0.1_PLAN.md
 
 **Engines**
 
-- [~] Players (`sim/players`): percentiles, builds and role tags (rules), injuries and injury history (shown on the player card) done; re-injury risk done; traits, clustered builds to do ([brief](research/2026-11-player-traits.md))
+- [~] Players (`sim/players`): percentiles, builds (skaters by nearest real-player cluster, goalies by rule) and role tags, injuries and injury history (shown on the player card) done; re-injury risk done; clustered builds done; play traits to do ([brief](research/2026-11-player-traits.md))
 - [x] Value (`sim/value`): per-team surplus value (can be negative), market value, pick value curve (rules-based, tuned in the lab)
 - [x] People (`sim/people`): personalities (from the player id), free-agent priorities by age and personality, AI GM styles and skill, team plans, morale (shown on the player card; no effects yet) done
 - [~] Models and calibration (`ml/`, [ADR 0005](adr/0005-calibrate-first.md): ML only where a fit is needed): faceoff effect and goalie form measured on NHL data, stats-to-ratings v2 fitted on the sim (per-game and workload features, 120 leagues), development targets (aging by age band) measured on NHL data; special-teams stats for stats to ratings, aging curves fitted to the targets, playtest analysis to do; "better team wins a best-of-7" back in range done

@@ -14,7 +14,7 @@ function run(state: LeagueState, command: Command) {
 
 describe('teams in crisis', () => {
   it('a losing team whose owner has lost faith is in crisis; a winning one never', () => {
-    const state = createLeague(4, ctx);
+    const state = createLeague(5, ctx);
     run(state, { kind: 'sim.advance', days: 1 }); // the preseason meeting
     for (const o of Object.values(state.owners)) o.confidence = 10;
     run(state, { kind: 'sim.advance', days: 60 });

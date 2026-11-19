@@ -1,31 +1,40 @@
 import { isGoalie } from '@gm/shared';
+import { SHAPE_POINTS, SKATER_BUILD_CLUSTERS } from './tuning';
 
 /**
- * Hockey builds and role tags from a player's percentiles (0–100 within his group). A plain rule
- * for now: the build is the profile his best skills fit; tags mark standout single skills.
- * TODO(M4, Azmi): builds found by clustering real players, replacing these rules.
+ * Hockey builds and role tags from a player's percentiles (0–100 within his group). A skater's
+ * build is the nearest real-player cluster to his shape (docs/research/2026-11-player-builds-evidence.md);
+ * a goalie's is a plain rule. Tags mark standout single skills.
  */
 type Pct = Record<string, number>;
 
 const mean = (p: Pct, keys: string[]) => keys.reduce((s, k) => s + (p[k] ?? 50), 0) / keys.length;
 
-/** Candidate builds per group, scored by how well the player's profile fits each. */
-const FORWARD_BUILDS: Record<string, (p: Pct) => number> = {
-  sniper: (p) => p.shooting! * 1.2 - 0.2 * (p.defense ?? 50),
-  playmaker: (p) => mean(p, ['passing', 'hockeyIq']) * 1.15 - 0.15 * (p.physical ?? 50),
-  powerForward: (p) => mean(p, ['physical', 'shooting']) * 1.1,
-  twoWay: (p) => mean(p, ['defense', 'hockeyIq', 'passing']),
-  grinder: (p) => mean(p, ['physical', 'defense']) * 1.05 - 0.1 * (p.shooting ?? 50),
-};
-const DEFENCE_BUILDS: Record<string, (p: Pct) => number> = {
-  offensiveD: (p) => mean(p, ['passing', 'skating', 'puckHandling']) * 1.1,
-  shutdownD: (p) => mean(p, ['defense', 'physical']) * 1.1,
-  twoWayD: (p) => mean(p, ['defense', 'passing', 'hockeyIq']),
-};
 const GOALIE_BUILDS: Record<string, (p: Pct) => number> = {
   athleticG: (p) => p.reflexes! * 1.1,
   positionalG: (p) => mean(p, ['positioning', 'reboundControl']) * 1.1,
 };
+
+/** The keys the clusters were found on. */
+const SHAPE_KEYS = ['shooting', 'passing', 'physical', 'hockeyIq', 'defense'];
+/**
+ * Percentile points per SD of a centre: a rating point is about 4 percentile points mid-range (a
+ * new league's skater keys spread about 9 points). Set so a new league's build shares match the
+ * clusters' (sim.test).
+ */
+const PCT_PER_SD = SHAPE_POINTS * 4;
+
+/** The nearest cluster to the player's shape: his percentiles minus their mean. */
+function nearestBuild(position: string, p: Pct): string {
+  const clusters =
+    position === 'D' ? SKATER_BUILD_CLUSTERS.defence : SKATER_BUILD_CLUSTERS.forwards;
+  const level = mean(p, SHAPE_KEYS);
+  const distance = (centre: Partial<Record<string, number>>) =>
+    SHAPE_KEYS.reduce((s, k) => s + ((p[k] ?? 50) - level - PCT_PER_SD * (centre[k] ?? 0)) ** 2, 0);
+  return clusters
+    .map((c) => ({ build: c.build, d: distance(c.centre) }))
+    .sort((a, b) => a.d - b.d)[0]!.build;
+}
 
 /** Tags for single standout skills (top 10% of his group). */
 const TAGS: Record<string, string> = {
@@ -45,14 +54,11 @@ export function hockeyRole(
   percentiles: readonly { key: string; value: number }[],
 ): { build: string; tags: string[] } {
   const p: Pct = Object.fromEntries(percentiles.map((x) => [x.key, x.value]));
-  const builds = isGoalie(position)
-    ? GOALIE_BUILDS
-    : position === 'D'
-      ? DEFENCE_BUILDS
-      : FORWARD_BUILDS;
-  const build = Object.entries(builds).sort(
-    ([a, fa], [b, fb]) => fb(p) - fa(p) || a.localeCompare(b),
-  )[0]![0];
+  const build = isGoalie(position)
+    ? Object.entries(GOALIE_BUILDS).sort(
+        ([a, fa], [b, fb]) => fb(p) - fa(p) || a.localeCompare(b),
+      )[0]![0]
+    : nearestBuild(position, p);
   const tags = percentiles
     .filter((x) => x.value >= TAG_PERCENTILE && TAGS[x.key])
     .sort((a, b) => b.value - a.value)

@@ -108,10 +108,11 @@ export const FIT_SPAN = { forwards: 15, defense: 8 } as const;
 /** Rating points a team with a perfectly fitting set of units adds (units weighted by ice time). */
 export const FIT_POINTS = 3;
 /**
- * The league's typical team fit (ice-time-weighted, measured on generated leagues), subtracted so
- * an average team nets zero and the bonus only separates teams.
+ * The league's typical team fit (ice-time-weighted, measured on 60 generated leagues with shaped
+ * skaters; the balance lab's "Builds fit" checks), subtracted so an average team nets zero and the
+ * bonus only separates teams.
  */
-export const FIT_BASELINE = { forwards: 0.21, defense: 0.12 } as const;
+export const FIT_BASELINE = { forwards: 0.19, defense: 0.12 } as const;
 
 /**
  * Linemates: games a pair has played in the same unit before a unit counts as fully together.

@@ -24,7 +24,7 @@ describe('news posts', () => {
   let state: LeagueState;
   let events: LeagueEvent[];
   beforeAll(() => {
-    state = createLeague(3, ctx);
+    state = createLeague(4, ctx);
     // Every pair of teams met in last season's playoffs, so every series is a rematch.
     const ids = Object.keys(state.teams) as (keyof typeof state.teams)[];
     for (const a of ids)
