@@ -247,7 +247,7 @@ function warnIfHot(state: LeagueState, emit: Emit, teamId: TeamId, confidence: n
 }
 
 /**
- * The preseason meeting (day 0, before the month settles): the owner sets what he expects
+ * The preseason meeting (camp's first day, before day 0 settles): the owner sets what he expects
  * (last season's points %, halfway back to .500, nudged by the plan), one results objective
  * a rebuild can meet, a profit objective if he cares about money, and keeps the budget the
  * review set. A profit owner whose GM priced tickets below his policy asks for it back.

@@ -22,10 +22,10 @@ function memo<T>(make: (seed: number) => T) {
   };
 }
 
-/** A new league played through the regular season and the playoffs (220 days). Not cached. */
+/** A new league played from camp through the regular season and the playoffs (to day 220). Not cached. */
 export function playSeason(seed: number) {
   const state = createLeague(seed, ctx);
-  const events = run(state, { kind: 'sim.advance', days: 220 });
+  const events = run(state, { kind: 'sim.advance', days: 220 - state.date.day });
   return { state, events };
 }
 
@@ -34,7 +34,7 @@ export const simSeason = memo(playSeason);
 
 const summer = memo((seed) => {
   const state = createLeague(seed, ctx);
-  run(state, { kind: 'sim.advance', days: 300 });
+  run(state, { kind: 'sim.advance', days: 300 - state.date.day });
   return state;
 });
 const freeAgency = memo((seed) => {

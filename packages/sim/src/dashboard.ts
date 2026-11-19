@@ -5,7 +5,7 @@ import { freeAgents, isExpiring, resignOffers, resignWindowOpen, wantedYears } f
 import { assistantSees, departmentsOf, staffOf } from './people';
 import { overall } from './players';
 import { cachedContext } from './trades';
-import { available } from './tonight';
+import { available, hurtOn } from './tonight';
 import type { SimContext } from './context';
 
 /** Days before the trade deadline when Home starts reminding you. */
@@ -128,7 +128,7 @@ export function dashboard(state: LeagueState, ctx: SimContext, teamId: TeamId): 
       });
     }
   }
-  const hurt = roster.filter((p) => (p.injuredUntil ?? 0) > state.date.day).length;
+  const hurt = roster.filter((p) => hurtOn(p, state.date.day)).length;
   if (hurt > 0) todo.push({ code: 'injured', params: { count: hurt }, screen: 'roster' });
   if (assistant && state.depthCharts[teamId]?.length) {
     // Only once you set your own order (the coach's default one needs no second opinion): the

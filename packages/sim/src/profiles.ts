@@ -2,6 +2,7 @@ import type { Player, PlayerProfile, TeamId } from '@gm/shared';
 import { Rng, type LeagueState } from './core';
 import { percentileRank } from './players';
 import { hash, moraleOf, notableTraits, personalityOf, staffOf } from './people';
+import { hurtOn } from './tonight';
 import type { SimContext } from './context';
 
 /**
@@ -71,7 +72,7 @@ export function playerProfiles(
         teamId: p.teamId,
         age: state.date.season - p.birthYear,
         ...(p.contract && { contract: { ...p.contract } }),
-        ...((p.injuredUntil ?? 0) > state.date.day && { injuredUntil: p.injuredUntil }),
+        ...(hurtOn(p, state.date.day) && { injuredUntil: p.injuredUntil }),
         ...(p.injuryHistory && { injuryHistory: { ...p.injuryHistory } }),
         ...(state.holdouts.some((h) => h.playerId === p.id) && { holdout: true as const }),
         percentiles,

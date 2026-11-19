@@ -37,7 +37,12 @@ describe('lines', () => {
     expect(mineNow.forwards[0]![0]!.id).toBe(fourthC.id);
     expect(mineNow.goalies[0]!.id).toBe(backup.id);
     // The game uses it: the backup is in net in your first game.
-    const played = handleCommand(state, { kind: 'sim.advance', days: 10 }, local, ctx);
+    const played = handleCommand(
+      state,
+      { kind: 'sim.advance', days: 10 - state.date.day },
+      local,
+      ctx,
+    );
     if (!played.ok) throw new Error(played.error.message);
     const game = played.events.find(
       (e) =>

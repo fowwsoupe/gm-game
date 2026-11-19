@@ -105,7 +105,7 @@ describe('holdouts', () => {
               expiresAfterSeason: state.date.season + yearsLeft,
             };
           }
-          run(state, { kind: 'sim.advance', days: 1 });
+          run(state, { kind: 'sim.advance', days: 1 - state.date.day }); // to day 1, past camp
           const h = state.holdouts.find((x) => x.teamId === ai.id);
           if (!h) continue;
           if ('squeezed' in c) {

@@ -32,8 +32,8 @@ playoff turnover 31-32% ([research/2026-11-spread-second-mechanism.md](research/
 all five jobs of [research/2026-11-league-events.md](research/2026-11-league-events.md) done (the pulse ranks by playoff odds; a young team out of it rebuilds, an old bubble team with cap space buys; crisis on top).
 
 Camp and a trade deadline that matters: brief in
-[research/2026-11-camp-deadline.md](research/2026-11-camp-deadline.md); its two jobs (camp, the
-deadline) are ready.
+[research/2026-11-camp-deadline.md](research/2026-11-camp-deadline.md); job 1 (camp) done, job 2
+(the deadline) is ready.
 
 Minor / junior / European leagues: brief in
 [research/2026-11-minor-leagues.md](research/2026-11-minor-leagues.md); its four jobs (the
@@ -124,7 +124,7 @@ Build order, owners and "done when" for each step: **[V0.1_PLAN.md](V0.1_PLAN.md
 
 **Features**
 
-- [~] Full season calendar: 84 games (divisions, conferences, back-to-backs) → playoffs → awards → draft → re-sign → FA done; camp and a trade deadline that matters wait for trades (M6)
+- [~] Full season calendar: 84 games (divisions, conferences, back-to-backs) → playoffs → awards → draft → re-sign → FA done; camp done (three weeks before opening night: holdouts and the owner's meeting on its first day, the coach's camp report on its last); a trade deadline that matters next (M6)
 - [~] Trades v1: surplus value per team (status, rentals, negative contracts), anti-quantity, cap and position checks, AI explains itself, trade screen, AI-to-AI trades (both GMs must accept), retained salary, draft picks (next three drafts, value curve by projected slot) done, AI GMs pay with picks, trade block (listed players draw more AI offers; AI buyers call AI teams with listed players first, so fire-sale players move), top-N protected picks done
 - [~] Contracts & cap: CBA checks, buyouts, cap sheet screen, cap advisor, offseason re-signing and in-season extensions, RFA rights with offer sheets the rights team can match, and compensation picks when it does not (NHL-style tiers by cap hit), done; signing bonuses, no-trade clauses and performance bonuses (overage carries to next season's cap) done
 - [~] Free agency v1: free-agency window in the summer, offers with an interest meter (money, winning, role, term weighted by age), signings any time outside the playoffs, personalities (greed, ambition), AI offers, AI re-signing by loyalty and ambition, and loyalty (to his old team) and hometown pulls on the interest meter done

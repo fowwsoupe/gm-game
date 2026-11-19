@@ -244,7 +244,10 @@ describe('AI fire sales', () => {
     run(state, { kind: 'sim.advance', days: 1 }); // the preseason meeting
     // Every owner is losing money, so every selling team's owner orders a fire sale.
     for (const id of Object.keys(state.teams) as TeamId[]) state.cash[id] = -1e10;
-    const events = run(state, { kind: 'sim.advance', days: cal.tradeDeadlineDay });
+    const events = run(state, {
+      kind: 'sim.advance',
+      days: cal.tradeDeadlineDay + 1 - state.date.day,
+    });
     const sales = events.filter((e) => e.kind === 'news.posted' && e.headline === 'event.fireSale');
     expect(sales.length).toBeGreaterThan(0);
     for (const e of sales) {

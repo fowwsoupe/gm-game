@@ -31,7 +31,14 @@ import {
 import { giveSeasonAwards } from './awards';
 import { aiHoldouts, announceDraftClass } from './offseason';
 import { aiOffers, aiTrades } from './trades';
-import { disputesWeek, holdoutsWeek, staffOf, startHoldouts, tradeRequests } from './people';
+import {
+  campReport,
+  disputesWeek,
+  holdoutsWeek,
+  staffOf,
+  startHoldouts,
+  tradeRequests,
+} from './people';
 import { sitsOut, strengthFor } from './tonight';
 import { byOverall, overall } from './players';
 import { payBonuses, payroll } from './cba';
@@ -291,13 +298,16 @@ export function advance(
 
   for (let d = 0; d < days; d++) {
     const today = { ...state.date };
-    // Opening day: a player who feels underpaid may refuse to report.
-    if (today.day === 0 && phaseOf(cal, today) === 'regular') {
+    // Camp opens (an old save's season opened on day 0): a player who feels underpaid may refuse
+    // to report, and the owner meets his GM, before day 0 settles, so the season's profit counts
+    // its bonuses.
+    if (today.day <= 0 && !Object.values(state.owners).some((o) => o.season === today.season)) {
       startHoldouts(state, ctx, rng.fork('holdouts'), emitter(state, events));
+      preseasonMeeting(state, ctx, emitter(state, events));
     }
+    // Camp's last day: the head coach's read of the team.
+    if (today.day === -1) campReport(state, ctx, rng.fork('camp'), emitter(state, events));
     if (settlesOn(today.day, cal.regularSeasonDays)) {
-      // The owner meets his GM before day 0 settles, so the season's profit counts its bonuses.
-      if (today.day === 0) preseasonMeeting(state, ctx, emitter(state, events));
       settleMonth(state, ctx, emitter(state, events), today.day);
       if (today.day > 0) ownerMonth(state, ctx, emitter(state, events));
     }

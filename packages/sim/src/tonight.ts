@@ -3,9 +3,12 @@ import type { LeagueState } from './core';
 import { chemistry, coachOf } from './people';
 import type { SimContext } from './context';
 
+/** Whether a player is hurt on `day` (camp days are negative, so no injury is not day 0). */
+export const hurtOn = (p: Player, day: number): boolean => (p.injuredUntil ?? -Infinity) > day;
+
 /** Whether a player sits out on `day`: hurt, or holding out. */
 export const sitsOut = (state: LeagueState, p: Player, day: number): boolean =>
-  (p.injuredUntil ?? 0) > day || state.holdouts.some((h) => h.playerId === p.id);
+  hurtOn(p, day) || state.holdouts.some((h) => h.playerId === p.id);
 
 /** Who can play for a team on `day` (the game engine, the lines screen and exhibitions agree). */
 export const available = (state: LeagueState, teamId: TeamId, day: number): Player[] =>
