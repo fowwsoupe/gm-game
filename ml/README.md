@@ -112,8 +112,9 @@ row, and export a table in the format from
 with a fixed seed in the lab before switching.
 
 - **Stats to ratings** (`gm-stats-to-ratings`): trained on simulated leagues (the data
-  `pnpm ratings:fit` produces, no licence issue), held out by league. Must beat the v1 R²
-  per key; goalies (0.25-0.36) have the most room.
+  `pnpm ratings:fit` produces, no licence issue), held out by league. Version 2 (per-game and
+  workload features, 120 leagues) is in; a replacement must beat its R² per key; goalies
+  (0.24-0.32) have the most room.
 - **Development** (`RulesDevelopmentConfig`): trained on NHL careers with player fixed
   effects (or imputation) against survivor bias; an `AgingCurve` per position plus
   retirement, with `noise` from the spread between careers. Shipping waits on data rights.

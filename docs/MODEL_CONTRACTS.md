@@ -71,13 +71,19 @@ table (`STATS_TO_RATINGS`) is fitted on the sim itself by `pnpm ratings:fit`: it
 seasons and fits each rating on the stat lines the sim produced (one league in five held out
 for R² and error). Rerun it after any change to the game sim or player generation.
 
-Features: skaters TOI/game and goals, assists, shots and +/- per 60; goalies save % and share
-of games. A sample under `FULL_SAMPLE` (half a season for skaters, a quarter for goalies) is
-pulled toward the position average and its `sd` widens toward the position spread.
+Features (table version 2): skaters TOI/game (and its square), goals, assists, shots and +/- per
+60 and per game, and share of games; goalies save %, share of games, save % times that share (a
+starter's save % says more than a backup's) and shots against per game. A sample under
+`FULL_SAMPLE` (half a season for skaters, a quarter for goalies) is pulled toward the position
+average and its `sd` widens toward the position spread.
 
-What a stat line shows today (held-out R², 40 leagues): `shooting` about 0.78, `passing` 0.55-0.61,
-other skater keys 0.43-0.49, goalie keys 0.25-0.36 (one season's save % is mostly noise, as in
-the NHL). Those keys mostly ride a player's overall level, since generation
-draws a player's ratings together, so their estimates are close to "how good is he" with a
-wide `sd`. A trained replacement must emit the same table format (format `gm-stats-to-ratings`)
-and beat these R² values on held-out leagues.
+What a stat line shows today (held-out R², 120 leagues): `shooting` about 0.78, `passing`
+0.57-0.66, other skater keys 0.47-0.51, goalie keys 0.24-0.32 (one season's save % is mostly
+noise, as in the NHL). On 30 fresh leagues neither table saw, version 2 beats version 1 on every
+key (skaters +0.005-0.018, goalies +0.034-0.040). Those keys mostly ride a player's overall
+level, since generation draws a player's ratings together, so their estimates are close to "how
+good is he" with a wide `sd`; the stat line has no number that tells `faceoffs` or `skating`
+apart from the rest. Penalty-kill time (the auto penalty kill picks forwards by `defense`) and
+penalty minutes (taken by `physical`) would: a forward's `defense` goes from 0.51 to about 0.62
+with them, but roster files do not carry them yet. A replacement must emit the same table format
+(format `gm-stats-to-ratings`) and beat these R² values on held-out leagues.

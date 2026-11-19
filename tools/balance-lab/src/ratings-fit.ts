@@ -21,13 +21,13 @@ import { fitLinear, mean, sd } from './stats';
  * hidden rating on the stat lines it produced. One league in five is held out to measure R²
  * and the error; the table is then refit on all leagues.
  *
- *   pnpm ratings:fit              # 40 leagues
- *   pnpm ratings:fit --leagues 80
+ *   pnpm ratings:fit              # 120 leagues, about 4 minutes
+ *   pnpm ratings:fit --leagues 40
  *
  * Rerun after any change to the game sim or player generation, and commit the new table.
  */
 const args = process.argv.slice(2);
-const leagues = Number(args[args.indexOf('--leagues') + 1]) || 40;
+const leagues = Number(args[args.indexOf('--leagues') + 1]) || 120;
 const ctx = defaultContext();
 const seasonGames = ctx.ruleset.season.gamesPerTeam;
 
@@ -94,7 +94,7 @@ const groups = Object.fromEntries(
 ) as StatsToRatingsTable['groups'];
 const table: StatsToRatingsTable = {
   format: 'gm-stats-to-ratings',
-  version: 1,
+  version: 2,
   source: `sim self-fit, ${leagues} leagues x 1 season, full samples (skaters ${FULL_SAMPLE.skater}, goalies ${FULL_SAMPLE.goalie} of ${seasonGames} games)`,
   groups,
 };
