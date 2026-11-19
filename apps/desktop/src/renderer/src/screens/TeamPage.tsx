@@ -2,7 +2,7 @@ import { TICKET_STEPS } from '@gm/shared';
 import { useCapSheet, useDispatch, useLines, useOwner, useRoster, useTeams } from '@/lib/queries';
 import { useUi } from '@/stores/ui';
 import { useT, type MessageKey } from '@/i18n';
-import { Button, Card, Td, Th } from '@/ui';
+import { Button, Card, PersonFace, Td, Th } from '@/ui';
 import { fullName, money, qualityKey, teamName } from '@/lib/format';
 import { Summary } from '@/screens/Cap';
 
@@ -33,7 +33,10 @@ export function TeamPage() {
       {owned && (
         <Card title={t('team.owner')}>
           <div className="grid gap-4 text-sm md:grid-cols-4">
-            <div className="font-semibold">{owned.owner.name}</div>
+            <div className="font-semibold">
+              <PersonFace role="owner" name={owned.owner.name} size={22} />
+              {owned.owner.name}
+            </div>
             {(
               [
                 ['team.owner.priority', `${Math.round(owned.owner.priority * 100)}%`],
@@ -48,6 +51,7 @@ export function TeamPage() {
             ))}
             <div className="font-semibold">
               <div className="font-normal text-muted">{t('team.coach')}</div>
+              <PersonFace role="coach" name={owned.coach.name} size={22} />
               {owned.coach.name}
             </div>
             {(
@@ -61,6 +65,13 @@ export function TeamPage() {
                 <div className="tabular">{value}</div>
               </div>
             ))}
+            {owned.gm && (
+              <div className="font-semibold">
+                <div className="font-normal text-muted">{t('team.gm')}</div>
+                <PersonFace role="gm" name={owned.gm} size={22} />
+                {owned.gm}
+              </div>
+            )}
           </div>
         </Card>
       )}

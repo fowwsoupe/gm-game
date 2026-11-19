@@ -309,6 +309,8 @@ export interface GmProfile {
   style: GmStyle;
   /** 0-1: how well he reads players. A low-skill GM over- and underrates players, always the same ones. */
   skill: number;
+  /** Absent in old saves: `gmOf` derives one from the team id. */
+  name?: string;
 }
 
 /** The person who owns a team. Derived from the team id; nothing is stored. */

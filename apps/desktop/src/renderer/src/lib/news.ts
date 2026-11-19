@@ -6,11 +6,12 @@ import { isMessageKey, useT, type MessageKey } from '@/i18n';
 /** Matches the sim's "long injury" for stopping the sim. */
 const LONG_INJURY = 14;
 
-/** A feed line: the event, its text and the one player it is about (for his face). */
+/** A feed line: the event, its text, the one player it is about and who speaks (for faces). */
 export interface Post {
   event: LeagueEvent;
   text: string;
   player: string | null;
+  by: NonNullable<Extract<LeagueEvent, { kind: 'news.posted' }>['by']> | null;
 }
 
 /**
@@ -145,7 +146,12 @@ export function usePosts(limit: number) {
         : 'playerId' in event
           ? (event.playerId ?? null)
           : null;
-    posts.push({ event, text, player });
+    posts.push({
+      event,
+      text,
+      player,
+      by: event.kind === 'news.posted' ? (event.by ?? null) : null,
+    });
   }
   return { posts, names, ages };
 }

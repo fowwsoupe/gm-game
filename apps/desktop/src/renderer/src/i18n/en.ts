@@ -71,6 +71,7 @@ export const en = {
   'team.owner.patience': 'Patience',
   'team.owner.market': 'Market size',
   'team.coach': 'Head coach',
+  'team.gm': 'General manager',
   'team.coach.since': 'In charge since',
   'team.coach.salary': 'Salary',
   'team.staff': 'Front office',
