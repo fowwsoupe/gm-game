@@ -1,6 +1,9 @@
-# Model contracts (for the ML track)
+# Model contracts
 
-Each model below replaces a rules-based default behind a small interface in `packages/sim`.
+Each "brain" below is a small interface in `packages/sim` with a rules-based default.
+Per [ADR 0005](adr/0005-calibrate-first.md), two get trained models: **stats to ratings (5)**
+and **development (4)**. The others stay calibrated rules; their formats stay so a replacement
+can still be tried in the lab.
 The sim stays pure TypeScript: no ONNX runtime, no files. A model ships as **data the sim can
 load** (a JSON table, or coefficients), or as a TypeScript implementation of the interface.
 
@@ -25,7 +28,7 @@ multiplies in the goalie (`goalieSensitivity`) and chooses who shoots and where 
 
 `goal[i][j]` = chance of a goal from the cell `i` cells out from the goal line and `j` out from
 the middle (|y|), for a shooter rated `reference`, even strength. Shots beyond the table use the
-last row and column. Export a trained model by evaluating it on the cell centres. Test it:
+last row and column. A replacement fills the cells (from measured goal rates, or any model evaluated on the cell centres). Test it:
 
 ```
 pnpm lab --xg ml/models/xg.json
@@ -53,8 +56,12 @@ Surplus value per team (can be negative). Default: `surplusValuator` (market sal
 
 ## 4. Development: `DevelopmentModel` (M4)
 
-Yearly rating and potential changes with age. Default: `rulesDevelopment(HOCKEY_DEVELOPMENT)`.
-Check: lab "league avg rating drift" and career-shape tests.
+Yearly rating and potential changes with age. Default: `rulesDevelopment(HOCKEY_DEVELOPMENT)`
+(hand-set curves in `sports/hockey/aging.ts`). **Trained model:** fitted on NHL careers with
+player fixed effects (survivor bias), exported in the same `RulesDevelopmentConfig` shape: an
+`AgingCurve` per position (`peakAge`, `declineAge`, `declineStart`, `declineStep`, `noise`)
+plus retirement. Shipping it waits on data rights. Check: lab "league avg rating drift",
+career-shape tests, and rates of peaks, busts and late bloomers.
 
 ## 5. Stats to ratings: `ratingsFromStats(table, position, totals, seasonGames)` (hockey)
 

@@ -61,7 +61,7 @@ would need the same thing, it belongs in a shared engine.
 | `packages/data`     | SQLite saves: migrations, load/save state, persist events, queries      | `@gm/shared`, `@gm/sim` (types + API), `better-sqlite3` |
 | `apps/desktop`      | Electron: main (LeagueService, worker, Steam), preload, React UI        | everything, but `@gm/sim` only from its root            |
 | `tools/balance-lab` | Headless league-health report (`pnpm lab`)                              | `@gm/sim`, `@gm/shared`                                 |
-| `ml/`               | Python training → model tables (JSON) in `ml/models/`                   | n/a                                                     |
+| `ml/`               | Python: two trained models (JSON tables), calibration studies           | n/a                                                     |
 
 ## Inside `packages/sim`: engines
 
@@ -106,8 +106,8 @@ through their `index.ts`** (`'../cba'`, never `'../cba/ruleset'`). Apps import o
    in `handleCommand`. Validate the actor: in multiplayer, players may only command their teams.
 4. **Everything is data.** Cap numbers, contract limits, season length, points, award names,
    team colours: data, never hard-coded. Read rules from `ctx.ruleset`.
-5. **Models behind interfaces.** ML models implement the same interface as the rules-based
-   default (`GoalModel`, `DevelopmentModel`, `PlayerValuator`) and are swapped in `Models`.
+5. **Models behind interfaces.** Any replacement implements the same interface as the rules-based
+   default (trained only for stats to ratings and development, ADR 0005) (`GoalModel`, `DevelopmentModel`, `PlayerValuator`) and are swapped in `Models`.
    Check a new model in the balance lab against the default with fixed seeds first.
 6. **SQL only in `packages/data`.** Never edit a migration after the first public build; add a new one.
 7. **Money is integer dollars** (`dollars(5.5)` → 5_500_000). Never floats.

@@ -30,3 +30,5 @@ Models do not ship as ONNX. To keep the sim pure (no native runtime, no file acc
 model ships as data the sim loads: a JSON table or coefficients behind the same interfaces
 (`gm-xg-table` for `GoalModel`, `gm-stats-to-ratings`; see [MODEL_CONTRACTS.md](../MODEL_CONTRACTS.md)).
 ONNX can still be a training-side step before the table is sampled.
+
+Since [0005](0005-calibrate-first.md), only two models are trained (stats to ratings, development); the rest of the rules are calibrated.

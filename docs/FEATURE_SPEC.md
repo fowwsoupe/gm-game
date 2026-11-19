@@ -9,7 +9,7 @@ A sports GM game for Steam where the league feels alive, every decision has a vi
 1. **A living league.** You always know who is contending, who is in trouble and who just made a move. Trade requests, disputes, injuries and slumps happen to every team, not only yours.
 2. **Smart, honest AI.** AI GMs value players per team, understand bad contracts, and explain their decisions. Harder difficulty means smarter AI, never cheating.
 3. **Decisions, not spreadsheets.** Cards, choices and clear visuals instead of tables and sliders. Every dollar and every hire shows a measurable effect.
-4. **Realism you can feel.** Real CBA rules, non-linear careers, realistic upset rates. Calibrated against real NHL data with machine learning.
+4. **Realism you can feel.** Real CBA rules, non-linear careers, realistic upset rates. Rules calibrated against real NHL data, with machine learning where a fit is needed.
 5. **Fast forever.** Sim a day under 0.5 s and any screen under 200 ms, even 20 years into a save.
 6. **Yours to shape.** Everything is data: rules, teams, awards, rosters. Sandbox leagues and community roster files.
 
@@ -52,22 +52,22 @@ Seven shared engines live in `packages/sim`; every feature is a thin layer on to
 - **Everything is data.** Rules, teams, colours, awards, schedule and playoff format live in data, never hard-coded.
 - **Every action is a command.** Trades, signings and line changes go through one command layer (`GmApi`). This makes multiplayer possible later.
 - **SQL only in `packages/data`.** One save = one SQLite file. Never edit a shipped migration.
-- **ML behind interfaces.** Trained in Python, shipped as data tables the pure sim loads (see MODEL_CONTRACTS.md), plugged into the Sim, Players and Value engines. A rules-based fallback always exists.
+- **Models behind interfaces.** Rules-based defaults calibrated against real data; trained models only for stats to ratings and development ([ADR 0005](adr/0005-calibrate-first.md)). The interfaces and table formats (MODEL_CONTRACTS.md) stay so a replacement can be tried in the lab.
 - **Seeded everything.** Same seed, same season: reproducible bugs, replayable games, fair multiplayer.
 
-## Foundation: data and machine learning
+## Foundation: data, models and calibration
 
-Python trains on public historical data; the game ships only trained models, never player data.
+Python measures public historical data to set the targets and tuning numbers the rules must hit; two models are trained where a fit is needed (stats to ratings, development); the game ships rules and tables, never player data.
 
-1. **Data pipeline.** Play-by-play with shot locations, player stats, drafts, contracts, junior and European seasons (collect junior/European when suitable rights exist). Community roster files supply players in the shipped game; historical data supports research and model calibration.
+1. **Data pipeline.** Play-by-play with shot locations, player stats, drafts, contracts, junior and European seasons (collect junior/European when suitable rights exist). Community roster files supply players in the shipped game; historical data supports research and calibration.
 2. **What drives winning.** Which advanced stats predict goals and wins. Decides which ratings the game needs.
-3. **Stats to ratings.** Turns a stat line into hidden ratings so community rosters get rated automatically.
-4. **Growth and potential.** Career-shape distributions (peak age, length, decline speed), skill-specific aging, junior/European translation, potential as a floor/ceiling range.
-5. **Value.** Player surplus value, draft-pick value curve, contract demands, calibrated on real past trades and signings.
+3. **Stats to ratings.** Turns a stat line into hidden ratings so community rosters get rated automatically (trained on the sim's own seasons).
+4. **Growth and potential.** Trained on NHL careers: career-shape distributions (peak age, length, decline speed), skill-specific aging, junior/European translation, potential as a floor/ceiling range.
+5. **Value.** Player surplus value, draft-pick value curve, contract demands, checked against published trade and signing anchors.
 
-Models in the game: shot / expected-goals, ratings-to-stats calibration, injury risk (Sim); development curves, build clustering (Players); player value, contract demands, team strategy, trade acceptance (AI GMs).
+Calibrated in the game: shot quality, scoring and save levels, injury rates (Sim); aging and career shapes (Players); player value, contract demands, team strategy, trade acceptance (AI GMs), all as readable rules.
 
-Rules: seeded; every AI decision shows a readable reason; each model is compared against the rules-based version with a fixed seed before switching; check each data source's terms of use.
+Rules: seeded; every AI decision shows a readable reason; every tuning change is checked in the balance lab with a fixed seed; check each data source's terms of use.
 
 ## Living league
 
@@ -96,7 +96,7 @@ Five top sections: Home, Team, League, Front Office, Owner. Cmd+K search and key
 
 No overall rating; the sim runs on hidden ratings underneath.
 
-- **Percentile cards**, **builds** (found by clustering), **role tags**, **traits**, **spot fit** (from shot locations and handedness), **generated faces** that age with the player.
+- **Percentile cards**, **builds**, **role tags**, **traits**, **spot fit** (from shot locations and handedness), **generated faces** that age with the player.
 - **Development is never a straight line:** each career has its own shape; good and bad seasons around the trend; skills age at different speeds; training plans work within each skill's hidden ceiling.
 - **Injuries:** cleared is not 100%; injury history and re-injury risk; injuries hit specific skills; you manage the return and medical staff changes the odds.
 
@@ -110,7 +110,7 @@ No overall rating; the sim runs on hidden ratings underneath.
 - Position scarcity from supply and demand (right-shot D cost more; goalies discounted).
 - No quantity-for-quality exploit.
 - Trade block (players and picks), conditional picks, retained salary (max 50%, three contracts, no double retention), future considerations, three-team trades.
-- AI explains itself; calibrated on real past trades.
+- AI explains itself; checked against published trade anchors.
 
 ### Contracts and cap
 
@@ -150,7 +150,7 @@ Summer training → camp → preseason → 84-game season → deadline → playo
 
 - Fictional default league; community roster JSON (versioned, validated); Steam Workshop; light sims for minor/junior/European leagues.
 - Sandbox: rules, any number of leagues, expansion, relocation, identity editor, commissioner mode.
-- Licensing (not legal advice): ship fictional names and our own award/trophy names; real-name files must genuinely come from the community; ML training data stays private; consult a lawyer before selling.
+- Licensing (not legal advice): ship fictional names and our own award/trophy names; real-name files must genuinely come from the community; historical data stays private and only sets targets; consult a lawyer before selling.
 
 ## Presentation and performance
 

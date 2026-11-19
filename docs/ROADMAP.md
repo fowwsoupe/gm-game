@@ -50,7 +50,7 @@ Builds the engines everything else depends on.
 - [x] Data pipeline (`ml/`): NHL play-by-play and player seasons prototyped; junior/European, draft and contract inputs deferred past v0.1 (community rosters instead)
 - [x] NHL-only held-out study done ([report](M1_PROTOTYPE_REPORT.md)); rating list v2 in code ([RATINGS.md](RATINGS.md)); `faceoffs` effect measured and calibrated (`ml/src/faceoffs.py`); M1 signed off on the NHL-only prototype
 - [x] Hidden ratings (list v2) + stats-to-ratings model v1 (`ratingsFromStats`, fitted on the sim by `pnpm ratings:fit`, with uncertainty); roster import does not use it yet (M4)
-- [x] Line-by-line game sim (`sports/hockey/game.ts`) + "result only" mode; trained shot model (Azmi) plugs into `GoalModel` as a `gm-xg-table`
+- [x] Line-by-line game sim (`sports/hockey/game.ts`) + "result only" mode; shot quality is a rules table behind `GoalModel` (`gm-xg-table`), tuned in the lab
 - [x] Balance lab: league-health report (`pnpm lab`) with multi-year checks (talent drift, dynasties, cap, playoff turnover, goalie save % repeatability, faceoff effect, goals vs expected, points % spread and repeatability against real NHL seasons); green apart from the long-run known gaps it lists ([why](research/2026-11-long-run-spread.md))
 - [x] Speed test in CI: day, season and year-20 budgets, plus year-20 screen data (standings, leaders, cap sheet)
 - [x] Design system: tokens, team theming, Card, Button, PercentileBar, PlayerCard, BroadcastCaption
@@ -64,8 +64,9 @@ Build order, owners and "done when" for each step: **[V0.1_PLAN.md](V0.1_PLAN.md
 **Engines**
 
 - [~] Players (`sim/players`): percentiles, builds and role tags (rules), injuries and injury history (shown on the player card) done; re-injury risk done; traits, clustered builds to do
-- [x] Value (`sim/value`): per-team surplus value (can be negative), market value, pick value curve (rules-based; calibrated curve is Azmi's)
+- [x] Value (`sim/value`): per-team surplus value (can be negative), market value, pick value curve (rules-based, tuned in the lab)
 - [x] People (`sim/people`): personalities (from the player id), free-agent priorities by age and personality, AI GM styles and skill, team plans, morale (shown on the player card; no effects yet) done
+- [~] Models and calibration (`ml/`, [ADR 0005](adr/0005-calibrate-first.md): ML only where a fit is needed): faceoff effect and goalie form measured on NHL data, stats-to-ratings v1 fitted on the sim; trained stats-to-ratings and development models, "better team wins a best-of-7" back in range, playtest analysis to do
 - [~] League & events (`sim/league`): calendar, team status (league pulse from playoff odds, roster age and cap space, crisis when a losing team's owner loses faith), event engine (trade requests, holdouts, disputes, breakouts in the summer and in season, AI owners' frustration, AI fire sales), news, a stop filter (saved with the league) done; the "talk extension" To do for breakouts to do
 - [ ] Minor / junior / European leagues: light stats-only sim for prospects
 
@@ -126,9 +127,10 @@ Build order, owners and "done when" for each step: **[V0.1_PLAN.md](V0.1_PLAN.md
 
 Research behind these: [docs/research/2026-11-sports-gm-research.md](research/2026-11-sports-gm-research.md).
 
-- [ ] **Data licensing (blocker before launch):** NHL API and MoneyPuck are non-commercial;
-      Hockey-Reference and Elite Prospects ban model training. Prototype freely; before launch,
-      ask the NHL and MoneyPuck for commercial permission or license a commercial feed.
+- [ ] **Data licensing (before launch):** NHL API and MoneyPuck are non-commercial;
+      Hockey-Reference and Elite Prospects ban model training. Since [ADR 0005](adr/0005-calibrate-first.md) the only model
+      trained on real data is development; everything else uses real data only for lab targets. Confirm with the lawyer that this
+      use is fine, or ask the NHL and MoneyPuck for permission.
 - [ ] **Incorporate and see a lawyer before any revenue** (Quebec image rights are strict;
       ship a fully fictional league; never host real-player or logo files).
 - [ ] Pricing: research suggests $19.99 in Early Access, $24.99-29.99 at 1.0.

@@ -22,7 +22,7 @@ apps/desktop      Electron app: main process, preload, React UI, Steam
 packages/shared   types, roster file schema, UI↔main contract
 packages/sim      the game engine (pure TypeScript, seeded, tested)
 packages/data     SQLite save files
-ml/               Python model training → model tables (JSON) in ml/models/
+ml/               Python: two trained models (JSON tables) + calibration studies
 tools/balance-lab league-health report (pnpm lab)
 docs/             architecture and decisions
 ```
@@ -32,8 +32,8 @@ Read [docs/V0.1_PLAN.md](docs/V0.1_PLAN.md), [docs/ROADMAP.md](docs/ROADMAP.md) 
 ## Stack
 
 React 19 + TypeScript, Vite (electron-vite), Tailwind 4, TanStack Table / Virtual / Query,
-Zustand, ECharts, PixiJS, Electron, better-sqlite3, steamworks.js. ML models ship as data
-(JSON tables), not as an ONNX runtime: see [docs/MODEL_CONTRACTS.md](docs/MODEL_CONTRACTS.md).
+Zustand, ECharts, PixiJS, Electron, better-sqlite3, steamworks.js. Models ship as data (JSON
+tables), only where a fit is needed; the rest is calibrated rules ([ADR 0005](docs/adr/0005-calibrate-first.md)).
 shadcn/ui components get added as needed with `pnpm dlx shadcn@latest add <component>`.
 
 ## Troubleshooting
