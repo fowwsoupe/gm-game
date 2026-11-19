@@ -404,6 +404,9 @@ export const fr: Record<MessageKey, string> = {
     'Votre poste est en jeu : la confiance du propriétaire est tombée à {n}. Sous {fire} à un bilan de saison, il vous congédie.',
   'owner.card.pressWin': 'La presse veut savoir comment votre équipe a gagné {n} matchs de suite.',
   'owner.card.pressLoss': 'La presse demande ce qui ne va pas après {n} défaites de suite.',
+  'owner.card.pressSeries':
+    'La presse demande comment votre équipe a gagné la ronde {n} des séries.',
+  'owner.card.pressOut': 'La presse demande ce qui n’a pas fonctionné à la ronde {n} des séries.',
   'owner.option.deflect': 'Esquiver',
   'owner.option.confident': 'Se montrer confiant',
   'owner.option.honest': 'Être franc',
