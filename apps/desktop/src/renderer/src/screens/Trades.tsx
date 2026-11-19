@@ -11,7 +11,8 @@ import {
 } from '@/lib/queries';
 import { useT, type MessageKey } from '@/i18n';
 import { Button, Card, Face, TeamLink, TeamSelect, Td, Th } from '@/ui';
-import { fullName, money, moneyParams, statValue, teamName } from '@/lib/format';
+import { useUi } from '@/stores/ui';
+import { fullName, money, moneyParams, pickParams, statValue, teamName } from '@/lib/format';
 
 /** Build a trade with another team; its GM answers live, with reasons, before you send it. */
 export function Trades() {
@@ -19,14 +20,15 @@ export function Trades() {
   const { data: teams = [] } = useTeams();
   const mine = teams.find((x) => x.userControlled);
   const others = teams.filter((x) => x.id !== mine?.id);
-  const [partnerPick, setPartner] = useState<TeamId>();
+  const ask = useUi((s) => s.tradeAsk);
+  const [partnerPick, setPartner] = useState(ask?.teamId as TeamId | undefined);
   const partner = partnerPick ?? others[0]?.id;
   const [give, setGive] = useState<PlayerId[]>([]);
   const [get, setGet] = useState<PlayerId[]>([]);
   /** Share of each given player's cap hit you keep paying (0 = none). */
   const [retain, setRetain] = useState<Record<string, number>>({});
   const [givePicks, setGivePicks] = useState<string[]>([]);
-  const [getPicks, setGetPicks] = useState<string[]>([]);
+  const [getPicks, setGetPicks] = useState<string[]>(ask ? [ask.pickId] : []);
   /** Top-N protection on the first-round picks you give (0 = none). */
   const [protectTop, setProtectTop] = useState(0);
   const { data: myPicks = [] } = usePicks(mine?.id);
@@ -327,6 +329,7 @@ function Offers({ teamId }: { teamId: TeamId }) {
     const p = list.find((x) => x.id === id);
     return p ? `${fullName(p)} (${p.position}, ${p.age})` : id;
   };
+  const pick = (id: string) => t('trade.pick', pickParams(teams, id));
   const respond = (offerId: string, accept: boolean) =>
     dispatch.mutate(
       { kind: 'trade.respond', offerId, accept },
@@ -343,8 +346,14 @@ function Offers({ teamId }: { teamId: TeamId }) {
                 <TeamLink teamId={o.proposal.fromTeamId}>{team?.abbreviation}</TeamLink>{' '}
                 {t('trade.offerLine', {
                   team: teamName(teams, o.proposal.fromTeamId),
-                  give: o.proposal.give.map((id) => name(theirs, id)).join(', '),
-                  get: o.proposal.get.map((id) => name(ours, id)).join(', '),
+                  give: [
+                    ...o.proposal.give.map((id) => name(theirs, id)),
+                    ...(o.proposal.givePicks ?? []).map(pick),
+                  ].join(', '),
+                  get: [
+                    ...o.proposal.get.map((id) => name(ours, id)),
+                    ...(o.proposal.getPicks ?? []).map(pick),
+                  ].join(', '),
                   day: o.expiresDay,
                 })}
               </span>

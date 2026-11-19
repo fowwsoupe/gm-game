@@ -420,11 +420,22 @@ export interface OwnerCard {
     | 'renovation'
     | 'festival'
     | 'fireCoach'
-    | 'hotSeat';
+    | 'hotSeat'
+    /** A press question after a win or losing streak (`params.n` games): you answer, the owner and fans react. */
+    | 'pressWin'
+    | 'pressLoss'
+    /** A press question after your team wins or loses a playoff series (`params.n` is the round). */
+    | 'pressSeries'
+    | 'pressOut'
+    /** A press question after a blockbuster trade: one of your top three players moved. */
+    | 'pressTrade';
   /** Text params: `amount` in dollars, `pct` in whole percent. */
   params: Record<string, number>;
   /** `noted`: a warning, nothing to decide. */
-  options: { key: 'agree' | 'refuse' | 'more' | 'noted'; effects: CardEffects }[];
+  options: {
+    key: 'agree' | 'refuse' | 'more' | 'noted' | 'deflect' | 'confident' | 'honest';
+    effects: CardEffects;
+  }[];
 }
 
 /** Generic standings row. `otl` stays 0 in sports without overtime-loss points. */
@@ -616,6 +627,8 @@ export interface LeagueStatus {
   championTeamId: TeamId | null;
   /** Between opening free agency and starting the next season. */
   freeAgencyOpen: boolean;
+  /** The live draft is under way (started, free agency not open yet). */
+  draftLive: boolean;
   tradeDeadlineDay: number;
   /** First day of the playoffs, and the last day they can run (the calendar's, as day indexes). */
   playoffsStartDay: number;
@@ -668,6 +681,16 @@ export interface ScoutReport {
 }
 
 /** A prospect as the draft board shows him: no hidden ratings. */
+/** The pick on the clock in the live draft, and the team that makes it. */
+export interface DraftClock {
+  /** Overall pick number, from 1. */
+  pick: number;
+  round: number;
+  teamId: TeamId;
+  /** The pick's id (`DraftPick.id`), to trade it. */
+  id: string;
+}
+
 export interface DraftBoardEntry {
   id: PlayerId;
   firstName: string;

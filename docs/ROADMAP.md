@@ -31,9 +31,17 @@ to 0.085-0.087 on seeds 1, 101 and 201 (re-checked 2026-11-18; 201 is borderline
 playoff turnover 31-32% ([research/2026-11-spread-second-mechanism.md](research/2026-11-spread-second-mechanism.md)). League & events:
 all five jobs of [research/2026-11-league-events.md](research/2026-11-league-events.md) done (the pulse ranks by playoff odds; a young team out of it rebuilds, an old bubble team with cap space buys; crisis on top).
 
+Camp and a trade deadline that matters: brief in
+[research/2026-11-camp-deadline.md](research/2026-11-camp-deadline.md); its two jobs (camp, the
+deadline) are ready.
+
+Minor / junior / European leagues: brief in
+[research/2026-11-minor-leagues.md](research/2026-11-minor-leagues.md); its four jobs (the
+prospect pool, lines, prospects in trades, the farm team) are ready, in that order.
+
 Needs a design first (a short brief in `docs/research/`, then jobs):
 
-- Minor / junior leagues; camp and a trade deadline that matters; player traits and clustered builds.
+- Player traits and clustered builds.
 - Every other Phase 2 headline below.
 
 ## Queue (model · effort)
@@ -49,7 +57,7 @@ A. Leftovers (Sonnet 5.5, medium)
 B. Balance and calibration (Opus 5.5 unless noted)
 
 - [ ] Points % spread, seed 1 still short (high; compare seeds 1/101/201)
-- [ ] "Better team wins a best-of-7" back in range (high)
+- [x] "Better team wins a best-of-7" back in range (high)
 - [ ] Trained stats-to-ratings and development models (xhigh, 2-3 PRs): stats to ratings v2 done (beats v1 on every key); penalty-kill time and penalty minutes in roster stats, and the development model, to do
 - [ ] Playtest analysis (Sonnet 5.5, medium)
 - [ ] Player traits and clustered builds (high, brief first)
@@ -64,7 +72,7 @@ D. Phase 2 headlines
 - [ ] Live draft room with trading (Opus, high, 3-4 PRs)
 - [ ] Free-agency bidding war and contract negotiation (Opus, xhigh, brief first)
 - [ ] League news tab (Opus for storylines, Sonnet for UI; high, brief first)
-- [ ] Media and press conferences, text (Sonnet, medium, 2-3 PRs)
+- [x] Media and press conferences, text (Sonnet, medium, 2-3 PRs)
 - [ ] Summer training, camp battles, international tournament (Opus, high, 3 PRs)
 - [ ] Cutscenes (Sonnet, medium, 3 PRs)
 - [ ] Match viewer (2D) with coach from the bench (Fable 5.2, xhigh, 6+ PRs)
@@ -102,7 +110,7 @@ Build order, owners and "done when" for each step: **[V0.1_PLAN.md](V0.1_PLAN.md
 - [~] Players (`sim/players`): percentiles, builds and role tags (rules), injuries and injury history (shown on the player card) done; re-injury risk done; traits, clustered builds to do
 - [x] Value (`sim/value`): per-team surplus value (can be negative), market value, pick value curve (rules-based, tuned in the lab)
 - [x] People (`sim/people`): personalities (from the player id), free-agent priorities by age and personality, AI GM styles and skill, team plans, morale (shown on the player card; no effects yet) done
-- [~] Models and calibration (`ml/`, [ADR 0005](adr/0005-calibrate-first.md): ML only where a fit is needed): faceoff effect and goalie form measured on NHL data, stats-to-ratings v2 fitted on the sim (per-game and workload features, 120 leagues); special-teams stats for stats to ratings, the trained development model, "better team wins a best-of-7" back in range, playtest analysis to do
+- [~] Models and calibration (`ml/`, [ADR 0005](adr/0005-calibrate-first.md): ML only where a fit is needed): faceoff effect and goalie form measured on NHL data, stats-to-ratings v2 fitted on the sim (per-game and workload features, 120 leagues); special-teams stats for stats to ratings, the trained development model, playtest analysis to do; "better team wins a best-of-7" back in range done
 - [~] League & events (`sim/league`): calendar, team status (league pulse from playoff odds, roster age and cap space, crisis when a losing team's owner loses faith), event engine (trade requests, holdouts, disputes, breakouts in the summer and in season, AI owners' frustration, AI fire sales), news, a stop filter (saved with the league), a "talk extension" To do for your breakouts done
 - [ ] Minor / junior / European leagues: light stats-only sim for prospects
 
@@ -143,7 +151,7 @@ Build order, owners and "done when" for each step: **[V0.1_PLAN.md](V0.1_PLAN.md
 - [ ] Live draft trade room
 - [ ] Free-agency live bidding war + full contract negotiation
 - [ ] League news tab, social-media style: a feed page of posts with the generated face of the player and of the AI GM (or coach, owner) in each one, built on the existing `news.posted` events and the news-feed faces. Storylines that run over weeks and seasons (a holdout becoming a trade, a breakout and his extension ask, a GM's fire sale, a contender clearing cap for a star, a rivalry, a coach on the hot seat), each told as a short thread of linked posts; generated GM faces; likes and follows only if they carry a use. Needs a design first (a short brief in `docs/research/`).
-- [ ] Media & press conferences (text)
+- [x] Media & press conferences (text)
 - [ ] Match viewer (2D) + coach from the bench
 - [ ] Cutscenes (trophy lift, draft pick, signing)
 - [ ] Summer training, camp battles, international tournament
