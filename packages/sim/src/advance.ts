@@ -194,6 +194,16 @@ export function advance(
             params: { player: playerName(p), team: teamName(team), n: s.points, gp: s.gp },
           }),
         );
+        if (team.userControlled) {
+          emit(
+            makeEvent(state, 'minor', [team.id], {
+              kind: 'player.brokeOut',
+              playerId: p.id,
+              teamId: team.id,
+              season: state.date.season,
+            }),
+          );
+        }
       }
       for (const teamId of [game.homeTeamId, game.awayTeamId]) {
         const stars = Object.values(state.players)

@@ -64,6 +64,7 @@ export function createLeague(
     tradeOffers: [],
     tradeRequests: [],
     holdouts: [],
+    breakouts: {},
     disputes: [],
     linemates: {},
     cash: {},

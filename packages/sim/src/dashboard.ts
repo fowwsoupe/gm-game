@@ -1,7 +1,7 @@
 import type { Dashboard, Player, TeamId, TodoItem } from '@gm/shared';
 import { capYearOf, phaseOf, playerName, type LeagueState } from './core';
 import { capYearIssues, teamCapTotal } from './cba';
-import { freeAgents, resignOffers, wantedYears } from './offseason';
+import { freeAgents, isExpiring, resignOffers, resignWindowOpen, wantedYears } from './offseason';
 import { assistantSees, departmentsOf, staffOf } from './people';
 import { overall } from './players';
 import { cachedContext } from './trades';
@@ -37,6 +37,14 @@ export function dashboard(state: LeagueState, ctx: SimContext, teamId: TeamId): 
         .map((o) => state.players[o.playerId]!)
         .sort((a, b) => overall(seen(b)) - overall(seen(a)))[0]!;
       todo.push({ code: 'adviceResign', params: { player: playerName(first) }, screen: 'cap' });
+    }
+  }
+  // A young player who broke out and is in his last year: his price only rises, so talk extension now.
+  if (!state.championTeamId && resignWindowOpen(state, ctx)) {
+    for (const p of roster.filter(
+      (x) => state.breakouts[x.id] === state.date.season && isExpiring(state, x),
+    )) {
+      todo.push({ code: 'breakoutExtend', params: { player: playerName(p) }, screen: 'cap' });
     }
   }
   if (state.draftClass.length > 0 && !(state.draftBoards[teamId]?.length ?? 0)) {

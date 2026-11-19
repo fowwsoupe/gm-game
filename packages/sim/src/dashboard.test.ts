@@ -1,6 +1,6 @@
 import { describe, expect, it } from 'vitest';
 import type { Actor } from '@gm/shared';
-import { createLeague, dashboard, defaultContext, handleCommand } from './index';
+import { applyEvent, createLeague, dashboard, defaultContext, handleCommand } from './index';
 import { cachedContext } from './trades';
 
 const ctx = defaultContext();
@@ -71,6 +71,30 @@ describe('the assistant GM', () => {
     const ai = dashboard(state, ctx, theirs.id).todo.map((i) => i.code);
     expect(ai).not.toContain('adviceTake');
     expect(ai).not.toContain('adviceDecline');
+  });
+});
+
+describe('a breakout on your team', () => {
+  it('asks for an extension in his last year, until he has one', () => {
+    const state = createLeague(56, ctx);
+    const mine = Object.values(state.teams).find((t) => t.userControlled)!.id;
+    const p = Object.values(state.players).find((x) => x.teamId === mine && x.contract)!;
+    p.contract!.expiresAfterSeason = state.date.season;
+    const asks = () => dashboard(state, ctx, mine).todo.filter((i) => i.code === 'breakoutExtend');
+    expect(asks()).toHaveLength(0);
+    applyEvent(state, {
+      id: 'e',
+      date: state.date,
+      importance: 'minor',
+      teamIds: [mine],
+      kind: 'player.brokeOut',
+      playerId: p.id,
+      teamId: mine,
+      season: state.date.season,
+    });
+    expect(asks()).toHaveLength(1);
+    p.extension = { ...p.contract! };
+    expect(asks()).toHaveLength(0);
   });
 });
 

@@ -411,6 +411,8 @@ export const fr: Record<MessageKey, string> = {
   'todo.draftList': 'Classez la cuvée du repêchage pour vos choix',
   'todo.freeAgency': 'Le marché est ouvert : signez des joueurs, puis lancez la saison suivante',
   'todo.holdout': '{player} est en grève',
+  'todo.breakoutExtend':
+    '{player} éclate : discutez d’une prolongation maintenant, son prix ne fera que monter',
   'todo.dispute': '{player} veut un plus grand rôle',
   'event.disputeStarted': '{player} veut un plus grand rôle',
   'event.disputeSettled': '{player} est de nouveau satisfait de son rôle',
