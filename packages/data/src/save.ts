@@ -112,6 +112,8 @@ interface PlayerRow {
   injured_until: number | null;
   injury_count: number;
   injury_days: number;
+  league: string | null;
+  origin: string | null;
 }
 
 /**
@@ -368,10 +370,10 @@ export class SaveFile {
     const setCoach = this.db.prepare('UPDATE teams SET coach_json = ? WHERE id = ?');
     const setStaff = this.db.prepare('UPDATE teams SET staff_json = ? WHERE id = ?');
     const setTeam = this.db.prepare('UPDATE players SET team_id = ? WHERE id = ?');
-    // Who joined a new team (or left one) in these events; written from the final state below.
+    // Who joined a new team, left one or changed league in these events; written from the final state below.
     const moved = new Set<string>();
     const setJoined = this.db.prepare(
-      'UPDATE players SET joined_season = ?, debut_season = ? WHERE id = ?',
+      'UPDATE players SET joined_season = ?, debut_season = ?, league = ?, origin = ? WHERE id = ?',
     );
     const setContractOnly = this.db.prepare('UPDATE players SET contract_json = ? WHERE id = ?');
     const archiveLine = this.db.prepare(
@@ -477,6 +479,9 @@ export class SaveFile {
             if (p) insertPlayer(p);
             break;
           }
+          case 'player.assigned':
+            moved.add(e.playerId);
+            break;
           case 'player.moved':
             moved.add(e.playerId);
             if (e.toTeamId) setTeam.run(e.toTeamId, e.playerId);
@@ -619,7 +624,8 @@ export class SaveFile {
       }
       for (const id of moved) {
         const p = state.players[id];
-        if (p) setJoined.run(p.joined ?? null, p.debut ?? null, id);
+        if (p)
+          setJoined.run(p.joined ?? null, p.debut ?? null, p.league ?? null, p.origin ?? null, id);
       }
       for (const s of Object.values(state.playoffSeries)) {
         updateSeries.run(s.higherWins, s.lowerWins, s.winnerTeamId ?? null, s.id);
@@ -730,6 +736,8 @@ export class SaveFile {
       if (r.extension_json) p.extension = JSON.parse(r.extension_json);
       if (r.joined_season !== null) p.joined = r.joined_season;
       if (r.debut_season !== null) p.debut = r.debut_season;
+      if (r.league !== null) p.league = r.league;
+      if (r.origin !== null) p.origin = r.origin;
       if (r.injured_until !== null) p.injuredUntil = r.injured_until;
       if (r.injury_count > 0) p.injuryHistory = { count: r.injury_count, days: r.injury_days };
       return p;

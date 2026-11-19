@@ -291,6 +291,11 @@ export const fr: Record<MessageKey, string> = {
   'prospects.lastLine': 'Dernière saison',
   'league.junior': 'Junior',
   'league.europe': 'Europe',
+  'league.minors': 'Ligue mineure',
+  'farm.down': 'Rétrograder',
+  'farm.up': 'Rappeler',
+  'farm.note':
+    'Rétrogradé, il quitte l’effectif et l’alignement, et son salaire ne compte au plafond qu’au-delà de l’exemption. Un junior sous l’âge junior retourne dans le junior.',
   'rating.skating': 'Patinage',
   'rating.shooting': 'Tir',
   'rating.passing': 'Passe',
@@ -559,6 +564,8 @@ export const fr: Record<MessageKey, string> = {
     'Une rivalité ravivée : {a} et {b} se retrouvent en séries, un an après leur dernière série',
   'todo.injured': '{count} joueur(s) blessé(s)',
   'todo.rosterShort': 'Il manque {count} joueur(s) à {position}',
+  'todo.rosterOver':
+    '{count} joueur(s) en santé au-delà de la limite de l’effectif : rétrogradez-les',
   'todo.overCap': 'Au-dessus du plafond de {amount}',
   'todo.deadline': 'Date limite des échanges dans {days} jour(s)',
   'career.totals': 'Total',

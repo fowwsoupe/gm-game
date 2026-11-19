@@ -296,6 +296,11 @@ function PlayerTable({
                 {p.injuredUntil !== undefined && (
                   <span className="ml-2 text-xs text-bad">{t('roster.injuredShort')}</span>
                 )}
+                {p.league && (
+                  <span className="ml-2 text-xs text-muted">
+                    {t(`league.${p.league}` as MessageKey)}
+                  </span>
+                )}
               </Td>
               <Td left>{p.position}</Td>
               <Td>{p.age}</Td>
@@ -394,6 +399,7 @@ export function Profile({
       <Career player={p} />
       {!standalone && <OpenProfile player={p} />}
       {p.teamId !== null && p.teamId === signFor && <BlockToggle player={p} teamId={signFor} />}
+      {p.contract && p.teamId === signFor && <FarmToggle player={p} teamId={signFor} />}
       {p.training && p.teamId === signFor && (
         <TrainingPlan player={p} options={p.training.options} teamId={signFor} />
       )}
@@ -774,6 +780,32 @@ function BlockToggle({ player, teamId }: { player: PlayerProfile; teamId: TeamId
         </Button>
         <span className="text-xs text-muted">{t('block.note')}</span>
       </div>
+    </Card>
+  );
+}
+
+/** Send one of your players down to a lower league (off the roster and the lineup) or call him up. */
+function FarmToggle({ player, teamId }: { player: PlayerProfile; teamId: TeamId }) {
+  const t = useT();
+  const dispatch = useDispatch();
+  const [message, setMessage] = useState<string | null>(null);
+  return (
+    <Card>
+      <div className="flex items-center gap-3">
+        <Button
+          disabled={dispatch.isPending}
+          onClick={() =>
+            dispatch.mutate(
+              { kind: 'player.assign', teamId, playerId: player.id, down: !player.league },
+              { onSuccess: (res) => setMessage(res.ok ? null : res.error.message) },
+            )
+          }
+        >
+          {t(player.league ? 'farm.up' : 'farm.down')}
+        </Button>
+        <span className="text-xs text-muted">{t('farm.note')}</span>
+      </div>
+      {message && <p className="mt-2 text-sm text-bad">{message}</p>}
     </Card>
   );
 }

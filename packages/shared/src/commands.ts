@@ -114,6 +114,11 @@ export type Command =
   | { kind: 'draft.pick'; teamId: TeamId; playerId: PlayerId }
   /** Sign one of your prospects to his entry deal (any time outside the playoffs, cap allowing). */
   | { kind: 'prospect.sign'; teamId: TeamId; playerId: PlayerId }
+  /**
+   * Send one of your signed players down (`down`) to a lower league, the sport decides which (hockey:
+   * back to junior under the junior age, else the farm team), or call him back up, cap allowing.
+   */
+  | { kind: 'player.assign'; teamId: TeamId; playerId: PlayerId; down: boolean }
   /** One day of free agency: free agents answer the offers they have, then AI teams make new ones. */
   | { kind: 'freeAgency.advanceDay' }
   /** Match the offer sheet another team gave your restricted free agent: he signs with you on its terms. */

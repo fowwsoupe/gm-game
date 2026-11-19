@@ -47,6 +47,8 @@ export interface Ruleset {
     offseasonOveragePct: number;
     /** The playoff cap: a team's best N skaters and goalies must fit under the upper limit. Null = no playoff cap. */
     playoffCap: { skaters: number; goalies: number } | null;
+    /** A player sent down to a lower league counts on the cap only for his hit above this. */
+    buriedRelief: Dollars;
   };
 
   contracts: {

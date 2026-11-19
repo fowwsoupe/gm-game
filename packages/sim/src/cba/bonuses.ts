@@ -33,7 +33,7 @@ export function payBonuses(
   for (const teamId of [...new Set(paid.map((x) => x.teamId))].sort()) {
     const mine = paid.filter((x) => x.teamId === teamId).sort((a, b) => b.amount - a.amount);
     const total = mine.reduce((s, x) => s + x.amount, 0);
-    let over = teamCapTotal(state, teamId) + total - ctx.ruleset.cap.upperLimit;
+    let over = teamCapTotal(ctx.ruleset, state, teamId) + total - ctx.ruleset.cap.upperLimit;
     for (const x of mine) {
       if (over <= 0) break;
       const amount = Math.min(over, x.amount);

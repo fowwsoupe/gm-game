@@ -247,10 +247,10 @@ export function evaluateTrade(
     .filter((c) => c.season === season)
     .reduce((sum, c) => sum + c.amount, 0);
   for (const teamId of [from, to]) {
-    const total = teamCapTotal(state, teamId, after) + (teamId === from ? newCharges : 0);
+    const total = teamCapTotal(ruleset, state, teamId, after) + (teamId === from ? newCharges : 0);
     if (
       capYearIssues(ruleset, state, total).length &&
-      total > teamCapTotal(state, teamId, before)
+      total > teamCapTotal(ruleset, state, teamId, before)
     ) {
       return refuse('over_cap', { team: state.teams[teamId]!.abbreviation });
     }

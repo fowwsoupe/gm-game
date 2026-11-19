@@ -42,6 +42,7 @@ import {
   tradeRequests,
 } from './people';
 import { sitsOut, strengthFor } from './tonight';
+import { aiFarmMoves } from './farm';
 import { byOverall, overall } from './players';
 import { payBonuses, payroll } from './cba';
 import { settleMonth, settlePlayoffs, settlesOn } from './finance';
@@ -332,6 +333,10 @@ export function advance(
       if (today.day > 0) ownerMonth(state, ctx, emitter(state, events));
     }
     if (checksInOn(today.day, ctx)) deadlineCheckIn(state, ctx, emitter(state, events));
+    // From opening night on, AI teams cut to the roster limit and call up for injuries.
+    if (today.day >= 0 && !state.championTeamId) {
+      aiFarmMoves(state, ctx, emitter(state, events), today.day);
+    }
     const dayStart = events.length;
 
     for (const g of byDay.get(today.day) ?? []) {
@@ -464,7 +469,7 @@ export function advance(
             .sort((a, b) => b.rating - a.rating)
             .slice(0, PULSE_CORE);
           const age = core.reduce((s, x) => s + x.age, 0) / Math.max(1, core.length);
-          const capRoom = (cap - payroll(roster)) / cap;
+          const capRoom = (cap - payroll(roster, ctx.ruleset)) / cap;
           return [teamId, { odds: odds.get(teamId) ?? 0, age, capRoom }];
         }),
       );

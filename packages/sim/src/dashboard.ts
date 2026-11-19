@@ -1,5 +1,5 @@
 import type { Dashboard, Player, TeamId, TodoItem } from '@gm/shared';
-import { capYearOf, phaseOf, playerName, type LeagueState } from './core';
+import { capYearOf, onRoster, phaseOf, playerName, type LeagueState } from './core';
 import { capYearIssues, teamCapTotal } from './cba';
 import { freeAgents, isExpiring, resignOffers, resignWindowOpen, wantedYears } from './offseason';
 import { assistantSees, departmentsOf, staffOf } from './people';
@@ -62,7 +62,7 @@ export function dashboard(state: LeagueState, ctx: SimContext, teamId: TeamId): 
     todo.push({ code: 'freeAgency', screen: 'roster' });
     if (assistant) {
       // The free agent with the most surplus on a deal at his ask that fits the cap room, on his read.
-      const room = ruleset.cap.upperLimit - teamCapTotal(state, teamId);
+      const room = ruleset.cap.upperLimit - teamCapTotal(ruleset, state, teamId);
       const context = cachedContext(state, ctx, teamId);
       const season = capYearOf(state);
       const surplus = (p: Player, ask: number) =>
@@ -155,13 +155,21 @@ export function dashboard(state: LeagueState, ctx: SimContext, teamId: TeamId): 
       todo.push({ code: 'adviceLines', params: { player: playerName(best.p) }, screen: 'lines' });
     }
   }
+  // The roster itself, without the players sent down.
+  const up = roster.filter(onRoster);
   for (const [position, min] of Object.entries(ruleset.roster.positionMin)) {
-    const have = roster.filter((p) => p.position === position).length;
+    const have = up.filter((p) => p.position === position).length;
     if (have < min) {
       todo.push({ code: 'rosterShort', params: { position, count: min - have }, screen: 'roster' });
     }
   }
-  const over = capYearIssues(ruleset, state, teamCapTotal(state, teamId)).find(
+  // From camp to the end of the playoffs: healthy players past the limit go down (an injured one
+  // does not count, so his call-up fits).
+  const extra = up.filter((p) => !hurtOn(p, state.date.day)).length - ruleset.roster.maxActive;
+  if (!state.championTeamId && extra > 0) {
+    todo.push({ code: 'rosterOver', params: { count: extra }, screen: 'roster' });
+  }
+  const over = capYearIssues(ruleset, state, teamCapTotal(ruleset, state, teamId)).find(
     (i) => i.code !== 'below_floor',
   );
   if (over && 'over' in over)

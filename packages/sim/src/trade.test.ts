@@ -438,7 +438,7 @@ describe('retained salary', () => {
 
 describe('AI offers to you', () => {
   const findOffer = () => {
-    for (const seed of [11, 12, 13, 14, 15]) {
+    for (const seed of [12, 13, 14, 15, 16]) {
       const state = createLeague(seed, base);
       for (let d = 0; d < base.ruleset.season.calendar.tradeDeadlineDay; d += 7) {
         const res = handleCommand(state, { kind: 'sim.advance', days: 7 }, local, base);

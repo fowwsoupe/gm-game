@@ -10,6 +10,7 @@ export {
   applyEvent,
   capYearOf,
   linemateKey,
+  onRoster,
   pairKey,
   prospectsOf,
   type LeagueState,

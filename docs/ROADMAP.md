@@ -42,8 +42,10 @@ done (picks wait unsigned with their rights, AI GMs sign them when ready, the ro
 a first main-league season); job 2, lines, done (every prospect and the draft class get a season
 in junior or Europe drawn from ratings at the sim's rates over an NHLe factor, with a career row
 per league); job 3, prospects in trades, done (either side can include them, valued on the entry
-deal each would sign; an AI buyer pays with one when no player or pick works); the farm team is
-next.
+deal each would sign; an AI buyer pays with one when no player or pick works); job 4, the farm
+team, done (send down and call up, a buried hit counts only above the $1.225M relief, a junior
+under 20 goes back to junior, AI teams cut to 23 on opening night and call up for injuries, minors
+lines). All four jobs done.
 
 Summer training, camp battles, international tournament: brief in
 [research/2026-11-summer-training.md](research/2026-11-summer-training.md); summer training plans
@@ -78,7 +80,7 @@ B. Balance and calibration (Opus 5.5 unless noted)
 
 C. Design brief first, then jobs (Opus 5.5)
 
-- [ ] Minor / junior / European leagues (xhigh, 4-6 PRs)
+- [x] Minor / junior / European leagues (xhigh, 4-6 PRs)
 - [x] Camp and a trade deadline that matters (high, 2-3 PRs)
 
 D. Phase 2 headlines
@@ -126,7 +128,7 @@ Build order, owners and "done when" for each step: **[V0.1_PLAN.md](V0.1_PLAN.md
 - [x] People (`sim/people`): personalities (from the player id), free-agent priorities by age and personality, AI GM styles and skill, team plans, morale (shown on the player card; no effects yet) done
 - [~] Models and calibration (`ml/`, [ADR 0005](adr/0005-calibrate-first.md): ML only where a fit is needed): faceoff effect and goalie form measured on NHL data, stats-to-ratings v2 fitted on the sim (per-game and workload features, 120 leagues), development targets (aging by age band) measured on NHL data and the aging curves fitted to them; special-teams stats for stats to ratings, playtest analysis to do; "better team wins a best-of-7" back in range done
 - [~] League & events (`sim/league`): calendar, team status (league pulse from playoff odds, roster age and cap space, crisis when a losing team's owner loses faith), event engine (trade requests, holdouts, disputes, breakouts in the summer and in season, AI owners' frustration, AI fire sales), news, a stop filter (saved with the league), a "talk extension" To do for your breakouts done
-- [ ] Minor / junior / European leagues: light stats-only sim for prospects
+- [x] Minor / junior / European leagues: light stats-only sim for prospects (the prospect pool, lines in junior, Europe and the minors, prospects in trades, the farm team)
 
 **Features**
 

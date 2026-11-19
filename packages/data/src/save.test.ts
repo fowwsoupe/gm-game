@@ -289,6 +289,10 @@ describe('SaveFile', () => {
     expect(state.players[pick.player.id]?.debut).toBeDefined();
     // His draft-year line is the first row of his career.
     expect(save.careerLines(pick.player.id)).toEqual([{ ...pick.line!, teamId: null }]);
+    // Sent down, he keeps the league he came from and the one he plays in now.
+    step({ kind: 'player.assign', teamId: mine, playerId: pick.player.id, down: true });
+    expect(state.players[pick.player.id]?.league).toBeDefined();
+    expect(state.players[pick.player.id]?.origin).toBe(pick.league);
     expect(save.loadState()).toEqual(state);
     save.close();
   });

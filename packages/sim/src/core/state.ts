@@ -165,6 +165,9 @@ export const prospectsOf = (state: LeagueState, teamId: TeamId): Prospect[] =>
     .filter((x) => x.player.teamId === teamId)
     .sort((a, b) => a.player.id.localeCompare(b.player.id));
 
+/** On his team's main-league roster, not sent down to a lower league (`Player.league`). */
+export const onRoster = (p: Player) => p.league === undefined;
+
 /** Two teams as one key, the same whichever is named first. */
 export const pairKey = (a: TeamId, b: TeamId) => [a, b].sort().join(':');
 
@@ -298,6 +301,7 @@ export function applyEvent(state: LeagueState, event: LeagueEvent): void {
         if (!p) throw new Error(`unknown player ${id}`);
         p.teamId = event.team.id;
         p.joined = capYearOf(state);
+        delete p.league;
         endRequest(state, id);
       }
       return;
@@ -312,6 +316,7 @@ export function applyEvent(state: LeagueState, event: LeagueEvent): void {
         delete p.joined;
       }
       delete p.extension;
+      delete p.league;
       state.tradeBlock = state.tradeBlock.filter((id) => id !== p.id);
       endRequest(state, p.id);
       return;
@@ -381,6 +386,7 @@ export function applyEvent(state: LeagueState, event: LeagueEvent): void {
       delete p.contract;
       delete p.extension;
       delete p.joined;
+      delete p.league;
       state.tradeBlock = state.tradeBlock.filter((id) => id !== p.id);
       state.capCharges.push(...event.charges.map((c) => ({ ...c })));
       endRequest(state, p.id);
@@ -403,6 +409,7 @@ export function applyEvent(state: LeagueState, event: LeagueEvent): void {
       p.teamId = null;
       delete p.contract;
       delete p.extension;
+      delete p.league;
       if (event.rightsTeamId) state.rfaRights[p.id] = event.rightsTeamId;
       if (formerTeam) state.formerTeams[p.id] = formerTeam;
       state.tradeBlock = state.tradeBlock.filter((id) => id !== p.id);
@@ -427,17 +434,27 @@ export function applyEvent(state: LeagueState, event: LeagueEvent): void {
     }
     case 'prospect.signed':
     case 'prospect.released': {
-      const player = state.prospects[event.playerId]?.player;
-      if (!player) throw new Error(`unknown prospect ${event.playerId}`);
+      const pr = state.prospects[event.playerId];
+      if (!pr) throw new Error(`unknown prospect ${event.playerId}`);
+      const { player } = pr;
       delete state.prospects[event.playerId];
       state.players[player.id] = player;
       player.debut = capYearOf(state);
+      player.origin = pr.league;
       if (event.kind === 'prospect.released') player.teamId = null;
       else {
         player.teamId = event.teamId;
         player.contract = { ...event.contract };
         player.joined = player.debut;
+        if (event.league) player.league = event.league;
       }
+      return;
+    }
+    case 'player.assigned': {
+      const p = state.players[event.playerId];
+      if (!p) throw new Error(`unknown player ${event.playerId}`);
+      if (event.league) p.league = event.league;
+      else delete p.league;
       return;
     }
     case 'draft.started':
@@ -745,10 +762,11 @@ export function applyEvent(state: LeagueState, event: LeagueEvent): void {
       }
       return;
     case 'prospects.played':
+      // A sent-down player's line lives in the save only.
       for (const l of event.lines) {
         const pr = state.prospects[l.playerId];
-        if (!pr) throw new Error(`unknown prospect ${l.playerId}`);
-        pr.line = { season: event.season, league: l.league, stats: { ...l.stats } };
+        if (pr) pr.line = { season: event.season, league: l.league, stats: { ...l.stats } };
+        else if (!state.players[l.playerId]) throw new Error(`unknown player ${l.playerId}`);
       }
       return;
     case 'award.given':

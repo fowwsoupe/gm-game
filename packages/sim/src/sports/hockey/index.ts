@@ -12,6 +12,7 @@ import { lineupUnits, specialUnitsView, teamStrength, unitOk, type TeamStrength 
 import {
   generateFictionalLeague,
   generateProspect,
+  hockeyFarmLeague,
   hockeyProspectLeague,
   hockeyProspectOrigin,
 } from './generate';
@@ -55,6 +56,7 @@ export function hockeySport(goalModel: GoalModel = rulesGoalModel): SportModule<
     generateProspect,
     prospectOrigin: hockeyProspectOrigin,
     prospectLeague: hockeyProspectLeague,
+    farmLeague: hockeyFarmLeague,
     leagueLine: hockeyLeagueLine,
     pickAwards,
     importRoster: importHockeyRoster,

@@ -140,8 +140,11 @@ function aiMatches(state: LeagueState, ctx: SimContext, teamId: TeamId, p: Playe
   if (salary > ctx.models.contractDemand.ask(ctx.ruleset, p) * MATCH_PREMIUM) return null;
   const room = roomFor(state, ctx, teamId, p, salary);
   if (!room) return null;
-  return capYearIssues(ctx.ruleset, state, teamCapTotal(state, teamId) + salary - room.freed)
-    .length === 0
+  return capYearIssues(
+    ctx.ruleset,
+    state,
+    teamCapTotal(ctx.ruleset, state, teamId) + salary - room.freed,
+  ).length === 0
     ? room
     : null;
 }

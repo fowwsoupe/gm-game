@@ -143,7 +143,7 @@ describe('draft', () => {
   });
 
   it('draft-day calls: AI teams trade up with each other, and call you while you are on the clock', () => {
-    const { state, mine } = finished(3);
+    const { state, mine } = finished(25);
     const start = handleCommand(state, { kind: 'offseason.startDraft' }, local, ctx);
     if (!start.ok) throw new Error(start.error.message);
     const clock = onTheClock(state, ctx)!;

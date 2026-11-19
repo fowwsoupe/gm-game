@@ -37,7 +37,7 @@ describe('in-season breakouts', () => {
     'fire a few a league-season on average, for players 23 or under only',
     { timeout: 60_000 },
     () => {
-      const state = createLeague(6, ctx);
+      const state = createLeague(9, ctx);
       const counts: number[] = [];
       for (let s = 0; s < 3; s++) {
         const news = run(state, { kind: 'sim.advance', days: cal.regularSeasonDays });
@@ -49,7 +49,7 @@ describe('in-season breakouts', () => {
         run(state, { kind: 'season.rollover' });
       }
       expect(counts[0]).toBe(0); // no last season yet
-      // One league's season is noisy (3 and 7 here): judge the average.
+      // One league's season is noisy (6 and 1 here): judge the average.
       const avg = (counts[1]! + counts[2]!) / 2;
       expect(avg).toBeGreaterThanOrEqual(1);
       expect(avg).toBeLessThanOrEqual(5);

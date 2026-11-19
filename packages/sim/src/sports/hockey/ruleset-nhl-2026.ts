@@ -38,6 +38,8 @@ export const NHL_2026: Ruleset = {
     minSalary: dollars(0.85),
     offseasonOveragePct: 10,
     playoffCap: { skaters: 18, goalies: 2 },
+    // AHL burial relief for 2026-27 (Sound of Hockey, in the Sports GM research rules table).
+    buriedRelief: dollars(1.225),
   },
   contracts: {
     maxYearsResign: 7,

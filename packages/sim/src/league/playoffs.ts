@@ -6,6 +6,7 @@ import {
   type Team,
   type TeamId,
 } from '@gm/shared';
+import { onRoster } from '../core';
 import { payroll, type Ruleset } from '../cba';
 import { overall } from '../players';
 import { byStanding } from './standings';
@@ -164,9 +165,10 @@ export function nextRound(won: readonly PlayoffSeries[]): PlayoffSeries[] {
 }
 
 /**
- * Teams that break the playoff cap: the best skaters and goalies (by rating, as the lineup
- * would dress them) cost more in cap hits than the upper limit. Nobody can today, since the
- * whole roster must fit under the cap; this guards the day in-season overage or retention exists.
+ * Teams that break the playoff cap: the best skaters and goalies on the roster (by rating, as the
+ * lineup would dress them; not the players sent down) cost more in cap hits than the upper limit.
+ * Nobody can today, since the roster's full hits and the buried ones must fit under the cap; this
+ * guards the day in-season overage or retention exists.
  * TODO(M5): the consequence (a compliance warning, forced moves).
  */
 export function playoffCapBreaches(players: readonly Player[], ruleset: Ruleset): TeamId[] {
@@ -174,7 +176,7 @@ export function playoffCapBreaches(players: readonly Player[], ruleset: Ruleset)
   if (!rule) return [];
   const byTeam = new Map<TeamId, Player[]>();
   for (const p of players) {
-    if (p.teamId) byTeam.set(p.teamId, [...(byTeam.get(p.teamId) ?? []), p]);
+    if (p.teamId && onRoster(p)) byTeam.set(p.teamId, [...(byTeam.get(p.teamId) ?? []), p]);
   }
   const cost = (roster: Player[], goalie: boolean, n: number) =>
     payroll(

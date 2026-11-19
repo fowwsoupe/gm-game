@@ -1,4 +1,4 @@
-import type { DraftClock, DraftProspect, Team, TeamId, TradeProposal } from '@gm/shared';
+import type { DraftClock, DraftProspect, Player, Team, TeamId, TradeProposal } from '@gm/shared';
 import { Rng, teamName, type Emit, type LeagueState } from '../core';
 import type { SimContext } from '../context';
 import { rightsYears } from '../cba';
@@ -72,16 +72,29 @@ export function draftClass(state: LeagueState, ctx: SimContext, rng: Rng): Draft
   }).sort((a, b) => scouted(b) - scouted(a) || a.player.id.localeCompare(b.player.id));
 }
 
-/** The regular season is over: every prospect gets his line in the league he played in. */
+/**
+ * The regular season is over: every prospect gets his line in the league he played in, and so
+ * does every player sent down. ponytail: a full season there for whoever is down at its end; split
+ * the line by days down if part-season call-ups matter.
+ */
 export function prospectSeason(state: LeagueState, ctx: SimContext, rng: Rng, emit: Emit) {
   const season = state.date.season;
-  const lines = Object.values(state.prospects)
-    .sort((a, b) => a.player.id.localeCompare(b.player.id))
-    .map(({ player, league: origin }) => {
-      const league = ctx.sport.prospectLeague(origin, season - player.birthYear, ctx.ruleset);
-      const stats = ctx.sport.leagueLine(player, league, rng.fork(player.id));
-      return { playerId: player.id, league, stats };
-    });
+  const line = (player: Player, league: string) => ({
+    playerId: player.id,
+    league,
+    stats: ctx.sport.leagueLine(player, league, rng.fork(player.id)),
+  });
+  const lines = [
+    ...Object.values(state.prospects)
+      .sort((a, b) => a.player.id.localeCompare(b.player.id))
+      .map(({ player, league: origin }) =>
+        line(player, ctx.sport.prospectLeague(origin, season - player.birthYear, ctx.ruleset)),
+      ),
+    ...Object.values(state.players)
+      .filter((p) => p.teamId && p.league)
+      .sort((a, b) => a.id.localeCompare(b.id))
+      .map((p) => line(p, p.league!)),
+  ];
   if (lines.length) emit('minor', [], { kind: 'prospects.played', season, lines });
 }
 

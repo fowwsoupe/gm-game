@@ -62,7 +62,7 @@ describe('the league pulse', () => {
   });
 
   it('shows every status at the trade deadline', () => {
-    const state = createLeague(4, ctx);
+    const state = createLeague(5, ctx);
     const deadline = ctx.ruleset.season.calendar.tradeDeadlineDay;
     run(state, { kind: 'sim.advance', days: deadline - 7 });
     // The last-place team's owner loses faith: it goes into crisis at the deadline's pulse.

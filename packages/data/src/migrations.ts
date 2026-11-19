@@ -191,4 +191,10 @@ export const migrations: readonly string[] = [
     PRIMARY KEY (player_id, season, league)
   );
   `,
+  // 23: the farm team. A signed player sent down to a lower league (NULL = on the roster), and the
+  // league a drafted player came from (NULL = undrafted, or from before the pool).
+  `
+  ALTER TABLE players ADD COLUMN league TEXT;
+  ALTER TABLE players ADD COLUMN origin TEXT;
+  `,
 ];
