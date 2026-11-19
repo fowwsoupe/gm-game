@@ -1,5 +1,13 @@
 import { useState } from 'react';
-import type { DraftPick, PlayerId, PlayerProfile, TeamId, TradeReason } from '@gm/shared';
+import type {
+  CommandResult,
+  DraftPick,
+  PlayerId,
+  PlayerProfile,
+  TeamId,
+  TradeOffer,
+  TradeReason,
+} from '@gm/shared';
 import {
   useDispatch,
   usePicks,
@@ -15,7 +23,10 @@ import { Button, Card, Face, TeamLink, TeamSelect, Td, Th } from '@/ui';
 import { useUi } from '@/stores/ui';
 import { fullName, money, moneyParams, pickParams, statValue, teamName } from '@/lib/format';
 
-/** Build a trade with another team; its GM answers live, with reasons, before you send it. */
+/**
+ * Build a trade with another team; its GM answers live, with reasons, before you send it. A
+ * human GM's team (hot-seat) gets the trade as an offer he answers when he has the seat.
+ */
 export function Trades() {
   const t = useT();
   const { data: teams = [] } = useTeams();
@@ -56,6 +67,22 @@ export function Trades() {
   const { data: verdict } = useTradeEvaluation(proposal);
   const dispatch = useDispatch();
   const reasonText = useReasonText();
+  const human = teams.find((x) => x.id === partner)?.userControlled;
+  const clear = () => {
+    setGive([]);
+    setGet([]);
+    setRetain({});
+    setGivePicks([]);
+    setGetPicks([]);
+  };
+  /** The trade went through, or (human partner) went to his GM as an offer, or `refused`. */
+  const outcome = (res: CommandResult, refused: string) => {
+    if (!res.ok) return setMessage(res.error.message);
+    const sent = res.events.some((e) => e.kind === 'trade.offered');
+    if (!sent && !res.events.some((e) => e.kind === 'trade.completed')) return setMessage(refused);
+    setMessage(sent ? t('trade.sent', { team: teamName(teams, partner!) }) : t('trade.done'));
+    clear();
+  };
 
   if (!mine || !partner) return <p className="text-muted">{t('trade.noTeam')}</p>;
   const toggle = (list: PlayerId[], set: (l: PlayerId[]) => void, id: PlayerId) =>
@@ -84,7 +111,7 @@ export function Trades() {
         ) : (
           <>
             <p className={`font-semibold ${verdict.accepted ? 'text-good' : 'text-bad'}`}>
-              {verdict.accepted ? t('trade.yes') : t('trade.no')}
+              {verdict.accepted ? t(human ? 'trade.theirCall' : 'trade.yes') : t('trade.no')}
             </p>
             {verdict.assistantGuess !== undefined && (
               <p className="mt-1 text-sm text-muted">
@@ -92,9 +119,11 @@ export function Trades() {
               </p>
             )}
             <ul className="mt-2 space-y-1 text-sm">
-              {verdict.reasons.map((r, i) => (
-                <li key={i}>{reasonText(r)}</li>
-              ))}
+              {verdict.reasons
+                .filter((r) => !human || r.code !== 'accepted')
+                .map((r, i) => (
+                  <li key={i}>{reasonText(r)}</li>
+                ))}
             </ul>
           </>
         )}
@@ -106,22 +135,11 @@ export function Trades() {
               proposal &&
               dispatch.mutate(
                 { kind: 'trade.propose', proposal },
-                {
-                  onSuccess: (res) => {
-                    setMessage(res.ok ? t('trade.done') : res.error.message);
-                    if (res.ok) {
-                      setGive([]);
-                      setGet([]);
-                      setRetain({});
-                      setGivePicks([]);
-                      setGetPicks([]);
-                    }
-                  },
-                },
+                { onSuccess: (res) => outcome(res, t('trade.done')) },
               )
             }
           >
-            {t('trade.propose')}
+            {t(human ? 'trade.send' : 'trade.propose')}
           </Button>
           {proposal && myPlayers.some((p) => give.includes(p.id) && p.contract?.noTrade) && (
             <Button
@@ -129,21 +147,7 @@ export function Trades() {
               onClick={() =>
                 dispatch.mutate(
                   { kind: 'contract.askWaiveNoTrade', proposal },
-                  {
-                    onSuccess: (res) => {
-                      const done = res.ok && res.events.some((e) => e.kind === 'trade.completed');
-                      setMessage(
-                        !res.ok ? res.error.message : done ? t('trade.done') : t('trade.waiveNo'),
-                      );
-                      if (done) {
-                        setGive([]);
-                        setGet([]);
-                        setRetain({});
-                        setGivePicks([]);
-                        setGetPicks([]);
-                      }
-                    },
-                  },
+                  { onSuccess: (res) => outcome(res, t('trade.waiveNo')) },
                 )
               }
             >
@@ -316,21 +320,13 @@ function Side({
   );
 }
 
-/** AI GMs' offers waiting for you: what they send, what they want, accept or decline. */
+/** Offers waiting for you (AI GMs, or hot-seat human GMs): what they send, what they want. */
 function Offers({ teamId }: { teamId: TeamId }) {
   const t = useT();
   const { data: offers = [] } = useTradeOffers(teamId);
-  const { data: teams = [] } = useTeams();
   const dispatch = useDispatch();
   const [message, setMessage] = useState<string | null>(null);
-  const { data: theirs = [] } = usePlayers(offers[0]?.proposal.fromTeamId);
-  const { data: ours = [] } = usePlayers(teamId);
   if (offers.length === 0) return null;
-  const name = (list: PlayerProfile[], id: string) => {
-    const p = list.find((x) => x.id === id);
-    return p ? `${fullName(p)} (${p.position}, ${p.age})` : id;
-  };
-  const pick = (id: string) => t('trade.pick', pickParams(teams, id));
   const respond = (offerId: string, accept: boolean) =>
     dispatch.mutate(
       { kind: 'trade.respond', offerId, accept },
@@ -339,43 +335,68 @@ function Offers({ teamId }: { teamId: TeamId }) {
   return (
     <Card title={t('trade.offersTitle')}>
       <ul className="space-y-2 text-sm">
-        {offers.map((o) => {
-          const team = teams.find((x) => x.id === o.proposal.fromTeamId);
-          return (
-            <li key={o.id} className="flex flex-wrap items-center justify-between gap-2">
-              <span>
-                <TeamLink teamId={o.proposal.fromTeamId}>{team?.abbreviation}</TeamLink>{' '}
-                {t('trade.offerLine', {
-                  team: teamName(teams, o.proposal.fromTeamId),
-                  give: [
-                    ...o.proposal.give.map((id) => name(theirs, id)),
-                    ...(o.proposal.givePicks ?? []).map(pick),
-                  ].join(', '),
-                  get: [
-                    ...o.proposal.get.map((id) => name(ours, id)),
-                    ...(o.proposal.getPicks ?? []).map(pick),
-                  ].join(', '),
-                  day: o.expiresDay,
-                })}
-              </span>
-              <span className="flex gap-2">
-                <Button
-                  variant="primary"
-                  disabled={dispatch.isPending}
-                  onClick={() => respond(o.id, true)}
-                >
-                  {t('trade.accept')}
-                </Button>
-                <Button disabled={dispatch.isPending} onClick={() => respond(o.id, false)}>
-                  {t('trade.decline')}
-                </Button>
-              </span>
-            </li>
-          );
-        })}
+        {offers.map((o) => (
+          <OfferLine
+            key={o.id}
+            offer={o}
+            teamId={teamId}
+            busy={dispatch.isPending}
+            onRespond={(accept) => respond(o.id, accept)}
+          />
+        ))}
       </ul>
       {message && <p className="mt-2 text-sm text-bad">{message}</p>}
     </Card>
+  );
+}
+
+function OfferLine({
+  offer: o,
+  teamId,
+  busy,
+  onRespond,
+}: {
+  offer: TradeOffer;
+  teamId: TeamId;
+  busy: boolean;
+  onRespond: (accept: boolean) => void;
+}) {
+  const t = useT();
+  const { data: teams = [] } = useTeams();
+  const { data: theirs = [] } = usePlayers(o.proposal.fromTeamId);
+  const { data: ours = [] } = usePlayers(teamId);
+  const team = teams.find((x) => x.id === o.proposal.fromTeamId);
+  const name = (list: PlayerProfile[], id: string) => {
+    const p = list.find((x) => x.id === id);
+    return p ? `${fullName(p)} (${p.position}, ${p.age})` : id;
+  };
+  const pick = (id: string) => t('trade.pick', pickParams(teams, id));
+  return (
+    <li className="flex flex-wrap items-center justify-between gap-2">
+      <span>
+        <TeamLink teamId={o.proposal.fromTeamId}>{team?.abbreviation}</TeamLink>{' '}
+        {t('trade.offerLine', {
+          team: teamName(teams, o.proposal.fromTeamId),
+          give: [
+            ...o.proposal.give.map((id) => name(theirs, id)),
+            ...(o.proposal.givePicks ?? []).map(pick),
+          ].join(', '),
+          get: [
+            ...o.proposal.get.map((id) => name(ours, id)),
+            ...(o.proposal.getPicks ?? []).map(pick),
+          ].join(', '),
+          day: o.expiresDay,
+        })}
+      </span>
+      <span className="flex gap-2">
+        <Button variant="primary" disabled={busy} onClick={() => onRespond(true)}>
+          {t('trade.accept')}
+        </Button>
+        <Button disabled={busy} onClick={() => onRespond(false)}>
+          {t('trade.decline')}
+        </Button>
+      </span>
+    </li>
   );
 }
 

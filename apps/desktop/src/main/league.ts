@@ -362,9 +362,9 @@ export class LeagueService {
     return resignOffers(state, defaultContext(state.rulesetId), teamId);
   }
 
-  players(teamId: TeamId | null) {
+  players(teamId: TeamId | null, viewer?: TeamId) {
     const { state } = this.open();
-    return playerProfiles(state, defaultContext(state.rulesetId), teamId);
+    return playerProfiles(state, defaultContext(state.rulesetId), teamId, viewer);
   }
 
   evaluateTrade(proposal: TradeProposal) {

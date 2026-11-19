@@ -151,13 +151,23 @@ describe('trade evaluation', () => {
     expect(res.ok).toBe(false);
   });
 
-  it("does not auto-accept for another human's team", () => {
+  it("sends a trade with another human GM's team to him as an offer: it needs his yes", () => {
     const { state, mine, partner, myC, theirC } = setup();
     state.teams[partner]!.userControlled = true;
     const remote: Actor = { id: 'remote', controls: [mine] };
     const proposal = { fromTeamId: mine, toTeamId: partner, give: [myC[0]!], get: [theirC[0]!] };
     const res = handleCommand(state, { kind: 'trade.propose', proposal }, remote, base);
-    expect(res.ok).toBe(false);
+    if (!res.ok) throw new Error(res.error.message);
+    expect(state.players[myC[0]!]!.teamId).toBe(mine);
+    const offer = state.tradeOffers.find((o) => o.proposal.fromTeamId === mine)!;
+    expect(offer.proposal).toEqual(proposal);
+    const accept = { kind: 'trade.respond', offerId: offer.id, accept: true } as const;
+    expect(handleCommand(state, accept, remote, base).ok).toBe(false); // not his to answer
+    const done = handleCommand(state, accept, { id: 'other', controls: [partner] }, base);
+    if (!done.ok) throw new Error(done.error.message);
+    expect(state.players[myC[0]!]!.teamId).toBe(partner);
+    expect(state.players[theirC[0]!]!.teamId).toBe(mine);
+    expect(state.tradeOffers).toEqual([]);
   });
 });
 

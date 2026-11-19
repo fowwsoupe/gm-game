@@ -69,7 +69,9 @@ function registerIpc() {
   ipcMain.handle(IPC.resignOffers, (_e, input: In<'resignOffers'>) =>
     league.resignOffers(input.teamId),
   );
-  ipcMain.handle(IPC.players, (_e, input: In<'players'>) => league.players(input.teamId));
+  ipcMain.handle(IPC.players, (_e, input: In<'players'>) =>
+    league.players(input.teamId, input.viewer),
+  );
   ipcMain.handle(IPC.evaluateTrade, (_e, input: In<'evaluateTrade'>) =>
     league.evaluateTrade(input),
   );

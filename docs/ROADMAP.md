@@ -88,7 +88,7 @@ D. Phase 2 headlines
 - [x] Cutscenes (Sonnet, medium, 3 PRs)
 - [ ] Match viewer (2D) with coach from the bench (Fable 5.2, xhigh, 6+ PRs)
 - [x] League sandbox (Sonnet, high, 4 PRs)
-- [ ] Multiplayer step 1, hot-seat (Opus, high, 2 PRs)
+- [x] Multiplayer step 1, hot-seat (Opus, high, 2 PRs)
 - [ ] Multiplayer step 2, hosted online (Fable 5.2, max, 8+ PRs)
 
 ---
@@ -168,7 +168,7 @@ Build order, owners and "done when" for each step: **[V0.1_PLAN.md](V0.1_PLAN.md
 - [~] Summer training, camp battles, international tournament: summer training plans (a focus per player on a human team reshapes his ratings at development, never past his ceiling) done; an international tournament every four years (a nation per player, six nations, two groups of three, semi-finals and a final, late in the summer on its own random stream; the champion and top scorer on History, your players' medals in your news) done
 - [~] Hall of Fame, legends return as staff, awards named after legends: Hall of Fame (rule-based induction, History screen), awards named after legends (the first inducted goalie, defenceman and forward lend their surname to the goalie, defence and MVP awards from the next season, on History) and legends as staff (a Hall of Famer is one of a human team's candidates, one a team-season) done
 - [x] League sandbox: expansion, relocation, identity editor, commissioner mode: identity editor (rename any team's city, name and abbreviation from its team page) and relocation (a franchise moves to a new city, name and market size from its team page; its fans cool) and expansion (once free agency is open a new team joins the smallest division and takes unprotected players from the others in an expansion draft; the ruleset sets the size limit, protected count and picks) and commissioner mode (move a player to any team or to free agency from his page, whatever the cap and trade rules say) done
-- [~] Multiplayer step 1: shared save (hot-seat): several human GMs in one save (add a GM for another team from Home, the GM at the controls picked in the sidebar, every screen follows his team) done; turn hand-over, trades between human GMs needing both, and each GM seeing through his own analytics department, to do
+- [x] Multiplayer step 1: shared save (hot-seat): several human GMs in one save (add a GM for another team from Home, the GM at the controls picked in the sidebar, every screen follows his team), turn hand-over (a curtain the next GM lifts himself), trades between human GMs needing both (sent as an offer the other GM answers from his seat) and each GM seeing through his own analytics department, done
 - [ ] Multiplayer step 2: hosted online league over Steam
 
 ## Phase 3 — Long term
