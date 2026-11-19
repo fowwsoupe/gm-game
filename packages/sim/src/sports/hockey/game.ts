@@ -263,7 +263,8 @@ function playGame(
       (k) => (att.shoot[k]! / 50) ** SKILL_POWER * (att.isD[k] ? D_SHOOTING : 1),
     );
     const shooter = unit[pick(weights, rng)]!;
-    const distance = 8 + Math.min(52, Math.abs(rng.normal(0, 22)));
+    const distance =
+      8 + Math.min(52, Math.abs(rng.normal(0, 22 * att.traits[shooter]!.shotSpread)));
     const angle = rng.normal(0, 0.45 + distance / 100);
     // `+ 0` turns -0 into 0, which JSON would otherwise change on a save round trip.
     const x = Math.round(distance * Math.cos(angle)) + 0;
@@ -328,7 +329,7 @@ function playGame(
     const k =
       s.onIce[
         pick(
-          s.onIce.map((j) => s.phys[j]! / 50),
+          s.onIce.map((j) => (s.phys[j]! / 50) * s.traits[j]!.penaltyWeight),
           rng,
         )
       ]!;

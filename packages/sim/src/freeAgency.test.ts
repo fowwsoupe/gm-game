@@ -267,7 +267,7 @@ describe('AI offers in free agency', () => {
   });
 
   it('a bidding war: he waits, the trailing team raises within its walk-away, the best interest wins', () => {
-    const { state } = finishedSeason(2);
+    const { state } = finishedSeason(28);
     run(state, { kind: 'offseason.openFreeAgency' });
     const ask = (p: Player) => ctx.models.contractDemand.ask(ctx.ruleset, p);
     const legal = (p: Player, teamId: TeamId, salary: number) => {
@@ -483,7 +483,7 @@ describe('negotiation', () => {
 
 describe('the pitch', () => {
   it('a promised role scores 100; one promise a position; not first by day PROMISE_DAYS, a dispute', () => {
-    const { state, mine } = finishedSeason(1);
+    const { state, mine } = finishedSeason(22);
     run(state, { kind: 'offseason.openFreeAgency' });
     state.teamStatus[mine] = 'contender';
     const pitch = (p: Player): Command => ({

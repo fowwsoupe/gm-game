@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest';
-import type { Actor, GameId, HockeyBoxScore, TeamId } from '@gm/shared';
+import type { Actor, GameId, HockeyBoxScore, PlayerId, TeamId } from '@gm/shared';
 import {
   applyEvent,
   autoLineup,
@@ -9,6 +9,7 @@ import {
   HOCKEY_TUNING,
   ICE_TIME,
   overall,
+  playTraitOf,
   Rng,
   simGame,
   teamStrength,
@@ -211,6 +212,51 @@ describe('game engine', () => {
       return goals;
     };
     expect(against(good)).toBeLessThan(against(bad));
+  });
+
+  it('a net-front shooter shoots from closer in, an undisciplined player sits in the box more', () => {
+    // Every skater at the same physical, renamed so only two have a trait.
+    const ids = Array.from({ length: 400 }, (_, i) => `trait-${i}`);
+    const withTrait = (t: string) => ids.find((id) => playTraitOf(id, 'C') === t)!;
+    const plain = ids.filter((id) => playTraitOf(id, 'C') === undefined);
+    const base = Object.values(state.players)
+      .filter((p) => p.teamId === a)
+      .map((p) => (p.position === 'G' ? p : { ...p, ratings: { ...p.ratings, physical: 60 } }));
+    const [c, w] = autoLineup(base).forwards[0]!;
+    const rename = new Map([
+      [c!.id, withTrait('netFront')],
+      [w!.id, withTrait('undisciplined')],
+    ]);
+    let n = 0;
+    const roster = base.map((p) =>
+      p.position === 'G' ? p : { ...p, id: (rename.get(p.id) ?? plain[n++]!) as PlayerId },
+    );
+    const netFront = withTrait('netFront');
+    const undisciplined = withTrait('undisciplined');
+    const mine = teamStrength(roster);
+    const rng = new Rng(5);
+    const dist: Record<string, number[]> = {};
+    const box = { pim: {} as Record<string, number>, toi: {} as Record<string, number> };
+    for (let i = 0; i < 300; i++) {
+      const g = simGame(
+        { id: 'g' as GameId, homeTeamId: a!, awayTeamId: b!, home: mine, away },
+        rng,
+      ).box as HockeyBoxScore;
+      for (const [, side, x, y, k] of g.shots)
+        if (side === 0) (dist[g.home.skaters[k]!.id] ??= []).push(Math.hypot(x, y));
+      for (const s of g.home.skaters) {
+        box.pim[s.id] = (box.pim[s.id] ?? 0) + s.pim;
+        box.toi[s.id] = (box.toi[s.id] ?? 0) + s.toi;
+      }
+    }
+    const avg = (xs: number[]) => xs.reduce((s, x) => s + x, 0) / xs.length;
+    const others = Object.entries(dist).filter(([id]) => id !== netFront);
+    expect(avg(dist[netFront]!)).toBeLessThan(avg(others.flatMap(([, d]) => d)) - 3);
+    const rate = (id: string) => box.pim[id]! / box.toi[id]!;
+    const rest = Object.keys(box.pim).filter((id) => id !== undisciplined);
+    const restRate =
+      rest.reduce((s, id) => s + box.pim[id]!, 0) / rest.reduce((s, id) => s + box.toi[id]!, 0);
+    expect(rate(undisciplined)).toBeGreaterThan(restRate * 1.25);
   });
 
   it('settles ties: playoff games never go to a shootout, regular-season overtime is 3v3', () => {

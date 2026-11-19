@@ -108,7 +108,7 @@ describe('draft', () => {
   });
 
   it('trading the pick on the clock to an AI team: he makes it and the draft runs on', () => {
-    const { state, mine } = finished(35);
+    const { state, mine } = finished(37);
     const total = Object.keys(state.teams).length * ctx.ruleset.draft.rounds;
     const start = handleCommand(state, { kind: 'offseason.startDraft' }, local, ctx);
     if (!start.ok) throw new Error(start.error.message);
@@ -143,7 +143,7 @@ describe('draft', () => {
   });
 
   it('draft-day calls: AI teams trade up with each other, and call you while you are on the clock', () => {
-    const { state, mine } = finished(30);
+    const { state, mine } = finished(3);
     const start = handleCommand(state, { kind: 'offseason.startDraft' }, local, ctx);
     if (!start.ok) throw new Error(start.error.message);
     const clock = onTheClock(state, ctx)!;

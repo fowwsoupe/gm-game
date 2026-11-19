@@ -1,10 +1,11 @@
-import { isGoalie } from '@gm/shared';
+import { isGoalie, type Player } from '@gm/shared';
+import { hash } from '../../people';
 import { SHAPE_POINTS, SKATER_BUILD_CLUSTERS } from './tuning';
 
 /**
  * Hockey builds and role tags from a player's percentiles (0–100 within his group). A skater's
  * build is the nearest real-player cluster to his shape (docs/research/2026-11-player-builds-evidence.md);
- * a goalie's is a plain rule. Tags mark standout single skills.
+ * a goalie's is a plain rule. Tags mark standout single skills, then his play trait.
  */
 type Pct = Record<string, number>;
 
@@ -49,9 +50,39 @@ const TAGS: Record<string, string> = {
 };
 const TAG_PERCENTILE = 90;
 
+/**
+ * Play traits: a style fixed for his career that both repeat in real data year to year (r
+ * 0.6-0.75, docs/research/2026-11-player-builds-evidence.md). `shotSpread` scales the spread
+ * of his shot distance draw (closer in / farther out), `penaltyWeight` his weight when the sim
+ * picks who takes a penalty. Paired opposites at the same share keep the league's average.
+ */
+export const PLAY_TRAITS = {
+  netFront: { shotSpread: 0.7, penaltyWeight: 1 },
+  perimeter: { shotSpread: 1.3, penaltyWeight: 1 },
+  disciplined: { shotSpread: 1, penaltyWeight: 2 / 3 },
+  undisciplined: { shotSpread: 1, penaltyWeight: 1.5 },
+} as const;
+export type PlayTrait = keyof typeof PLAY_TRAITS;
+/** Percent of skaters with each trait: four traits, one skater in five has one. */
+const TRAIT_SHARE = 5;
+const NO_TRAIT = { shotSpread: 1, penaltyWeight: 1 };
+
+/** A skater's play trait, if any: from his id like his personality, nothing stored. */
+export function playTraitOf(playerId: string, position: string): PlayTrait | undefined {
+  if (isGoalie(position)) return undefined;
+  const traits = Object.keys(PLAY_TRAITS) as PlayTrait[];
+  return traits[Math.floor((hash(`playTrait:${playerId}`) % 100) / TRAIT_SHARE)];
+}
+
+export const traitLevers = (p: Player): { shotSpread: number; penaltyWeight: number } => {
+  const t = playTraitOf(p.id, p.position);
+  return t ? PLAY_TRAITS[t] : NO_TRAIT;
+};
+
 export function hockeyRole(
   position: string,
   percentiles: readonly { key: string; value: number }[],
+  playerId: string,
 ): { build: string; tags: string[] } {
   const p: Pct = Object.fromEntries(percentiles.map((x) => [x.key, x.value]));
   const build = isGoalie(position)
@@ -64,5 +95,6 @@ export function hockeyRole(
     .sort((a, b) => b.value - a.value)
     .slice(0, 2)
     .map((x) => TAGS[x.key]!);
-  return { build, tags };
+  const trait = playTraitOf(playerId, position);
+  return { build, tags: trait ? [...tags, trait] : tags };
 }

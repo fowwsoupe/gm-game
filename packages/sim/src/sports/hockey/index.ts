@@ -113,3 +113,4 @@ export {
 export { STATS_TO_RATINGS } from './ratingsFromStatsTable';
 export { HOCKEY_LEAGUES, type RatingsToStatsTable } from './leagueLines';
 export { HOCKEY_DEVELOPMENT } from './aging';
+export { PLAY_TRAITS, playTraitOf, type PlayTrait } from './builds';

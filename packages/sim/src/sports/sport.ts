@@ -84,11 +84,12 @@ export interface SportModule<Strength = unknown> {
 
   /**
    * A player's build and role tags (keys the UI translates, e.g. hockey 'sniper', 'speed'), from
-   * his percentiles within his group.
+   * his percentiles within his group; tags may add a play style fixed by his id.
    */
   role(
     position: string,
     percentiles: readonly { key: string; value: number }[],
+    playerId: string,
   ): { build: string; tags: string[] };
 
   /**
