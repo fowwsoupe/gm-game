@@ -348,6 +348,9 @@ export class SaveFile {
       'INSERT OR REPLACE INTO awards (season, award, team_id, player_id) VALUES (?, ?, ?, ?)',
     );
     const setStatus = this.db.prepare('UPDATE teams SET status = ? WHERE id = ?');
+    const setIdentity = this.db.prepare(
+      'UPDATE teams SET city = ?, name = ?, abbreviation = ? WHERE id = ?',
+    );
     const setControl = this.db.prepare('UPDATE teams SET user_controlled = ? WHERE id = ?');
     const setGm = this.db.prepare('UPDATE teams SET gm_json = ? WHERE id = ?');
     const setPlan = this.db.prepare('UPDATE teams SET plan_json = ? WHERE id = ?');
@@ -474,6 +477,9 @@ export class SaveFile {
             break;
           case 'team.statusChanged':
             setStatus.run(e.to, e.teamId);
+            break;
+          case 'team.renamed':
+            setIdentity.run(e.city, e.name, e.abbreviation, e.teamId);
             break;
           case 'team.controlChanged':
             setControl.run(e.userControlled ? 1 : 0, e.teamId);

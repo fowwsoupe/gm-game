@@ -248,6 +248,16 @@ export function applyEvent(state: LeagueState, event: LeagueEvent): void {
       if (event.canBeFired !== undefined) state.canBeFired = event.canBeFired;
       if (event.stopOn) state.stopOn = [...event.stopOn];
       return;
+    case 'team.renamed': {
+      const team = state.teams[event.teamId];
+      if (team)
+        Object.assign(team, {
+          city: event.city,
+          name: event.name,
+          abbreviation: event.abbreviation,
+        });
+      return;
+    }
     case 'team.controlChanged': {
       const team = state.teams[event.teamId];
       if (team) team.userControlled = event.userControlled;

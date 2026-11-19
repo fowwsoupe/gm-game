@@ -105,6 +105,33 @@ export function handleCommand(
       return applied(state, ev);
     }
 
+    case 'team.rename': {
+      const team = state.teams[command.teamId];
+      if (!team) return invalid('unknown team');
+      // The local player edits any team's identity (sandbox); a remote player only his own.
+      if (actor.id !== 'local' && !actor.controls.includes(team.id)) return notYours;
+      const city = command.city.trim();
+      const name = command.name.trim();
+      const abbreviation = command.abbreviation.trim().toUpperCase();
+      if (!city || !name || city.length > 24 || name.length > 24)
+        return invalid('city and name: 1–24 characters');
+      if (!/^[A-Z]{2,4}$/.test(abbreviation)) return invalid('abbreviation: 2–4 letters');
+      if (
+        Object.values(state.teams).some((t) => t.id !== team.id && t.abbreviation === abbreviation)
+      )
+        return invalid('abbreviation already taken');
+      return applied(
+        state,
+        makeEvent(state, 'minor', [team.id], {
+          kind: 'team.renamed',
+          teamId: team.id,
+          city,
+          name,
+          abbreviation,
+        }),
+      );
+    }
+
     case 'contract.buyout': {
       const player = state.players[command.playerId];
       const team = player?.teamId ? state.teams[player.teamId] : undefined;
