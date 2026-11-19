@@ -23,7 +23,15 @@ import {
 import { useT, type MessageKey } from '@/i18n';
 import { Button, Card, Face, RangeBar, TeamLink, TeamSelect, Td, Th } from '@/ui';
 import { useUi } from '@/stores/ui';
-import { fullName, money, moneyParams, pickParams, statValue, teamName } from '@/lib/format';
+import {
+  fullName,
+  money,
+  moneyParams,
+  pickParams,
+  statValue,
+  teamAbbr,
+  teamName,
+} from '@/lib/format';
 
 /**
  * Build a trade with another team; its GM answers live, with reasons, before you send it. A
@@ -220,9 +228,7 @@ export function Trades() {
 
 function useReasonText() {
   const t = useT();
-  return (r: TradeReason) => {
-    return t(`trade.reason.${r.code}` as MessageKey, moneyParams(r.params));
-  };
+  return (r: TradeReason) => t(`trade.reason.${r.code}` as MessageKey, moneyParams(r.params));
 }
 
 const togglePick = (list: string[], id: string) =>
@@ -261,7 +267,6 @@ function Side({
 }) {
   const t = useT();
   const { data: teams = [] } = useTeams();
-  const abbr = (id: string) => teams.find((x) => x.id === id)?.abbreviation ?? id;
   return (
     <Card title={title}>
       <table className="tabular w-full text-sm">
@@ -374,7 +379,7 @@ function Side({
               {t('trade.pick', {
                 season: pk.season,
                 round: pk.round,
-                team: abbr(pk.originalTeamId),
+                team: teamAbbr(teams, pk.originalTeamId, pk.originalTeamId),
               })}
             </label>
           ))}
@@ -431,7 +436,6 @@ function OfferLine({
   const { data: ours = [] } = usePlayers(teamId);
   const { data: theirProspects = [] } = useProspects(o.proposal.fromTeamId, teamId);
   const { data: ourProspects = [] } = useProspects(teamId);
-  const team = teams.find((x) => x.id === o.proposal.fromTeamId);
   const name = (list: (PlayerProfile | ProspectEntry)[], id: string) => {
     const p = list.find((x) => x.id === id);
     return p ? `${fullName(p)} (${p.position}, ${p.age})` : id;
@@ -440,7 +444,7 @@ function OfferLine({
   return (
     <li className="flex flex-wrap items-center justify-between gap-2">
       <span>
-        <TeamLink teamId={o.proposal.fromTeamId}>{team?.abbreviation}</TeamLink>{' '}
+        <TeamLink teamId={o.proposal.fromTeamId}>{teamAbbr(teams, o.proposal.fromTeamId)}</TeamLink>{' '}
         {t('trade.offerLine', {
           team: teamName(teams, o.proposal.fromTeamId),
           give: [

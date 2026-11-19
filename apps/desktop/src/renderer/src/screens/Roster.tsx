@@ -27,7 +27,7 @@ import {
   Td,
   Th,
 } from '@/ui';
-import { fullName, leagueLineText, money, statValue, teamName } from '@/lib/format';
+import { fullName, leagueLineText, money, statValue, teamAbbr, teamName } from '@/lib/format';
 
 const FREE_AGENTS = 'fa';
 
@@ -107,7 +107,7 @@ function Room({ players, onSelect }: { players: PlayerProfile[]; onSelect: (id: 
   const { data: teams = [] } = useTeams();
   const { data: feed } = useFeed(200, 'minor');
   if (!status?.market) return null;
-  const abbr = (id: string) => teams.find((x) => x.id === id)?.abbreviation ?? '';
+  const abbr = (id: string) => teamAbbr(teams, id);
   const name = (id: string) => feed?.names[id] ?? '';
   const board = players
     .flatMap((p) => (p.bids ? [{ p, b: p.bids }] : []))
@@ -461,9 +461,7 @@ export function Offer({
       <p className="mb-2 text-sm text-muted">{t('sign.ask', { amount: money(player.ask) })}</p>
       {player.rightsTeamId && (
         <p className="mb-2 text-sm text-muted">
-          {t('sign.rights', {
-            team: teams.find((x) => x.id === player.rightsTeamId)?.abbreviation ?? '',
-          })}
+          {t('sign.rights', { team: teamAbbr(teams, player.rightsTeamId) })}
         </p>
       )}
       {player.bids && (
@@ -471,9 +469,7 @@ export function Offer({
           {player.bids.teams.length > 0 && (
             <p className="text-bad">
               {t('sign.bidding', {
-                teams: player.bids.teams
-                  .map((id) => teams.find((x) => x.id === id)?.abbreviation ?? '')
-                  .join(', '),
+                teams: player.bids.teams.map((id) => teamAbbr(teams, id)).join(', '),
                 n: player.bids.best,
               })}
             </p>
@@ -635,7 +631,7 @@ function Career({ player }: { player: PlayerProfile }) {
   ];
   if (rows.length === 0) return null;
   const keys = [...new Set(rows.flatMap((r) => Object.keys(r.stats)))];
-  const abbr = (id: string | null) => teams.find((x) => x.id === id)?.abbreviation ?? '–';
+  const abbr = (id: string | null) => teamAbbr(teams, id, '–');
   // Counting stats add up, main league only; a rate (save %) does not.
   const main = rows.filter((r) => !r.league);
   const totals: Record<string, number> = {};
@@ -723,12 +719,11 @@ function Sheets({ teamId }: { teamId: TeamId | undefined }) {
       <p className="mb-2 text-sm text-muted">{t('sheet.hint')}</p>
       {sheets.map((o) => {
         const p = players.find((x) => x.id === o.playerId);
-        const from = teams.find((x) => x.id === o.teamId);
         return (
           <div key={o.playerId} className="flex items-center gap-3 py-1 text-sm">
             <span className="flex-1">
               {t('sheet.line', {
-                team: from?.abbreviation ?? '',
+                team: teamAbbr(teams, o.teamId),
                 player: p ? fullName(p) : o.playerId,
                 amount: money(o.salary),
                 years: o.years,

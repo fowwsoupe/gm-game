@@ -2,7 +2,7 @@ import { useLeaders, useTeams } from '@/lib/queries';
 import { useT, type MessageKey } from '@/i18n';
 import { useUi } from '@/stores/ui';
 import { Card, Face } from '@/ui';
-import { statValue } from '@/lib/format';
+import { statValue, teamAbbr } from '@/lib/format';
 
 /** Stat leaders of the season so far. */
 export function Leaders() {
@@ -10,7 +10,6 @@ export function Leaders() {
   const { data: boards = [] } = useLeaders();
   const { data: teams = [] } = useTeams();
   const openPlayer = useUi((s) => s.openPlayer);
-  const abbreviation = (id: string | null) => teams.find((x) => x.id === id)?.abbreviation ?? '';
   if (boards.every((b) => b.rows.length === 0)) {
     return <p className="text-muted">{t('leaders.empty')}</p>;
   }
@@ -30,7 +29,7 @@ export function Leaders() {
                   >
                     {r.name}
                   </button>{' '}
-                  <span className="text-muted">{abbreviation(r.teamId)}</span>
+                  <span className="text-muted">{teamAbbr(teams, r.teamId)}</span>
                 </span>
                 <span>
                   {statValue(board.key, r.value)}
