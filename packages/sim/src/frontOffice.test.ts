@@ -16,7 +16,7 @@ import {
   staffCandidates,
   teamRange,
 } from './offseason';
-import { DEPARTMENTS, ownerOf } from './people';
+import { DEPARTMENTS, departmentsOf, ownerOf } from './people';
 import { playerProfiles } from './profiles';
 import { overall } from './players';
 
@@ -209,6 +209,40 @@ describe('hiring through commands', () => {
     expect(hire(mine, 0).ok).toBe(false);
     const [cheap, , dear] = staffCandidates(state.teams[theirs]!, 'medical', ctx, 2030);
     expect(cheap!.quality).toBeLessThanOrEqual(dear!.quality);
+  });
+});
+
+describe('legends as staff', () => {
+  const legend = (position: string, awards: string[]) => ({
+    playerId: 'x' as never,
+    name: 'Real Legend',
+    position,
+    retiredSeason: 2030,
+    seasons: 15,
+    totals: {},
+    awards,
+  });
+
+  it('offers one legend a team-season, in a fitting department, by his career', () => {
+    const state = createLeague(1, ctx);
+    const team = state.teams[Object.keys(state.teams).sort()[0] as TeamId]!;
+    const season = state.date.season;
+    for (const [l, fit] of [
+      [legend('G', ['topGoalie', 'topGoalie']), ['medical', 'development']],
+      [legend('C', ['mvp', 'mvp', 'mvp']), ['scouting', 'analytics', 'assistant']],
+    ] as const) {
+      const hits = departmentsOf(team).filter((d) =>
+        staffCandidates(team, d, ctx, season, [l]).some((c) => c.legend),
+      );
+      expect(hits).toHaveLength(1);
+      expect(fit).toContain(hits[0]);
+      const c = staffCandidates(team, hits[0]!, ctx, season, [l])[2]!;
+      expect(c.name).toBe('Real Legend');
+      expect(c.quality).toBeCloseTo(0.6 + 0.07 * l.awards.length);
+      // Same again; and without legends the list is the plain one.
+      expect(staffCandidates(team, hits[0]!, ctx, season, [l])[2]).toEqual(c);
+      expect(staffCandidates(team, hits[0]!, ctx, season)[2]!.legend).toBeUndefined();
+    }
   });
 });
 

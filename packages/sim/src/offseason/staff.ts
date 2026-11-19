@@ -1,4 +1,11 @@
-import type { Department, DepartmentReturns, StaffProfile, Team, TeamId } from '@gm/shared';
+import type {
+  Department,
+  DepartmentReturns,
+  HallOfFamer,
+  StaffProfile,
+  Team,
+  TeamId,
+} from '@gm/shared';
 import { FIRST, LAST, Rng, teamName, type Emit, type LeagueState } from '../core';
 import type { SimContext } from '../context';
 import { departmentsOf, hash, hireQuality, ownerOf, staffOf, staffSalary } from '../people';
@@ -73,20 +80,55 @@ export function changeStaff(
 /** How far apart the three candidates' qualities sit: a cheap one, the owner's usual, a dear one. */
 const CANDIDATE_STEP = 0.25;
 
+/** Where a goalie legend fits; a skater legend fits the other departments. */
+const GOALIE_DEPARTMENTS: Department[] = ['medical', 'development'];
+
+/**
+ * The Hall of Famer who offers his services to a team this season, in at most one department:
+ * one legend and one fitting department a team-season, drawn from the team and season alone.
+ * His quality comes from his career (awards won); he is not offered where he already works.
+ */
+function legendCandidate(
+  team: Team,
+  department: Department,
+  ctx: SimContext,
+  season: number,
+  legends: readonly HallOfFamer[],
+): StaffProfile | undefined {
+  if (!legends.length) return undefined;
+  const r = new Rng(hash(`legend:${team.id}:${season}`));
+  const legend = r.pick(legends);
+  const fits = departmentsOf(team).filter(
+    (d) => GOALIE_DEPARTMENTS.includes(d) === (legend.position === 'G'),
+  );
+  if (!fits.length || r.pick(fits) !== department) return undefined;
+  if (Object.values(team.staff ?? {}).some((h) => h.name === legend.name)) return undefined;
+  const quality = Math.min(0.95, 0.6 + 0.07 * Math.min(legend.awards.length, 4));
+  return {
+    name: legend.name,
+    quality,
+    hired: season,
+    salary: staffSalary(quality, ctx.ruleset.frontOffice.salary),
+    legend: true,
+  };
+}
+
 /**
  * The three people a human GM can hire for a department this season, cheapest first. Centred
  * on what the owner spends, like the AI's hires; the same all season, so nothing is stored.
+ * A Hall of Famer (`legends`, from the save) can take the dearest slot, see `legendCandidate`.
  */
 export function staffCandidates(
   team: Team,
   department: Department,
   ctx: SimContext,
   season: number,
+  legends: readonly HallOfFamer[] = [],
 ): StaffProfile[] {
   const fo = ctx.ruleset.frontOffice;
   const centre = 0.5 + fo.spend * (ownerOf(team).budget - 0.5);
   const r = new Rng(hash(`candidates:${team.id}:${department}:${season}`));
-  return [-1, 0, 1].map((step) => {
+  const out = [-1, 0, 1].map((step) => {
     const quality =
       Math.round(clamp01(centre + step * CANDIDATE_STEP + r.normal(0, fo.hireSd / 2)) * 100) / 100;
     return {
@@ -96,6 +138,9 @@ export function staffCandidates(
       salary: staffSalary(quality, fo.salary),
     };
   });
+  const legend = legendCandidate(team, department, ctx, season, legends);
+  if (legend) out[2] = legend;
+  return out;
 }
 
 /** The stand-in who runs a department after you fire its head: `frontOffice.interim` quality, not a market hire. */

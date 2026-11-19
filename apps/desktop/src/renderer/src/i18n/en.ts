@@ -20,6 +20,7 @@ export const en = {
   'frontOffice.since': 'since {season}',
   'frontOffice.candidate': 'Available this season',
   'frontOffice.quality': 'Quality',
+  'frontOffice.legend': 'Hall of Famer',
   'frontOffice.hire': 'Hire',
   'frontOffice.hiredNow': 'Hired this season: the next change waits for next season.',
   'frontOffice.fire': 'Fire, interim in his place',

@@ -17,6 +17,7 @@ export const fr: Record<MessageKey, string> = {
   'frontOffice.since': 'depuis {season}',
   'frontOffice.candidate': 'Disponibles cette saison',
   'frontOffice.quality': 'Qualité',
+  'frontOffice.legend': 'Temple de la renommée',
   'frontOffice.hire': 'Embaucher',
   'frontOffice.hiredNow':
     'Embauche faite cette saison : le prochain changement attend la saison prochaine.',

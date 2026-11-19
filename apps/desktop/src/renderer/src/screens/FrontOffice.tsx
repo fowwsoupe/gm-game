@@ -76,7 +76,10 @@ export function FrontOffice() {
               <tbody>
                 {open.candidates.map((c, i) => (
                   <tr key={c.name + i}>
-                    <Td>{c.name}</Td>
+                    <Td>
+                      {c.name}
+                      {c.legend && ` (${t('frontOffice.legend')})`}
+                    </Td>
                     <Td>{t(qualityKey(c.quality))}</Td>
                     <Td>{money(c.salary)}</Td>
                     <Td>
