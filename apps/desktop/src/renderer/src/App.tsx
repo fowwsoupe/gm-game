@@ -20,6 +20,7 @@ import { Leaders } from '@/screens/Leaders';
 import { Cap } from '@/screens/Cap';
 import { Games } from '@/screens/Games';
 import { Home } from '@/screens/Home';
+import { News } from '@/screens/News';
 import { Roster } from '@/screens/Roster';
 import { Trades } from '@/screens/Trades';
 import { Lines } from '@/screens/Lines';
@@ -31,6 +32,7 @@ import { Player } from '@/screens/Player';
 
 const NAV: { id: Screen; label: MessageKey }[] = [
   { id: 'home', label: 'nav.home' },
+  { id: 'news', label: 'nav.news' },
   { id: 'standings', label: 'nav.standings' },
   { id: 'roster', label: 'nav.roster' },
   { id: 'freeAgency', label: 'nav.freeAgency' },
@@ -239,6 +241,7 @@ export function App() {
         {screen === 'home' && (
           <Home hasLeague={hasLeague} teamCount={teams.length} lastSim={lastSim} />
         )}
+        {screen === 'news' && <News />}
         {screen === 'standings' && <Standings />}
         {screen === 'games' && <Games />}
         {screen === 'cap' && <Cap />}

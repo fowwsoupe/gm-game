@@ -109,6 +109,7 @@ function letGo(state: LeagueState, ctx: SimContext, emit: Emit, teamId: TeamId, 
     emit('notable', [teamId], {
       kind: 'news.posted',
       headline: 'event.madeRoom',
+      playerId: x.id,
       params: { team: teamName(team), player: playerName(x) },
     });
   }
@@ -211,6 +212,7 @@ export function decideOffers(state: LeagueState, ctx: SimContext, emit: Emit): v
         emit('notable', [teamId], {
           kind: 'news.posted',
           headline: 'event.lostFreeAgent',
+          playerId: player.id,
           params: {
             player: playerName(player),
             team: teamName(state.teams[o.teamId]!),

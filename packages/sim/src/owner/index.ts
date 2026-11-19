@@ -406,7 +406,7 @@ function fireSale(state: LeagueState, emit: Emit, teamId: TeamId) {
   for (const p of listed) {
     emit('minor', [teamId], { kind: 'trade.blockSet', teamId, playerId: p.id, onBlock: true });
   }
-  emit('minor', [teamId], {
+  emit('notable', [teamId], {
     kind: 'news.posted',
     headline: 'event.fireSale',
     params: { team: teamName(state.teams[teamId]!), n: listed.length },

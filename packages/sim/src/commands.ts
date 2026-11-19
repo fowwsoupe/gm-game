@@ -193,6 +193,7 @@ export function handleCommand(
           makeEvent(state, 'notable', [from.id], {
             kind: 'news.posted',
             headline: 'event.noTradeRefused',
+            playerId: no.id,
             params: { player: playerName(no) },
           }),
         );
@@ -289,6 +290,7 @@ export function handleCommand(
         : makeEvent(state, 'notable', [team.id], {
             kind: 'news.posted',
             headline: 'event.requestStands',
+            playerId: p.id,
             params: { player: playerName(p) },
           });
       return applied(state, ev);
@@ -368,6 +370,7 @@ export function handleCommand(
         : makeEvent(state, 'notable', [team.id], {
             kind: 'news.posted',
             headline: 'event.holdoutStands',
+            playerId: p.id,
             params: { player: playerName(p) },
           });
       return applied(state, ev);

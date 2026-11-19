@@ -107,6 +107,7 @@ export function developPlayers(
     emit('notable', [player.teamId!], {
       kind: 'news.posted',
       headline: 'event.summerTraining',
+      playerId: player.id,
       params: { player: playerName(player), focus, n: gained },
     });
   }
@@ -151,6 +152,7 @@ export function breakoutNews(
     emit(team.userControlled ? 'notable' : 'minor', [team.id], {
       kind: 'news.posted',
       headline: 'event.breakout',
+      playerId: p.id,
       params: { player: playerName(p), team: teamName(team), n: gain },
     });
     if (team.userControlled) {

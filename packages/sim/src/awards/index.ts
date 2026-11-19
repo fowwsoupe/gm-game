@@ -27,6 +27,7 @@ export function giveSeasonAwards(state: LeagueState, ctx: SimContext, emit: Emit
     emit('notable', [team.id], {
       kind: 'news.posted',
       headline: 'event.awardWon',
+      playerId: player.id,
       params: { award, player: playerName(player), team: team.name },
     });
   }

@@ -303,6 +303,8 @@ export type LeagueEvent =
   | (EventBase & {
       kind: 'news.posted';
       headline: string;
+      /** The player the line is about (set whenever `params.player` names one), for his face. */
+      playerId?: PlayerId;
       body?: string;
       params?: Record<string, string | number>;
     });
