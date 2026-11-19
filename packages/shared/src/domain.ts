@@ -420,11 +420,20 @@ export interface OwnerCard {
     | 'renovation'
     | 'festival'
     | 'fireCoach'
-    | 'hotSeat';
+    | 'hotSeat'
+    /** A press question after a win or losing streak (`params.n` games): you answer, the owner and fans react. */
+    | 'pressWin'
+    | 'pressLoss'
+    /** A press question after your team wins or loses a playoff series (`params.n` is the round). */
+    | 'pressSeries'
+    | 'pressOut';
   /** Text params: `amount` in dollars, `pct` in whole percent. */
   params: Record<string, number>;
   /** `noted`: a warning, nothing to decide. */
-  options: { key: 'agree' | 'refuse' | 'more' | 'noted'; effects: CardEffects }[];
+  options: {
+    key: 'agree' | 'refuse' | 'more' | 'noted' | 'deflect' | 'confident' | 'honest';
+    effects: CardEffects;
+  }[];
 }
 
 /** Generic standings row. `otl` stays 0 in sports without overtime-loss points. */

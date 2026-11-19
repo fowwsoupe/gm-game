@@ -184,6 +184,42 @@ function closeOpen(state: LeagueState, emit: Emit, teamId: TeamId) {
   }
 }
 
+/** What each answer to a press question does: fans like swagger, the owner likes candour. */
+const PRESS_OPTIONS: Record<`press${'Win' | 'Loss' | 'Series' | 'Out'}`, OwnerCard['options']> = {
+  pressWin: [
+    { key: 'deflect', effects: {} },
+    { key: 'confident', effects: { fanInterest: 2 } },
+    { key: 'honest', effects: { confidence: 2 } },
+  ],
+  pressLoss: [
+    { key: 'deflect', effects: {} },
+    { key: 'confident', effects: { fanInterest: 1, confidence: -2 } },
+    { key: 'honest', effects: { fanInterest: -1, confidence: 2 } },
+  ],
+  pressSeries: [
+    { key: 'deflect', effects: {} },
+    { key: 'confident', effects: { fanInterest: 2 } },
+    { key: 'honest', effects: { confidence: 2 } },
+  ],
+  pressOut: [
+    { key: 'deflect', effects: {} },
+    { key: 'confident', effects: { fanInterest: 1, confidence: -2 } },
+    { key: 'honest', effects: { fanInterest: -1, confidence: 2 } },
+  ],
+};
+
+/** After a big moment (a streak milestone, a playoff series), the press asks a human GM about it (an AI GM is never asked). */
+export function pressQuestion(
+  state: LeagueState,
+  emit: Emit,
+  teamId: TeamId,
+  kind: keyof typeof PRESS_OPTIONS,
+  n: number,
+) {
+  if (!state.teams[teamId]!.userControlled) return;
+  offer(state, emit, { teamId, kind, params: { n }, options: PRESS_OPTIONS[kind] }, 'deflect');
+}
+
 /** The owner warns a human GM his job is on the line: once a season, while "can be fired" is on. */
 function warnIfHot(state: LeagueState, emit: Emit, teamId: TeamId, confidence: number) {
   const standing = state.owners[teamId];

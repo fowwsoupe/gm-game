@@ -407,6 +407,19 @@ export const fr: Record<MessageKey, string> = {
   'owner.effect.coach': '{name} prend la relève',
   'owner.card.hotSeat':
     'Votre poste est en jeu : la confiance du propriétaire est tombée à {n}. Sous {fire} à un bilan de saison, il vous congédie.',
+  'owner.card.pressWin': 'La presse veut savoir comment votre équipe a gagné {n} matchs de suite.',
+  'owner.card.pressLoss': 'La presse demande ce qui ne va pas après {n} défaites de suite.',
+  'owner.card.pressSeries':
+    'La presse demande comment votre équipe a gagné la ronde {n} des séries.',
+  'owner.card.pressOut': 'La presse demande ce qui n’a pas fonctionné à la ronde {n} des séries.',
+  'owner.option.deflect': 'Esquiver',
+  'owner.option.confident': 'Se montrer confiant',
+  'owner.option.honest': 'Être franc',
+  'press.quote.deflect': 'Le DG du {team} esquive la presse : « Un match à la fois. »',
+  'press.quote.confident':
+    'Le DG du {team} dit à la presse : « Nous sommes exactement où nous voulons être. »',
+  'press.quote.honest':
+    'Le DG du {team} dit à la presse : « Il reste du travail, et j’en prends la responsabilité. »',
   'owner.option.noted': 'Compris',
   'owner.option.agree': 'Accepter',
   'owner.option.refuse': 'Refuser',

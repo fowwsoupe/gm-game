@@ -31,9 +31,13 @@ to 0.085-0.087 on seeds 1, 101 and 201 (re-checked 2026-11-18; 201 is borderline
 playoff turnover 31-32% ([research/2026-11-spread-second-mechanism.md](research/2026-11-spread-second-mechanism.md)). League & events:
 all five jobs of [research/2026-11-league-events.md](research/2026-11-league-events.md) done (the pulse ranks by playoff odds; a young team out of it rebuilds, an old bubble team with cap space buys; crisis on top).
 
+Camp and a trade deadline that matters: brief in
+[research/2026-11-camp-deadline.md](research/2026-11-camp-deadline.md); its two jobs (camp, the
+deadline) are ready.
+
 Needs a design first (a short brief in `docs/research/`, then jobs):
 
-- Minor / junior leagues; camp and a trade deadline that matters; player traits and clustered builds.
+- Minor / junior leagues; player traits and clustered builds.
 - Every other Phase 2 headline below.
 
 ## Queue (model · effort)
