@@ -168,7 +168,10 @@ export interface GmApi {
     pulse(): Promise<PulseRow[]>;
     /** Date, phase and which windows (trades, free agency) are open. */
     status(): Promise<LeagueStatus>;
-    /** How a free agent feels about an offer from `teamId` (null if he is not a free agent). */
+    /**
+     * How a free agent feels about an offer from `teamId`, or with `resign` one of its own players
+     * whose deal ends (null if he is neither).
+     */
     signingInterest(input: {
       playerId: string;
       teamId: TeamId;
@@ -176,6 +179,7 @@ export interface GmApi {
       years: number;
       noTrade?: true;
       bonusPct?: number;
+      resign?: true;
     }): Promise<SigningInterest | null>;
   };
   feed: {

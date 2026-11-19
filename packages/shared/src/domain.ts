@@ -692,7 +692,7 @@ export interface LeagueStatus {
 
 /**
  * How a free agent feels about an offer. Each factor is scored 0–100 and weighted by what a
- * player of his age cares about; he signs when `interest` reaches `threshold`.
+ * player of his age cares about; he signs when `interest` reaches his line, which only he knows.
  */
 export interface SigningInterest {
   /** An offer sheet to a restricted free agent: the draft picks it would cost, and whether you own them. */
@@ -702,7 +702,8 @@ export interface SigningInterest {
   ask: number;
   maxYears: number;
   interest: number;
-  threshold: number;
+  /** Rounds of talks this team has left with him (0: he broke them off). */
+  talks: number;
   factors: {
     key: 'money' | 'winning' | 'role' | 'term' | 'loyalty' | 'home';
     score: number;

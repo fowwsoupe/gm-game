@@ -1,22 +1,50 @@
-import type { Contract, Player, SigningInterest, TeamId, TeamStatus } from '@gm/shared';
-import type { LeagueState } from '../core';
-import { capYearIssues, capYearOf, teamCapTotal, validateContract, type Ruleset } from '../cba';
+import type { Contract, Player, PlayerId, SigningInterest, TeamId, TeamStatus } from '@gm/shared';
+import type { EventBody, LeagueState } from '../core';
+import {
+  capYearIssues,
+  capYearOf,
+  maxPlayerCapHit,
+  teamCapTotal,
+  validateContract,
+  type Ruleset,
+} from '../cba';
 import { nextDraftSeason, pickId, pickOwner } from '../league';
 import { overall } from '../players';
 import { hometownOf, personalityOf } from '../people';
 import type { SimContext } from '../context';
 import { resignWindowOpen } from './resign';
-import { wantedYears } from './roster';
+import { resignAsk, wantedYears } from './roster';
 
 /**
- * Free agency v1: a free agent weighs an offer on money, winning, his role and the term, with
+ * Free agency: a free agent weighs an offer on money, winning, his role and the term, with
  * weights that shift with age (young players chase money and ice time, veterans a winner).
- * Greed and ambition (people engine) tilt those weights. He signs when his interest reaches the
- * threshold.
+ * Greed and ambition (people engine) tilt those weights. He signs when his interest reaches his
+ * line (`lineOf`, hidden from the GM); under it his agent counters (`counterOffer`) until his
+ * patience runs out. A re-sign (`resign`) is weighed the same way, from his re-sign ask, with his
+ * loyalty counted for the team he plays for.
  */
 
-/** He signs at this interest or above. */
-const THRESHOLD = 70;
+/** An offer as the meter weighs it; `resign`: his own team re-signing him. */
+type Offer = { salary: number; years: number; noTrade?: true; bonusPct?: number; resign?: true };
+
+/** `signFreeAgent`'s answer to a legal offer under his line. */
+export const NOT_INTERESTED = 'he is not interested';
+
+/** The interest he signs at: the ruleset's line, up to `lineSwing` higher for the greediest player. */
+export const lineOf = (ctx: SimContext, playerId: string) => {
+  const { line, lineSwing } = ctx.ruleset.freeAgency;
+  return Math.round(line + (personalityOf(playerId).greed - 0.5) * 2 * lineSwing);
+};
+
+/** Rounds of talks `teamId` has left with him: his patience (more for a calm player) until spent. */
+export const talksLeft = (
+  state: LeagueState,
+  ctx: SimContext,
+  playerId: PlayerId,
+  teamId: TeamId,
+) =>
+  state.talks[playerId]?.[teamId] ??
+  1 + Math.round(ctx.ruleset.freeAgency.patience * personalityOf(playerId).temperament);
 
 const WINNING: Record<TeamStatus, number> = {
   contender: 1,
@@ -56,20 +84,22 @@ function priorities(age: number, playerId: string) {
 /** Most of his weight a pull to the team he left (scaled by loyalty) or to his hometown can take. */
 const LOYALTY_PULL = 0.2;
 const HOME_PULL = 0.1;
+/** The money score tops out here (an overpay); under it, it is linear in salary. */
+const MAX_MONEY = 1.5;
+/** His agent counters in round numbers. */
+const COUNTER_STEP = 10_000;
 
 const clamp = (n: number, lo: number, hi: number) => Math.max(lo, Math.min(hi, n));
+const KEYS = ['money', 'winning', 'role', 'term'] as const;
 
-/** How `player` feels about joining `teamId` for `salary` a year over `years`. */
-export function signingInterest(
-  state: LeagueState,
-  ctx: SimContext,
-  player: Player,
-  teamId: TeamId,
-  offer: { salary: number; years: number; noTrade?: true; bonusPct?: number },
-): SigningInterest {
+/** The meter's parts: his ask, each factor's score and weight, the pulls, and his interest (0-1). */
+function weigh(state: LeagueState, ctx: SimContext, player: Player, teamId: TeamId, offer: Offer) {
   const { ruleset } = ctx;
-  const age = capYearOf(state) - player.birthYear;
-  const ask = ctx.models.contractDemand.ask(ruleset, player);
+  const season = offer.resign ? state.date.season + 1 : capYearOf(state);
+  const age = season - player.birthYear;
+  const ask = offer.resign
+    ? resignAsk(ctx, player, season)
+    : ctx.models.contractDemand.ask(ruleset, player);
   const better = Object.values(state.players).filter(
     (p) => p.teamId === teamId && p.position === player.position && overall(p) > overall(player),
   ).length;
@@ -80,7 +110,7 @@ export function signingInterest(
     money: clamp(
       ((offer.salary * (1 + (0.1 * (offer.bonusPct ?? 0)) / 100)) / ask - 0.6) / 0.4,
       0,
-      1.5,
+      MAX_MONEY,
     ),
     winning: WINNING[state.teamStatus[teamId] ?? 'bubble'],
     role: clamp(1 - better / depth, 0.2, 1),
@@ -90,7 +120,7 @@ export function signingInterest(
   // Playing for his old team or his hometown is worth something on top: a full-score factor that
   // takes its weight from the others, so the same money goes further there (a "discount").
   const pulls: { key: 'loyalty' | 'home'; weight: number }[] = [];
-  if (state.formerTeams[player.id] === teamId) {
+  if ((offer.resign ? player.teamId : state.formerTeams[player.id]) === teamId) {
     pulls.push({
       key: 'loyalty',
       weight: LOYALTY_PULL * (0.25 + 0.75 * personalityOf(player.id).loyalty),
@@ -107,18 +137,30 @@ export function signingInterest(
     role: base.role * (1 - pull),
     term: base.term * (1 - pull),
   };
-  const keys = ['money', 'winning', 'role', 'term'] as const;
-  const interest = keys.reduce((sum, k) => sum + scores[k] * weights[k], 0) + pull; // pulls score 1
+  const interest = KEYS.reduce((sum, k) => sum + scores[k] * weights[k], 0) + pull; // pulls score 1
+  return { ask, scores, weights, pulls, interest };
+}
+
+/** How `player` feels about joining `teamId` for `salary` a year over `years` (or re-signing). */
+export function signingInterest(
+  state: LeagueState,
+  ctx: SimContext,
+  player: Player,
+  teamId: TeamId,
+  offer: Offer,
+): SigningInterest {
+  const { ruleset } = ctx;
+  const { ask, scores, weights, pulls, interest } = weigh(state, ctx, player, teamId, offer);
   const sheet = sheetCompensation(state, ruleset, player, teamId, Math.round(offer.salary));
   return {
     ...(sheet.picks.length && { sheet }),
     playerId: player.id,
     ask,
-    maxYears: ruleset.contracts.maxYearsNewTeam,
+    maxYears: offer.resign ? ruleset.contracts.maxYearsResign : ruleset.contracts.maxYearsNewTeam,
     interest: Math.round(clamp(interest, 0, 1) * 100),
-    threshold: THRESHOLD,
+    talks: talksLeft(state, ctx, player.id, teamId),
     factors: [
-      ...keys.map((key) => ({
+      ...KEYS.map((key) => ({
         key,
         score: Math.round(clamp(scores[key], 0, 1) * 100),
         weight: weights[key],
@@ -126,6 +168,58 @@ export function signingInterest(
       ...pulls.map((x) => ({ key: x.key, score: 100, weight: x.weight })),
     ],
   };
+}
+
+/**
+ * What his agent asks for: the lowest salary, at the offer's term, clause and bonus, that puts his
+ * interest at his line plus the agent's markup (more for a greedy player). Null when no salary up
+ * to the CBA maximum gets there (a winner-chasing veteran and a rebuilding team).
+ */
+export function counterSalary(
+  state: LeagueState,
+  ctx: SimContext,
+  player: Player,
+  teamId: TeamId,
+  offer: Offer,
+): number | null {
+  const { ask, scores, weights, interest } = weigh(state, ctx, player, teamId, offer);
+  const { markup } = ctx.ruleset.freeAgency;
+  const target =
+    (lineOf(ctx, player.id) + Math.round(personalityOf(player.id).greed * markup)) / 100;
+  // The money score is linear in salary up to MAX_MONEY: solve for the one that reaches the target.
+  const score = (target - interest + scores.money * weights.money) / weights.money;
+  const perDollar = 1 + (offer.bonusPct ?? 0) / 1000; // the bonus's tenth more, as in `weigh`
+  const salary = Math.max(
+    ctx.ruleset.cap.minSalary,
+    Math.ceil((ask * (0.6 + 0.4 * score)) / perDollar / COUNTER_STEP) * COUNTER_STEP,
+  );
+  return score <= MAX_MONEY && salary <= maxPlayerCapHit(ctx.ruleset) ? salary : null;
+}
+
+/**
+ * His agent's answer to an offer under his line: a lowball (more than `freeAgency.lowball` under
+ * it) spends two rounds of talks, any other offer one. While talks go on he names his counter or,
+ * if no salary would do, the factor holding him back (his weakest besides the money).
+ */
+export function counterOffer(
+  state: LeagueState,
+  ctx: SimContext,
+  player: Player,
+  teamId: TeamId,
+  offer: Offer,
+): Extract<EventBody, { kind: 'contract.countered' }> {
+  const view = signingInterest(state, ctx, player, teamId, offer);
+  const under = lineOf(ctx, player.id) - view.interest;
+  const rounds = Math.max(0, view.talks - (under > ctx.ruleset.freeAgency.lowball ? 2 : 1));
+  const base = { kind: 'contract.countered' as const, playerId: player.id, teamId, rounds };
+  if (rounds === 0) return base;
+  const counter = counterSalary(state, ctx, player, teamId, offer);
+  if (counter !== null) return { ...base, counter };
+  const score = (key: string) => view.factors.find((f) => f.key === key)!.score;
+  const holdsBack = (['winning', 'role', 'term'] as const).reduce((a, b) =>
+    score(b) < score(a) ? b : a,
+  );
+  return { ...base, holdsBack };
 }
 
 /**
@@ -168,7 +262,7 @@ export function compensationFor(
 
 /**
  * The contract if `player` signs with `teamId` on this offer, or why not. Legal (window, free
- * agent, CBA terms, cap) first, then he has to want it.
+ * agent, CBA terms, cap) first, then it has to reach his line (`NOT_INTERESTED`).
  */
 export function signFreeAgent(
   state: LeagueState,
@@ -221,7 +315,7 @@ export function signFreeAgent(
     ...(offer.noTrade && { noTrade: true as const }),
     ...(offer.bonusPct && { bonusPct: offer.bonusPct }),
   });
-  if (view.interest < view.threshold) return { error: 'he is not interested' };
+  if (view.interest < lineOf(ctx, player.id)) return { error: NOT_INTERESTED };
   return {
     contract: {
       capHit: salary,
