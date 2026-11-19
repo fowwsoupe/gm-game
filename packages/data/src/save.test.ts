@@ -33,6 +33,28 @@ describe('SaveFile', () => {
     save.close();
   });
 
+  it('hot-seat: a second human GM shares the save and both teams stay human', () => {
+    const save = openSave(':memory:');
+    const state = createLeague(4, ctx);
+    save.saveNewLeague(state);
+    const second = Object.values(state.teams).find((t) => !t.userControlled)!.id;
+    const res = handleCommand(
+      state,
+      { kind: 'team.setUserControlled', teamId: second, userControlled: true },
+      local,
+      ctx,
+    );
+    if (!res.ok) throw new Error(res.error.message);
+    save.persist(res.events, state);
+    const sim = handleCommand(state, { kind: 'sim.advance', days: 3 }, local, ctx);
+    if (!sim.ok) throw new Error(sim.error.message);
+    save.persist(sim.events, state);
+    const loaded = save.loadState();
+    expect(Object.values(loaded.teams).filter((t) => t.userControlled)).toHaveLength(2);
+    expect(loaded).toEqual(state);
+    save.close();
+  });
+
   it('persists a relocated team', () => {
     const save = openSave(':memory:');
     const state = createLeague(4, ctx);

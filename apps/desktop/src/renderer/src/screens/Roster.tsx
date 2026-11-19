@@ -11,6 +11,7 @@ import {
   useSigningInterest,
   useStatus,
   useTeams,
+  useMine,
 } from '@/lib/queries';
 import { useT, type MessageKey } from '@/i18n';
 import {
@@ -33,6 +34,7 @@ const FREE_AGENTS = 'fa';
 export function Roster({ freeAgents = false }: { freeAgents?: boolean }) {
   const t = useT();
   const { data: teams = [] } = useTeams();
+  const mine = useMine()?.id;
   const focus = useUi((s) => s.focus);
   const [picked, setPicked] = useState<string | undefined>(focus?.teamId);
   const [selected, setSelected] = useState<string | undefined>(focus?.playerId);
@@ -43,8 +45,7 @@ export function Roster({ freeAgents = false }: { freeAgents?: boolean }) {
   }, [focus]);
   const value = freeAgents
     ? FREE_AGENTS
-    : ((picked && picked !== FREE_AGENTS ? picked : undefined) ??
-      (teams.find((x) => x.userControlled) ?? teams[0])?.id);
+    : ((picked && picked !== FREE_AGENTS ? picked : undefined) ?? mine ?? teams[0]?.id);
   const teamId = value === FREE_AGENTS ? null : (value as TeamId | undefined);
   const { data: players = [] } = usePlayers(value === undefined ? undefined : teamId);
   if (value === undefined) return <p className="text-muted">{t('roster.empty')}</p>;
@@ -84,12 +85,10 @@ export function Roster({ freeAgents = false }: { freeAgents?: boolean }) {
               onSelect={setSelected}
             />
           ))}
-          {teamId && (
-            <Prospects teamId={teamId} mine={teamId === teams.find((x) => x.userControlled)?.id} />
-          )}
+          {teamId && <Prospects teamId={teamId} mine={teamId === mine} />}
         </div>
-        {freeAgents && <Sheets teamId={teams.find((x) => x.userControlled)?.id} />}
-        {card && <Profile player={card} signFor={teams.find((x) => x.userControlled)?.id} />}
+        {freeAgents && <Sheets teamId={mine} />}
+        {card && <Profile player={card} signFor={mine} />}
       </div>
     </div>
   );
