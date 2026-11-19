@@ -44,6 +44,10 @@ Summer training, camp battles, international tournament: brief in
 [research/2026-11-summer-training.md](research/2026-11-summer-training.md); summer training plans
 and the international tournament are done; camp battles wait for the camp job above.
 
+Free-agency bidding war and contract negotiation: brief in
+[research/2026-11-free-agency-bidding.md](research/2026-11-free-agency-bidding.md); its three
+jobs (the bidding war, negotiation, the room and the pitch) are ready, in that order.
+
 Needs a design first (a short brief in `docs/research/`, then jobs):
 
 - Player traits and clustered builds.
@@ -75,7 +79,7 @@ C. Design brief first, then jobs (Opus 5.5)
 D. Phase 2 headlines
 
 - [x] Live draft room with trading (Opus, high, 3-4 PRs)
-- [ ] Free-agency bidding war and contract negotiation (Opus, xhigh, brief first)
+- [ ] Free-agency bidding war and contract negotiation (Opus, xhigh; brief done: [research/2026-11-free-agency-bidding.md](research/2026-11-free-agency-bidding.md), its 3 jobs next)
 - [ ] League news tab (Opus for storylines, Sonnet for UI; high, brief first)
 - [x] Media and press conferences, text (Sonnet, medium, 2-3 PRs)
 - [~] Summer training, camp battles, international tournament (Opus, high, 3 PRs): brief, summer training plans and the international tournament done; camp battles wait for camp
@@ -154,7 +158,7 @@ Build order, owners and "done when" for each step: **[V0.1_PLAN.md](V0.1_PLAN.md
 - [x] Owner & finance: decision cards, pricing policy, fans, projects, owner meetings; owners and markets, the money ledger, fans and ticket pricing, confidence, meetings and cards, the Owner screen, projects and more cards, the head coach (salary, heat, AI firings in-season and at the review, the fire-or-keep card), and your job on the line (hot-seat warning, fired at a review, job offers, a "can be fired" option, AI GMs fired on confidence) (all 8 jobs in [the brief](research/2026-11-owner-finance.md))
 - [~] Front office: scouting, analytics, medical, coaching, development staff. Department heads with a quality and a salary, coach quality in games, development staff (replacing GM skill), per-team draft reads, medical injury days, the staff market (leave, poaching, owner budgets), the Front Office screen with three candidates a season, tuned against the long-run benchmarks (all jobs of [the brief](research/2026-11-front-office.md); the price curve was tried and dropped), an assistant GM for human teams whose advice on Home (extend first, take or turn down an offer) is as accurate as his quality (the best-value free agent for your cap room, who would help on the top line, and a guess at a trade's answer), done; department returns (what each department added against an average one, on the Front Office screen) and firing a head without a replacement (an interim, severance) done; hired head coaches drawn from the owner-tilted market (coaching measured around the league's average coach) and medical scaling re-injury risk done; an analytics department (a fourth head; a weak one blurs what you see of other teams' players, a fixed amount per player, view only) done; his return (how far his read of your roster is off) done; delegation (maybe) to do
 - [x] Live draft trade room: pick by pick, trade for any pick to come, AI teams trade up and call you on the clock, draft results with the picks that changed hands
-- [ ] Free-agency live bidding war + full contract negotiation
+- [ ] Free-agency live bidding war + full contract negotiation ([brief](research/2026-11-free-agency-bidding.md): the bidding war, negotiation, the room and the pitch, to do)
 - [ ] League news tab, social-media style: a feed page of posts with the generated face of the player and of the AI GM (or coach, owner) in each one, built on the existing `news.posted` events and the news-feed faces. Storylines that run over weeks and seasons (a holdout becoming a trade, a breakout and his extension ask, a GM's fire sale, a contender clearing cap for a star, a rivalry, a coach on the hot seat), each told as a short thread of linked posts; generated GM faces; likes and follows only if they carry a use. Needs a design first (a short brief in `docs/research/`).
 - [x] Media & press conferences (text)
 - [ ] Match viewer (2D) + coach from the bench
@@ -187,5 +191,5 @@ Research behind these: [docs/research/2026-11-sports-gm-research.md](research/20
 
 - [ ] Build order and who owns which engine
 - [ ] Game name and championship cup name
-- [ ] Contract negotiation design
+- [x] Contract negotiation design ([brief](research/2026-11-free-agency-bidding.md))
 - [ ] Steam launch plan: Early Access timing, price, demo, roadmap page
