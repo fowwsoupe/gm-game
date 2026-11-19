@@ -29,7 +29,7 @@ export function contractIn(player: Player, season: number): Contract | undefined
   return undefined;
 }
 
-export interface ContractTerms {
+interface ContractTerms {
   /** Salary for each season of the deal, in order. */
   salaries: Dollars[];
   signingAge: number;

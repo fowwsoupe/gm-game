@@ -6,20 +6,21 @@ import type {
   Team,
   TeamId,
 } from '@gm/shared';
-import { FIRST, LAST, Rng, teamName, type Emit, type LeagueState } from '../core';
+import { Rng, teamName, type Emit, type LeagueState } from '../core';
 import type { SimContext } from '../context';
 import {
   assistantSees,
   departmentsOf,
   hash,
+  hireCentre,
   hireQuality,
-  ownerOf,
+  randomName,
   staffOf,
   staffSalary,
 } from '../people';
 import { leagueStandings } from '../league';
 import { overall } from '../players';
-import { teamRange } from './draft';
+import { scouted, teamRange } from './draft';
 
 /** A head this good or better makes league-wide news when he moves. */
 const NEWS_QUALITY = 0.9;
@@ -61,7 +62,7 @@ export function changeStaff(
       if (!leaves && !poached) continue;
       const quality = hireQuality(r, team, fo);
       const head: StaffProfile = {
-        name: `${r.pick(FIRST)} ${r.pick(LAST)}`,
+        name: randomName(r),
         quality,
         // The season just played: a summer replacement never uses up the GM's own hire.
         hired: state.date.season,
@@ -135,13 +136,13 @@ export function staffCandidates(
   legends: readonly HallOfFamer[] = [],
 ): StaffProfile[] {
   const fo = ctx.ruleset.frontOffice;
-  const centre = 0.5 + fo.spend * (ownerOf(team).budget - 0.5);
+  const centre = hireCentre(team, fo);
   const r = new Rng(hash(`candidates:${team.id}:${department}:${season}`));
   const out = [-1, 0, 1].map((step) => {
     const quality =
       Math.round(clamp01(centre + step * CANDIDATE_STEP + r.normal(0, fo.hireSd / 2)) * 100) / 100;
     return {
-      name: `${r.pick(FIRST)} ${r.pick(LAST)}`,
+      name: randomName(r),
       quality,
       hired: season,
       salary: staffSalary(quality, fo.salary),
@@ -162,7 +163,7 @@ export function interimHead(
   const fo = ctx.ruleset.frontOffice;
   const r = new Rng(hash(`interim:${team.id}:${department}:${season}`));
   return {
-    name: `${r.pick(FIRST)} ${r.pick(LAST)}`,
+    name: randomName(r),
     quality: fo.interim,
     hired: season,
     salary: staffSalary(fo.interim, fo.salary),
@@ -198,10 +199,9 @@ export function departmentReturns(
   const newest = Math.max(0, ...players.map(draftOf));
   const missOf = (t: Team) => {
     const picks = players.filter((p) => p.teamId === t.id && draftOf(p) === newest);
-    const miss = picks.map((p) => {
-      const r = teamRange(t, { player: p }, ctx, season);
-      return Math.abs((r.low + r.high) / 2 - p.potential);
-    });
+    const miss = picks.map((p) =>
+      Math.abs(scouted(teamRange(t, { player: p }, ctx, season)) - p.potential),
+    );
     return { n: miss.length, error: mean(miss) };
   };
   const mineMiss = missOf(mine);

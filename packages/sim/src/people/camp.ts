@@ -3,7 +3,7 @@ import type { SimContext } from '../context';
 import { coachOf } from './owner';
 
 /** The coach's word for a team's form at the end of camp. */
-export type CampRead = 'sharp' | 'expected' | 'flat';
+type CampRead = 'sharp' | 'expected' | 'flat';
 
 /** Half a form SD either way is "as expected". */
 const wordFor = (form: number, sd: number): CampRead =>

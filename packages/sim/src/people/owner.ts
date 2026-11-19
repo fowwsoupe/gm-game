@@ -5,6 +5,9 @@ import { hash } from './personality';
 /** A coach's deal, from the ruleset (`finance.coach`). */
 type CoachTerms = { salary: number; years: number };
 
+/** A fictional person's name: a first name, then a last name. */
+export const randomName = (rng: Rng) => `${rng.pick(FIRST)} ${rng.pick(LAST)}`;
+
 /** A new head coach: a fictional name, on the league's usual deal from `hired`. */
 export const newCoach = (
   rng: Rng,
@@ -12,21 +15,19 @@ export const newCoach = (
   terms: CoachTerms,
   quality?: number,
 ): CoachProfile => ({
-  name: `${rng.pick(FIRST)} ${rng.pick(LAST)}`,
+  name: randomName(rng),
   hired,
   ...terms,
   ...(quality === undefined ? {} : { quality }),
 });
 
-/** A hire's quality from the owner-tilted market: centred on his budget, as the staff market does. */
-export const hireQuality = (
-  rng: Rng,
-  team: Team,
-  fo: { spend: number; hireSd: number },
-): number => {
-  const centre = 0.5 + fo.spend * (ownerOf(team).budget - 0.5);
-  return Math.round(Math.max(0, Math.min(1, rng.normal(centre, fo.hireSd))) * 100) / 100;
-};
+/** The average quality of a hire on the market: tilted by `fo.spend` toward the owner's budget. */
+export const hireCentre = (team: Team, fo: { spend: number }) =>
+  0.5 + fo.spend * (ownerOf(team).budget - 0.5);
+
+/** A hire's quality from the owner-tilted market (`hireCentre`), as the staff market does. */
+export const hireQuality = (rng: Rng, team: Team, fo: { spend: number; hireSd: number }): number =>
+  round2(Math.max(0, Math.min(1, rng.normal(hireCentre(team, fo), fo.hireSd))));
 
 /**
  * A team's head coach; an old save's is derived from the team id (`season` is today's, so his
@@ -73,7 +74,7 @@ export function staffOf(
   const stored = team.staff?.[dept];
   if (stored) return stored;
   const rng = new Rng(hash(`staff:${dept}:${team.id}`));
-  const name = `${rng.pick(FIRST)} ${rng.pick(LAST)}`;
+  const name = randomName(rng);
   const quality = round2(rng.next());
   return {
     name,
@@ -97,7 +98,7 @@ const MARKET = { min: 0.65, max: 1.75 };
 export function ownerOf(team: Team): OwnerProfile {
   const rng = new Rng(hash(`owner:${team.id}`));
   return {
-    name: `${rng.pick(FIRST)} ${rng.pick(LAST)}`,
+    name: randomName(rng),
     priority: round2(rng.next()),
     patience: round2(rng.next()),
     budget: round2(rng.next()),

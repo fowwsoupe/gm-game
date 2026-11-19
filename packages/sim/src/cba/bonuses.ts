@@ -29,8 +29,9 @@ export function payBonuses(
     if (amount > 0) paid.push({ playerId: p.id, teamId: p.teamId, amount });
   }
   if (!paid.length) return paid;
+  const teams = [...new Set(paid.map((x) => x.teamId))].sort();
   const charges: CapCharge[] = [];
-  for (const teamId of [...new Set(paid.map((x) => x.teamId))].sort()) {
+  for (const teamId of teams) {
     const mine = paid.filter((x) => x.teamId === teamId).sort((a, b) => b.amount - a.amount);
     const total = mine.reduce((s, x) => s + x.amount, 0);
     let over = teamCapTotal(ctx.ruleset, state, teamId) + total - ctx.ruleset.cap.upperLimit;
@@ -47,7 +48,6 @@ export function payBonuses(
       over -= amount;
     }
   }
-  const teams = [...new Set(paid.map((x) => x.teamId))].sort();
   emit(teams.some((id) => state.teams[id]?.userControlled) ? 'notable' : 'minor', teams, {
     kind: 'bonuses.paid',
     season,

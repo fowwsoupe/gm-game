@@ -2,6 +2,7 @@ import type { DraftProspect, ScoutReport } from '@gm/shared';
 import { Rng } from '../core';
 import type { SimContext } from '../context';
 import { hash } from '../people';
+import { scouted } from './draft';
 
 /** How far a scout's read of one current rating is off (rating points). */
 const READ_SD = 5;
@@ -25,6 +26,6 @@ export function scoutReport(ctx: SimContext, d: DraftProspect): ScoutReport {
   return {
     strengths: ranked.slice(0, 2).map((r) => r.key),
     weakness: ranked.at(-1)?.key ?? '',
-    ready: mean >= (d.low + d.high) / 2 - RAW_GAP,
+    ready: mean >= scouted(d) - RAW_GAP,
   };
 }

@@ -5,7 +5,7 @@ import { Rng } from '../core';
  * free-agent priorities, press answers, locker-room chemistry, and AI GM / owner styles.
  * Traits are 0–1 weights, not labels, so they combine smoothly.
  */
-export const TRAITS = [
+const TRAITS = [
   'loyalty',
   'ambition',
   'greed',
@@ -13,22 +13,10 @@ export const TRAITS = [
   'temperament',
   'professionalism',
 ] as const;
-export type Trait = (typeof TRAITS)[number];
+type Trait = (typeof TRAITS)[number];
 export type Personality = Record<Trait, number>;
 
-/** What a player cares about in a new contract. Weights sum to ~1 and shift with age. */
-export const PRIORITIES = [
-  'money',
-  'winning',
-  'role',
-  'loyalty',
-  'mentor',
-  'home',
-  'term',
-] as const;
-export type Priority = (typeof PRIORITIES)[number];
-
-export function randomPersonality(rng: Rng): Personality {
+function randomPersonality(rng: Rng): Personality {
   const p = {} as Personality;
   for (const t of TRAITS) p[t] = Math.round(rng.next() * 100) / 100;
   return p;

@@ -4,7 +4,7 @@
  * and turning what happened into events and news. League generation is per sport.
  */
 export { drawForm, makeSchedule } from './schedule';
-export { byStanding, computeStandings, leagueStandings, worstFirst } from './standings';
+export { computeStandings, leagueStandings, worstFirst } from './standings';
 export { classifyTeams, type PulseInput } from './status';
 export { playoffOdds, raceNight, teamRatings } from './odds';
 export {

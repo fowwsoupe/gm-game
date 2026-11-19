@@ -13,7 +13,6 @@ export {
   elcYears,
   prospectDeal,
   rightsYears,
-  type ContractTerms,
   type ContractIssue,
 } from './contracts';
 export {

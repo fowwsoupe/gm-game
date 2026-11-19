@@ -12,7 +12,8 @@ const SCOUT_SD = 4;
 /** Half the width of the scouted range. */
 const SCOUT_HALF_RANGE = 5;
 
-const scouted = (d: DraftProspect) => (d.low + d.high) / 2;
+/** The middle of a scouted range: the potential the scouts expect. */
+export const scouted = (r: { low: number; high: number }) => (r.low + r.high) / 2;
 
 /**
  * A prospect's potential range as this team's scouts read it: a good scouting department reads
@@ -40,8 +41,7 @@ function aiPick(team: Team, pool: readonly DraftProspect[], ctx: SimContext, sea
   let best = 0;
   let bestRead = -Infinity;
   pool.slice(0, AI_LOOKS_AT).forEach((d, i) => {
-    const r = teamRange(team, d, ctx, season);
-    const read = (r.low + r.high) / 2;
+    const read = scouted(teamRange(team, d, ctx, season));
     if (read > bestRead) [best, bestRead] = [i, read];
   });
   return best;
@@ -198,7 +198,7 @@ const TRADE_UP_REACH = 8;
  * a human holder is only called with a deal worth taking.
  * ponytail: one extra pick at most, whatever the gap; a price tied to the gap if calls feel cheap.
  */
-export function tradeUpCall(
+function tradeUpCall(
   state: LeagueState,
   ctx: SimContext,
   clock: DraftClock,
@@ -208,10 +208,7 @@ export function tradeUpCall(
   const season = state.date.season + 1;
   const best = (team: Team, from: number) =>
     Math.max(
-      ...pool.slice(from, from + AI_LOOKS_AT).map((d) => {
-        const r = teamRange(team, d, ctx, season);
-        return (r.low + r.high) / 2;
-      }),
+      ...pool.slice(from, from + AI_LOOKS_AT).map((d) => scouted(teamRange(team, d, ctx, season))),
     );
   const holder = state.teams[clock.teamId]!;
   const judge = {

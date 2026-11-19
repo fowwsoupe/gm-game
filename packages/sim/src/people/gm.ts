@@ -9,7 +9,8 @@ import type {
   TeamPlanKind,
   TeamStatus,
 } from '@gm/shared';
-import { FIRST, LAST, Rng } from '../core';
+import { Rng } from '../core';
+import { randomName } from './owner';
 import { hash } from './personality';
 
 const GM_STYLES: readonly GmStyle[] = ['winNow', 'balanced', 'builder'];
@@ -24,7 +25,7 @@ export function randomGm(rng: Rng): NamedGm {
   return {
     style: rng.pick(GM_STYLES),
     skill: Math.round(rng.next() * 100) / 100,
-    name: `${rng.pick(FIRST)} ${rng.pick(LAST)}`,
+    name: randomName(rng),
   };
 }
 
@@ -84,7 +85,7 @@ function shifted(player: Player, off: number): Player {
 /** Seasons a rebuild is given before the GM reconsiders (unless the kids arrive early)... */
 const REBUILD_SEASONS = 2;
 /** ...and the most it lasts: then the GM has to push (retool), however the kids look. */
-export const REBUILD_MAX_SEASONS = 4;
+const REBUILD_MAX_SEASONS = 4;
 /** A core younger than this on average is promise, not just weakness. */
 const YOUNG_CORE = 26;
 /** Age of the core above which the window starts closing, and how fast (per year, in SDs). */

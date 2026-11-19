@@ -122,7 +122,7 @@ export function buyoutCharges(
   }));
 }
 
-export type RetentionIssue =
+type RetentionIssue =
   | { code: 'retention_too_high'; max: number }
   | { code: 'too_many_retained'; max: number }
   | { code: 'retained_too_recently'; days: number };
@@ -131,7 +131,7 @@ export type RetentionIssue =
  * Whether a team may keep `retainPct` of a contract's cap hit when trading the player.
  * `teamRetainedCount`: contracts the team already retains on. `daysSinceRetained`: days since
  * this same contract was last traded with retention (null if never), for the double-retention ban.
- * For trades (M6); the rules live here so every caller checks them the same way.
+ * Trades check it (`evaluateTrade`); the rules live here so every caller checks them the same way.
  */
 export function retentionIssues(
   rules: Ruleset,
