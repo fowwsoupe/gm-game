@@ -1,5 +1,13 @@
 import { describe, expect, it } from 'vitest';
-import type { Actor, Command, LeagueEvent, Player, PlayerId, TeamId } from '@gm/shared';
+import type {
+  Actor,
+  Command,
+  LeagueEvent,
+  Player,
+  PlayerId,
+  TeamId,
+  TradeProposal,
+} from '@gm/shared';
 import {
   Rng,
   applyEvent,
@@ -8,6 +16,7 @@ import {
   dashboard,
   defaultContext,
   emitter,
+  evaluateTrade,
   handleCommand,
   hockeySeasonStats,
   prospectsOf,
@@ -195,5 +204,57 @@ describe('lower-league lines', () => {
       league: 'junior',
     });
     expect(state.prospects['old' as PlayerId]!.line?.league).toBe('europe');
+  });
+});
+
+describe('prospects in trades', () => {
+  /** A new league (trades open) with a 19-year-old prospect of the user's, all ratings 50. */
+  function league(potentials: Record<string, number>) {
+    const state = createLeague(65, ctx);
+    const teams = Object.values(state.teams);
+    const mine = teams.find((t) => t.userControlled)!.id;
+    const partner = teams.find((t) => !t.userControlled)!.id;
+    for (const [id, potential] of Object.entries(potentials)) {
+      addProspect(state, mine, id, 50, state.date.season + 3);
+      Object.assign(state.prospects[id as PlayerId]!.player, {
+        potential,
+        birthYear: state.date.season - 19,
+      });
+    }
+    const give = (id: string): TradeProposal => ({
+      fromTeamId: mine,
+      toTeamId: partner,
+      give: [],
+      get: [],
+      giveProspects: [id as PlayerId],
+    });
+    return { state, mine, partner, give };
+  }
+
+  it('values a prospect with a high read potential above a low one', () => {
+    // One prospect, so the other GM's misread of him is the same both times.
+    const { state, give } = league({ kid: 50 });
+    const low = evaluateTrade(state, ctx, give('kid')).value;
+    state.prospects['kid' as PlayerId]!.player.potential = 85;
+    expect(evaluateTrade(state, ctx, give('kid')).value).toBeGreaterThan(low);
+  });
+
+  it('a trade with one passes the same checks as any other, and moves his rights', () => {
+    const { state, partner, give } = league({ kid: 85 });
+    addProspect(state, partner, 'theirs', 50, state.date.season + 3);
+    const code = (p: TradeProposal, s = state) => evaluateTrade(s, ctx, p).reasons[0]?.code;
+    expect(code(give('theirs'))).toBe('not_on_team');
+    expect(code({ ...give('kid'), getProspects: ['kid' as PlayerId] })).toBe('empty');
+    const late = { ...state, date: { ...state.date, day: cal.tradeDeadlineDay + 1 } };
+    expect(code(give('kid'), late)).toBe('closed');
+
+    const replica = structuredClone(state);
+    const events = run(state, { kind: 'trade.propose', proposal: give('kid') });
+    events.forEach((e) => applyEvent(replica, e));
+    expect(replica).toEqual(state);
+    expect(events[0]).toMatchObject({ kind: 'trade.completed', giveProspects: ['kid'] });
+    // Still a prospect, his rights with his new team: off its roster and its cap.
+    expect(state.prospects['kid' as PlayerId]!.player.teamId).toBe(partner);
+    expect(state.players['kid' as PlayerId]).toBeUndefined();
   });
 });

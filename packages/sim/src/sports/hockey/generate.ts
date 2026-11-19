@@ -11,6 +11,7 @@ import { payroll, type Ruleset } from '../../cba';
 import { FIRST, LAST, pct, type Rng } from '../../core';
 import { clampRating } from '../../players';
 import { HOCKEY_DEVELOPMENT } from './aging';
+import { SHAPE_POINTS, SKATER_BUILD_CLUSTERS } from './tuning';
 
 const CITIES = [
   'Aurora',
@@ -83,8 +84,49 @@ const DRAFT_POSITIONS: HockeyPosition[] = [
 const PROSPECT = { potentialBase: 46, gap: [12, 26] as const };
 
 /** One value per rating key, drawn in the order the keys are listed. */
-const rate = (keys: readonly string[], r: () => number) =>
-  Object.fromEntries(keys.map((k) => [k, r()]));
+const rate = (keys: readonly string[], r: (key: string) => number) =>
+  Object.fromEntries(keys.map((k) => [k, r(k)]));
+
+/** Variance of the +-8 die every key had before builds: a key's shape and die add up to it. */
+const KEY_VARIANCE = (17 ** 2 - 1) / 12;
+
+/**
+ * Each build's offset per skater key in rating points, centred on the share-weighted mean so the
+ * league's average rating does not move, and the die left per key so its spread does not either.
+ */
+function shapes(clusters: readonly { share: number; centre: Partial<Record<string, number>> }[]) {
+  const centre = (c: (typeof clusters)[number], k: string) => c.centre[k] ?? 0;
+  const mean = (k: string) => clusters.reduce((s, c) => s + c.share * centre(c, k), 0);
+  const builds = clusters.map((c) => ({
+    share: c.share,
+    offset: Object.fromEntries(
+      SKATER_RATINGS.map((k) => [k, SHAPE_POINTS * (centre(c, k) - mean(k))]),
+    ),
+  }));
+  const die = Object.fromEntries(
+    SKATER_RATINGS.map((k) => [
+      k,
+      Math.sqrt(KEY_VARIANCE - builds.reduce((s, b) => s + b.share * b.offset[k]! ** 2, 0)),
+    ]),
+  );
+  return { builds, die };
+}
+const SHAPES = {
+  forwards: shapes(SKATER_BUILD_CLUSTERS.forwards),
+  defence: shapes(SKATER_BUILD_CLUSTERS.defence),
+};
+
+/**
+ * A new player's ratings around `base`. A skater is born with a build drawn by its share of real
+ * skaters; goalies keep plain dice (their public stats are too noisy to cluster).
+ */
+function ratingsFor(position: HockeyPosition, base: number, rng: Rng) {
+  if (position === 'G') return rate(GOALIE_RATINGS, () => clampRating(base + rng.int(-8, 8)));
+  const { builds, die } = position === 'D' ? SHAPES.defence : SHAPES.forwards;
+  let u = rng.next();
+  const build = builds.find((b) => (u -= b.share) < 0) ?? builds.at(-1)!;
+  return rate(SKATER_RATINGS, (k) => clampRating(base + build.offset[k]! + rng.normal(0, die[k]!)));
+}
 
 /**
  * Fictional league for development and for players who don't load a community roster.
@@ -119,7 +161,6 @@ export function generateFictionalLeague(
     const teamStart = players.length;
     for (const position of ROSTER) {
       const base = 62 + quality + rng.int(-10, 12);
-      const r = () => clampRating(base + rng.int(-8, 8));
       const firstName = rng.pick(FIRST);
       const lastName = rng.pick(LAST);
       const birthYear = rng.int(1993, 2007);
@@ -137,7 +178,7 @@ export function generateFictionalLeague(
         potential: clampRating(base + upside),
         contract: { capHit: rng.int(8, 100) * 100_000, expiresAfterSeason: 2027 + rng.int(0, 5) },
       };
-      p.ratings = rate(position === 'G' ? GOALIE_RATINGS : SKATER_RATINGS, r);
+      p.ratings = ratingsFor(position, base, rng);
       players.push(p);
     }
     fitPayroll(players.slice(teamStart), ruleset, rng.fork(`payroll${t}`));
@@ -181,7 +222,6 @@ export const hockeyProspectLeague = (origin: string, age: number, rules: Ruleset
 /**
  * A new, teamless 18-19 year old: the draft class and undrafted free agents.
  * Rated well below his potential; development closes the gap by his mid-twenties.
- * TODO(M4): position-specific rating profiles.
  */
 export function generateProspect(
   rng: Rng,
@@ -190,7 +230,6 @@ export function generateProspect(
   const position = (opts.position ?? rng.pick(DRAFT_POSITIONS)) as HockeyPosition;
   const potential = clampRating(PROSPECT.potentialBase + rng.int(0, 15) + rng.int(0, 15));
   const base = potential - rng.int(PROSPECT.gap[0], PROSPECT.gap[1]);
-  const r = () => clampRating(base + rng.int(-8, 8));
   return {
     id: opts.id as PlayerId,
     firstName: rng.pick(FIRST),
@@ -199,6 +238,6 @@ export function generateProspect(
     teamId: null,
     position,
     potential,
-    ratings: rate(position === 'G' ? GOALIE_RATINGS : SKATER_RATINGS, r),
+    ratings: ratingsFor(position, base, rng),
   };
 }

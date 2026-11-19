@@ -78,6 +78,7 @@ export {
   rulesGoalModel,
   strengthEdge,
   HOCKEY_TUNING,
+  SKATER_BUILD_CLUSTERS,
   type GoalModel,
   type ShotInfo,
 } from './tuning';
@@ -87,6 +88,7 @@ export {
   teamStrength,
   autoLineup,
   lineupFit,
+  FIT_BASELINE,
   lineupTogether,
   LINEMATES_FULL_GAMES,
   unitFit,

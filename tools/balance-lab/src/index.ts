@@ -25,6 +25,8 @@ import {
   hockeySeasonStats,
   inDeadlineWeek,
   ICE_TIME,
+  FIT_BASELINE,
+  lineupFit,
   overall,
   parseXgTable,
   rulesGoalModel,
@@ -97,6 +99,8 @@ let teamGames = 0;
 const shotModel = goalModel ?? rulesGoalModel;
 /** Per team season: [goal diff per game, draw skill, offence, defence, goaltending] without draws. */
 const faceoffRows: number[][] = [];
+/** Builds fit of every fresh league's teams (forward lines, defence pairs), ice-time-weighted. */
+const fits = { forwards: [] as number[], defense: [] as number[] };
 const started = performance.now();
 
 const rosterOf = (state: LeagueState, id: string) =>
@@ -168,6 +172,9 @@ for (let i = 0; i < seasons; i++) {
     const roster = rosterOf(state, id);
     const base = withoutDraws(roster);
     faceoffRows.push([0, drawSkill(roster), base.offense, base.defense, base.goaltending]);
+    const fit = lineupFit(strength.get(id)!.lineup);
+    fits.forwards.push(fit.forwards);
+    fits.defense.push(fit.defense);
   }
   for (const g of results) {
     const edge = strengthEdge(strength.get(g.homeTeamId)!, strength.get(g.awayTeamId)!);
@@ -575,6 +582,13 @@ const checks: Check[] = [
     min: 0.02,
     max: 0.17,
   },
+  // FIT_BASELINE is this mean (strength.ts): out of range, re-measure it so an average team nets zero.
+  ...(['forwards', 'defense'] as const).map((g) => ({
+    name: `Builds fit, ${g} (new leagues)`,
+    value: mean(fits[g]),
+    min: FIT_BASELINE[g] - 0.02,
+    max: FIT_BASELINE[g] + 0.02,
+  })),
   // Multi-year (offseason rollover). Ranges: league talent stable, no runaway dynasty, cap legal.
   { name: `League avg rating drift (${years}y)`, value: maxDrift, min: 0, max: 3 },
   {

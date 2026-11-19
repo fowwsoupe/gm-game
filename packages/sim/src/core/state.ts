@@ -159,6 +159,12 @@ export interface LeagueState {
  */
 export const capYearOf = (state: LeagueState) => state.date.season + (state.championTeamId ? 1 : 0);
 
+/** A team's prospects (docs/research/2026-11-minor-leagues.md), by id. */
+export const prospectsOf = (state: LeagueState, teamId: TeamId): Prospect[] =>
+  Object.values(state.prospects)
+    .filter((x) => x.player.teamId === teamId)
+    .sort((a, b) => a.player.id.localeCompare(b.player.id));
+
 /** Two teams as one key, the same whichever is named first. */
 export const pairKey = (a: TeamId, b: TeamId) => [a, b].sort().join(':');
 
@@ -638,6 +644,16 @@ export function applyEvent(state: LeagueState, event: LeagueEvent): void {
         }
       }
       for (const id of event.getPicks ?? []) state.pickOwners[id] = event.fromTeamId;
+      for (const [ids, to] of [
+        [event.giveProspects ?? [], event.toTeamId],
+        [event.getProspects ?? [], event.fromTeamId],
+      ] as const) {
+        for (const id of ids) {
+          const pr = state.prospects[id];
+          if (!pr) throw new Error(`unknown prospect ${id}`);
+          pr.player.teamId = to;
+        }
+      }
       for (const r of event.retained ?? []) {
         const p = state.players[r.playerId]!;
         if (p.contract) p.contract = { ...p.contract, capHit: r.capHit };

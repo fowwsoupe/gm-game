@@ -623,6 +623,9 @@ export interface TradeProposal {
   /** Draft picks (ids like `2028-1-t3`: draft season, round, original team) each way. */
   givePicks?: string[];
   getPicks?: string[];
+  /** Prospects (unsigned, rights held: `Prospect`) each way. */
+  giveProspects?: PlayerId[];
+  getProspects?: PlayerId[];
   /**
    * Top-N protection on the first-round picks you give: if one lands in the first `protectTop`
    * picks of that draft you keep it instead of passing it on.

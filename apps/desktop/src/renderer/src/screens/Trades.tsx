@@ -4,6 +4,7 @@ import type {
   DraftPick,
   PlayerId,
   PlayerProfile,
+  ProspectEntry,
   TeamId,
   TradeOffer,
   TradeReason,
@@ -12,6 +13,7 @@ import {
   useDispatch,
   usePicks,
   usePlayers,
+  useProspects,
   useTeams,
   useTradeEvaluation,
   useTradeOffers,
@@ -19,7 +21,7 @@ import {
   useMine,
 } from '@/lib/queries';
 import { useT, type MessageKey } from '@/i18n';
-import { Button, Card, Face, TeamLink, TeamSelect, Td, Th } from '@/ui';
+import { Button, Card, Face, RangeBar, TeamLink, TeamSelect, Td, Th } from '@/ui';
 import { useUi } from '@/stores/ui';
 import { fullName, money, moneyParams, pickParams, statValue, teamName } from '@/lib/format';
 
@@ -43,11 +45,16 @@ export function Trades() {
   const [getPicks, setGetPicks] = useState<string[]>(ask ? [ask.pickId] : []);
   /** Top-N protection on the first-round picks you give (0 = none). */
   const [protectTop, setProtectTop] = useState(0);
+  const [giveProspects, setGiveProspects] = useState<PlayerId[]>([]);
+  const [getProspects, setGetProspects] = useState<PlayerId[]>([]);
   const { data: myPicks = [] } = usePicks(mine?.id);
   const { data: theirPicks = [] } = usePicks(partner);
   const [message, setMessage] = useState<string | null>(null);
   const { data: myPlayers = [] } = usePlayers(mine?.id);
   const { data: theirPlayers = [] } = usePlayers(partner);
+  const { data: myProspects = [] } = useProspects(mine?.id);
+  // Their prospects as your scouts read them.
+  const { data: theirProspects = [] } = useProspects(partner, mine?.id);
   const kept = give
     .filter((id) => (retain[id] ?? 0) > 0)
     .map((id) => ({ playerId: id, pct: retain[id]! }));
@@ -61,9 +68,12 @@ export function Trades() {
           ...(kept.length && { retain: kept }),
           ...(givePicks.length && { givePicks }),
           ...(getPicks.length && { getPicks }),
+          ...(giveProspects.length && { giveProspects }),
+          ...(getProspects.length && { getProspects }),
           ...(protectTop && givePicks.length && { protectTop }),
         }
       : undefined;
+  const asked = [give, get, givePicks, getPicks, giveProspects, getProspects].some((l) => l.length);
   const { data: verdict } = useTradeEvaluation(proposal);
   const dispatch = useDispatch();
   const reasonText = useReasonText();
@@ -74,6 +84,8 @@ export function Trades() {
     setRetain({});
     setGivePicks([]);
     setGetPicks([]);
+    setGiveProspects([]);
+    setGetProspects([]);
   };
   /** The trade went through, or (human partner) went to his GM as an offer, or `refused`. */
   const outcome = (res: CommandResult, refused: string) => {
@@ -99,6 +111,7 @@ export function Trades() {
             setPartner(id as TeamId);
             setGet([]);
             setGetPicks([]);
+            setGetProspects([]);
           }}
         />
         <TeamLink teamId={partner}>{t('team.view')}</TeamLink>
@@ -106,7 +119,7 @@ export function Trades() {
       <Requests teamId={mine.id} />
       <Offers teamId={mine.id} />
       <Card title={t('trade.answerTitle')}>
-        {!verdict || give.length + get.length + givePicks.length + getPicks.length === 0 ? (
+        {!verdict || !asked ? (
           <p className="text-sm text-muted">{t('trade.pickPlayers')}</p>
         ) : (
           <>
@@ -184,6 +197,9 @@ export function Trades() {
           picks={myPicks}
           pickedPicks={givePicks}
           onTogglePick={(id) => setGivePicks(togglePick(givePicks, id))}
+          prospects={myProspects}
+          pickedProspects={giveProspects}
+          onToggleProspect={(id) => toggle(giveProspects, setGiveProspects, id)}
         />
         <Side
           title={t('trade.youGet')}
@@ -193,6 +209,9 @@ export function Trades() {
           picks={theirPicks}
           pickedPicks={getPicks}
           onTogglePick={(id) => setGetPicks(togglePick(getPicks, id))}
+          prospects={theirProspects}
+          pickedProspects={getProspects}
+          onToggleProspect={(id) => toggle(getProspects, setGetProspects, id)}
         />
       </div>
     </div>
@@ -222,6 +241,9 @@ function Side({
   picks,
   pickedPicks,
   onTogglePick,
+  prospects,
+  pickedProspects,
+  onToggleProspect,
 }: {
   title: string;
   players: PlayerProfile[];
@@ -233,6 +255,9 @@ function Side({
   picks: DraftPick[];
   pickedPicks: string[];
   onTogglePick: (id: string) => void;
+  prospects: ProspectEntry[];
+  pickedProspects: PlayerId[];
+  onToggleProspect: (id: PlayerId) => void;
 }) {
   const t = useT();
   const { data: teams = [] } = useTeams();
@@ -297,6 +322,45 @@ function Side({
           })}
         </tbody>
       </table>
+      {prospects.length > 0 && (
+        <table className="tabular mt-3 w-full text-sm">
+          <thead>
+            <tr className="border-b border-line text-right text-muted">
+              <Th left>{t('prospects.title')}</Th>
+              <Th left>{t('roster.pos')}</Th>
+              <Th>{t('roster.age')}</Th>
+              <Th left>{t('prospects.league')}</Th>
+              <Th className="w-1/4">{t('draft.range')}</Th>
+            </tr>
+          </thead>
+          <tbody>
+            {prospects.map((p) => (
+              <tr
+                key={p.id}
+                onClick={() => onToggleProspect(p.id)}
+                className={`cursor-pointer border-b border-line/50 text-right hover:bg-panel-2 ${pickedProspects.includes(p.id) ? 'bg-panel-2 text-accent' : ''}`}
+              >
+                <Td left>
+                  <input
+                    type="checkbox"
+                    readOnly
+                    checked={pickedProspects.includes(p.id)}
+                    className="mr-2"
+                  />
+                  <Face seed={p.id} age={p.age} size={22} />
+                  {fullName(p)}
+                </Td>
+                <Td left>{p.position}</Td>
+                <Td>{p.age}</Td>
+                <Td left>{t(`league.${p.league}` as MessageKey)}</Td>
+                <Td>
+                  <RangeBar low={p.low} high={p.high} />
+                </Td>
+              </tr>
+            ))}
+          </tbody>
+        </table>
+      )}
       {picks.length > 0 && (
         <div className="mt-3 flex flex-wrap gap-2 text-sm">
           <span className="text-muted">{t('trade.picks')}</span>
@@ -365,8 +429,10 @@ function OfferLine({
   const { data: teams = [] } = useTeams();
   const { data: theirs = [] } = usePlayers(o.proposal.fromTeamId);
   const { data: ours = [] } = usePlayers(teamId);
+  const { data: theirProspects = [] } = useProspects(o.proposal.fromTeamId, teamId);
+  const { data: ourProspects = [] } = useProspects(teamId);
   const team = teams.find((x) => x.id === o.proposal.fromTeamId);
-  const name = (list: PlayerProfile[], id: string) => {
+  const name = (list: (PlayerProfile | ProspectEntry)[], id: string) => {
     const p = list.find((x) => x.id === id);
     return p ? `${fullName(p)} (${p.position}, ${p.age})` : id;
   };
@@ -379,10 +445,12 @@ function OfferLine({
           team: teamName(teams, o.proposal.fromTeamId),
           give: [
             ...o.proposal.give.map((id) => name(theirs, id)),
+            ...(o.proposal.giveProspects ?? []).map((id) => name(theirProspects, id)),
             ...(o.proposal.givePicks ?? []).map(pick),
           ].join(', '),
           get: [
             ...o.proposal.get.map((id) => name(ours, id)),
+            ...(o.proposal.getProspects ?? []).map((id) => name(ourProspects, id)),
             ...(o.proposal.getPicks ?? []).map(pick),
           ].join(', '),
           day: o.expiresDay,

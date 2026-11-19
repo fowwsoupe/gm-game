@@ -322,7 +322,8 @@ export const fr: Record<MessageKey, string> = {
   'trade.youGive': 'Vous cédez',
   'trade.youGet': 'Vous obtenez',
   'trade.answerTitle': 'Leur réponse',
-  'trade.pickPlayers': 'Choisissez des joueurs de chaque côté pour demander.',
+  'trade.pickPlayers':
+    'Choisissez des joueurs, des espoirs ou des choix de chaque côté pour demander.',
   'trade.yes': 'Ils accepteraient.',
   'trade.no': 'Ils refuseraient.',
   'trade.guessYes': 'Votre DG adjoint : ils diront probablement oui.',
@@ -605,6 +606,7 @@ export const fr: Record<MessageKey, string> = {
   'build.playmaker': 'Fabricant de jeux',
   'build.powerForward': 'Attaquant de puissance',
   'build.twoWay': 'Attaquant complet',
+  'build.defensiveF': 'Attaquant défensif',
   'build.grinder': 'Plombier',
   'build.offensiveD': 'Défenseur offensif',
   'build.shutdownD': 'Défenseur défensif',

@@ -12,6 +12,7 @@ import {
   percentileRank,
   playerProfiles,
   Rng,
+  SKATER_BUILD_CLUSTERS,
   seedPlayoffs,
   validateContract,
   dollars,
@@ -302,19 +303,31 @@ describe('player profiles', () => {
 });
 
 describe('builds and role tags', () => {
-  it('spread across the league, with tags only for standout skills', () => {
-    const state = createLeague(91, ctx);
-    const cards = Object.keys(state.teams).flatMap((id) =>
-      playerProfiles(state, ctx, id as TeamId),
-    );
-    const builds = new Map<string, number>();
-    for (const c of cards) builds.set(c.build, (builds.get(c.build) ?? 0) + 1);
-    // Every build is used, and none takes over a group.
-    expect(builds.size).toBe(10);
-    const forwards = cards.filter((c) => ['C', 'LW', 'RW'].includes(c.position)).length;
-    for (const b of ['sniper', 'playmaker', 'powerForward', 'twoWay', 'grinder']) {
-      expect(builds.get(b)! / forwards).toBeLessThan(0.5);
+  it("a new league has the real clusters' shares and shapes, with tags only for standout skills", () => {
+    const cards = [91, 92, 93, 94, 95, 96, 97, 98, 99, 100].flatMap((seed) => {
+      const state = createLeague(seed, ctx);
+      return Object.keys(state.teams).flatMap((id) => playerProfiles(state, ctx, id as TeamId));
+    });
+    for (const [group, clusters] of Object.entries(SKATER_BUILD_CLUSTERS)) {
+      const mine = cards.filter(
+        (c) => (c.position === 'D') === (group === 'defence') && c.position !== 'G',
+      );
+      for (const { build, share } of clusters) {
+        const n = mine.filter((c) => c.build === build).length;
+        expect(Math.abs(n / mine.length - share), build).toBeLessThan(0.03);
+      }
     }
+    // Shapes of the right sign: a sniper shoots more than he defends, a grinder hits more than he
+    // shoots, an offensive defenceman passes more than he hits.
+    const avgPct = (build: string, key: string) => {
+      const vs = cards
+        .filter((c) => c.build === build)
+        .map((c) => c.percentiles.find((x) => x.key === key)!.value);
+      return vs.reduce((a, b) => a + b, 0) / vs.length;
+    };
+    expect(avgPct('sniper', 'shooting')).toBeGreaterThan(avgPct('sniper', 'defense') + 10);
+    expect(avgPct('grinder', 'physical')).toBeGreaterThan(avgPct('grinder', 'shooting') + 10);
+    expect(avgPct('offensiveD', 'passing')).toBeGreaterThan(avgPct('offensiveD', 'physical') + 10);
     for (const c of cards) {
       expect(c.tags.length).toBeLessThanOrEqual(2);
       if (c.tags.length)
