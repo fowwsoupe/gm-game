@@ -5,6 +5,7 @@ import {
   handleCommand,
   parseXgTable,
   resignOffers,
+  RFA_DISCOUNT,
   rulesGoalModel,
   simGame,
   teamStrength,
@@ -44,6 +45,8 @@ describe('table shot model', () => {
     const [a, b] = Object.keys(state.teams) as TeamId[];
     const strength = (id: TeamId) =>
       teamStrength(Object.values(state.players).filter((p) => p.teamId === id));
+    const home = strength(a!);
+    const away = strength(b!);
     const goals = (model?: typeof rulesGoalModel) => {
       const rng = new Rng(4);
       let n = 0;
@@ -53,8 +56,8 @@ describe('table shot model', () => {
             id: 'g' as GameId,
             homeTeamId: a!,
             awayTeamId: b!,
-            home: strength(a!),
-            away: strength(b!),
+            home,
+            away,
             resultOnly: true,
           },
           rng,
@@ -70,8 +73,27 @@ describe('table shot model', () => {
   it('is built into the context, and bad files come back as readable errors', () => {
     const parsed = parseXgTable(template);
     if (!parsed.ok) throw new Error('template must parse');
-    const ctx = defaultContext(undefined, { goalModel: parsed.model });
-    expect(ctx.sport.id).toBe('nhl');
+    expect(defaultContext(undefined, { goalModel: parsed.model }).sport.id).toBe('nhl');
+    // The context's games use the model it was given: every shot a sure thing scores far more.
+    const state = createLeague(11, defaultContext());
+    const [a, b] = Object.keys(state.teams) as TeamId[];
+    const strength = (id: TeamId) =>
+      teamStrength(Object.values(state.players).filter((p) => p.teamId === id));
+    const game = {
+      id: 'g' as GameId,
+      homeTeamId: a!,
+      awayTeamId: b!,
+      home: strength(a!),
+      away: strength(b!),
+      resultOnly: true,
+    };
+    const goals = (ctx: ReturnType<typeof defaultContext>) => {
+      const r = ctx.sport.simGame(game, new Rng(4));
+      return r.homeScore + r.awayScore;
+    };
+    expect(goals(defaultContext(undefined, { goalModel: { shotXg: () => 1 } }))).toBeGreaterThan(
+      goals(defaultContext()) + 10,
+    );
     const bad = parseXgTable({ ...template, goal: [[0.1, 2], [0.1]], powerPlay: 0, version: 2 });
     expect(bad.ok).toBe(false);
     if (!bad.ok) {
@@ -85,7 +107,7 @@ describe('table shot model', () => {
 });
 
 describe('contract demand model', () => {
-  it('a replacement model sets the asking price for re-signing', () => {
+  it('a replacement model sets the asking price for re-signing (less the RFA discount)', () => {
     const ctx = defaultContext(undefined, { models: { contractDemand: { ask: () => 2_500_000 } } });
     const state = createLeague(7, ctx);
     const local = { id: 'local', controls: [] };
@@ -93,6 +115,33 @@ describe('contract demand model', () => {
     const team = Object.values(state.teams).find((t) => t.userControlled)!.id;
     const offers = resignOffers(state, ctx, team);
     expect(offers.length).toBeGreaterThan(0);
-    expect(offers.every((o) => o.ask === 2_500_000)).toBe(true);
+    const season = state.date.season + 1;
+    for (const o of offers) {
+      const restricted =
+        season - state.players[o.playerId]!.birthYear < ctx.ruleset.contracts.ufaAge;
+      expect(o.ask).toBe(restricted ? 2_500_000 * RFA_DISCOUNT : 2_500_000);
+    }
+  });
+});
+
+describe('re-injury risk', () => {
+  it('is 1 for a healthy skater, more after injuries, and capped', async () => {
+    const { injuryRisk } = await import('./sports/hockey/game');
+    const base = createLeague(1, defaultContext());
+    const p = Object.values(base.players)[0]!;
+    delete p.injuredUntil;
+    delete p.injuryHistory;
+    expect(injuryRisk(p)).toBe(1);
+    p.injuredUntil = 10;
+    p.injuryHistory = { count: 1, days: 10 };
+    expect(injuryRisk(p)).toBeCloseTo(1.33);
+    p.injuryHistory = { count: 100, days: 1000 };
+    expect(injuryRisk(p)).toBe(2);
+    // The medical factor scales the re-injury extra, not the base chance.
+    p.injuryHistory = { count: 1, days: 10 };
+    expect(injuryRisk(p, 0.5)).toBeCloseTo(1.165);
+    delete p.injuredUntil;
+    delete p.injuryHistory;
+    expect(injuryRisk(p, 0.5)).toBe(1);
   });
 });

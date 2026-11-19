@@ -1,6 +1,8 @@
 import { useState } from 'react';
 import {
+  GOALIE_ROTATIONS,
   SPECIAL_UNITS,
+  type GoalieRotation,
   SPECIAL_UNIT_SIZE,
   type PlayerId,
   type PlayerProfile,
@@ -9,6 +11,7 @@ import {
 import { useDispatch, useLines, usePlayers, useTeams } from '@/lib/queries';
 import { useT, type MessageKey } from '@/i18n';
 import { Button, Card } from '@/ui';
+import { fullName } from '@/lib/format';
 
 /**
  * Your lines: the lineup the game dresses tonight. Drag a player onto another of his position to swap them (the arrow buttons do the same from the
@@ -23,7 +26,7 @@ export function Lines() {
   const { data: players = [] } = usePlayers(mine);
   const dispatch = useDispatch();
   const [error, setError] = useState<string | null>(null);
-  if (!mine) return <p className="text-muted">{t('trade.noTeam')}</p>;
+  if (!mine) return <p className="text-muted">{t('common.noTeam')}</p>;
 
   const byId = new Map(players.map((p) => [p.id as string, p]));
   const dressed = units.flatMap((u) => u.playerIds);
@@ -92,7 +95,7 @@ export function Lines() {
     >
       <span>
         <span className="mr-2 text-xs text-muted">{p.position}</span>
-        {p.firstName} {p.lastName}
+        {fullName(p)}
         {p.injuredUntil !== undefined && (
           <span className="ml-2 text-xs text-bad">{t('roster.injuredShort')}</span>
         )}
@@ -124,15 +127,95 @@ export function Lines() {
         </Button>
         <span className="text-sm text-muted">{t('lines.note')}</span>
         {data && (
-          <span className="ml-auto text-sm">
-            {t('lines.chemistry', {
-              value: Math.round(data.chemistry.value * 100),
-              seasons: data.chemistry.seasons.toFixed(1),
+          <span className="ml-auto text-sm text-muted">
+            {t('lines.fit', {
+              forwards: Math.round(data.fit.forwards * 100),
+              defense: Math.round(data.fit.defense * 100),
             })}
           </span>
         )}
+        {data && (
+          <span className="text-sm text-muted">
+            {t('lines.together', {
+              forwards: Math.round(data.together.forwards * 100),
+              defense: Math.round(data.together.defense * 100),
+            })}
+          </span>
+        )}
+        {data && (
+          <span className="text-sm">
+            {t('lines.chemistry', {
+              value: Math.round(data.chemistry.value * 100),
+              seasons: data.chemistry.seasons.toFixed(1),
+              leaders: data.chemistry.leaders,
+            })}
+          </span>
+        )}
+        {data && (
+          <label className="flex items-center gap-2 text-sm text-muted">
+            {t('lines.rotation')}
+            <select
+              value={data.rotation}
+              disabled={dispatch.isPending}
+              onChange={(e) =>
+                dispatch.mutate({
+                  kind: 'goalies.setRotation',
+                  teamId: mine,
+                  rotation: e.target.value as GoalieRotation,
+                })
+              }
+              className="rounded border border-line bg-panel px-2 py-1 text-ink"
+            >
+              {GOALIE_ROTATIONS.map((r) => (
+                <option key={r} value={r}>
+                  {t(`lines.rotation.${r}` as MessageKey)}
+                </option>
+              ))}
+            </select>
+          </label>
+        )}
         {error && <span className="text-sm text-bad">{error}</span>}
       </div>
+      {data && data.disputes.length > 0 && (
+        <Card title={t('lines.disputes')}>
+          <ul className="space-y-2 text-sm">
+            {data.disputes.map((d) => {
+              const p = byId.get(d.playerId);
+              const player = p ? fullName(p) : d.playerId;
+              return (
+                <li key={d.playerId} className="flex flex-wrap items-center justify-between gap-2">
+                  {d.listed ? (
+                    <span>{t('lines.disputeListed', { player })}</span>
+                  ) : d.until === undefined ? (
+                    <>
+                      <span>{t('lines.disputeLine', { player })}</span>
+                      <span className="flex gap-1">
+                        {(['promise', 'patience', 'block'] as const).map((answer) => (
+                          <Button
+                            key={answer}
+                            disabled={dispatch.isPending}
+                            onClick={() =>
+                              dispatch.mutate({
+                                kind: 'dispute.talk',
+                                playerId: d.playerId as PlayerId,
+                                answer,
+                              })
+                            }
+                          >
+                            {t(`lines.dispute.${answer}`)}
+                          </Button>
+                        ))}
+                      </span>
+                    </>
+                  ) : (
+                    <span>{t('lines.disputePromised', { player, day: d.until })}</span>
+                  )}
+                </li>
+              );
+            })}
+          </ul>
+        </Card>
+      )}
       <div className="grid gap-4 md:grid-cols-2 xl:grid-cols-4">
         {units.map((u) => (
           <Card
@@ -174,7 +257,7 @@ export function Lines() {
                           const p = byId.get(x);
                           return (
                             <option key={x} value={x}>
-                              {p?.position} {p?.firstName} {p?.lastName}
+                              {p ? `${p.position} ${fullName(p)}` : x}
                             </option>
                           );
                         })}

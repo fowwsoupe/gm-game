@@ -8,6 +8,7 @@ import {
 } from '@gm/shared';
 import { payroll, type Ruleset } from '../cba';
 import { overall } from '../players';
+import { byStanding } from './standings';
 
 /** A fixed bracket: adjacent slots meet, so the top two seeds cannot meet early. */
 export function bracketSeeds(teamCount: number): number[] {
@@ -39,10 +40,7 @@ export function seedPlayoffs(
 ): PlayoffSeries[] {
   const count = ruleset.playoffs.teamsQualifying;
   if (rows.length < count) throw new Error('invalid playoff field');
-  const ranked = [...rows].sort(
-    (a, b) =>
-      b.pts - a.pts || b.w - a.w || b.gf - b.ga - (a.gf - a.ga) || a.teamId.localeCompare(b.teamId),
-  );
+  const ranked = [...rows].sort(byStanding);
   const rank = new Map(ranked.map((r, i) => [r.teamId, i + 1]));
   const conferenceOf = new Map(teams.map((t) => [t.id, t.conference]));
   const conferences = [...new Set(ranked.map((r) => conferenceOf.get(r.teamId)))];
@@ -126,7 +124,7 @@ function wildcardSeries(
   return out;
 }
 
-export function makeSeries(
+function makeSeries(
   season: number,
   round: number,
   slot: number,
@@ -169,7 +167,7 @@ export function nextRound(won: readonly PlayoffSeries[]): PlayoffSeries[] {
  * Teams that break the playoff cap: the best skaters and goalies (by rating, as the lineup
  * would dress them) cost more in cap hits than the upper limit. Nobody can today, since the
  * whole roster must fit under the cap; this guards the day in-season overage or retention exists.
- * TODO(M5): the consequence (a compliance warning, forced moves) once the cap sheet exists.
+ * TODO(M5): the consequence (a compliance warning, forced moves).
  */
 export function playoffCapBreaches(players: readonly Player[], ruleset: Ruleset): TeamId[] {
   const rule = ruleset.cap.playoffCap;

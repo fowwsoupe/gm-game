@@ -20,6 +20,10 @@ export const NHL_2026: Ruleset = {
     gamesPerTeam: 84,
     calendar: { preseasonDays: 21, regularSeasonDays: 190, tradeDeadlineDay: 140, playoffDays: 62 },
     points: { win: 2, overtimeLoss: 1 },
+    // docs/research/2026-11-spread-second-mechanism.md: unverified, tuned in the balance lab. The
+    // part of team quality a roster does not carry into next season: widens the points % spread
+    // and lowers its year-to-year r together (4.5: spread 0.088 but r on its 0.40 floor).
+    form: 3.5,
   },
   playoffs: {
     teamsQualifying: 16,
@@ -47,6 +51,20 @@ export const NHL_2026: Ruleset = {
     ],
     elcSalary: dollars(1),
     ufaAge: 27,
+    maxNoTradePerTeam: 16,
+    // TODO(verify): the real signing-bonus limit; 50 is a placeholder like the other unverified rules.
+    maxBonusPct: 50,
+    // The NHL's "Schedule A" entry-level bonus limit, $850,000 a year.
+    maxPerformanceBonus: dollars(0.85),
+    // The NHL's offer-sheet table (2025-26 tiers scaled to this cap), third-rounders dropped
+    // because this draft has two rounds. TODO(verify): the tiers move with the league's average salary.
+    offerSheetCompensation: [
+      { minCapHit: dollars(2.55), rounds: [2] },
+      { minCapHit: dollars(5.09), rounds: [1] },
+      { minCapHit: dollars(7.64), rounds: [1, 2] },
+      { minCapHit: dollars(10.19), rounds: [1, 1, 2] },
+      { minCapHit: dollars(12.74), rounds: [1, 1, 1, 1] },
+    ],
   },
   // The real draft has 7 rounds, but most picks stay in junior or college and never take an NHL
   // roster spot. Until prospects exist as a separate pool, only the picks that sign are drafted.
@@ -69,6 +87,39 @@ export const NHL_2026: Ruleset = {
     shareOwedUnderAge: { age: 26, share: 1 / 3 },
     shareOwedOtherwise: 2 / 3,
     termMultiplier: 2,
+  },
+  // docs/research/2026-11-owner-finance.md ("The model"): 2024-25 numbers scaled by the cap ratio
+  // (104 / 88). Fans and prices from its benchmark table; operations tuned in the balance lab.
+  finance: {
+    capacity: { min: 16_000, max: 21_105 }, // NHL 2024-25: the largest crowd, every home date
+    ticketPrice: 160, // blended a fan, premium seats in (44% ticket share over attendance)
+    gameDaySpend: 48, // 12% game-day share
+    sponsorship: dollars(59), // SponsorUnited, about $48M a team
+    localMedia: dollars(10), // no clean public number: the remainder, tuned in the lab
+    leagueShare: dollars(59), // national media, under $1.5B league-wide
+    playoffs: { markupPct: 15, playersPct: 35, feePerDate: dollars(0.5) }, // LVSportsBiz
+    // Yearly was $50M with the front office inside it; its four departments now cost about $5.3M
+    // on average (see frontOffice), so total costs hold.
+    operations: { yearly: dollars(44.7), perHomeDate: dollars(1.9) },
+    coach: { salary: dollars(2.95), years: 3 }, // ESPN 2024: about $2.5M, usually three-year deals
+  },
+  // docs/research/2026-11-front-office.md: no public source; unverified, tuned in the lab.
+  frontOffice: {
+    salary: { min: dollars(0.5), max: dollars(3) },
+    // Tuned in the balance lab against the long-run brief's three NHL benchmarks (spread, year-to-year
+    // r, playoff turnover): a strong edge that moves on with its people.
+    // Development is the lever for spread; past 3 the edge lives on in its players and playoff
+    // turnover falls under the NHL's. The coach's edge moves on with him.
+    development: { points: 3 }, // was ORG_DEVELOPMENT 2, from GM skill
+    scouting: { best: 2, worst: 6 }, // the GM misread on prospects was 1-6
+    medical: { days: 0.4 },
+    analytics: { best: 1, worst: 6 }, // like the AI GMs' misread, 1-6
+    coaching: { points: 1.5 }, // at 2 a coach's defence made goalie save % too repeatable
+    leave: 0.3,
+    poach: 0.6,
+    spend: 0.6,
+    hireSd: 0.2,
+    interim: 0.3, // the brief's interim quality
   },
   roster: {
     maxActive: 23,

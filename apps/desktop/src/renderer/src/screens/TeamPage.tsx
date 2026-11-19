@@ -1,8 +1,9 @@
-import { useCapSheet, useLines, useRoster, useTeams } from '@/lib/queries';
+import { TICKET_STEPS } from '@gm/shared';
+import { useCapSheet, useDispatch, useLines, useOwner, useRoster, useTeams } from '@/lib/queries';
 import { useUi } from '@/stores/ui';
 import { useT, type MessageKey } from '@/i18n';
-import { Button, Card } from '@/ui';
-import { money } from '@/lib/format';
+import { Button, Card, Td, Th } from '@/ui';
+import { fullName, money, qualityKey, teamName } from '@/lib/format';
 import { Summary } from '@/screens/Cap';
 
 /** Any team's roster, cap sheet and depth chart, built from the existing queries. */
@@ -14,21 +15,121 @@ export function TeamPage() {
   const { data: roster = [] } = useRoster(team?.id);
   const { data: sheet } = useCapSheet(team?.id);
   const { data: lines } = useLines(team?.id);
+  const { data: owned } = useOwner(team?.id);
+  const dispatch = useDispatch();
   if (!team) return <p className="text-muted">{t('team.empty')}</p>;
   const byId = new Map<string, (typeof roster)[number]>(roster.map((p) => [p.id, p]));
   const name = (id: string) => {
     const p = byId.get(id);
-    return p ? `${p.firstName} ${p.lastName}` : id;
+    return p ? fullName(p) : id;
   };
 
   return (
     <div className="max-w-5xl space-y-4">
       <div className="flex items-center gap-3">
         <Button onClick={() => setScreen('standings')}>{t('team.back')}</Button>
-        <h1 className="text-lg font-semibold">
-          {team.city} {team.name}
-        </h1>
+        <h1 className="text-lg font-semibold">{teamName(teams, team.id)}</h1>
       </div>
+      {owned && (
+        <Card title={t('team.owner')}>
+          <div className="grid gap-4 text-sm md:grid-cols-4">
+            <div className="font-semibold">{owned.owner.name}</div>
+            {(
+              [
+                ['team.owner.priority', `${Math.round(owned.owner.priority * 100)}%`],
+                ['team.owner.patience', `${Math.round(owned.owner.patience * 100)}%`],
+                ['team.owner.market', `×${owned.market.toFixed(2)}`],
+              ] as const
+            ).map(([key, value]) => (
+              <div key={key}>
+                <div className="text-muted">{t(key)}</div>
+                <div className="tabular">{value}</div>
+              </div>
+            ))}
+            <div className="font-semibold">
+              <div className="font-normal text-muted">{t('team.coach')}</div>
+              {owned.coach.name}
+            </div>
+            {(
+              [
+                ['team.coach.since', String(owned.coach.hired)],
+                ['team.coach.salary', money(owned.coach.salary)],
+              ] as const
+            ).map(([key, value]) => (
+              <div key={key}>
+                <div className="text-muted">{t(key)}</div>
+                <div className="tabular">{value}</div>
+              </div>
+            ))}
+          </div>
+        </Card>
+      )}
+      {owned && (
+        <Card title={t('team.staff')}>
+          <div className="grid gap-4 text-sm md:grid-cols-5">
+            {(
+              [
+                ['team.coach', owned.coach],
+                ['team.staff.scouting', owned.staff.scouting],
+                ['team.staff.development', owned.staff.development],
+                ['team.staff.medical', owned.staff.medical],
+                ['team.staff.analytics', owned.staff.analytics],
+              ] as const
+            ).map(([key, head]) => (
+              <div key={key}>
+                <div className="text-muted">{t(key)}</div>
+                <div className="font-semibold">{head.name}</div>
+                <div className="tabular">
+                  {t(qualityKey(head.quality ?? 0.5))} · {money(head.salary)}
+                </div>
+              </div>
+            ))}
+          </div>
+        </Card>
+      )}
+      {owned && (
+        <Card title={t('team.arena')}>
+          <div className="grid gap-4 text-sm md:grid-cols-4">
+            {(
+              [
+                ['team.arena.capacity', owned.capacity.toLocaleString()],
+                [
+                  'team.arena.attendance',
+                  owned.fans.attendance
+                    ? `${owned.fans.attendance.toLocaleString()} (${Math.round((100 * owned.fans.attendance) / owned.capacity)}%)`
+                    : '—',
+                ],
+                ['team.arena.interest', `${Math.round(owned.fans.interest)} / 100`],
+              ] as const
+            ).map(([key, value]) => (
+              <div key={key}>
+                <div className="text-muted">{t(key)}</div>
+                <div className="tabular">{value}</div>
+              </div>
+            ))}
+            <div>
+              <div className="text-muted">{t('team.arena.price')}</div>
+              {team.userControlled ? (
+                <div className="mt-1 flex flex-wrap gap-1">
+                  {TICKET_STEPS.map((pct) => (
+                    <Button
+                      key={pct}
+                      variant={pct === owned.ticketPct ? 'primary' : 'ghost'}
+                      onClick={() =>
+                        dispatch.mutate({ kind: 'finance.setTicketPrice', teamId: team.id, pct })
+                      }
+                    >
+                      {signedPct(pct)}
+                    </Button>
+                  ))}
+                </div>
+              ) : (
+                <div className="tabular">{signedPct(owned.ticketPct)}</div>
+              )}
+            </div>
+          </div>
+        </Card>
+      )}
       <Card title={t('team.depth')}>
         <div className="grid gap-4 text-sm md:grid-cols-2 xl:grid-cols-4">
           {lines?.units.map((u) => (
@@ -49,21 +150,19 @@ export function TeamPage() {
         <table className="tabular w-full text-sm">
           <thead>
             <tr className="border-b border-line text-left text-muted">
-              <th className="px-3 py-2 font-medium">{t('cap.player')}</th>
-              <th className="px-3 py-2 font-medium">{t('team.pos')}</th>
-              <th className="px-3 py-2 text-right font-medium">{t('team.hit')}</th>
-              <th className="px-3 py-2 text-right font-medium">{t('team.thru')}</th>
+              <Th>{t('roster.player')}</Th>
+              <Th>{t('roster.pos')}</Th>
+              <Th>{t('roster.capHit')}</Th>
+              <Th>{t('roster.through')}</Th>
             </tr>
           </thead>
           <tbody>
             {roster.map((p) => (
               <tr key={p.id} className="border-b border-line/50">
-                <td className="px-3 py-1.5">{name(p.id)}</td>
-                <td className="px-3 py-1.5">{p.position}</td>
-                <td className="px-3 py-1.5 text-right">
-                  {p.contract ? money(p.contract.capHit) : ''}
-                </td>
-                <td className="px-3 py-1.5 text-right">{p.contract?.expiresAfterSeason ?? ''}</td>
+                <Td>{name(p.id)}</Td>
+                <Td>{p.position}</Td>
+                <Td>{p.contract ? money(p.contract.capHit) : ''}</Td>
+                <Td>{p.contract?.expiresAfterSeason ?? ''}</Td>
               </tr>
             ))}
           </tbody>
@@ -73,3 +172,5 @@ export function TeamPage() {
     </div>
   );
 }
+
+const signedPct = (pct: number) => `${pct > 0 ? '+' : ''}${pct}%`;

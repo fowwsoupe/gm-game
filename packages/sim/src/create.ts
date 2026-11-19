@@ -1,6 +1,8 @@
 import type { Player, Team, TeamId, TeamStatus } from '@gm/shared';
+import { STOP_CATEGORIES } from '@gm/shared';
 import { Rng, type LeagueState } from './core';
-import { makeSchedule } from './league';
+import { drawForm, makeSchedule } from './league';
+import { newCoach, randomGm } from './people';
 import type { SimContext } from './context';
 
 /** First season of a new league. 2027 = the 2026-27 season. */
@@ -31,7 +33,16 @@ export function createLeague(
     rulesetId: ctx.ruleset.id,
     date: { season, day: 0 },
     rngState: rng.fork('games').state,
-    teams: Object.fromEntries(teams.map((t) => [t.id, t])),
+    teams: Object.fromEntries(
+      teams.map((t, i) => {
+        const r = rng.fork(`coach${i}`);
+        const { years } = ctx.ruleset.finance.coach;
+        // Coaches hired over the last few seasons, so their deals do not all end together.
+        const coach =
+          t.coach ?? newCoach(r, season - Math.floor(r.next() * years), ctx.ruleset.finance.coach);
+        return [t.id, { ...t, gm: t.gm ?? randomGm(rng.fork(`gm${i}`)), coach }];
+      }),
+    ),
     players: Object.fromEntries(players.map((p) => [p.id, p])),
     teamStatus: Object.fromEntries(teams.map((t) => [t.id, 'bubble' as TeamStatus])) as Record<
       TeamId,
@@ -44,13 +55,39 @@ export function createLeague(
     capCharges: [],
     freeAgencyOpen: false,
     draftClass: [],
+    draftOrder: [],
     draftBoards: {},
     depthCharts: {},
     specialUnits: {},
     pickOwners: {},
+    pickProtection: {},
     tradeOffers: [],
     tradeRequests: [],
+    holdouts: [],
+    disputes: [],
+    linemates: {},
+    cash: {},
+    fans: {},
+    ticketPrices: {},
+    owners: {},
+    ownerCards: [],
+    projects: [],
+    arenas: {},
+    career: null,
+    canBeFired: true,
+    stopOn: [...STOP_CATEGORIES],
     faOffers: [],
+    rfaRights: {},
+    formerTeams: {},
+    goalieRotation: {},
+    tradeBlock: [],
+    rfaSheets: [],
+    teamForm: drawForm(
+      teams.map((t) => t.id),
+      ctx.ruleset.season.form,
+      rng.fork('form'),
+    ),
+    lastSeason: {},
     eventSeq: 0,
   };
 }

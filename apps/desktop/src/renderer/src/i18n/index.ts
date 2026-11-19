@@ -6,7 +6,7 @@ export type Locale = 'en' | 'fr';
 const dictionaries: Record<Locale, Record<MessageKey, string>> = { en, fr };
 
 /** Translate a key, filling {placeholders}. Missing translations fall back to English. */
-export function translate(
+function translate(
   locale: Locale,
   key: MessageKey,
   vars?: Record<string, string | number>,
@@ -16,6 +16,9 @@ export function translate(
     ? template.replace(/\{(\w+)\}/g, (_, k: string) => String(vars[k] ?? `{${k}}`))
     : template;
 }
+
+/** Whether a string from the sim (a news headline) is a key we can translate. */
+export const isMessageKey = (key: string): key is MessageKey => key in en;
 
 /** Hook used by components: `const t = useT(); t('nav.home')`. */
 export function useT() {

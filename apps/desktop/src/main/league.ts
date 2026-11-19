@@ -1,24 +1,44 @@
-import { existsSync, mkdirSync, readFileSync, rmSync } from 'node:fs';
+import { existsSync, mkdirSync, readFileSync, renameSync, rmSync } from 'node:fs';
 import { join } from 'node:path';
 import type { Worker } from 'node:worker_threads';
 import { app } from 'electron';
 import { openSave, type SaveFile } from '@gm/data';
 import {
+  HOCKEY_TUNING,
   applyEvent,
+  available,
   capSheet,
   computeStandings,
+  leagueStandings,
   createLeague,
   defaultContext,
   phaseOf,
   parseXgTable,
   playerProfiles,
   chemistry,
+  autoLineup,
+  lineupFit,
+  lineupTogether,
+  seatsOf,
+  fansOf,
+  marketOf,
+  coachOf,
+  departmentsOf,
+  staffOf,
+  ownerOf,
+  ownerStanding,
+  ticketPctOf,
   dashboard,
   raceNight,
   draftPicks,
   playoffOdds,
   teamRatings,
   evaluateTrade,
+  scoutReport,
+  teamRange,
+  staffCandidates,
+  departmentReturns,
+  capYearOf,
   signingInterest,
   tradeWindowOpen,
   playerRecords,
@@ -26,11 +46,13 @@ import {
   Rng,
   teamRecords,
   type LeagueState,
+  strengthFor,
 } from '@gm/sim';
 import type {
   Actor,
   Command,
   CommandResult,
+  Department,
   GameDetail,
   GameId,
   GameResult,
@@ -38,13 +60,17 @@ import type {
   HallOfFamer,
   Importance,
   LeagueStatus,
+  OwnerReport,
   PulseRow,
   RosterPlayer,
+  StaffProfile,
   TeamId,
   TradeProposal,
 } from '@gm/shared';
+import type { GmApi } from '@gm/shared/ipc';
 import createSimWorker from './sim.worker?nodeWorker';
 import type { WorkerRequest } from './sim.worker';
+import { contextWithXg } from './simContext';
 
 /** Single-player: the local human. Multiplayer will pass real actors from the network. */
 const LOCAL: Actor = { id: 'local', controls: [] };
@@ -80,17 +106,13 @@ export class LeagueService {
     return undefined;
   })();
 
-  private context(rulesetId: string) {
-    const xg = this.xg === undefined ? undefined : parseXgTable(this.xg);
-    return defaultContext(rulesetId, xg?.ok ? { goalModel: xg.model } : {});
-  }
-
   private savePath() {
     return join(app.getPath('userData'), 'saves', 'league-1.sqlite');
   }
 
   private open(): { save: SaveFile; state: LeagueState } {
     if (!this.save) {
+      mkdirSync(join(app.getPath('userData'), 'saves'), { recursive: true }); // first run: no folder yet
       this.save = openSave(this.savePath());
       if (this.save.getMeta('season')) this.state = this.save.loadState();
     }
@@ -117,12 +139,19 @@ export class LeagueService {
   }
 
   private start(state: LeagueState) {
-    this.save?.close();
     mkdirSync(join(app.getPath('userData'), 'saves'), { recursive: true });
-    rmSync(this.savePath(), { force: true });
+    // Build the new save beside the old one and swap it in, so a crash never leaves no save.
+    const fresh = `${this.savePath()}.new`;
+    rmSync(fresh, { force: true });
+    const next = openSave(fresh);
+    next.saveNewLeague(state);
+    next.close(); // checkpoints the WAL into the file, so the rename moves everything
+    this.save?.close();
+    this.save = null;
+    for (const ext of ['', '-wal', '-shm']) rmSync(this.savePath() + ext, { force: true });
+    renameSync(fresh, this.savePath());
     this.save = openSave(this.savePath());
     this.state = state;
-    this.save.saveNewLeague(this.state);
     return { teams: this.save.listTeams() };
   }
 
@@ -132,11 +161,7 @@ export class LeagueService {
 
   standings() {
     const { state } = this.open();
-    return computeStandings(
-      Object.keys(state.teams) as TeamId[],
-      Object.values(state.results),
-      defaultContext(state.rulesetId).ruleset.season.points,
-    );
+    return leagueStandings(state, defaultContext(state.rulesetId).ruleset);
   }
 
   playoffs() {
@@ -180,34 +205,40 @@ export class LeagueService {
   leaders() {
     const { state } = this.open();
     const results = Object.values(state.results).filter((g) => !g.playoffSeriesId);
-    return defaultContext(state.rulesetId).sport.leaders(results, Object.values(state.players), 10);
+    const boards = defaultContext(state.rulesetId).sport.leaders(
+      results,
+      Object.values(state.players),
+      10,
+    );
+    return boards.map((b) => ({
+      ...b,
+      rows: b.rows.map((r) => ({
+        ...r,
+        age: state.date.season - state.players[r.playerId]!.birthYear,
+      })),
+    }));
   }
 
   records() {
     const { save, state } = this.open();
-    const points = defaultContext(state.rulesetId).ruleset.season.points;
+    const { ruleset, sport } = defaultContext(state.rulesetId);
     const teamIds = Object.keys(state.teams) as TeamId[];
-    const seasons = save.finishedSeasons().map((season) => ({
+    const played = save.finishedSeasons().map((season) => ({
       season,
-      rows: computeStandings(
-        teamIds,
-        save.playedResults(season).filter((g) => !g.playoffSeriesId),
-        points,
-      ),
+      results: save.playedResults(season).filter((g) => !g.playoffSeriesId),
+    }));
+    const seasons = played.map(({ season, results }) => ({
+      season,
+      rows: computeStandings(teamIds, results, ruleset.season.points),
     }));
     const champions = save
       .listAwards()
       .filter((a) => a.award === 'champion')
       .map((a) => a.teamId);
     const everyone = save.listPlayers(true);
-    const sport = defaultContext(state.rulesetId).sport;
-    const boards = seasons.map(({ season }) => ({
+    const boards = played.map(({ season, results }) => ({
       season,
-      boards: sport.leaders(
-        save.playedResults(season).filter((g) => !g.playoffSeriesId),
-        everyone,
-        1,
-      ),
+      boards: sport.leaders(results, everyone, 1),
     }));
     return [...teamRecords(seasons, champions), ...playerRecords(boards)];
   }
@@ -244,7 +275,6 @@ export class LeagueService {
         awayScore: g.awayScore,
         overtime: g.overtime,
         shootout: g.stats.shootout === 1,
-        playoff: !!g.playoffSeriesId,
       }));
   }
 
@@ -259,16 +289,9 @@ export class LeagueService {
     if (!state.teams[homeTeamId] || !state.teams[awayTeamId] || homeTeamId === awayTeamId) {
       throw new Error('pick two different teams');
     }
-    const ctx = this.context(state.rulesetId);
+    const ctx = contextWithXg(state.rulesetId, this.xg);
     const strength = (id: TeamId) =>
-      ctx.sport.teamStrength(
-        Object.values(state.players).filter(
-          (p) => p.teamId === id && (p.injuredUntil ?? 0) <= state.date.day,
-        ),
-        state.depthCharts[id],
-        undefined,
-        state.specialUnits[id],
-      );
+      strengthFor(state, ctx, id, available(state, id, state.date.day));
     const result = ctx.sport.simGame(
       {
         id: `x${seed}` as GameId,
@@ -298,18 +321,19 @@ export class LeagueService {
         if (p) names[id] = `${p.firstName} ${p.lastName}`;
       }
     }
-    return { result, names };
+    // Playoff overtime is played in full periods.
+    const overtimeSeconds = result.playoffSeriesId ? 1200 : HOCKEY_TUNING.overtimeSeconds;
+    return { result, names, overtimeSeconds };
   }
 
   /** Players on the team now, including ones whose contract ends this season. */
   roster(teamId: TeamId): RosterPlayer[] {
     return Object.values(this.open().state.players)
       .filter((p) => p.teamId === teamId)
-      .map(({ id, firstName, lastName, birthYear, position, contract }) => ({
+      .map(({ id, firstName, lastName, position, contract }) => ({
         id,
         firstName,
         lastName,
-        birthYear,
         position,
         ...(contract && { contract }),
       }));
@@ -344,6 +368,9 @@ export class LeagueService {
       playoffsStartDay: cal.regularSeasonDays,
       playoffsEndDay: cal.regularSeasonDays + cal.playoffDays,
       tradesOpen: tradeWindowOpen(state, ctx),
+      career: state.career,
+      canBeFired: state.canBeFired,
+      stopOn: state.stopOn,
     };
   }
 
@@ -351,6 +378,79 @@ export class LeagueService {
     return this.open()
       .state.tradeRequests.filter((r) => r.teamId === teamId)
       .map((r) => r.playerId);
+  }
+
+  owner(teamId: TeamId) {
+    const { state } = this.open();
+    const team = state.teams[teamId];
+    if (!team) throw new Error(`No team ${teamId}`);
+    const { ruleset } = defaultContext(state.rulesetId);
+    return {
+      owner: ownerOf(team),
+      coach: coachOf(team, ruleset.finance.coach, state.date.season),
+      staff: Object.fromEntries(
+        departmentsOf(team).map((d) => [
+          d,
+          staffOf(team, d, ruleset.frontOffice.salary, state.date.season),
+        ]),
+      ) as Record<Exclude<Department, 'assistant'>, StaffProfile> & { assistant?: StaffProfile },
+      market: marketOf(team),
+      capacity: seatsOf(state, teamId, ruleset),
+      fans: fansOf(state, teamId),
+      ticketPct: ticketPctOf(team, state.ticketPrices),
+    };
+  }
+
+  departmentReturns(teamId: TeamId) {
+    const { state } = this.open();
+    if (!state.teams[teamId]) throw new Error(`No team ${teamId}`);
+    return departmentReturns(state, defaultContext(state.rulesetId), teamId);
+  }
+
+  staffCandidates(teamId: TeamId) {
+    const { state } = this.open();
+    const team = state.teams[teamId];
+    if (!team) throw new Error(`No team ${teamId}`);
+    const ctx = defaultContext(state.rulesetId);
+    const season = capYearOf(state);
+    return Object.fromEntries(
+      departmentsOf(team).map((d) => [
+        d,
+        {
+          candidates: staffCandidates(team, d, ctx, season),
+          locked: team.staff?.[d]?.hired === season,
+        },
+      ]),
+    ) as Partial<Record<Department, { candidates: StaffProfile[]; locked: boolean }>>;
+  }
+
+  ownerReport(teamId: TeamId): OwnerReport {
+    const { save, state } = this.open();
+    const team = state.teams[teamId];
+    if (!team) throw new Error(`No team ${teamId}`);
+    const { money, meetings } = save.ownerHistory(teamId);
+    // Cash after each settlement, counted back from today's (so card payments land in it too).
+    let cash = state.cash[teamId] ?? 0;
+    const flow = money
+      .reverse()
+      .map((m) => {
+        const point = { ...m, cash };
+        cash -= m.revenue - m.costs;
+        return point;
+      })
+      .reverse();
+    return {
+      owner: ownerOf(team),
+      standing: ownerStanding(state, defaultContext(state.rulesetId), teamId),
+      cash: state.cash[teamId] ?? 0,
+      money: flow,
+      meetings,
+    };
+  }
+
+  offerSheets(teamId: TeamId) {
+    const { state } = this.open();
+    return state.rfaSheets.filter((o) => state.rfaRights[o.playerId] === teamId);
   }
 
   tradeOffers(teamId: TeamId) {
@@ -364,18 +464,29 @@ export class LeagueService {
 
   lines(teamId: TeamId) {
     const { state } = this.open();
-    const healthy = Object.values(state.players).filter(
-      (p) => p.teamId === teamId && (p.injuredUntil ?? 0) <= state.date.day,
-    );
+    const { sport } = defaultContext(state.rulesetId);
+    const healthy = available(state, teamId, state.date.day);
+    const depth = state.depthCharts[teamId];
+    const lineup = autoLineup(healthy, depth);
     return {
-      units: defaultContext(state.rulesetId).sport.lineup(healthy, state.depthCharts[teamId]),
-      special: defaultContext(state.rulesetId).sport.specialUnits(
-        healthy,
-        state.depthCharts[teamId],
-        state.specialUnits[teamId],
-      ),
+      units: sport.lineup(healthy, depth),
+      special: sport.specialUnits(healthy, depth, state.specialUnits[teamId]),
       chemistry: chemistry(healthy, state.date.season),
+      fit: lineupFit(lineup),
+      together: lineupTogether(lineup, state.linemates[teamId]),
+      rotation: state.goalieRotation[teamId] ?? 'backToBack',
+      disputes: state.disputes
+        .filter((d) => d.teamId === teamId)
+        .map((d) => ({
+          playerId: d.playerId,
+          ...(d.until !== undefined && { until: d.until }),
+          ...(d.listed && { listed: true as const }),
+        })),
     };
+  }
+
+  history(playerId: string) {
+    return this.open().save.playerHistory(playerId);
   }
 
   career(playerId: string) {
@@ -417,11 +528,7 @@ export class LeagueService {
       rng: new Rng(state.rngState),
       sims: 1000,
     });
-    const rows = computeStandings(
-      teams.map((t) => t.id),
-      results,
-      ruleset.season.points,
-    );
+    const rows = leagueStandings(state, ruleset);
     const rating = teamRatings(rows, sport.pythagoreanExponent);
     return teams.map((t) => ({
       teamId: t.id,
@@ -433,21 +540,33 @@ export class LeagueService {
 
   draftClass(teamId: TeamId) {
     const { state } = this.open();
+    const ctx = defaultContext(state.rulesetId);
     return {
-      prospects: state.draftClass.map(({ player: p, low, high }) => ({
-        id: p.id,
-        firstName: p.firstName,
-        lastName: p.lastName,
-        position: p.position,
-        age: state.date.season + 1 - p.birthYear,
-        low,
-        high,
-      })),
+      prospects: state.draftClass.map((pd) => {
+        // Your scouting department's read, not the public range.
+        const team = state.teams[teamId];
+        const d = team ? { ...pd, ...teamRange(team, pd, ctx, state.date.season) } : pd;
+        const { player: p, low, high } = d;
+        return {
+          id: p.id,
+          firstName: p.firstName,
+          lastName: p.lastName,
+          position: p.position,
+          age: state.date.season + 1 - p.birthYear,
+          low,
+          high,
+          report: scoutReport(ctx, d),
+        };
+      }),
       board: state.draftBoards[teamId] ?? [],
     };
   }
 
-  signingInterest(playerId: string, teamId: TeamId, offer: { salary: number; years: number }) {
+  signingInterest(
+    playerId: string,
+    teamId: TeamId,
+    offer: Parameters<GmApi['league']['signingInterest']>[0],
+  ) {
     const { state } = this.open();
     const player = state.players[playerId];
     if (!player || player.teamId !== null || !state.teams[teamId]) return null;
@@ -463,19 +582,25 @@ export class LeagueService {
       if (e.kind === 'player.drafted') ids.add(e.player.id);
     }
     const names: Record<string, string> = {};
+    const ages: Record<string, number> = {};
     const missing: string[] = [];
     for (const id of ids) {
       const p = state.players[id];
-      if (p) names[id] = `${p.firstName} ${p.lastName}`;
-      else missing.push(id);
+      if (p) {
+        names[id] = `${p.firstName} ${p.lastName}`;
+        ages[id] = state.date.season - p.birthYear;
+      } else missing.push(id);
     }
     // Retired since: look them up in the save (rare, so only when needed).
     if (missing.length) {
       for (const p of save.listPlayers(true)) {
-        if (missing.includes(p.id)) names[p.id] = `${p.firstName} ${p.lastName}`;
+        if (missing.includes(p.id)) {
+          names[p.id] = `${p.firstName} ${p.lastName}`;
+          ages[p.id] = state.date.season - p.birthYear;
+        }
       }
     }
-    return { events, names };
+    return { events, names, ages };
   }
 
   dispatch(command: Command): Promise<CommandResult> {
@@ -489,7 +614,13 @@ export class LeagueService {
     const result = await this.runInWorker({ state, command, actor: LOCAL, xg: this.xg });
     if (result.ok) {
       for (const e of result.events) applyEvent(state, e);
-      save.persist(result.events, state);
+      try {
+        save.persist(result.events, state);
+      } catch (err) {
+        // The write rolled back, so memory is ahead of the disk: go back to what the disk has.
+        this.state = save.loadState();
+        throw err;
+      }
     }
     return result;
   }
@@ -502,6 +633,7 @@ export class LeagueService {
       };
       const onError = (err: Error) => {
         this.worker.off('message', onMessage);
+        this.worker = createSimWorker({}); // the old thread is dead; later commands need a new one
         reject(err);
       };
       this.worker.once('message', onMessage);

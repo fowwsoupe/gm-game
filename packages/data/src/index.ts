@@ -1,1 +1,1 @@
-export { openSave, migrate, SaveFile, type Db } from './save';
+export { openSave, SaveFile } from './save';

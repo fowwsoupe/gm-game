@@ -1,11 +1,16 @@
 import { describe, expect, it } from 'vitest';
-import type { Actor, GameId, PlayerId, TeamId } from '@gm/shared';
+import type { Actor, GameId, Player, PlayerId, TeamId } from '@gm/shared';
 import {
   autoLineup,
   chemistry,
+  unitFit,
+  personalityOf,
   createLeague,
   defaultContext,
   handleCommand,
+  lineupTogether,
+  linemateKey,
+  LINEMATES_FULL_GAMES,
   Rng,
   teamStrength,
 } from './index';
@@ -74,7 +79,7 @@ describe('power-play and penalty-kill units', () => {
     const set = (unit: 'pp1' | 'pk1', playerIds: PlayerId[]) =>
       handleCommand(state, { kind: 'units.set', teamId: mine, unit, playerIds }, local, ctx).ok;
     expect(set('pp1', [...fourth.slice(0, 2), ...pair])).toBe(false); // four skaters
-    const twoPairs = [...auto.defense[1]!, ...pair].map((p) => (typeof p === 'string' ? p : p.id));
+    const twoPairs = [...auto.defense[1]!.map((p) => p.id), ...pair];
     expect(set('pp1', [fourth[0]!, ...twoPairs])).toBe(false); // 1F+4D
     const fifth = auto.forwards[2]!.slice(0, 2).map((p) => p.id);
     expect(set('pp1', [...fourth, ...fifth])).toBe(true); // 5F
@@ -124,25 +129,91 @@ describe('power-play and penalty-kill units', () => {
   });
 });
 
+describe('builds fit', () => {
+  const mk = (id: string, shooting: number, passing: number): Player =>
+    ({
+      id,
+      firstName: id,
+      lastName: id,
+      birthYear: 1995,
+      teamId: null,
+      position: 'C',
+      potential: 70,
+      ratings: { shooting, passing, puckHandling: 60, skating: 60 },
+    }) as unknown as Player;
+
+  it('a finisher with a creator fits; three of a kind or three generalists do not', () => {
+    const span = 15;
+    const lean = (p: Player) => p.ratings.shooting! - p.ratings.passing!;
+    const pair = [mk('a', 80, 60), mk('b', 60, 80), mk('c', 70, 70)];
+    expect(unitFit(pair, lean, span)).toBeGreaterThan(0.9);
+    expect(unitFit([mk('a', 80, 60), mk('b', 85, 55), mk('c', 78, 62)], lean, span)).toBe(0);
+    expect(unitFit([mk('a', 70, 70), mk('b', 71, 70), mk('c', 70, 71)], lean, span)).toBeLessThan(
+      0.1,
+    );
+    expect(unitFit([mk('a', 80, 60)], lean, span)).toBe(0);
+  });
+
+  it('a better-fitting top line scores more offence from the same total skill', () => {
+    const roster = (leans: [number, number][]): Player[] =>
+      leans.flatMap(([s, p], i) => [
+        { ...mk(`c${i}`, s, p), position: 'C' },
+        { ...mk(`l${i}`, s, p), position: 'LW' },
+        { ...mk(`r${i}`, s, p), position: 'RW' },
+      ]);
+    const kinds = Array<[number, number]>(4).fill([70, 70]);
+    // Same average shooting and passing, but line 1 splits them across its players.
+    const mixed = roster(kinds).map((p) =>
+      p.id === 'c0' ? { ...p, ratings: { ...p.ratings, shooting: 90, passing: 50 } } : p,
+    );
+    const alike = roster(kinds);
+    mixed.find((p) => p.id === 'l0')!.ratings = { ...mixed[0]!.ratings, shooting: 50, passing: 90 };
+    const a = teamStrength(alike, [], 0.5).offense;
+    const m = teamStrength(mixed, [], 0.5).offense;
+    expect(m).toBeGreaterThan(a);
+  });
+});
+
 describe('chemistry', () => {
   it('grows with time together, drops with new faces, and moves strength a little', () => {
     const state = createLeague(73, ctx);
     const teams = Object.values(state.teams);
     const mine = teams.find((t) => t.userControlled)!.id;
     const roster = () => Object.values(state.players).filter((p) => p.teamId === mine);
-    expect(chemistry(roster(), state.date.season).value).toBe(1); // a settled, original roster
+    const settledTeam = chemistry(roster(), state.date.season);
+    expect(settledTeam.seasons).toBe(3); // a settled, original roster
     // A new face joins this season: the team's chemistry dips.
     const partner = teams.find((t) => !t.userControlled)!.id;
     const theirs = Object.values(state.players).find((p) => p.teamId === partner)!;
     state.players[theirs.id]!.teamId = mine;
     state.players[theirs.id]!.joined = state.date.season;
     const after = chemistry(roster(), state.date.season);
-    expect(after.value).toBeLessThan(1);
-    expect(chemistry(roster(), state.date.season + 3).value).toBe(1);
+    expect(after.value).toBeLessThan(settledTeam.value);
+    expect(chemistry(roster(), state.date.season + 3).value).toBeGreaterThan(after.value);
     // Capped effect: a settled team vs a brand-new one differ by 2 rating points at most.
     const settled = teamStrength(roster(), [], 1);
     const fresh = teamStrength(roster(), [], 0);
     expect(settled.offense - fresh.offense).toBeCloseTo(2, 5);
+  });
+
+  it('leaders in the room lift it, and a room full of them is no better than two', () => {
+    const state = createLeague(75, ctx);
+    const mine = Object.values(state.teams)[0]!.id;
+    const players = Object.values(state.players).filter((p) => p.teamId === mine);
+    const byLeadership = [...players].sort(
+      (a, b) => personalityOf(b.id).leadership - personalityOf(a.id).leadership,
+    );
+    const none = players.filter((p) => personalityOf(p.id).leadership < 0.75);
+    const withTwo = [...none, ...byLeadership.slice(0, 2)];
+    const withAll = [...none, ...byLeadership.slice(0, 5)];
+    expect(chemistry(withTwo, state.date.season).leaders).toBeGreaterThanOrEqual(2);
+    expect(chemistry(withTwo, state.date.season).value).toBeGreaterThan(
+      chemistry(none, state.date.season).value,
+    );
+    expect(chemistry(withAll, state.date.season).value).toBeCloseTo(
+      chemistry(withTwo, state.date.season).value,
+      5,
+    );
   });
 
   it('a traded player joins his new team this season', () => {
@@ -178,26 +249,120 @@ describe('chemistry in games', () => {
     );
     const settled = teamStrength(roster, [], 1);
     const fresh = teamStrength(roster, [], 0);
+    // Chemistry is capped where it is computed: past "fully settled" it adds nothing.
+    expect(teamStrength(roster, [], 5).chemistry).toBe(settled.chemistry);
+    const games = 1000;
+    const edge = (good: typeof settled, bad: typeof settled) => {
+      const rng = new Rng(9);
+      let diff = 0;
+      for (let i = 0; i < games; i++) {
+        const home = i % 2 === 0;
+        const g = ctx.sport.simGame(
+          {
+            id: `c${i}` as GameId,
+            homeTeamId: 'a' as TeamId,
+            awayTeamId: 'b' as TeamId,
+            home: home ? good : bad,
+            away: home ? bad : good,
+            resultOnly: true,
+          },
+          rng,
+        );
+        diff += home ? g.homeScore - g.awayScore : g.awayScore - g.homeScore;
+      }
+      return diff / games;
+    };
+    // The real gap (~0.05 a game) needs ~6,000 games to see; five times the chemistry shows in
+    // 1,000 that the game uses it (same approach as the line-bonus test below).
+    const inflate = (s: typeof settled) => ({ ...s, chemistry: s.chemistry * 5 });
+    expect(edge(inflate(settled), inflate(fresh))).toBeGreaterThan(0.1);
+    // Worth something, but capped: a few tenths of a goal a game at most.
+    expect(edge(settled, fresh)).toBeLessThan(0.6);
+  }, 30_000); // seeded, so the thresholds never flake
+
+  it('line bonuses (builds fit) reach the game, not only the strength numbers', () => {
+    const state = createLeague(75, ctx);
+    const roster = Object.values(state.players).filter(
+      (p) => p.teamId === Object.keys(state.teams)[0],
+    );
+    const base = teamStrength(roster, [], 0.5);
+    const zero = (bs: { offense: number; defense: number }[]) =>
+      bs.map(() => ({ offense: 0, defense: 0 }));
+    const plus = (bs: { offense: number; defense: number }[]) =>
+      bs.map(() => ({ offense: 2, defense: 2 }));
+    const flat = {
+      ...base,
+      unitBonus: { forwards: zero(base.unitBonus.forwards), defense: zero(base.unitBonus.defense) },
+    };
+    const fit = {
+      ...base,
+      unitBonus: { forwards: plus(base.unitBonus.forwards), defense: plus(base.unitBonus.defense) },
+    };
     const rng = new Rng(9);
     let diff = 0;
-    const games = 6000;
+    const games = 4000;
     for (let i = 0; i < games; i++) {
       const home = i % 2 === 0;
       const g = ctx.sport.simGame(
         {
-          id: `c${i}` as GameId,
+          id: `f${i}` as GameId,
           homeTeamId: 'a' as TeamId,
           awayTeamId: 'b' as TeamId,
-          home: home ? settled : fresh,
-          away: home ? fresh : settled,
+          home: home ? fit : flat,
+          away: home ? flat : fit,
           resultOnly: true,
         },
         rng,
       );
       diff += home ? g.homeScore - g.awayScore : g.awayScore - g.homeScore;
     }
-    // Worth something, but capped: a few tenths of a goal a game at most.
-    expect(diff / games).toBeGreaterThan(0.02);
-    expect(diff / games).toBeLessThan(0.6);
-  }, 30_000); // ~1.5 s locally, ~5 s on CI; seeded, so the threshold never flakes
+    expect(diff / games).toBeGreaterThan(0.05);
+  }, 30_000);
+});
+
+describe('linemates', () => {
+  it('counts games together by unit, and forgets a pair once a player leaves', () => {
+    const state = createLeague(76, ctx);
+    const res = handleCommand(state, { kind: 'sim.advance', days: 30 }, local, ctx);
+    if (!res.ok) throw new Error(res.error.message);
+    const team = Object.keys(state.teams)[0] as TeamId;
+    const roster = Object.values(state.players).filter((p) => p.teamId === team);
+    const line = autoLineup(roster).forwards[0]!;
+    const games = Object.values(state.results).filter(
+      (g) => g.homeTeamId === team || g.awayTeamId === team,
+    ).length;
+    // Nobody is kept on the result, only counted.
+    expect(Object.values(state.results).every((g) => g.units === undefined)).toBe(true);
+    // The top line has mostly played together (injuries break it up now and then).
+    const together = state.linemates[team]![linemateKey(line[0]!.id, line[1]!.id)] ?? 0;
+    expect(together).toBeGreaterThan(games / 2);
+    expect(together).toBeLessThanOrEqual(games);
+    // He leaves: his pairs go with the next game his old team plays.
+    state.players[line[0]!.id]!.teamId = null;
+    const more = handleCommand(state, { kind: 'sim.advance', days: 4 }, local, ctx);
+    if (!more.ok) throw new Error(more.error.message);
+    expect(
+      Object.keys(state.linemates[team]!).some((k) => k.split('|').includes(line[0]!.id)),
+    ).toBe(false);
+  }, 30_000);
+
+  it('a line that has played together is stronger, by a little', () => {
+    const state = createLeague(77, ctx);
+    const team = Object.keys(state.teams)[0]!;
+    const roster = Object.values(state.players).filter((p) => p.teamId === team);
+    const lineup = autoLineup(roster);
+    const games: Record<string, number> = {};
+    for (const u of [...lineup.forwards, ...lineup.defense]) {
+      for (const a of u)
+        for (const b of u) if (a.id < b.id) games[linemateKey(a.id, b.id)] = LINEMATES_FULL_GAMES;
+    }
+    expect(lineupTogether(lineup, games).forwards).toBeCloseTo(1, 9);
+    expect(lineupTogether(lineup, games).defense).toBeCloseTo(1, 9);
+    expect(lineupTogether(lineup, {})).toEqual({ forwards: 0, defense: 0 });
+    const gelled = teamStrength(roster, [], 0.5, {}, games);
+    const strangers = teamStrength(roster, [], 0.5, {}, {});
+    // A line and a pair: half a point each way, both ways around the middle.
+    expect(gelled.offense - strangers.offense).toBeCloseTo(2, 5);
+    expect(gelled.defense - strangers.defense).toBeCloseTo(2, 5);
+  });
 });

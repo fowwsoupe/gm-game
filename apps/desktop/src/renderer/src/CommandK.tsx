@@ -1,5 +1,5 @@
-import { useQuery } from '@tanstack/react-query';
-import { useTeams } from '@/lib/queries';
+import { useAllPlayers, useTeams } from '@/lib/queries';
+import { fullName } from '@/lib/format';
 import { useUi, type Screen } from '@/stores/ui';
 import { useT, type MessageKey } from '@/i18n';
 import { Palette, type PaletteItem } from '@/ui';
@@ -15,17 +15,7 @@ export function CommandK({
   const t = useT();
   const { setScreen, openRoster, openTeam } = useUi();
   const { data: teams = [] } = useTeams();
-  // Every player in the league: one cached read per team, plus free agents.
-  const { data: players = [] } = useQuery({
-    queryKey: ['league', 'allPlayers', teams.map((x) => x.id).join()],
-    queryFn: async () =>
-      (
-        await Promise.all(
-          [...teams.map((x) => x.id), null].map((teamId) => window.gm.league.players({ teamId })),
-        )
-      ).flat(),
-    enabled: teams.length > 0,
-  });
+  const { data: players = [] } = useAllPlayers(teams.map((x) => x.id));
 
   const items: PaletteItem[] = [
     ...screens.map((s) => ({ id: `s:${s.id}`, label: t(s.label), hint: t('palette.screen') })),
@@ -36,7 +26,7 @@ export function CommandK({
     })),
     ...players.map((p) => ({
       id: `p:${p.teamId ?? 'fa'}:${p.id}`,
-      label: `${p.firstName} ${p.lastName}`,
+      label: fullName(p),
       hint: t('palette.player'),
     })),
   ];

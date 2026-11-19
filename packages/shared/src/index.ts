@@ -1,4 +1,5 @@
 export * from './domain';
+export * from './money';
 export * from './sports/hockey';
 export * from './events';
 export * from './commands';

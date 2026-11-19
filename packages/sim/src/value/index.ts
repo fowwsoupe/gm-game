@@ -5,16 +5,11 @@
  */
 export {
   surplusValuator,
-  projectedOverall,
+  RFA_DISCOUNT,
   type PlayerValuator,
   type Valuation,
   type ValueReason,
   type TeamContext,
 } from './valuation';
-export {
-  marketSalary,
-  salaryForOverall,
-  rulesContractDemand,
-  type ContractDemandModel,
-} from './market';
+export { rulesContractDemand, type ContractDemandModel } from './market';
 export { pickValue } from './picks';

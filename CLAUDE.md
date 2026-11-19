@@ -18,3 +18,7 @@ Feature intent lives in `docs/FEATURE_SPEC.md`; priorities in `docs/ROADMAP.md`.
 - Build screens from `apps/desktop/src/renderer/src/ui` components and design tokens.
 - Sim balance changes: run `pnpm lab` before and after and paste both reports in the PR.
 - Keep PRs small and scoped to one engine or screen where possible.
+- One pass: list every file the change needs and read them together (several reads in one
+  message), then make every edit, then run the checks once. Never read, edit, read, edit.
+- Smallest change that fully solves the task: reuse what exists, no speculative abstractions
+  or scaffolding (use the `ponytail` skill if you have it).

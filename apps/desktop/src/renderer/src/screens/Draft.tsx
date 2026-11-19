@@ -1,8 +1,9 @@
 import { useState } from 'react';
 import type { PlayerId } from '@gm/shared';
 import { useDispatch, useDraftClass, useTeams } from '@/lib/queries';
-import { useT } from '@/i18n';
-import { Button, Card, RangeBar } from '@/ui';
+import { useT, type MessageKey } from '@/i18n';
+import { Button, Card, Face, RangeBar, Td, Th } from '@/ui';
+import { fullName } from '@/lib/format';
 
 /**
  * Draft board: the class as the scouts see it (a potential range, not the truth) and your
@@ -15,7 +16,7 @@ export function Draft() {
   const { data } = useDraftClass(mine);
   const dispatch = useDispatch();
   const [error, setError] = useState<string | null>(null);
-  if (!mine) return <p className="text-muted">{t('trade.noTeam')}</p>;
+  if (!mine) return <p className="text-muted">{t('common.noTeam')}</p>;
   if (!data || data.prospects.length === 0) {
     return <p className="text-muted">{t('draft.empty')}</p>;
   }
@@ -41,27 +42,38 @@ export function Draft() {
         <table className="tabular w-full text-sm">
           <thead>
             <tr className="border-b border-line text-left text-muted">
-              <th className="px-2 py-1 font-medium">#</th>
-              <th className="px-2 py-1 font-medium">{t('roster.player')}</th>
-              <th className="px-2 py-1 font-medium">{t('roster.pos')}</th>
-              <th className="px-2 py-1 font-medium">{t('roster.age')}</th>
-              <th className="w-1/3 px-2 py-1 font-medium">{t('draft.range')}</th>
-              <th />
+              <Th>#</Th>
+              <Th>{t('roster.player')}</Th>
+              <Th>{t('roster.pos')}</Th>
+              <Th>{t('roster.age')}</Th>
+              <Th className="w-1/4">{t('draft.range')}</Th>
+              <Th left>{t('draft.report')}</Th>
+              <Th />
             </tr>
           </thead>
           <tbody>
             {data.prospects.map((p, i) => (
               <tr key={p.id} className="border-b border-line/50">
-                <td className="px-2 py-1 text-muted">{i + 1}</td>
-                <td className="px-2 py-1">
-                  {p.firstName} {p.lastName}
-                </td>
-                <td className="px-2 py-1">{p.position}</td>
-                <td className="px-2 py-1">{p.age}</td>
-                <td className="px-2 py-1">
+                <Td className="text-muted">{i + 1}</Td>
+                <Td>
+                  <Face seed={p.id} age={p.age} size={22} />
+                  {fullName(p)}
+                </Td>
+                <Td>{p.position}</Td>
+                <Td>{p.age}</Td>
+                <Td>
                   <RangeBar low={p.low} high={p.high} />
-                </td>
-                <td className="px-2 py-1 text-right">
+                </Td>
+                <Td left className="text-xs text-muted">
+                  {t('draft.reportLine', {
+                    strengths: p.report.strengths
+                      .map((k) => t(`rating.${k}` as MessageKey))
+                      .join(', '),
+                    weakness: t(`rating.${p.report.weakness}` as MessageKey),
+                    ready: t(p.report.ready ? 'draft.ready' : 'draft.raw'),
+                  })}
+                </Td>
+                <Td>
                   {board.includes(p.id) ? (
                     <span className="text-xs text-muted">{t('draft.onBoard')}</span>
                   ) : (
@@ -69,7 +81,7 @@ export function Draft() {
                       {t('draft.add')}
                     </Button>
                   )}
-                </td>
+                </Td>
               </tr>
             ))}
           </tbody>
@@ -86,7 +98,7 @@ export function Draft() {
                 <li key={id} className="flex items-center justify-between gap-2">
                   <span>
                     <span className="mr-2 text-muted">{i + 1}</span>
-                    {p ? `${p.firstName} ${p.lastName} (${p.position})` : id}
+                    {p ? `${fullName(p)} (${p.position})` : id}
                   </span>
                   <span className="flex gap-1">
                     <Button disabled={i === 0 || dispatch.isPending} onClick={() => move(i, -1)}>

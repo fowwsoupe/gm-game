@@ -1,13 +1,17 @@
 import { describe, expect, it } from 'vitest';
-import type { Actor, Player, PlayerId, TeamId } from '@gm/shared';
+import type { Actor, LeagueEvent, Player, PlayerId, TeamId } from '@gm/shared';
 import {
+  aiTrades,
   applyEvent,
+  emitter,
+  Rng,
   createLeague,
   defaultContext,
   evaluateTrade,
   handleCommand,
   surplusValuator,
   type PlayerValuator,
+  type LeagueState,
   type TeamContext,
 } from './index';
 
@@ -144,6 +148,15 @@ describe('trade evaluation', () => {
     );
     expect(res.ok).toBe(false);
   });
+
+  it("does not auto-accept for another human's team", () => {
+    const { state, mine, partner, myC, theirC } = setup();
+    state.teams[partner]!.userControlled = true;
+    const remote: Actor = { id: 'remote', controls: [mine] };
+    const proposal = { fromTeamId: mine, toTeamId: partner, give: [myC[0]!], get: [theirC[0]!] };
+    const res = handleCommand(state, { kind: 'trade.propose', proposal }, remote, base);
+    expect(res.ok).toBe(false);
+  });
 });
 
 describe('trades with the default valuation', () => {
@@ -171,7 +184,6 @@ describe('surplus value', () => {
     status,
     season: 2027,
     seasonLeft,
-    capSpace: 0,
     needs: [],
   });
   const player = (over: Partial<Player>): Player => ({
@@ -220,10 +232,22 @@ describe('surplus value', () => {
       'rental',
     );
   });
+
+  it('counts an extension he signed: not a rental, and the new cap hit is what he costs', () => {
+    const contract = { capHit: 3 * M, expiresAfterSeason: 2027 };
+    const rental = player({ birthYear: 2027 - 30, ratings: { a: 72, b: 72 }, contract });
+    const cheap = { ...rental, extension: { capHit: 3 * M, expiresAfterSeason: 2030 } };
+    const dear = { ...rental, extension: { capHit: 11 * M, expiresAfterSeason: 2030 } };
+    const v = (p: Player) => surplusValuator.value(p, team('contender', 0.5), rules);
+    expect(v(cheap).reasons).not.toContain('rental');
+    expect(v(cheap).surplus).toBeGreaterThan(v(rental).surplus);
+    expect(v(dear).surplus).toBeLessThan(v(cheap).surplus);
+  });
 });
 
 describe('AI-to-AI trades', () => {
-  it('happen during the season, never with a human team, the same way every time', () => {
+  // Same seed, same trades: covered by the season determinism checks (sim.test, offseason.test).
+  it('happen during the season, never with a human team', () => {
     const run = (seed: number) => {
       const state = createLeague(seed, base);
       // Trades end at the deadline, so the season after it is not needed.
@@ -248,7 +272,34 @@ describe('AI-to-AI trades', () => {
         expect(e.date.day).toBeLessThanOrEqual(base.ruleset.season.calendar.tradeDeadlineDay);
       }
     }
-    expect(run(2).trades).toEqual(seasons[0]!.trades);
+  }, 60_000);
+
+  it('a player on an AI seller’s block goes to an AI buyer more often than when unlisted', () => {
+    const league = createLeague(5, base);
+    const ai = Object.values(league.teams).filter((t) => !t.userControlled);
+    const seller = ai[0]!.id;
+    league.teamStatus[seller] = 'seller';
+    for (const t of ai.slice(1, 6)) league.teamStatus[t.id] = 'contender';
+    const player = Object.values(league.players)
+      .filter((p) => p.teamId === seller && p.contract?.expiresAfterSeason === league.date.season)
+      .sort((a, b) => a.id.localeCompare(b.id))[0]!;
+    const traded = (listed: boolean) => {
+      let n = 0;
+      for (let seed = 0; seed < 20; seed++) {
+        const state = structuredClone(league);
+        if (listed) state.tradeBlock.push(player.id);
+        const events: LeagueEvent[] = [];
+        aiTrades(state, base, new Rng(seed), emitter(state, events));
+        if (state.players[player.id]!.teamId !== seller) n++;
+        for (const e of events) {
+          if (e.kind !== 'trade.completed') continue;
+          expect(state.teams[e.fromTeamId]!.userControlled).toBe(false);
+          expect(state.teams[e.toTeamId]!.userControlled).toBe(false);
+        }
+      }
+      return n;
+    };
+    expect(traded(true)).toBeGreaterThan(traded(false));
   }, 60_000);
 });
 
@@ -302,11 +353,23 @@ describe('retained salary', () => {
     state.capCharges = [{ ...charge(myC[1]!), teamId: partner }];
     expect(offer(myC[1]!, 20)).toBe('retention');
     expect(offer(myC[0]!, 20)).toBe('accepted');
+    // The same player twice would retain 100%.
+    const twice = evaluateTrade(state, ctx, {
+      fromTeamId: mine,
+      toTeamId: partner,
+      give: [myC[0]!],
+      get: [],
+      retain: [
+        { playerId: myC[0]!, pct: 50 },
+        { playerId: myC[0]!, pct: 50 },
+      ],
+    });
+    expect(twice.reasons[0]!.code).toBe('retention');
   });
 });
 
 describe('AI offers to you', () => {
-  const seasonWithOffer = () => {
+  const findOffer = () => {
     for (const seed of [11, 12, 13, 14, 15]) {
       const state = createLeague(seed, base);
       for (let d = 0; d < base.ruleset.season.calendar.tradeDeadlineDay; d += 7) {
@@ -317,6 +380,9 @@ describe('AI offers to you', () => {
     }
     throw new Error('no offer in five leagues');
   };
+  // Searched once; each test gets its own copy.
+  let found: LeagueState | undefined;
+  const seasonWithOffer = () => structuredClone((found ??= findOffer()));
 
   it('arrive, can be accepted, and the trade goes through', () => {
     const state = seasonWithOffer();

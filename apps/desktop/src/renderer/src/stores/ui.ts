@@ -9,6 +9,7 @@ export type Screen =
   | 'home'
   | 'standings'
   | 'roster'
+  | 'freeAgency'
   | 'lines'
   | 'trades'
   | 'draft'
@@ -16,7 +17,10 @@ export type Screen =
   | 'games'
   | 'leaders'
   | 'history'
-  | 'team';
+  | 'team'
+  | 'owner'
+  | 'frontOffice'
+  | 'player';
 
 interface UiState {
   screen: Screen;
@@ -24,11 +28,13 @@ interface UiState {
   teamId: string | undefined;
   openTeam: (teamId: string) => void;
   locale: Locale;
-  /** Set by Cmd+K: the Roster screen shows this team ('fa' = free agents) and player. */
+  /** Set by Cmd+K: the Roster screen shows this team and player ('fa' opens Free agency). */
   focus: { teamId: string; playerId?: string | undefined } | null;
   setScreen: (screen: Screen) => void;
   setLocale: (locale: Locale) => void;
   openRoster: (teamId: string, playerId?: string) => void;
+  /** The player's own page. `teamId` null = a free agent. */
+  openPlayer: (teamId: string | null, playerId: string) => void;
 }
 
 export const useUi = create<UiState>((set) => ({
@@ -37,7 +43,10 @@ export const useUi = create<UiState>((set) => ({
   openTeam: (teamId) => set({ screen: 'team', teamId }),
   locale: 'en',
   focus: null,
-  openRoster: (teamId, playerId) => set({ screen: 'roster', focus: { teamId, playerId } }),
+  openRoster: (teamId, playerId) =>
+    set({ screen: teamId === 'fa' ? 'freeAgency' : 'roster', focus: { teamId, playerId } }),
+  openPlayer: (teamId, playerId) =>
+    set({ screen: 'player', focus: { teamId: teamId ?? 'fa', playerId } }),
   setScreen: (screen) => set({ screen }),
   setLocale: (locale) => set({ locale }),
 }));

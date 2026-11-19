@@ -1,11 +1,14 @@
 import Database from 'better-sqlite3';
 import type {
   AwardEntry,
+  PlayerHistory,
+  PlayerMove,
   CareerLine,
   CapCharge,
   GameResult,
   Importance,
   LeagueEvent,
+  OwnerReport,
   Player,
   PlayerId,
   PlayoffSeries,
@@ -33,6 +36,8 @@ export function openSave(path: string): SaveFile {
 
 export function migrate(db: Db): void {
   const current = db.pragma('user_version', { simple: true }) as number;
+  if (current > migrations.length)
+    throw new Error('This save is from a newer version of the game.');
   for (let v = current; v < migrations.length; v++) {
     db.transaction(() => {
       db.exec(migrations[v]!);
@@ -40,6 +45,43 @@ export function migrate(db: Db): void {
     })();
   }
 }
+
+/**
+ * League state kept as JSON in meta rather than its own table (each is small: one draft class,
+ * open offers...), with the value used when a save lacks the key. Load and save both loop here.
+ */
+const JSON_META = {
+  draftClass: '[]',
+  draftOrder: '[]',
+  draftBoards: '{}',
+  depthCharts: '{}',
+  specialUnits: '{}',
+  pickOwners: '{}',
+  pickProtection: '{}',
+  tradeOffers: '[]',
+  tradeRequests: '[]',
+  holdouts: '[]',
+  disputes: '[]',
+  linemates: '{}',
+  cash: '{}',
+  fans: '{}',
+  ticketPrices: '{}',
+  owners: '{}',
+  ownerCards: '[]',
+  projects: '[]',
+  arenas: '{}',
+  career: 'null',
+  canBeFired: 'true',
+  stopOn: '["league","yours","offers","injuries"]',
+  faOffers: '[]',
+  rfaRights: '{}',
+  formerTeams: '{}',
+  goalieRotation: '{}',
+  tradeBlock: '[]',
+  rfaSheets: '[]',
+  teamForm: '{}',
+  lastSeason: '{}',
+} satisfies Partial<Record<keyof LeagueState, string>>;
 
 const IMPORTANCE_RANK: Record<Importance, number> = { minor: 0, notable: 1, major: 2 };
 
@@ -56,6 +98,8 @@ interface PlayerRow {
   extension_json: string | null;
   joined_season: number | null;
   injured_until: number | null;
+  injury_count: number;
+  injury_days: number;
 }
 
 /**
@@ -92,15 +136,10 @@ export class SaveFile {
 
   saveNewLeague(state: LeagueState) {
     const insertTeam = this.db.prepare(
-      'INSERT INTO teams (id, city, name, abbreviation, user_controlled, status, conference, division) VALUES (?, ?, ?, ?, ?, ?, ?, ?)',
+      'INSERT INTO teams (id, city, name, abbreviation, user_controlled, status, conference, division, gm_json, plan_json, coach_json, staff_json) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)',
     );
-    const insertPlayer = this.db.prepare(
-      `INSERT INTO players (id, team_id, first_name, last_name, birth_year, position, potential, ratings_json, contract_json)
-       VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)`,
-    );
-    const insertGame = this.db.prepare(
-      'INSERT INTO games (id, season, day, home_team_id, away_team_id) VALUES (?, ?, ?, ?, ?)',
-    );
+    const insertPlayer = this.insertPlayer();
+    const insertGame = this.insertGame();
     const insertCharge = this.insertCapCharge();
     this.db.transaction(() => {
       for (const t of Object.values(state.teams)) {
@@ -113,23 +152,14 @@ export class SaveFile {
           state.teamStatus[t.id] ?? 'bubble',
           t.conference ?? null,
           t.division ?? null,
+          t.gm ? JSON.stringify(t.gm) : null,
+          t.plan ? JSON.stringify(t.plan) : null,
+          t.coach ? JSON.stringify(t.coach) : null,
+          t.staff ? JSON.stringify(t.staff) : null,
         );
       }
-      for (const p of Object.values(state.players)) {
-        insertPlayer.run(
-          p.id,
-          p.teamId,
-          p.firstName,
-          p.lastName,
-          p.birthYear,
-          p.position,
-          p.potential,
-          JSON.stringify(p.ratings),
-          p.contract ? JSON.stringify(p.contract) : null,
-        );
-      }
-      for (const g of state.schedule)
-        insertGame.run(g.id, g.date.season, g.date.day, g.homeTeamId, g.awayTeamId);
+      for (const p of Object.values(state.players)) insertPlayer(p);
+      for (const g of state.schedule) insertGame(g);
       for (const c of state.capCharges) insertCharge(c);
       this.writeClock(state);
       this.setMeta('sport', state.sport);
@@ -206,14 +236,9 @@ export class SaveFile {
       ),
       championTeamId: (this.getMeta('championTeamId') as TeamId | undefined) ?? null,
       freeAgencyOpen: this.getMeta('freeAgencyOpen') === '1',
-      draftClass: JSON.parse(this.getMeta('draftClass') ?? '[]'),
-      draftBoards: JSON.parse(this.getMeta('draftBoards') ?? '{}'),
-      depthCharts: JSON.parse(this.getMeta('depthCharts') ?? '{}'),
-      specialUnits: JSON.parse(this.getMeta('specialUnits') ?? '{}'),
-      pickOwners: JSON.parse(this.getMeta('pickOwners') ?? '{}'),
-      tradeOffers: JSON.parse(this.getMeta('tradeOffers') ?? '[]'),
-      tradeRequests: JSON.parse(this.getMeta('tradeRequests') ?? '[]'),
-      faOffers: JSON.parse(this.getMeta('faOffers') ?? '[]'),
+      ...(Object.fromEntries(
+        Object.entries(JSON_META).map(([k, d]) => [k, JSON.parse(this.getMeta(k) ?? d)]),
+      ) as Pick<LeagueState, keyof typeof JSON_META>),
       capCharges: (
         this.db
           .prepare(
@@ -234,6 +259,33 @@ export class SaveFile {
         amount: r.amount,
       })),
     };
+  }
+
+  private insertPlayer() {
+    const stmt = this.db.prepare(
+      `INSERT INTO players (id, team_id, first_name, last_name, birth_year, position, potential, ratings_json, contract_json)
+       VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)`,
+    );
+    return (p: Player) =>
+      stmt.run(
+        p.id,
+        p.teamId,
+        p.firstName,
+        p.lastName,
+        p.birthYear,
+        p.position,
+        p.potential,
+        JSON.stringify(p.ratings),
+        p.contract ? JSON.stringify(p.contract) : null,
+      );
+  }
+
+  private insertGame() {
+    const stmt = this.db.prepare(
+      'INSERT INTO games (id, season, day, home_team_id, away_team_id) VALUES (?, ?, ?, ?, ?)',
+    );
+    return (g: ScheduledGame) =>
+      stmt.run(g.id, g.date.season, g.date.day, g.homeTeamId, g.awayTeamId);
   }
 
   private insertCapCharge() {
@@ -263,10 +315,7 @@ export class SaveFile {
     const updateSeries = this.db.prepare(
       `UPDATE playoff_series SET higher_wins = ?, lower_wins = ?, winner_team_id = ? WHERE id = ?`,
     );
-    const insertPlayer = this.db.prepare(
-      `INSERT INTO players (id, team_id, first_name, last_name, birth_year, position, potential, ratings_json, contract_json)
-       VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)`,
-    );
+    const insertPlayer = this.insertPlayer();
     const setRatings = this.db.prepare(
       'UPDATE players SET ratings_json = ?, potential = ? WHERE id = ?',
     );
@@ -278,18 +327,22 @@ export class SaveFile {
     const retire = this.db.prepare(
       'UPDATE players SET retired_season = ?, team_id = NULL, contract_json = NULL WHERE id = ?',
     );
-    const setInjury = this.db.prepare('UPDATE players SET injured_until = ? WHERE id = ?');
+    const setInjury = this.db.prepare(
+      'UPDATE players SET injured_until = ?, injury_count = injury_count + 1, injury_days = injury_days + ? WHERE id = ?',
+    );
     const insertCharge = this.insertCapCharge();
     const dropOldCharges = this.db.prepare('DELETE FROM cap_charges WHERE season < ?');
     const healAll = this.db.prepare('UPDATE players SET injured_until = NULL');
-    const insertScheduled = this.db.prepare(
-      'INSERT INTO games (id, season, day, home_team_id, away_team_id) VALUES (?, ?, ?, ?, ?)',
-    );
+    const insertGame = this.insertGame();
     const insertAward = this.db.prepare(
       'INSERT OR REPLACE INTO awards (season, award, team_id, player_id) VALUES (?, ?, ?, ?)',
     );
     const setStatus = this.db.prepare('UPDATE teams SET status = ? WHERE id = ?');
     const setControl = this.db.prepare('UPDATE teams SET user_controlled = ? WHERE id = ?');
+    const setGm = this.db.prepare('UPDATE teams SET gm_json = ? WHERE id = ?');
+    const setPlan = this.db.prepare('UPDATE teams SET plan_json = ? WHERE id = ?');
+    const setCoach = this.db.prepare('UPDATE teams SET coach_json = ? WHERE id = ?');
+    const setStaff = this.db.prepare('UPDATE teams SET staff_json = ? WHERE id = ?');
     const setTeam = this.db.prepare('UPDATE players SET team_id = ? WHERE id = ?');
     // Who joined a new team (or left one) in these events; written from the final state below.
     const moved = new Set<string>();
@@ -313,7 +366,7 @@ export class SaveFile {
             // The box score lives in the games table; keeping it here too would double the save.
             JSON.stringify(
               e.kind === 'game.final'
-                ? { ...e, result: { ...e.result, box: undefined } }
+                ? { ...e, result: { ...e.result, box: undefined, units: undefined } }
                 : e.kind === 'stats.archived'
                   ? { ...e, lines: undefined } // kept in player_seasons
                   : e,
@@ -374,7 +427,7 @@ export class SaveFile {
             for (const c of e.charges) insertCharge(c);
             break;
           case 'player.injured':
-            setInjury.run(e.until, e.playerId);
+            setInjury.run(e.until, e.days, e.playerId);
             break;
           case 'contract.expired':
             moved.add(e.playerId);
@@ -383,17 +436,7 @@ export class SaveFile {
           case 'player.drafted': {
             const p = e.player;
             moved.add(p.id);
-            insertPlayer.run(
-              p.id,
-              p.teamId,
-              p.firstName,
-              p.lastName,
-              p.birthYear,
-              p.position,
-              p.potential,
-              JSON.stringify(p.ratings),
-              p.contract ? JSON.stringify(p.contract) : null,
-            );
+            insertPlayer(p);
             break;
           }
           case 'player.signed':
@@ -401,9 +444,7 @@ export class SaveFile {
             setContract.run(e.teamId, JSON.stringify(e.contract), e.playerId);
             break;
           case 'season.started':
-            for (const g of e.schedule) {
-              insertScheduled.run(g.id, g.date.season, g.date.day, g.homeTeamId, g.awayTeamId);
-            }
+            for (const g of e.schedule) insertGame(g);
             this.db
               .prepare("DELETE FROM meta WHERE key IN ('championTeamId', 'freeAgencyOpen')")
               .run();
@@ -416,8 +457,31 @@ export class SaveFile {
           case 'team.controlChanged':
             setControl.run(e.userControlled ? 1 : 0, e.teamId);
             break;
+          case 'team.gmChanged':
+            setGm.run(JSON.stringify(e.gm), e.teamId);
+            break;
+          case 'staff.fired':
+          case 'staff.hired':
+            setStaff.run(JSON.stringify(state.teams[e.teamId]?.staff ?? null), e.teamId);
+            break;
+          case 'career.fired':
+            setControl.run(0, e.teamId);
+            setGm.run(JSON.stringify(e.gm), e.teamId);
+            break;
+          case 'career.hired':
+            setControl.run(1, e.teamId);
+            break;
+          case 'career.offers':
+          case 'league.optionSet':
+            break; // stored with the clock below
+          case 'team.planChanged':
+            setPlan.run(JSON.stringify(e.plan), e.teamId);
+            break;
           case 'contract.extended':
             setExtension.run(JSON.stringify(e.contract), e.playerId);
+            break;
+          case 'bonuses.paid':
+            for (const c of e.charges) insertCharge(c);
             break;
           case 'stats.archived':
             for (const l of e.lines) {
@@ -428,12 +492,32 @@ export class SaveFile {
           case 'draft.boardSet':
           case 'lines.set':
           case 'units.set':
+          case 'goalies.rotationSet':
+          case 'trade.blockSet':
           case 'trade.offered':
           case 'freeAgency.offered':
+          case 'freeAgency.sheetReceived':
+          case 'freeAgency.sheetDropped':
           case 'player.tradeRequested':
           case 'player.tradeRequestEnded':
+          case 'player.disputeStarted':
+          case 'player.disputePromised':
+          case 'player.disputeListed':
+          case 'player.disputeEnded':
+          case 'player.holdoutStarted':
+          case 'player.holdoutEnded':
           case 'trade.offerClosed':
+          case 'finance.settled':
+          case 'finance.ticketPriceSet':
+          case 'owner.meeting':
+          case 'owner.confidenceMoved':
+          case 'owner.frustrated':
+          case 'owner.cardOpened':
+          case 'project.finished':
             break; // stored with the clock below
+          case 'owner.cardAnswered':
+            if (e.effects.coach) setCoach.run(JSON.stringify(e.effects.coach.hire), e.teamId);
+            break; // the rest is stored with the clock below
           case 'freeAgency.opened':
             this.setMeta('freeAgencyOpen', '1');
             break;
@@ -474,15 +558,8 @@ export class SaveFile {
     this.setMeta('day', String(state.date.day));
     this.setMeta('rngState', String(state.rngState));
     this.setMeta('eventSeq', String(state.eventSeq));
-    // Small (one draft class): kept as JSON in meta rather than its own table.
-    this.setMeta('draftClass', JSON.stringify(state.draftClass));
-    this.setMeta('draftBoards', JSON.stringify(state.draftBoards));
-    this.setMeta('depthCharts', JSON.stringify(state.depthCharts));
-    this.setMeta('specialUnits', JSON.stringify(state.specialUnits));
-    this.setMeta('pickOwners', JSON.stringify(state.pickOwners));
-    this.setMeta('tradeOffers', JSON.stringify(state.tradeOffers));
-    this.setMeta('tradeRequests', JSON.stringify(state.tradeRequests));
-    this.setMeta('faOffers', JSON.stringify(state.faOffers));
+    for (const k of Object.keys(JSON_META) as (keyof typeof JSON_META)[])
+      this.setMeta(k, JSON.stringify(state[k]));
   }
 
   // ---------- queries ----------
@@ -535,6 +612,10 @@ export class SaveFile {
       user_controlled: number;
       conference: string | null;
       division: string | null;
+      gm_json: string | null;
+      plan_json: string | null;
+      coach_json: string | null;
+      staff_json: string | null;
     }[];
     return rows.map((r) => ({
       id: r.id as Team['id'],
@@ -544,6 +625,10 @@ export class SaveFile {
       ...(r.conference ? { conference: r.conference } : {}),
       ...(r.division ? { division: r.division } : {}),
       userControlled: r.user_controlled === 1,
+      ...(r.gm_json ? { gm: JSON.parse(r.gm_json) as NonNullable<Team['gm']> } : {}),
+      ...(r.plan_json ? { plan: JSON.parse(r.plan_json) as NonNullable<Team['plan']> } : {}),
+      ...(r.coach_json ? { coach: JSON.parse(r.coach_json) as NonNullable<Team['coach']> } : {}),
+      ...(r.staff_json ? { staff: JSON.parse(r.staff_json) as NonNullable<Team['staff']> } : {}),
     }));
   }
 
@@ -567,6 +652,7 @@ export class SaveFile {
       if (r.extension_json) p.extension = JSON.parse(r.extension_json);
       if (r.joined_season !== null) p.joined = r.joined_season;
       if (r.injured_until !== null) p.injuredUntil = r.injured_until;
+      if (r.injury_count > 0) p.injuryHistory = { count: r.injury_count, days: r.injury_days };
       return p;
     });
   }
@@ -623,6 +709,93 @@ export class SaveFile {
       teamId: r.team_id,
       stats: JSON.parse(r.stats_json) as Record<string, number>,
     }));
+  }
+
+  /**
+   * A team's settlements (each one's revenue and costs) and owner meetings, oldest first: the
+   * Owner screen's money flow and history.
+   */
+  ownerHistory(teamId: TeamId): {
+    money: { season: number; day: number; revenue: number; costs: number }[];
+    meetings: OwnerReport['meetings'];
+  } {
+    const rows = this.db
+      .prepare(
+        `SELECT payload_json FROM events
+         WHERE kind IN ('finance.settled', 'owner.meeting') AND team_ids = ? ORDER BY seq`,
+      )
+      .all(JSON.stringify([teamId])) as { payload_json: string }[];
+    const sum = (lines: Record<string, number>) => Object.values(lines).reduce((a, b) => a + b, 0);
+    const money: { season: number; day: number; revenue: number; costs: number }[] = [];
+    const meetings: OwnerReport['meetings'] = [];
+    for (const r of rows) {
+      const e = JSON.parse(r.payload_json) as LeagueEvent;
+      if (e.kind === 'finance.settled') {
+        money.push({ ...e.date, revenue: sum(e.revenue), costs: sum(e.costs) });
+      } else if (e.kind === 'owner.meeting') {
+        const { season, objectives, confidence } = e.owner;
+        meetings.push({ season, meeting: e.meeting, objectives, confidence });
+      }
+    }
+    return { money, meetings };
+  }
+
+  /** A player's awards and the contract / team moves recorded in the event log, oldest first. */
+  playerHistory(id: string): PlayerHistory {
+    const playerId = id as PlayerId;
+    const rows = this.db
+      .prepare(
+        `SELECT season, payload_json FROM events
+         WHERE kind IN ('player.drafted', 'player.signed', 'contract.extended', 'trade.completed',
+                        'contract.boughtOut', 'contract.expired')
+           AND payload_json LIKE ? ORDER BY seq`,
+      )
+      .all(`%"${id}"%`) as { season: number; payload_json: string }[];
+    const moves: PlayerMove[] = [];
+    for (const r of rows) {
+      const e = JSON.parse(r.payload_json) as LeagueEvent;
+      const season = r.season;
+      switch (e.kind) {
+        case 'player.drafted':
+          if (e.player.id === playerId && e.player.teamId) {
+            moves.push({ season, kind: 'drafted', teamId: e.player.teamId });
+          }
+          break;
+        case 'player.signed':
+          if (e.playerId === playerId) {
+            moves.push({ season, kind: 'signed', teamId: e.teamId, capHit: e.contract.capHit });
+          }
+          break;
+        case 'contract.extended':
+          if (e.playerId === playerId) {
+            moves.push({ season, kind: 'extended', teamId: e.teamId, capHit: e.contract.capHit });
+          }
+          break;
+        case 'trade.completed':
+          // `give` goes to `toTeamId`, `get` comes to `fromTeamId`.
+          if (e.give.includes(playerId)) moves.push({ season, kind: 'traded', teamId: e.toTeamId });
+          else if (e.get.includes(playerId)) {
+            moves.push({ season, kind: 'traded', teamId: e.fromTeamId });
+          }
+          break;
+        case 'contract.boughtOut':
+          if (e.playerId === playerId) moves.push({ season, kind: 'boughtOut', teamId: e.teamId });
+          break;
+        case 'contract.expired':
+          // Emitted with the team he was under contract to as its only `teamIds` entry.
+          if (e.playerId === playerId && e.teamIds[0]) {
+            moves.push({ season, kind: 'expired', teamId: e.teamIds[0] });
+          }
+          break;
+        default:
+          break;
+      }
+    }
+    const awards = this.listAwards()
+      .filter((a) => a.playerId === playerId)
+      .map((a) => ({ season: a.season, award: a.award }))
+      .reverse();
+    return { awards, moves };
   }
 
   /** Seasons that have a champion, oldest first. */

@@ -7,7 +7,7 @@ import type {
   SeasonPhase,
   TeamId,
 } from '@gm/shared';
-import { pct, type Dollars, type LeagueState } from '../core';
+import { capYearOf, pct, type Dollars, type LeagueState } from '../core';
 import { contractIn } from './contracts';
 import type { Ruleset } from './ruleset';
 
@@ -108,7 +108,8 @@ export function buyoutCharges(
   const age = input.season - input.player.birthYear;
   const { shareOwedUnderAge, shareOwedOtherwise, termMultiplier } = rules.buyouts;
   const share = age < shareOwedUnderAge.age ? shareOwedUnderAge.share : shareOwedOtherwise;
-  const owed = Math.round(share * contract.capHit * remaining);
+  // A signing bonus was paid up front: only the salary part is owed on a buyout.
+  const owed = Math.round(share * (contract.capHit - (contract.bonus ?? 0)) * remaining);
   const spread = Math.max(1, Math.round(termMultiplier * remaining));
   const each = Math.floor(owed / spread);
   return Array.from({ length: spread }, (_, i) => ({
@@ -154,12 +155,6 @@ export function retentionIssues(
   return issues;
 }
 
-/**
- * The cap year signings and trades are judged for: next season once the champion is crowned
- * (expiring deals are then off the books), else the current one.
- */
-export const capYearOf = (state: LeagueState) => state.date.season + (state.championTeamId ? 1 : 0);
-
 /** What a team's cap counts in the cap year: contracts that run through it, plus dead cap. */
 export function teamCapTotal(
   state: LeagueState,
@@ -170,11 +165,14 @@ export function teamCapTotal(
   const committed = players
     .filter((p) => p.teamId === teamId)
     .reduce((sum, p) => sum + (contractIn(p, season)?.capHit ?? 0), 0);
-  const dead = state.capCharges
+  return committed + deadCap(state, teamId, season);
+}
+
+/** Dead cap (buyouts, retained salary) a team carries in `season`. */
+export const deadCap = (state: LeagueState, teamId: TeamId, season: number): Dollars =>
+  state.capCharges
     .filter((c) => c.teamId === teamId && c.season === season)
     .reduce((sum, c) => sum + c.amount, 0);
-  return committed + dead;
-}
 
 /** Cap issues for a total in the cap year: the offseason allowance once the season is over, else the ceiling only. */
 export const capYearIssues = (rules: Ruleset, state: LeagueState, total: Dollars) =>

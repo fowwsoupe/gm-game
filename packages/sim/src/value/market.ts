@@ -4,19 +4,22 @@ import { maxPlayerCapHit, type Ruleset } from '../cba';
 import { overall } from '../players';
 
 /**
- * What a free agent asks for per year. A placeholder price curve: worth grows with the
- * square of how far he is above replacement level (45), scaled by the cap so it follows the
- * ruleset. Tuned so a team of average players spends about 85% of the cap.
+ * What a free agent asks for per year. A placeholder price curve: worth grows with how far he
+ * is above replacement level (45) to the power 1.5, scaled by the cap so it follows the ruleset.
+ * Tuned so a team of average players spends about 85% of the cap. The power is below 2 so stars
+ * are cheaper per rating point than a square would make them (as the max contract does in the
+ * NHL): with a square and a hard cap, every team could only afford the same talent, and leagues
+ * flattened over the years (balance lab long-run checks).
  * TODO(M6, Azmi): contract demand model calibrated on real signings, with age and market.
  */
-export function marketSalary(rules: Ruleset, player: Player): Dollars {
+function marketSalary(rules: Ruleset, player: Player): Dollars {
   return salaryForOverall(rules, overall(player));
 }
 
 /** The market salary of a player of this overall rating (see `marketSalary`). */
 export function salaryForOverall(rules: Ruleset, rating: number): Dollars {
   const above = Math.max(0, rating - 45);
-  const raw = rules.cap.minSalary + pct(rules.cap.upperLimit, 0.0075) * above * above;
+  const raw = rules.cap.minSalary + pct(rules.cap.upperLimit, 0.0335) * above ** 1.5;
   const rounded = Math.round(raw / 100_000) * 100_000;
   return Math.min(maxPlayerCapHit(rules), Math.max(rules.cap.minSalary, rounded));
 }

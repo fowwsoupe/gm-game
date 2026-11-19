@@ -1,115 +1,21 @@
+import { TIRED_GOALIE } from '@gm/shared';
 import type {
   GameId,
   GameResult,
   HockeyBoxScore,
   HockeyGameStats,
-  HockeyGoalieLine,
   HockeyPenalty,
   HockeyShot,
-  HockeySkaterLine,
   Player,
   PlayerId,
   TeamId,
 } from '@gm/shared';
 import type { Rng } from '../../core';
-import {
-  attack,
-  defence,
-  faceoffs,
-  FACEOFF_WEIGHT,
-  goalieScore,
-  ICE_TIME,
-  rating,
-  UNIT_WEIGHT,
-  type TeamStrength,
-} from './strength';
-
-/** Knobs to tune the game sim. Kept in one place so balance changes are easy to find. */
-export const HOCKEY_TUNING = {
-  /** Shots on goal per team per 60 minutes between two average units at even strength. */
-  shotsPer60: 26.0,
-  /** How strongly a rating gap between the attacking and defending unit moves the shot rate. */
-  ratingSensitivity: 0.0085,
-  /**
-   * The average starting goalie's rating, and how strongly a gap moves his goal chance per shot.
-   * Set so a starter's save % repeats year to year at r 0.12-0.30 as in the NHL (balance lab);
-   * at 0.011 it repeated at 0.6, so goalies were far more predictable than real ones.
-   */
-  leagueAvgGoaltending: 67,
-  goalieSensitivity: 0.005,
-  /**
-   * Goalie form: each game, a goalie's goal chance against is multiplied by exp(N(0, sd)), with
-   * sd = goalieFormSd x (1.5 - consistency / 100). Calibrated so a team game's goals vary around
-   * expected goals as much as in the NHL (balance lab "Goals vs expected" check; ml/src/form.py).
-   */
-  goalieFormSd: 0.14,
-  homeIceBoost: 1.07,
-  /** Shot rate changes by this (log) per skater of man advantage: 5v4 is about 1.7 times even strength. */
-  manAdvantageStep: 0.55,
-  /** Shot rate in 3v3 overtime relative to five-on-five. */
-  overtimePace: 2.4,
-  /** Minor penalties a team takes per game, and how long each lasts (seconds). */
-  penaltiesPerTeam: 3,
-  penaltySeconds: 120,
-  /** A team on the power play shoots from chances this much better. */
-  powerPlayQuality: 1.5,
-  /** Scales every shot's goal chance (the GoalModel's output) so the league saves about 90%. */
-  xgScale: 1.02,
-  /** A trailing team pulls its goalie this many seconds before the end: down one, down two. */
-  pullSeconds: [150, 90],
-  /** A team with its goalie pulled attacks this much harder than the extra skater alone explains. */
-  pulledPace: 2,
-  /** Score effects: a team shoots more (log, per goal down, up to two) when trailing and less when leading. */
-  scoreEffect: 0.12,
-  /** Chance a shot at an empty net goes in. */
-  emptyNetGoal: 0.7,
-  /** Shift length (seconds) between line changes. */
-  shiftSeconds: 45,
-  /** A goalie who has let in four before the late second period is pulled this often. */
-  pulledAfterFour: 0.6,
-  overtimeSeconds: 300,
-  shootoutGoal: 0.33,
-} as const;
-
-/** What a goal model sees of a shot. */
-export interface ShotInfo {
-  /** Feet from the goal line toward the dots, and from the middle of the ice (net at 0, 0). */
-  x: number;
-  y: number;
-  /** The shooter's shooting rating. */
-  shooting: number;
-  /** The shooting team has a man advantage from a penalty. */
-  power: boolean;
-}
-
-/**
- * Anything that can say how likely a shot is to be a goal against an average goalie (expected
- * goals). The default is rules-based; an ML shot-quality model (trained in /ml, shipped as
- * a `gm-xg-table`, see xgTable.ts) can implement the same interface. The engine adds the goalie's effect on top.
- */
-export interface GoalModel {
-  shotXg(shot: ShotInfo): number;
-}
-
-/** Scoring chance of a shot from where it is taken: close and in front is dangerous. */
-export const shotQuality = (x: number, y: number) =>
-  0.3 * Math.exp(-Math.hypot(x, y) / 22) * Math.max(0.2, x / Math.hypot(x, y));
-
-export const rulesGoalModel: GoalModel = {
-  shotXg: ({ x, y, shooting, power }) =>
-    HOCKEY_TUNING.xgScale *
-    shotQuality(x, y) *
-    (shooting / 65) ** 0.7 *
-    (power ? HOCKEY_TUNING.powerPlayQuality : 1),
-};
-
-/**
- * How much better team `a` is than team `b` at five-on-five, as the log of its goal ratio:
- * positive = `a` is better. For the balance lab and for odds; not used by the game itself.
- */
-export const strengthEdge = (a: TeamStrength, b: TeamStrength): number =>
-  HOCKEY_TUNING.ratingSensitivity * (a.offense - b.defense - (b.offense - a.defense)) +
-  HOCKEY_TUNING.goalieSensitivity * (a.goaltending - b.goaltending);
+import { FACEOFF_WEIGHT, goalieScore, rating, UNIT_WEIGHT, type TeamStrength } from './strength';
+import { HOCKEY_TUNING, rulesGoalModel, type GoalModel } from './tuning';
+import { finishBox, makeSide } from './side';
+import { buildUnit, mean, pick } from './units';
+import { playShootout } from './shootout';
 
 // ---------- the play-by-play engine ----------
 
@@ -132,121 +38,23 @@ const INJURY_DAYS = [
   { weight: 30, days: [15, 60] },
   { weight: 10, days: [61, 180] },
 ] as const;
-/** Share of power-play and penalty-kill time played by the first and second unit. */
-const UNIT_SPLIT = [0.55, 0.45] as const;
+/**
+ * Re-injury risk: a skater already hurt this season is hurt more easily again (a tweak that
+ * comes back), and a long injury record adds a little more. Capped at double.
+ */
+const RE_INJURY = 0.3;
+const PER_PAST_INJURY = 0.03;
+const MAX_INJURY_RISK = 2;
+export const injuryRisk = (p: Player, medical = 1): number =>
+  Math.min(
+    MAX_INJURY_RISK,
+    1 +
+      ((p.injuredUntil !== undefined ? RE_INJURY : 0) +
+        PER_PAST_INJURY * (p.injuryHistory?.count ?? 0)) *
+        medical,
+  );
 const REGULATION = 3600;
 const PLAYOFF_OVERTIME = 1200;
-
-/** Index of one weight picked in proportion to its size. */
-function pick(weights: readonly number[], rng: Rng): number {
-  let roll = rng.next() * weights.reduce((a, b) => a + b, 0);
-  const i = weights.findIndex((w) => (roll -= w) < 0);
-  return i < 0 ? weights.length - 1 : i;
-}
-
-interface Side {
-  players: Player[];
-  skaters: HockeySkaterLine[];
-  /** Skater indexes of each forward line and defence pair. */
-  lines: number[][];
-  pairs: number[][];
-  /** Penalty killers, two forwards per unit. */
-  killers: number[][];
-  /** The GM's saved power-play / penalty-kill units by unit number: skater indexes, forwards then defence. */
-  saved: {
-    pp: ({ f: number[]; d: number[] } | undefined)[];
-    pk: ({ f: number[]; d: number[] } | undefined)[];
-  };
-  isD: boolean[];
-  /** Per-skater skills, by index. */
-  atk: number[];
-  def: number[];
-  draw: number[];
-  shoot: number[];
-  pass: number[];
-  phys: number[];
-  /** The goalie who started and the one who can come in, and who is in now (-1 = nobody). */
-  goalies: Player[];
-  current: number;
-  goalieLines: HockeyGoalieLine[];
-  /** Goals the current goalie has let in. */
-  against: number;
-  /** Skaters who left the game hurt. */
-  out: Set<number>;
-  onIce: number[];
-  /** Penalties running, soonest to end first: [end second, skater index]. */
-  penalties: [number, number][];
-  pulled: boolean;
-  /** Team skills of the units on ice. */
-  uAtk: number;
-  uDef: number;
-  /** Chemistry bonus added to every unit (rating points). */
-  chem: number;
-}
-
-function makeSide(strength: TeamStrength, backup: boolean): Side {
-  const { forwards, defense, goalies } = strength.lineup;
-  const players: Player[] = [];
-  const index = (unit: Player[]) => unit.map((p) => players.push(p) - 1);
-  const lines = forwards.map(index);
-  const pairs = defense.map(index);
-  const killers = lines
-    .flat()
-    .sort((a, b) => rating(players[b]!, 'defense') - rating(players[a]!, 'defense') || a - b)
-    .slice(0, 4);
-  const at = new Map(players.map((p, k) => [p.id, k]));
-  const unit = (name: 'pp1' | 'pp2' | 'pk1' | 'pk2') => {
-    const ks = strength.lineup.special?.[name]?.map((p) => at.get(p.id)!);
-    return (
-      ks && {
-        f: ks.filter((k) => !pairs.flat().includes(k)),
-        d: ks.filter((k) => pairs.flat().includes(k)),
-      }
-    );
-  };
-  const start = backup && goalies.length > 1 ? 1 : 0;
-  const order = goalies[start] ? [goalies[start]!, ...goalies.filter((_, i) => i !== start)] : [];
-  const starter = order[0];
-  return {
-    players,
-    lines,
-    pairs,
-    killers: [killers.slice(0, 2), killers.slice(2)],
-    saved: { pp: [unit('pp1'), unit('pp2')], pk: [unit('pk1'), unit('pk2')] },
-    isD: players.map((_, k) => pairs.some((pr) => pr.includes(k))),
-    atk: players.map(attack),
-    def: players.map(defence),
-    draw: players.map(faceoffs),
-    shoot: players.map((p) => rating(p, 'shooting')),
-    pass: players.map((p) => rating(p, 'passing')),
-    phys: players.map((p) => rating(p, 'physical')),
-    goalies: order.slice(0, 2),
-    current: starter ? 0 : -1,
-    goalieLines: starter ? [{ id: starter.id, toi: 0, shotsAgainst: 0, saves: 0 }] : [],
-    against: 0,
-    out: new Set(),
-    onIce: [],
-    penalties: [],
-    pulled: false,
-    uAtk: 50,
-    uDef: 50,
-    chem: strength.chemistry ?? 0,
-    skaters: players.map((p) => ({
-      id: p.id,
-      toi: 0,
-      ppToi: 0,
-      pkToi: 0,
-      shots: 0,
-      goals: 0,
-      ppGoals: 0,
-      assists: 0,
-      plusMinus: 0,
-      pim: 0,
-    })),
-  };
-}
-
-const mean = (xs: number[]) => (xs.length ? xs.reduce((a, b) => a + b, 0) / xs.length : 50);
 
 interface Played {
   /** Goals each side [home, away] counted in the score, not shootout goals. */
@@ -278,6 +86,8 @@ function playGame(
     away: TeamStrength;
     homeBackup: boolean;
     awayBackup: boolean;
+    /** Medical factor on re-injury risk, home and away. */
+    medical: [number, number];
     playoff: boolean;
     keepBox: boolean;
   },
@@ -330,60 +140,20 @@ function playGame(
   const lam: [number, number] = [0, 0];
   const penRate: [number, number] = [0, 0];
 
-  /** A forward line and a defence pair, by ice time (empty ones never play). */
-  const pickShare = (units: number[][], shares: readonly number[]) => {
-    const weights = units.map((u, i) => (u.length ? shares[i]! : 0));
-    return weights.some((w) => w > 0) ? pick(weights, rng) : -1;
-  };
-  /** A skater of the same kind who is healthy and not already out there; the deepest first. */
-  const spare = (n: 0 | 1, k: number, unit: number[]) => {
-    const s = S[n];
-    const group = (s.isD[k] ? s.pairs : s.lines).flat();
-    return group.filter((j) => !unit.includes(j) && !s.out.has(j)).at(-1);
-  };
-  const build = (n: 0 | 1, kind: 'ev' | 'pp' | 'pk', size: number): number[] => {
-    const s = S[n];
-    const nd = size >= 4 ? 2 : 1;
-    const nf = size - nd;
-    let f: number[];
-    let d: number[];
-    if (kind === 'ev') {
-      const li = pickShare(s.lines, ICE_TIME.forwardLines);
-      const pi = pickShare(s.pairs, ICE_TIME.defensePairs);
-      f = li < 0 ? [] : s.lines[li]!.slice(0, nf);
-      d = pi < 0 ? [] : s.pairs[pi]!.slice(0, nd);
-      // An extra attacker (goalie pulled) is the best other forward still in the game.
-      const extra = s.lines
-        .flat()
-        .filter((k) => !f.includes(k) && !s.out.has(k))
-        .sort((a, b) => s.atk[b]! - s.atk[a]! || a - b);
-      while (f.length < nf && extra.length) f.push(extra.shift()!);
-    } else {
-      const k = pick(
-        UNIT_SPLIT.map((w, i) => (s.pairs[i]?.length || s.lines[i]?.length ? w : 0)),
-        rng,
-      );
-      const mine = s.saved[kind][k];
-      // A saved power play keeps its own mix (4F+1D, 5F...): the defence count comes from the unit.
-      const nds = kind === 'pp' && mine ? Math.min(mine.d.length, nd) : nd;
-      d = (mine?.d ?? s.pairs[k] ?? []).slice(0, nds);
-      f = (mine?.f ?? (kind === 'pp' ? (s.lines[k] ?? []) : (s.killers[k] ?? []))).slice(
-        0,
-        size - nds,
-      );
-    }
-    const unit = [...f, ...d];
-    return unit
-      .map((k) => (s.out.has(k) ? (spare(n, k, unit) ?? k) : k))
-      .filter((k) => !S[n].out.has(k));
+  const build = (n: 0 | 1, kind: 'ev' | 'pp' | 'pk', size: number) =>
+    buildUnit(S[n], kind, size, rng);
+
+  /** Seconds before the end of regulation a side pulls its goalie (down one or two), else 0. */
+  const pullWindow = (n: 0 | 1) => {
+    const down = score(1 - n) - score(n);
+    return down >= 1 && down <= 2 ? T.pullSeconds[down - 1]! : 0;
   };
 
   /** Puts out new units for the situation and recomputes every rate. */
   const refresh = (regulation: boolean, allowPenalties: boolean) => {
     for (const n of [0, 1] as const) {
       const s = S[n];
-      const down = score(1 - n) - score(n);
-      const window = down >= 1 && down <= 2 ? T.pullSeconds[down - 1]! : 0;
+      const window = pullWindow(n);
       s.pulled = regulation && window > 0 && t >= REGULATION - window && s.current >= 0;
     }
     for (const n of [0, 1] as const) {
@@ -397,6 +167,10 @@ function playGame(
       const draws = FACEOFF_WEIGHT * ((S[n].draw[f[0]!] ?? 50) - 50);
       const w = (fs: number[], ds: number[], wt: { forwards: number; defense: number }) =>
         wt.forwards * mean(fs) + wt.defense * mean(ds);
+      // The line's and the pair's own bonus (builds fit): the mean over who is out there.
+      const unit = (bonus: number[]) =>
+        (f.length ? mean(f.map((k) => bonus[k] ?? 0)) : 0) +
+        (d.length ? mean(d.map((k) => bonus[k] ?? 0)) : 0);
       S[n].uAtk =
         w(
           f.map((k) => S[n].atk[k]!),
@@ -404,7 +178,8 @@ function playGame(
           UNIT_WEIGHT.offense,
         ) +
         draws +
-        S[n].chem;
+        S[n].chem +
+        unit(S[n].unitAtk);
       S[n].uDef =
         w(
           f.map((k) => S[n].def[k]!),
@@ -412,7 +187,8 @@ function playGame(
           UNIT_WEIGHT.defense,
         ) +
         draws +
-        S[n].chem;
+        S[n].chem +
+        unit(S[n].unitDef);
     }
     for (const n of [0, 1] as const) {
       const o = (1 - n) as 0 | 1;
@@ -450,7 +226,13 @@ function playGame(
     for (const n of [0, 1] as const) {
       const s = S[n];
       for (const k of s.onIce) {
-        if (!rng.chance((INJURY_PER_GAME * T.shiftSeconds) / (AVG_TOI * 60))) continue;
+        if (
+          !rng.chance(
+            (INJURY_PER_GAME * injuryRisk(s.players[k]!, input.medical[n]) * T.shiftSeconds) /
+              (AVG_TOI * 60),
+          )
+        )
+          continue;
         s.out.add(k);
         injuries.push({ playerId: s.players[k]!.id, days: pickInjuryDays() });
       }
@@ -585,8 +367,7 @@ function playGame(
       // The goalie is pulled at a set time, so it is a boundary too.
       if (opts.regulation) {
         for (const n of [0, 1] as const) {
-          const down = score(1 - n) - score(n);
-          const window = down >= 1 && down <= 2 ? T.pullSeconds[down - 1]! : 0;
+          const window = pullWindow(n);
           if (window && !S[n].pulled && S[n].current >= 0 && t < REGULATION - window)
             boundary = Math.min(boundary, REGULATION - window);
         }
@@ -640,75 +421,14 @@ function playGame(
         penalties: false,
         suddenDeath: true,
       });
-      if (overtimeGoal === null) shootoutWinner = shootout();
+      if (overtimeGoal === null) shootoutWinner = playShootout(S, rng, goalFactor);
     }
-  }
-
-  /** Three shooters each, then one at a time. Skill is shooting and hands. */
-  function shootout(): 0 | 1 {
-    const order = ([0, 1] as const).map((n) =>
-      S[n].players
-        .map((_, k) => k)
-        .filter((k) => !S[n].out.has(k) && !S[n].isD[k])
-        .sort(
-          (a, b) =>
-            S[n].shoot[b]! +
-              rating(S[n].players[b]!, 'puckHandling') -
-              (S[n].shoot[a]! + rating(S[n].players[a]!, 'puckHandling')) || a - b,
-        ),
-    );
-    const tally = [0, 0];
-    const taken = [0, 0];
-    const attempt = (n: 0 | 1, round: number) => {
-      const list = order[n]!;
-      const k = list[round % Math.max(1, list.length)];
-      const skill =
-        k === undefined ? 50 : S[n].shoot[k]! + rating(S[n].players[k]!, 'puckHandling');
-      const p = T.shootoutGoal * (skill / 130) ** 2 * goalFactor((1 - n) as 0 | 1);
-      return rng.chance(Math.min(0.9, p));
-    };
-    for (let round = 0; round < 3; round++) {
-      for (const n of [0, 1] as const) {
-        if (attempt(n, round)) tally[n]!++;
-        taken[n]!++;
-        // Decided once the trailing side cannot catch up with the shots it has left.
-        if (tally[0]! > tally[1]! + (3 - taken[1]!)) return 0;
-        if (tally[1]! > tally[0]! + (3 - taken[0]!)) return 1;
-      }
-    }
-    if (tally[0] !== tally[1]) return tally[0]! > tally[1]! ? 0 : 1;
-    for (let round = 3; round < 40; round++) {
-      const a = attempt(0, round);
-      const b = attempt(1, round);
-      if (a !== b) return a ? 0 : 1;
-    }
-    return rng.chance(0.5) ? 0 : 1;
   }
 
   const credited: [number, number] = [goals[0], goals[1]];
-  const minutes = (sec: number) => Math.round((sec / 60) * 10) / 10;
   let box: HockeyBoxScore | undefined;
   if (input.keepBox) {
-    for (const s of S) {
-      for (const line of s.skaters) {
-        line.toi = minutes(line.toi);
-        line.ppToi = minutes(line.ppToi);
-        line.pkToi = minutes(line.pkToi);
-      }
-      for (const line of s.goalieLines) line.toi = minutes(line.toi);
-    }
-    const side = (s: Side) => ({
-      skaters: s.skaters,
-      goalie: s.goalieLines[0] ?? { id: '', toi: 0, shotsAgainst: 0, saves: 0 },
-      ...(s.goalieLines[1] ? { relief: s.goalieLines[1] } : {}),
-    });
-    box = {
-      home: side(S[0]),
-      away: side(S[1]),
-      shots,
-      penalties,
-      ...(emptyNet[0] + emptyNet[1] > 0 ? { emptyNet } : {}),
-    };
+    box = finishBox(S, shots, penalties, emptyNet);
   }
   return {
     goals: credited,
@@ -733,6 +453,12 @@ export interface MatchupInput {
   /** The team played yesterday: its backup goalie starts (never in the playoffs). */
   homeBackToBack?: boolean;
   awayBackToBack?: boolean;
+  /** The starter is playing the second night of a back-to-back: he is a little worse. */
+  homeTired?: boolean;
+  awayTired?: boolean;
+  /** The medical staff's factor on re-injury risk (1 = average, below 1 = better). */
+  homeMedical?: number;
+  awayMedical?: number;
 }
 
 export function simGame(
@@ -741,12 +467,24 @@ export function simGame(
   model: GoalModel = rulesGoalModel,
 ): GameResult {
   const backup = (backToBack?: boolean) => !!backToBack && !input.playoff;
+  const rested = (s: TeamStrength, tired?: boolean): TeamStrength => {
+    const g = s.lineup.goalies[0];
+    if (!tired || input.playoff || !g) return s;
+    const ratings = Object.fromEntries(
+      Object.entries(g.ratings).map(([k, v]) => [k, v * TIRED_GOALIE]),
+    );
+    return {
+      ...s,
+      lineup: { ...s.lineup, goalies: [{ ...g, ratings }, ...s.lineup.goalies.slice(1)] },
+    };
+  };
   const played = playGame(
     {
-      home: input.home,
-      away: input.away,
+      home: rested(input.home, input.homeTired),
+      away: rested(input.away, input.awayTired),
       homeBackup: backup(input.homeBackToBack),
       awayBackup: backup(input.awayBackToBack),
+      medical: [input.homeMedical ?? 1, input.awayMedical ?? 1],
       playoff: !!input.playoff,
       keepBox: !input.resultOnly,
     },
@@ -754,6 +492,10 @@ export function simGame(
     model,
   );
   const shootout = played.shootoutWinner;
+  const units = (s: TeamStrength) =>
+    [...s.lineup.forwards, ...s.lineup.defense]
+      .map((u) => u.map((p) => p.id))
+      .filter((u) => u.length > 1);
   const stats: HockeyGameStats = {
     homeShots: played.shots[0],
     awayShots: played.shots[1],
@@ -769,5 +511,6 @@ export function simGame(
     stats,
     ...(played.box ? { box: played.box } : {}),
     ...(played.injuries.length ? { injuries: played.injuries } : {}),
+    ...(input.resultOnly ? {} : { units: { home: units(input.home), away: units(input.away) } }),
   };
 }

@@ -1,20 +1,6 @@
 import type { Player } from '@gm/shared';
 import type { Rng } from '../core';
 
-/**
- * A player's career shape, drawn once (from distributions learned from real careers) and
- * stored with him. Development is never a straight line: this shape plus yearly noise
- * decides his path.
- */
-export interface CareerShape {
-  /** Age when he reaches his peak (early ~23, normal ~26, late ~29). */
-  peakAge: number;
-  /** Seasons he stays near his peak. */
-  primeLength: number;
-  /** How fast he declines after the prime (0 slow – 1 fast). */
-  declineRate: number;
-}
-
 /** Plug-in point for development. The ML-trained model implements the same interface. */
 export interface DevelopmentModel {
   /** Returns the player after one offseason of development. Must use only `rng` for randomness. */
@@ -28,6 +14,13 @@ export function overall(player: Player): number {
   const values = Object.values(player.ratings);
   return values.length ? values.reduce((a, b) => a + b, 0) / values.length : 50;
 }
+
+/** Best overall first, ties by id. */
+export const byOverall = (a: Player, b: Player) =>
+  overall(b) - overall(a) || a.id.localeCompare(b.id);
+
+/** A rating rounded to a whole point and kept within 1-99. */
+export const clampRating = (n: number) => Math.max(1, Math.min(99, Math.round(n)));
 
 /** How one kind of player (a position) ages. Ages are the age in the season about to start. */
 export interface AgingCurve {
@@ -61,8 +54,6 @@ export interface RulesDevelopmentConfig {
   };
 }
 
-const clamp = (n: number) => Math.max(1, Math.min(99, Math.round(n)));
-
 /**
  * Rules-based default: young players close the gap to their potential at a steady pace, hold
  * steady through their peak, then lose a little more each year. Numbers per position come
@@ -85,7 +76,7 @@ export function rulesDevelopment(config: RulesDevelopmentConfig): DevelopmentMod
       const luck = rng.normal(0, c.noise);
       const ratings: Record<string, number> = {};
       for (const [key, value] of Object.entries(player.ratings)) {
-        ratings[key] = clamp(value + delta + luck + rng.normal(0, 1));
+        ratings[key] = clampRating(value + delta + luck + rng.normal(0, 1));
       }
       return { ...player, ratings };
     },

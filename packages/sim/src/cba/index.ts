@@ -8,7 +8,6 @@ export {
   validateContract,
   contractIn,
   payroll,
-  averageAnnualValue,
   maxPlayerCapHit,
   elcYears,
   type ContractTerms,
@@ -17,10 +16,12 @@ export {
 export {
   capIssues,
   capSheet,
-  capYearOf,
   capYearIssues,
   teamCapTotal,
+  deadCap,
   buyoutCharges,
   retentionIssues,
-  type RetentionIssue,
 } from './cap';
+export { payBonuses } from './bonuses';
+/** The cap year lives in core (the reducer needs it too); the cap engine's callers get it here. */
+export { capYearOf } from '../core';

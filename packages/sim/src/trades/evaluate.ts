@@ -6,10 +6,11 @@ import type {
   TradeProposal,
   TradeReason,
 } from '@gm/shared';
-import { pct, phaseOf, type LeagueState } from '../core';
+import { pct, phaseOf, playerName, type LeagueState } from '../core';
 import { capYearIssues, capYearOf, retentionIssues, teamCapTotal } from '../cba';
 import { pickValue, type TeamContext } from '../value';
-import { computeStandings, draftPicks, nextDraftSeason } from '../league';
+import { draftPicks, nextDraftSeason, worstFirst } from '../league';
+import { GM_LEAN, gmOf, planStatus, seenBy } from '../people';
 import type { SimContext } from '../context';
 
 /** The other team wants to win a trade by at least this share of the cap. */
@@ -22,6 +23,8 @@ const MARGIN_PCT_OF_CAP = 0.5;
 const DEPTH_DISCOUNT = 0.5;
 /** Reasons quoted at most. */
 const MAX_REASONS = 4;
+/** A first-round pick that projects inside its top-N protection is worth this share to the receiver. */
+const PROTECTED_SHARE = 0.25;
 
 /** Trades are open in the preseason, the regular season up to the deadline, and once the champion is crowned. */
 export function tradeWindowOpen(state: LeagueState, ctx: SimContext): boolean {
@@ -60,7 +63,7 @@ export function planRetention(
   for (const { playerId, pct: share } of proposal.retain ?? []) {
     const p = state.players[playerId];
     const contract = p?.contract;
-    const name = p ? `${p.firstName} ${p.lastName}` : playerId;
+    const name = p ? playerName(p) : playerId;
     const { maxRetentionPct: max, maxRetainedContracts: contracts } = ctx.ruleset.trades;
     const fail = {
       error: { code: 'retention' as const, params: { player: name, max, contracts } },
@@ -68,7 +71,10 @@ export function planRetention(
     if (!p || !contract || !proposal.give.includes(p.id) || contract.expiresAfterSeason < season) {
       return fail;
     }
-    if (!Number.isInteger(share) || share <= 0) return fail;
+    // Listing a player twice would retain past the max share.
+    if (!Number.isInteger(share) || share <= 0 || retained.some((r) => r.playerId === p.id)) {
+      return fail;
+    }
     const before = state.capCharges.some((c) => c.kind === 'retained' && c.playerId === p.id);
     const issues = retentionIssues(ctx.ruleset, {
       retainPct: share,
@@ -93,32 +99,58 @@ export function planRetention(
 }
 
 /** What `teamId` knows about itself when it values players (see the value engine). */
-export function teamContext(state: LeagueState, ctx: SimContext, teamId: TeamId): TeamContext {
+function teamContext(state: LeagueState, ctx: SimContext, teamId: TeamId): TeamContext {
   const { ruleset } = ctx;
   const players = Object.values(state.players).filter((p) => p.teamId === teamId);
   const days = ruleset.season.calendar.regularSeasonDays;
   const inSeason = !state.championTeamId && state.date.day >= 0;
   return {
-    status: state.teamStatus[teamId] ?? 'bubble',
+    status: planStatus(state.teams[teamId]!, state.teamStatus[teamId] ?? 'bubble'),
     season: capYearOf(state),
     seasonLeft: inSeason ? Math.max(0, 1 - state.date.day / days) : 1,
-    capSpace: ruleset.cap.upperLimit - teamCapTotal(state, teamId, players),
     needs: Object.entries(ruleset.roster.positionMin)
       .filter(([position, min]) => count(players, teamId, position) < min)
       .map(([position]) => position),
+    lean: state.teams[teamId]?.userControlled ? 0 : GM_LEAN[gmOf(state.teams[teamId]!).style],
   };
+}
+
+/**
+ * Work that stays the same while the league does not change, shared by many evaluations (one
+ * week of AI trade talks). Start a new one after any trade.
+ */
+export interface TradeCache {
+  contexts: Map<TeamId, TeamContext>;
+  worstFirst?: TeamId[];
+}
+export const newTradeCache = (): TradeCache => ({ contexts: new Map() });
+
+/** A team's context, from the cache when there is one. */
+export function cachedContext(
+  state: LeagueState,
+  ctx: SimContext,
+  teamId: TeamId,
+  cache?: TradeCache,
+): TeamContext {
+  let team = cache?.contexts.get(teamId);
+  if (!team) {
+    team = teamContext(state, ctx, teamId);
+    cache?.contexts.set(teamId, team);
+  }
+  return team;
 }
 
 /**
  * Whether `toTeamId` accepts the trade. Legal first (window, ownership, cap ceiling, the other
  * team keeping its position minimums), then value: the players it receives, best first and
  * discounted for depth, minus the ones it sends, must beat a small margin. A user-controlled
- * partner accepts any legal trade (the same person runs both teams).
+ * partner accepts any legal trade (`trade.propose` lets only its own GM propose one).
  */
 export function evaluateTrade(
   state: LeagueState,
   ctx: SimContext,
   proposal: TradeProposal,
+  cache?: TradeCache,
 ): TradeEvaluation {
   const { ruleset } = ctx;
   const { fromTeamId: from, toTeamId: to, give, get } = proposal;
@@ -127,12 +159,13 @@ export function evaluateTrade(
     value: 0,
     reasons: [{ code, ...(params && { params }) }],
   });
-  const name = (p: Player) => `${p.firstName} ${p.lastName}`;
 
   if (!tradeWindowOpen(state, ctx)) return refuse('closed');
   if (from === to || !state.teams[from] || !state.teams[to]) return refuse('not_on_team');
   const givePicks = proposal.givePicks ?? [];
   const getPicks = proposal.getPicks ?? [];
+  const protectTop = proposal.protectTop ?? 0;
+  if (!Number.isInteger(protectTop) || protectTop < 0) return refuse('empty');
   const assets = [...give, ...get, ...givePicks, ...getPicks];
   if (assets.length === 0 || new Set(assets).size !== assets.length) return refuse('empty');
   // Built only when picks are in the deal (AI trade talks call this hundreds of times a week).
@@ -161,7 +194,8 @@ export function evaluateTrade(
   ] as const) {
     for (const id of ids) {
       const p = state.players[id];
-      if (p?.teamId !== owner) return refuse('not_on_team', { player: p ? name(p) : id });
+      if (p?.teamId !== owner) return refuse('not_on_team', { player: p ? playerName(p) : id });
+      if (p.contract?.noTrade) return refuse('no_trade', { player: playerName(p) });
     }
   }
 
@@ -202,44 +236,54 @@ export function evaluateTrade(
     return { accepted: true, value: 0, reasons: [{ code: 'accepted' }] };
   }
 
-  const team = teamContext(state, ctx, to);
+  const team = cachedContext(state, ctx, to, cache);
   const afterById = new Map(after.map((p) => [p.id as string, p]));
   // Incoming players are valued at their cap hit after any retention.
   const valueOf = (id: string) => {
     const p = afterById.get(id)!;
-    return { p, ...ctx.models.valuation.value(p, team, ruleset) };
+    return { p, ...ctx.models.valuation.value(seenBy(state.teams[to]!, p), team, ruleset) };
   };
   // A pick in the next draft lands where its original team finishes (worst first, from today's
-  // standings); later drafts are guessed at the middle of the round.
+  // standings), trusted more as the season is played: an empty table is all ties broken by team
+  // id. Later drafts are guessed at the middle of the round.
   const teamCount = Object.keys(state.teams).length;
+  const middle = Math.ceil(teamCount / 2);
+  const played = state.championTeamId
+    ? 1
+    : Math.min(1, Math.max(0, state.date.day / ruleset.season.calendar.regularSeasonDays));
   // Only needed to value picks, and costly (every result this season): computed on first use.
-  let worstFirst: TeamId[] | undefined;
   const slotOf = (teamId: TeamId) => {
-    worstFirst ??= computeStandings(
-      Object.keys(state.teams) as TeamId[],
-      Object.values(state.results),
-      ruleset.season.points,
-    )
-      .map((r) => r.teamId)
-      .reverse();
-    return worstFirst.indexOf(teamId) + 1;
+    const order = (cache ?? {}) as { worstFirst?: TeamId[] };
+    order.worstFirst ??= worstFirst(state, ruleset);
+    return order.worstFirst.indexOf(teamId) + 1;
   };
   const next = nextDraftSeason(state);
-  const pickOf = (id: string) => {
+  const pickOf = (id: string, protectedTop = 0) => {
     const pick = picks.get(id)!;
-    const slot = pick.season === next ? slotOf(pick.originalTeamId) : Math.ceil(teamCount / 2);
+    // Once the lottery is drawn, a round-one pick in the next draft has its real slot.
+    const drawn =
+      pick.season === next && pick.round === 1 ? state.draftOrder.indexOf(pick.originalTeamId) : -1;
+    const slot =
+      drawn >= 0
+        ? drawn + 1
+        : pick.season === next && played > 0
+          ? Math.round(middle + (slotOf(pick.originalTeamId) - middle) * played)
+          : middle;
     return {
       p: undefined,
       label: label(id),
-      surplus: pickValue(
-        ruleset,
-        { slot, teams: teamCount, round: pick.round, yearsAway: pick.season - next },
-        team.status,
+      // Protected picks that project inside the protection are worth little to the receiver.
+      surplus: Math.round(
+        pickValue(
+          ruleset,
+          { slot, teams: teamCount, round: pick.round, yearsAway: pick.season - next },
+          team.status,
+        ) * (pick.round === 1 && slot <= protectedTop ? PROTECTED_SHARE : 1),
       ),
       reasons: [] as const,
     };
   };
-  const incoming = [...give.map(valueOf), ...givePicks.map(pickOf)].sort(
+  const incoming = [...give.map(valueOf), ...givePicks.map((id) => pickOf(id, protectTop))].sort(
     (a, b) => b.surplus - a.surplus,
   );
   const outgoing = [...get.map(valueOf), ...getPicks.map(pickOf)];
@@ -265,7 +309,7 @@ export function evaluateTrade(
     if (!v.p) continue;
     for (const r of v.reasons) {
       const code = r === 'negative_contract' ? 'bad_contract' : r;
-      reasons.push({ code, params: { player: name(v.p) } });
+      reasons.push({ code, params: { player: playerName(v.p) } });
     }
   }
   return { accepted, value, reasons: reasons.slice(0, MAX_REASONS) };

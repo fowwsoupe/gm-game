@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest';
-import type { Actor } from '@gm/shared';
+import type { Actor, TeamId } from '@gm/shared';
 import { createLeague, defaultContext, handleCommand } from '@gm/sim';
 import { openSave } from './index';
 import { migrations } from './migrations';
@@ -24,6 +24,50 @@ describe('SaveFile', () => {
     if (!res.ok) throw new Error(res.error.message);
     save.persist(res.events, state);
     expect(save.loadState()).toEqual(state);
+    save.close();
+  });
+
+  it("reads a team's owner history from a year-20 log inside the screen budget", () => {
+    const save = openSave(':memory:');
+    const state = createLeague(4, ctx);
+    save.saveNewLeague(state);
+    const res = handleCommand(state, { kind: 'sim.advance', days: 252 }, local, ctx);
+    if (!res.ok) throw new Error(res.error.message);
+    save.persist(res.events, state);
+    const teamId = Object.keys(state.teams)[0] as TeamId;
+    const season = save.ownerHistory(teamId);
+    // Months 0, 30 ... 180, the regular season's end, and the playoffs; three meetings.
+    expect(season.money).toHaveLength(9);
+    expect(season.meetings.map((m) => m.meeting)).toEqual(['preseason', 'deadline', 'review']);
+    // The same season's log 19 more times: a save 20 years in.
+    save.db.exec(`
+      WITH RECURSIVE n(k) AS (SELECT 1 UNION ALL SELECT k + 1 FROM n WHERE k < 19)
+      INSERT INTO events (id, season, day, kind, importance, team_ids, payload_json)
+      SELECT e.id || '-' || n.k, e.season + n.k, e.day, e.kind, e.importance, e.team_ids,
+             e.payload_json
+      FROM events e, n WHERE e.season = ${state.date.season}`);
+    const t0 = performance.now();
+    const years = save.ownerHistory(teamId);
+    const ms = performance.now() - t0;
+    expect(years.money).toHaveLength(180);
+    expect(years.meetings).toHaveLength(60);
+    expect(ms).toBeLessThan(200);
+    save.close();
+  });
+
+  it('keeps the stop filter across a save and load', () => {
+    const save = openSave(':memory:');
+    const state = createLeague(4, ctx);
+    save.saveNewLeague(state);
+    const res = handleCommand(
+      state,
+      { kind: 'league.setStopOn', stopOn: ['injuries'] },
+      local,
+      ctx,
+    );
+    if (!res.ok) throw new Error(res.error.message);
+    save.persist(res.events, state);
+    expect(save.loadState().stopOn).toEqual(['injuries']);
     save.close();
   });
 
@@ -112,7 +156,8 @@ describe('SaveFile', () => {
     expect(retired.length).toBeGreaterThan(0);
     expect(retired.some((c) => c.lines.length > 0)).toBe(true);
     const logged = save.listEvents(5000).find((e) => e.kind === 'stats.archived');
-    expect(logged && 'lines' in logged && logged.lines).toBeFalsy();
+    expect(logged).toBeDefined();
+    expect(logged).not.toHaveProperty('lines');
     const res = handleCommand(state, { kind: 'season.rollover' }, local, ctx);
     if (!res.ok) throw new Error(res.error.message);
     save.persist(res.events, state);
@@ -173,7 +218,7 @@ describe('SaveFile', () => {
     const afterLoad = handleCommand(resumed, { kind: 'sim.advance', days: 30 }, local, ctx);
     expect(afterLoad).toEqual(direct);
     save.close();
-  });
+  }, 30_000); // two full seasons: ~4 s locally, too close to the 5 s default under load
 
   it('filters the event log by importance', () => {
     const save = openSave(':memory:');
@@ -183,7 +228,9 @@ describe('SaveFile', () => {
     if (!res.ok) throw new Error();
     save.persist(res.events, state);
     expect(save.listEvents(1000).length).toBeGreaterThan(0);
-    for (const e of save.listEvents(1000, 'notable')) expect(e.importance).not.toBe('minor');
+    const notable = save.listEvents(1000, 'notable');
+    expect(notable.length).toBeGreaterThan(0);
+    for (const e of notable) expect(e.importance).not.toBe('minor');
     save.close();
   });
 
@@ -233,6 +280,30 @@ describe('SaveFile', () => {
     if (!rolled.ok) throw new Error(rolled.error.message);
     save.persist(rolled.events, state);
     expect(save.loadState()).toEqual(state);
+    save.close();
+  });
+});
+
+describe('player history', () => {
+  it("lists a drafted player's signing and the awards he won, oldest first", () => {
+    const save = openSave(':memory:');
+    const state = createLeague(11, ctx);
+    save.saveNewLeague(state);
+    const { regularSeasonDays, playoffDays } = ctx.ruleset.season.calendar;
+    for (const command of [
+      { kind: 'sim.advance', days: regularSeasonDays + playoffDays },
+      { kind: 'season.rollover' },
+    ] as const) {
+      const res = handleCommand(state, command, local, ctx);
+      if (!res.ok) throw new Error(res.error.message);
+      save.persist(res.events, state);
+    }
+    const mvp = save.listAwards().find((a) => a.award === 'mvp')!;
+    const history = save.playerHistory(mvp.playerId!);
+    expect(history.awards).toContainEqual({ season: mvp.season, award: 'mvp' });
+    expect(save.playerHistory('nobody')).toEqual({ awards: [], moves: [] });
+    const drafted = Object.values(state.players).find((p) => p.id.startsWith('d'))!;
+    expect(save.playerHistory(drafted.id).moves[0]).toMatchObject({ kind: 'drafted' });
     save.close();
   });
 });

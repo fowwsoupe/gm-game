@@ -1,9 +1,12 @@
 import type { Contract, Player, SigningInterest, TeamId, TeamStatus } from '@gm/shared';
-import { phaseOf, type LeagueState } from '../core';
-import { capYearIssues, capYearOf, teamCapTotal, validateContract } from '../cba';
+import type { LeagueState } from '../core';
+import { capYearIssues, capYearOf, teamCapTotal, validateContract, type Ruleset } from '../cba';
+import { nextDraftSeason, pickId, pickOwner } from '../league';
 import { overall } from '../players';
-import { personalityOf } from '../people';
+import { hometownOf, personalityOf } from '../people';
 import type { SimContext } from '../context';
+import { resignWindowOpen } from './resign';
+import { wantedYears } from './roster';
 
 /**
  * Free agency v1: a free agent weighs an offer on money, winning, his role and the term, with
@@ -50,8 +53,9 @@ function priorities(age: number, playerId: string) {
   };
 }
 
-/** Years he would like (more years is never worse for him). */
-const wantedYears = (age: number) => (age < 28 ? 5 : age < 32 ? 3 : 2);
+/** Most of his weight a pull to the team he left (scaled by loyalty) or to his hometown can take. */
+const LOYALTY_PULL = 0.2;
+const HOME_PULL = 0.1;
 
 const clamp = (n: number, lo: number, hi: number) => Math.max(lo, Math.min(hi, n));
 
@@ -61,7 +65,7 @@ export function signingInterest(
   ctx: SimContext,
   player: Player,
   teamId: TeamId,
-  offer: { salary: number; years: number },
+  offer: { salary: number; years: number; noTrade?: true; bonusPct?: number },
 ): SigningInterest {
   const { ruleset } = ctx;
   const age = capYearOf(state) - player.birthYear;
@@ -72,26 +76,94 @@ export function signingInterest(
   const depth = (ruleset.roster.positionMin[player.position] ?? 2) + 1;
   const scores = {
     // Asking price = 1; up to 1.5 for an overpay, 0 at 60% of the ask.
-    money: clamp((offer.salary / ask - 0.6) / 0.4, 0, 1.5),
+    // Cash up front is worth a tenth more than the same money spread over the season.
+    money: clamp(
+      ((offer.salary * (1 + (0.1 * (offer.bonusPct ?? 0)) / 100)) / ask - 0.6) / 0.4,
+      0,
+      1.5,
+    ),
     winning: WINNING[state.teamStatus[teamId] ?? 'bubble'],
     role: clamp(1 - better / depth, 0.2, 1),
-    term: clamp(offer.years / wantedYears(age), 0, 1),
+    // A no-trade clause is job security: worth about a quarter of the term he wants.
+    term: clamp(offer.years / wantedYears(age) + (offer.noTrade ? 0.25 : 0), 0, 1),
   };
-  const weights = priorities(age, player.id);
+  // Playing for his old team or his hometown is worth something on top: a full-score factor that
+  // takes its weight from the others, so the same money goes further there (a "discount").
+  const pulls: { key: 'loyalty' | 'home'; weight: number }[] = [];
+  if (state.formerTeams[player.id] === teamId) {
+    pulls.push({
+      key: 'loyalty',
+      weight: LOYALTY_PULL * (0.25 + 0.75 * personalityOf(player.id).loyalty),
+    });
+  }
+  if (hometownOf(player.id, Object.keys(state.teams)) === teamId) {
+    pulls.push({ key: 'home', weight: HOME_PULL });
+  }
+  const pull = pulls.reduce((sum, x) => sum + x.weight, 0);
+  const base = priorities(age, player.id);
+  const weights = {
+    money: base.money * (1 - pull),
+    winning: base.winning * (1 - pull),
+    role: base.role * (1 - pull),
+    term: base.term * (1 - pull),
+  };
   const keys = ['money', 'winning', 'role', 'term'] as const;
-  const interest = keys.reduce((sum, k) => sum + scores[k] * weights[k], 0);
+  const interest = keys.reduce((sum, k) => sum + scores[k] * weights[k], 0) + pull; // pulls score 1
+  const sheet = sheetCompensation(state, ruleset, player, teamId, Math.round(offer.salary));
   return {
+    ...(sheet.picks.length && { sheet }),
     playerId: player.id,
     ask,
     maxYears: ruleset.contracts.maxYearsNewTeam,
     interest: Math.round(clamp(interest, 0, 1) * 100),
     threshold: THRESHOLD,
-    factors: keys.map((key) => ({
-      key,
-      score: Math.round(clamp(scores[key], 0, 1) * 100),
-      weight: weights[key],
-    })),
+    factors: [
+      ...keys.map((key) => ({
+        key,
+        score: Math.round(clamp(scores[key], 0, 1) * 100),
+        weight: weights[key],
+      })),
+      ...pulls.map((x) => ({ key: x.key, score: 100, weight: x.weight })),
+    ],
   };
+}
+
+/**
+ * The draft picks `teamId` gives up if its offer sheet at `capHit` signs `player` away from the
+ * team holding his rights (`ruleset.contracts.offerSheetCompensation`), none when it costs
+ * nothing or he is not restricted, and whether the team owns them all (it must, to send it).
+ */
+export function sheetCompensation(
+  state: LeagueState,
+  rules: Ruleset,
+  player: Player,
+  teamId: TeamId,
+  capHit: number,
+): { picks: string[]; owned: boolean } {
+  const rights = state.rfaRights[player.id];
+  if (!rights || rights === teamId) return { picks: [], owned: true };
+  const tier = rules.contracts.offerSheetCompensation.filter((t) => capHit >= t.minCapHit).at(-1);
+  const first = nextDraftSeason(state);
+  const taken = new Map<number, number>();
+  const picks = (tier?.rounds ?? []).map((round) => {
+    const n = taken.get(round) ?? 0;
+    taken.set(round, n + 1);
+    return pickId(first + n, round, teamId);
+  });
+  return { picks, owned: picks.every((id) => pickOwner(state, id, teamId) === teamId) };
+}
+
+/** The `player.signed` field for a sheet that stands: his old team's picks, if any. */
+export function compensationFor(
+  state: LeagueState,
+  rules: Ruleset,
+  player: Player,
+  teamId: TeamId,
+  capHit: number,
+): { compensation?: { toTeamId: TeamId; picks: string[] } } {
+  const { picks, owned } = sheetCompensation(state, rules, player, teamId, capHit);
+  const toTeamId = state.rfaRights[player.id];
+  return owned && picks.length && toTeamId ? { compensation: { toTeamId, picks } } : {};
 }
 
 /**
@@ -103,24 +175,49 @@ export function signFreeAgent(
   ctx: SimContext,
   player: Player,
   teamId: TeamId,
-  offer: { salary: number; years: number },
+  offer: { salary: number; years: number; noTrade?: true; bonusPct?: number },
+  /** Cap the team will free before he signs (a contender making room, `roomFor`). */
+  capFreed = 0,
 ): { contract: Contract } | { error: string } {
   const { ruleset } = ctx;
   if (player.teamId !== null) return { error: 'not a free agent' };
-  const inPlayoffs = phaseOf(ruleset.season.calendar, state.date) === 'playoffs';
-  if (inPlayoffs && !state.championTeamId) return { error: 'signings are closed in the playoffs' };
+  if (!resignWindowOpen(state, ctx)) return { error: 'signings are closed in the playoffs' };
   const salary = Math.round(offer.salary);
   if (!Number.isInteger(offer.years)) return { error: 'illegal term' };
+  // NaN would slip past every comparison below.
+  if (!Number.isFinite(salary)) return { error: 'illegal salary' };
   const season = capYearOf(state);
   const issues = validateContract(ruleset, {
     salaries: Array<number>(Math.max(0, offer.years)).fill(salary),
     signingAge: season - player.birthYear,
     isResign: false,
+    ...(offer.bonusPct !== undefined && { bonusPct: offer.bonusPct }),
+    ...(offer.noTrade && {
+      noTrade: {
+        held: Object.values(state.players).filter((p) => p.teamId === teamId && p.contract?.noTrade)
+          .length,
+      },
+    }),
   });
   if (issues.length) return { error: `illegal contract: ${issues[0]!.code}` };
-  const total = teamCapTotal(state, teamId) + salary;
+  const total = teamCapTotal(state, teamId) + salary - capFreed;
   if (capYearIssues(ruleset, state, total).length) return { error: 'no cap room' };
-  const view = signingInterest(state, ctx, player, teamId, { salary, years: offer.years });
+  if (!sheetCompensation(state, ruleset, player, teamId, salary).owned) {
+    return { error: 'not enough draft picks for an offer sheet' };
+  }
+  const view = signingInterest(state, ctx, player, teamId, {
+    salary,
+    years: offer.years,
+    ...(offer.noTrade && { noTrade: true as const }),
+    ...(offer.bonusPct && { bonusPct: offer.bonusPct }),
+  });
   if (view.interest < view.threshold) return { error: 'he is not interested' };
-  return { contract: { capHit: salary, expiresAfterSeason: season + offer.years - 1 } };
+  return {
+    contract: {
+      capHit: salary,
+      expiresAfterSeason: season + offer.years - 1,
+      ...(offer.noTrade && { noTrade: true as const }),
+      ...(offer.bonusPct && { bonus: Math.round((salary * offer.bonusPct) / 100) }),
+    },
+  };
 }

@@ -1,4 +1,5 @@
-import type { ReactNode } from 'react';
+import type { ReactNode, ThHTMLAttributes, TdHTMLAttributes } from 'react';
+import type { Team, TeamId } from '@gm/shared';
 import { useUi } from '@/stores/ui';
 
 export { Face } from './Face';
@@ -162,5 +163,130 @@ export function TeamLink({ teamId, children }: { teamId: string; children: React
     <button onClick={() => openTeam(teamId)} className="hover:underline">
       {children}
     </button>
+  );
+}
+
+/**
+ * Pick a team by full name. `empty` adds a first option with value '' (pass '' for a blank one).
+ */
+export function TeamSelect({
+  teams,
+  value,
+  onChange,
+  empty,
+  className = '',
+}: {
+  teams: readonly Team[];
+  value: string;
+  onChange: (id: TeamId | '') => void;
+  empty?: string;
+  className?: string;
+}) {
+  return (
+    <select
+      value={value}
+      onChange={(e) => onChange(e.target.value as TeamId | '')}
+      className={`rounded border border-line bg-panel px-2 py-1 text-sm text-ink ${className}`}
+    >
+      {empty !== undefined && <option value="">{empty}</option>}
+      {teams.map((x) => (
+        <option key={x.id} value={x.id}>
+          {x.city} {x.name}
+        </option>
+      ))}
+    </select>
+  );
+}
+
+/**
+ * Table cells with the shared padding. Numbers right-align (the row sets `text-right`);
+ * pass `left` for text columns.
+ */
+export function Th({
+  left,
+  className = '',
+  ...rest
+}: { left?: boolean } & ThHTMLAttributes<HTMLTableCellElement>) {
+  return (
+    <th {...rest} className={`px-2 py-1.5 font-medium ${left ? 'text-left' : ''} ${className}`} />
+  );
+}
+
+export function Td({
+  left,
+  className = '',
+  ...rest
+}: { left?: boolean } & TdHTMLAttributes<HTMLTableCellElement>) {
+  return <td {...rest} className={`px-2 py-1.5 ${left ? 'text-left' : ''} ${className}`} />;
+}
+
+/** A small heading inside a card or screen. */
+export function SectionHeader({ children }: { children: ReactNode }) {
+  return <h3 className="mb-2 text-sm font-semibold">{children}</h3>;
+}
+
+/**
+ * Bars (each one's sign coloured good or bad) with a line over them, on one scale, oldest left.
+ * `labels` mark the start of each group (a season) along the bottom.
+ */
+export function BarLineChart({
+  bars,
+  line,
+  labels,
+}: {
+  bars: number[];
+  line: number[];
+  labels: { at: number; text: string }[];
+}) {
+  const w = 600;
+  const h = 160;
+  const top = Math.max(0, ...bars, ...line);
+  const bottom = Math.min(0, ...bars, ...line);
+  const y = (v: number) => (top === bottom ? h / 2 : ((top - v) / (top - bottom)) * h);
+  const step = w / Math.max(1, bars.length);
+  return (
+    <svg viewBox={`0 0 ${w} ${h + 14}`} className="w-full" role="img">
+      <line x1={0} x2={w} y1={y(0)} y2={y(0)} className="stroke-line" />
+      {bars.map((v, i) => (
+        <rect
+          key={i}
+          x={i * step + step * 0.15}
+          width={step * 0.7}
+          y={Math.min(y(v), y(0))}
+          height={Math.abs(y(v) - y(0))}
+          className={v >= 0 ? 'fill-good' : 'fill-bad'}
+        />
+      ))}
+      <polyline
+        points={line.map((v, i) => `${i * step + step / 2},${y(v)}`).join(' ')}
+        fill="none"
+        className="stroke-accent"
+        strokeWidth={2}
+      />
+      {labels.map((l) => (
+        <text key={l.at} x={l.at * step} y={h + 12} className="fill-muted text-[10px]">
+          {l.text}
+        </text>
+      ))}
+    </svg>
+  );
+}
+
+/** One headline number: a small label over a big value, with an optional note. */
+export function StatRow({
+  label,
+  value,
+  note,
+}: {
+  label: ReactNode;
+  value: ReactNode;
+  note?: ReactNode;
+}) {
+  return (
+    <div>
+      <div className="text-xs uppercase tracking-wider text-muted">{label}</div>
+      <div className="tabular text-lg font-semibold">{value}</div>
+      {note && <div className="tabular text-xs text-muted">{note}</div>}
+    </div>
   );
 }

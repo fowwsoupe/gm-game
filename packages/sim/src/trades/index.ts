@@ -3,7 +3,6 @@
  * whether the other team says yes, with its reasons. Built on the value engine (per-team
  * surplus) and the CBA engine (cap checks). The same rules judge human and AI offers.
  * AI GMs trade with each other once a week at most (`aiTrades`).
- * TODO(M6): draft picks, retained salary, trade block.
  */
-export { evaluateTrade, planRetention, tradeWindowOpen, teamContext } from './evaluate';
+export { cachedContext, evaluateTrade, planRetention, tradeWindowOpen } from './evaluate';
 export { aiOffers, aiTrades } from './ai';

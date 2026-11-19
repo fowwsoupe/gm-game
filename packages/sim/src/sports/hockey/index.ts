@@ -6,13 +6,19 @@ import {
   type SpecialUnit,
 } from '@gm/shared';
 import type { SportModule } from '../sport';
-import { simGame, rulesGoalModel, type GoalModel } from './game';
+import { simGame } from './game';
+import { rulesGoalModel, type GoalModel } from './tuning';
 import { lineupUnits, specialUnitsView, teamStrength, unitOk, type TeamStrength } from './strength';
 import { generateFictionalLeague, generateProspect } from './generate';
-import { NHL_2026 } from './ruleset-nhl-2026';
 import { pickAwards } from './awards';
 import { importHockeyRoster } from './roster';
-import { hockeyHallOfFame, hockeyHighlights, hockeyLeaders, hockeyPlayerLines } from './stats';
+import {
+  hockeyBonusEarned,
+  hockeyHallOfFame,
+  hockeyHighlights,
+  hockeyLeaders,
+  hockeyPlayerLines,
+} from './stats';
 import { hockeyRole } from './builds';
 
 /**
@@ -23,11 +29,9 @@ import { hockeyRole } from './builds';
 export function hockeySport(goalModel: GoalModel = rulesGoalModel): SportModule<TeamStrength> {
   return {
     id: 'nhl',
-    name: 'Hockey',
     positions: HOCKEY_POSITIONS,
     ratingKeys: (position) => (isGoalie(position) ? GOALIE_RATINGS : SKATER_RATINGS),
     pythagoreanExponent: 2,
-    defaultRuleset: NHL_2026,
     generateLeague: generateFictionalLeague,
     generateProspect,
     pickAwards,
@@ -38,6 +42,7 @@ export function hockeySport(goalModel: GoalModel = rulesGoalModel): SportModule<
     unitOk: (unit, players) => unitOk(unit as SpecialUnit, players),
     leaders: hockeyLeaders,
     playerLines: hockeyPlayerLines,
+    bonusEarned: hockeyBonusEarned,
     highlights: hockeyHighlights,
     hallOfFame: hockeyHallOfFame,
     role: hockeyRole,
@@ -47,26 +52,27 @@ export function hockeySport(goalModel: GoalModel = rulesGoalModel): SportModule<
 
 export { NHL_2026, FICTIONAL_2026 } from './ruleset-nhl-2026';
 export {
-  simGame,
   rulesGoalModel,
   strengthEdge,
-  shotQuality,
   HOCKEY_TUNING,
   type GoalModel,
   type ShotInfo,
-  type MatchupInput,
-} from './game';
+} from './tuning';
+export { simGame, type MatchupInput } from './game';
 export { parseXgTable, xgTableFromModel, type XgTable, type XgTableResult } from './xgTable';
 export {
   teamStrength,
   autoLineup,
-  lineupUnits,
+  lineupFit,
+  lineupTogether,
+  LINEMATES_FULL_GAMES,
+  unitFit,
   ICE_TIME,
   type TeamStrength,
   type Lineup,
 } from './strength';
 export { importHockeyRoster, exportHockeyRoster } from './roster';
-export { hockeyLeaders, hockeySeasonStats, type SkaterTotals, type GoalieTotals } from './stats';
+export { hockeySeasonStats, type SkaterTotals, type GoalieTotals } from './stats';
 export {
   ratingsFromStats,
   statFeatures,

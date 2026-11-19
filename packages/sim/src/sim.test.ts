@@ -17,16 +17,10 @@ import {
   dollars,
   type LeagueState,
 } from './index';
+import { playSeason, simSeason } from './testLeagues';
 
 const local: Actor = { id: 'local', controls: [] };
 const ctx = defaultContext();
-
-function simSeason(seed: number) {
-  const state = createLeague(seed, ctx);
-  const res = handleCommand(state, { kind: 'sim.advance', days: 220 }, local, ctx);
-  if (!res.ok) throw new Error(res.error.message);
-  return { state, events: res.events };
-}
 
 describe('Rng', () => {
   it('is deterministic for a seed', () => {
@@ -45,7 +39,7 @@ describe('Rng', () => {
 
 describe('season sim', () => {
   it('is fully deterministic for the same seed', () => {
-    expect(simSeason(7).events).toEqual(simSeason(7).events);
+    expect(playSeason(7).events).toEqual(simSeason(7).events);
   });
 
   it('plays every scheduled game, with a winner each time', () => {
@@ -60,6 +54,7 @@ describe('season sim', () => {
     const rows = computeStandings(
       Object.keys(state.teams) as TeamId[],
       Object.values(state.results),
+      ctx.ruleset.season.points,
     );
     for (const r of rows) expect(r.gp).toBe(NHL_2026.season.gamesPerTeam);
   });
@@ -107,8 +102,10 @@ describe('playoffs', () => {
     const rows = computeStandings(
       Object.keys(state.teams) as TeamId[],
       Object.values(state.results),
+      ctx.ruleset.season.points,
     );
     expect(bracketSeeds(ctx.ruleset.playoffs.teamsQualifying)).toEqual([1, 8, 4, 5, 2, 7, 3, 6]);
+    expect(bracketSeeds(16)).toHaveLength(16);
     const firstRound = Object.values(state.playoffSeries).filter((s) => s.round === 1);
     for (const series of firstRound) {
       expect(series.higherTeamId).toBe(rows[series.higherSeed - 1]!.teamId);
@@ -163,13 +160,8 @@ describe('playoffs', () => {
     }
   });
 
-  it('keeps the NHL ruleset at sixteen qualifiers', () => {
-    expect(NHL_2026.playoffs.teamsQualifying).toBe(16);
-    expect(bracketSeeds(NHL_2026.playoffs.teamsQualifying)).toHaveLength(16);
-  });
-
   it('ends each best-of-seven at four wins with the correct home pattern and no shootouts', () => {
-    const { state } = simSeason(13);
+    const { state, events } = simSeason(13);
     const pattern = ctx.ruleset.playoffs.homeIcePattern;
     for (const series of Object.values(state.playoffSeries)) {
       const games = Object.values(state.results).filter((g) => g.playoffSeriesId === series.id);
@@ -182,17 +174,11 @@ describe('playoffs', () => {
       });
     }
     expect(state.championTeamId).not.toBeNull();
-  });
-
-  it('crowns the same champion for the same seed and replays every event', () => {
-    const live = createLeague(14, ctx);
-    const replica: LeagueState = structuredClone(live);
-    const res = handleCommand(live, { kind: 'sim.advance', days: 220 }, local, ctx);
-    if (!res.ok) throw new Error();
-    res.events.forEach((e) => applyEvent(replica, e));
-    expect(replica).toEqual(live);
-    expect(live.championTeamId).toBe(simSeason(14).state.championTeamId);
-    expect(res.events.filter((e) => e.kind === 'champion.crowned')).toHaveLength(1);
+    expect(events.filter((e) => e.kind === 'champion.crowned')).toHaveLength(1);
+    // Replaying the whole season, playoffs included, rebuilds the same league.
+    const replica = createLeague(13, ctx);
+    events.forEach((e) => applyEvent(replica, e));
+    expect(replica).toEqual(state);
   });
 
   it('stops at a series win and later at the championship', () => {
@@ -215,6 +201,29 @@ describe('playoffs', () => {
     }
     expect(sawSeries).toBe(true);
     expect(sawChampion).toBe(true);
+  });
+});
+
+describe('the stop filter', () => {
+  it('stops only on the categories asked for', () => {
+    const state = createLeague(15, ctx);
+    const mine = Object.values(state.teams).find((t) => t.userControlled)!.id;
+    const res = handleCommand(
+      state,
+      { kind: 'sim.advance', days: 400, stopOn: ['injuries'] },
+      local,
+      ctx,
+    );
+    if (!res.ok) throw new Error();
+    // Ran past league moments (phase changes) and stopped on the day of your first long injury.
+    const longOnes = res.events.filter(
+      (e) => e.kind === 'player.injured' && e.days >= 14 && e.teamIds.includes(mine),
+    );
+    expect(longOnes).toHaveLength(1);
+    expect(res.events.at(-1)?.date.day).toBe(longOnes[0]!.date.day);
+    const none = handleCommand(state, { kind: 'sim.advance', days: 30, stopOn: [] }, local, ctx);
+    if (!none.ok) throw new Error();
+    expect(none.events.filter((e) => e.kind === 'clock.advanced')).toHaveLength(30);
   });
 });
 

@@ -1,6 +1,7 @@
 import { describe, expect, it } from 'vitest';
 import type { Actor } from '@gm/shared';
 import { createLeague, dashboard, defaultContext, handleCommand } from './index';
+import { cachedContext } from './trades';
 
 const ctx = defaultContext();
 const local: Actor = { id: 'local', controls: [] };
@@ -32,6 +33,44 @@ describe('home dashboard', () => {
     const after = dashboard(state, ctx, mine).todo.map((i) => i.code);
     expect(after).toContain('freeAgency');
     expect(after).not.toContain('resign');
+  });
+});
+
+describe('the assistant GM', () => {
+  it("advises on every offer, and an elite one's advice is right more often than a poor one's", () => {
+    const state = createLeague(54, ctx);
+    const mine = Object.values(state.teams).find((t) => t.userControlled)!;
+    const theirs = Object.values(state.teams).find((t) => !t.userControlled)!;
+    const roster = (id: string) => Object.values(state.players).filter((p) => p.teamId === id);
+    state.tradeOffers = roster(mine.id).flatMap((out) =>
+      roster(theirs.id).map((inc) => ({
+        id: `${inc.id}-${out.id}`,
+        proposal: { fromTeamId: theirs.id, toTeamId: mine.id, give: [inc.id], get: [out.id] },
+        expiresDay: 0,
+      })),
+    );
+    const context = cachedContext(state, ctx, mine.id);
+    const worth = (id: string) =>
+      ctx.models.valuation.value(state.players[id]!, context, ctx.ruleset).surplus;
+    const truth = state.tradeOffers.map(({ proposal: p }) => worth(p.give[0]!) > worth(p.get[0]!));
+    const rightShare = (quality: number) => {
+      mine.staff = { assistant: { name: 'A B', quality, hired: 2026, salary: 1 } };
+      const advice = dashboard(state, ctx, mine.id).todo.filter((i) => i.code.startsWith('advice'));
+      expect(advice).toHaveLength(truth.length);
+      return advice.filter((a, i) => (a.code === 'adviceTake') === truth[i]).length / truth.length;
+    };
+    const elite = rightShare(1);
+    const poor = rightShare(0);
+    expect(elite).toBeGreaterThan(poor + 0.05);
+    expect(elite).toBeGreaterThan(0.9);
+    // AI GMs have no assistant: their Home gets no advice.
+    state.tradeOffers = state.tradeOffers.map((o) => ({
+      ...o,
+      proposal: { ...o.proposal, fromTeamId: mine.id, toTeamId: theirs.id },
+    }));
+    const ai = dashboard(state, ctx, theirs.id).todo.map((i) => i.code);
+    expect(ai).not.toContain('adviceTake');
+    expect(ai).not.toContain('adviceDecline');
   });
 });
 
@@ -79,7 +118,7 @@ describe('streak and highlight news', () => {
     };
     const whole = news(200);
     expect(whole).toEqual(news(10));
-    for (const key of ['winStreak', 'losingStreak', 'hatTrick', 'shutout']) {
+    for (const key of ['winStreak', 'losingStreak', 'hatTrick', 'shutout', 'slump']) {
       expect(whole.some((l) => l.includes(`event.${key}`))).toBe(true);
     }
   });

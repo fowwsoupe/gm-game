@@ -21,7 +21,6 @@ __pycache__/
 *.pyc
 ml/data/raw/
 ml/data/processed/
-.ipynb_checkpoints/
 
 # Steam (dev only, never commit your real app id file)
 steam_appid.txt

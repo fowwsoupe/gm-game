@@ -77,7 +77,10 @@ src/
   offseason/ yearly rollover: development, retirements, expiries, draft, re-sign, free agency, next schedule
   trades/    trade window, legality and the other team's answer (built on value + cba)
   sports/    SportModule interface + one folder per sport
-    hockey/  NHL: game sim, team strength, GoalModel, generator, NHL_2026 ruleset
+    hockey/  NHL: team strength, generator, NHL_2026 ruleset, and the game sim:
+             game.ts (the clock loop: shots, penalties, overtime), units.ts (who is on the ice),
+             side.ts (a team's sides of the game, box score), shootout.ts,
+             tuning.ts (HOCKEY_TUNING knobs, GoalModel)
   models.ts  Models: shared swappable brains + rules-based defaults
   context.ts SimContext: sport + ruleset + models; SPORTS and RULESETS registries
   create.ts  createLeague(seed, ctx)
@@ -125,6 +128,7 @@ through their `index.ts`** (`'../cba'`, never `'../cba/ruleset'`). Apps import o
 5. A query in `GmApi` if the UI needs to read new data; then the screen, from `ui/` components.
 6. Strings in `en.ts` and `fr.ts`.
 7. `pnpm check` and, for anything touching sim numbers, `pnpm lab` before and after.
+   `pnpm test` plays 4 seasons in the long-run tests; `pnpm test:slow` (also nightly in CI) plays the full 20.
 
 ## Decisions
 

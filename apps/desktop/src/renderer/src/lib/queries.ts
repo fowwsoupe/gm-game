@@ -79,6 +79,36 @@ export const useTradeRequests = (teamId: TeamId | undefined) =>
     queryFn: () => window.gm.league.tradeRequests({ teamId: teamId! }),
     enabled: !!teamId,
   });
+export const useOwner = (teamId: TeamId | undefined) =>
+  useQuery({
+    queryKey: ['league', 'owner', teamId] as const,
+    queryFn: () => window.gm.league.owner({ teamId: teamId! }),
+    enabled: !!teamId,
+  });
+export const useStaffCandidates = (teamId: TeamId | undefined) =>
+  useQuery({
+    queryKey: ['league', 'staffCandidates', teamId] as const,
+    queryFn: () => window.gm.league.staffCandidates({ teamId: teamId! }),
+    enabled: !!teamId,
+  });
+export const useDepartmentReturns = (teamId: TeamId | undefined) =>
+  useQuery({
+    queryKey: ['league', 'departmentReturns', teamId] as const,
+    queryFn: () => window.gm.league.departmentReturns({ teamId: teamId! }),
+    enabled: !!teamId,
+  });
+export const useOwnerReport = (teamId: TeamId | undefined) =>
+  useQuery({
+    queryKey: ['league', 'ownerReport', teamId] as const,
+    queryFn: () => window.gm.league.ownerReport({ teamId: teamId! }),
+    enabled: !!teamId,
+  });
+export const useOfferSheets = (teamId: TeamId | undefined) =>
+  useQuery({
+    queryKey: ['league', 'offerSheets', teamId] as const,
+    queryFn: () => window.gm.league.offerSheets({ teamId: teamId! }),
+    enabled: !!teamId,
+  });
 export const useTradeOffers = (teamId: TeamId | undefined) =>
   useQuery({
     queryKey: ['league', 'tradeOffers', teamId] as const,
@@ -103,10 +133,25 @@ export const useCareer = (playerId: string | undefined) =>
     queryFn: () => window.gm.league.career({ playerId: playerId! }),
     enabled: !!playerId,
   });
+export const useHistory = (playerId: string | undefined) =>
+  useQuery({
+    queryKey: ['league', 'history', playerId] as const,
+    queryFn: () => window.gm.league.history({ playerId: playerId! }),
+    enabled: !!playerId,
+  });
 export const useStatus = () =>
   useQuery({ queryKey: ['league', 'status'] as const, queryFn: () => window.gm.league.status() });
 export const useSigningInterest = (
-  input: { playerId: string; teamId: TeamId; salary: number; years: number } | undefined,
+  input:
+    | {
+        playerId: string;
+        teamId: TeamId;
+        salary: number;
+        years: number;
+        noTrade?: true;
+        bonusPct?: number;
+      }
+    | undefined,
 ) =>
   useQuery({
     queryKey: ['league', 'signingInterest', input] as const,
@@ -119,6 +164,16 @@ export const usePlayers = (teamId: TeamId | null | undefined) =>
     queryKey: ['league', 'players', teamId ?? 'fa'] as const,
     queryFn: () => window.gm.league.players({ teamId: teamId ?? null }),
     enabled: teamId !== undefined,
+  });
+/** Every player in the league: one read per team, plus free agents. */
+export const useAllPlayers = (teamIds: readonly TeamId[]) =>
+  useQuery({
+    queryKey: ['league', 'allPlayers', teamIds.join()] as const,
+    queryFn: async () =>
+      (
+        await Promise.all([...teamIds, null].map((teamId) => window.gm.league.players({ teamId })))
+      ).flat(),
+    enabled: teamIds.length > 0,
   });
 export const useGames = (teamId: TeamId | undefined, limit = 30) =>
   useQuery({

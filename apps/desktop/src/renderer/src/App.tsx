@@ -10,6 +10,7 @@ import {
   useSteam,
   useTeams,
 } from '@/lib/queries';
+import type { StopCategory } from '@gm/shared';
 import { useUi, type Screen } from '@/stores/ui';
 import { useT, type MessageKey } from '@/i18n';
 import { Button } from '@/ui';
@@ -24,16 +25,22 @@ import { Trades } from '@/screens/Trades';
 import { Lines } from '@/screens/Lines';
 import { Draft } from '@/screens/Draft';
 import { TeamPage } from '@/screens/TeamPage';
+import { Owner } from '@/screens/Owner';
+import { FrontOffice } from '@/screens/FrontOffice';
+import { Player } from '@/screens/Player';
 
 const NAV: { id: Screen; label: MessageKey }[] = [
   { id: 'home', label: 'nav.home' },
   { id: 'standings', label: 'nav.standings' },
   { id: 'roster', label: 'nav.roster' },
+  { id: 'freeAgency', label: 'nav.freeAgency' },
   { id: 'lines', label: 'nav.lines' },
   { id: 'trades', label: 'nav.trades' },
   { id: 'draft', label: 'nav.draft' },
   { id: 'games', label: 'nav.games' },
   { id: 'cap', label: 'nav.cap' },
+  { id: 'owner', label: 'nav.owner' },
+  { id: 'frontOffice', label: 'nav.frontOffice' },
   { id: 'leaders', label: 'nav.leaders' },
   { id: 'history', label: 'nav.history' },
 ];
@@ -68,7 +75,7 @@ export function App() {
     return () => window.removeEventListener('keydown', onKey);
   }, []);
 
-  const sim = (days: number, stopOn: 'never' | 'major' = 'never') =>
+  const sim = (days: number, stopOn: 'never' | readonly StopCategory[] = 'never') =>
     dispatch.mutate(
       { kind: 'sim.advance', days, stopOn },
       {
@@ -116,12 +123,16 @@ export function App() {
         <div className="mb-6 flex flex-wrap gap-2">
           <Button
             variant="primary"
-            onClick={() => newLeague.mutate(Math.floor(Math.random() * 1e9))}
+            onClick={() => {
+              if (!hasLeague || window.confirm(t('actions.confirmReplace')))
+                newLeague.mutate(Math.floor(Math.random() * 1e9));
+            }}
           >
             {t('actions.newLeague')}
           </Button>
           <Button
             onClick={() =>
+              (!hasLeague || window.confirm(t('actions.confirmReplace'))) &&
               fromRoster.mutate(Math.floor(Math.random() * 1e9), {
                 onSuccess: (res) => {
                   if (res.ok === 'canceled') return;
@@ -142,7 +153,10 @@ export function App() {
           <Button disabled={!hasLeague || dispatch.isPending} onClick={() => sim(7)}>
             {t('actions.simWeek')}
           </Button>
-          <Button disabled={!hasLeague || dispatch.isPending} onClick={() => sim(400, 'major')}>
+          <Button
+            disabled={!hasLeague || dispatch.isPending}
+            onClick={() => sim(400, status?.stopOn)}
+          >
             {t('actions.simToNext')}
           </Button>
           {status &&
@@ -213,10 +227,14 @@ export function App() {
         {screen === 'leaders' && <Leaders />}
         {screen === 'history' && <History />}
         {screen === 'roster' && <Roster />}
+        {screen === 'freeAgency' && <Roster freeAgents />}
         {screen === 'lines' && <Lines />}
         {screen === 'trades' && <Trades />}
         {screen === 'draft' && <Draft />}
         {screen === 'team' && <TeamPage />}
+        {screen === 'owner' && <Owner />}
+        {screen === 'frontOffice' && <FrontOffice />}
+        {screen === 'player' && <Player />}
       </main>
     </div>
   );

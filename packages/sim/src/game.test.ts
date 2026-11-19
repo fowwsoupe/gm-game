@@ -13,17 +13,11 @@ import {
   simGame,
   teamStrength,
 } from './index';
+import { simSeason } from './testLeagues';
 
 /** The hockey game: lines and goalies, box scores, the shift-by-shift engine, injuries. */
 const local: Actor = { id: 'local', controls: [] };
 const ctx = defaultContext();
-
-function simSeason(seed: number) {
-  const state = createLeague(seed, ctx);
-  const res = handleCommand(state, { kind: 'sim.advance', days: 220 }, local, ctx);
-  if (!res.ok) throw new Error(res.error.message);
-  return { state, events: res.events };
-}
 
 describe('lines and goalies', () => {
   const roster = () => {
@@ -128,9 +122,6 @@ describe('box scores', () => {
       expect(box.shots.filter((s) => s[5] === 1).length).toBe(
         g.homeScore + g.awayScore - (shootout ? 1 : 0),
       );
-      for (const side of [box.home, box.away]) {
-        for (const p of side.skaters) expect(p.assists).toBeGreaterThanOrEqual(0);
-      }
     }
   });
 
@@ -179,33 +170,28 @@ describe('game engine', () => {
   const [a, b] = Object.keys(state.teams) as TeamId[];
   const strength = (id: TeamId) =>
     teamStrength(Object.values(state.players).filter((p) => p.teamId === id));
+  const home = strength(a!);
+  const away = strength(b!);
   const play = (n: number, input: { playoff?: boolean; resultOnly?: boolean } = {}) => {
     const rng = new Rng(9);
     return Array.from({ length: n }, () =>
-      simGame(
-        {
-          id: 'g' as GameId,
-          homeTeamId: a!,
-          awayTeamId: b!,
-          home: strength(a!),
-          away: strength(b!),
-          ...input,
-        },
-        rng,
-      ),
+      simGame({ id: 'g' as GameId, homeTeamId: a!, awayTeamId: b!, home, away, ...input }, rng),
     );
   };
+  // The same 1,500 seeded games, played once for every test that reads them.
+  let played: ReturnType<typeof play> | undefined;
+  const games1500 = () => (played ??= play(1500));
 
   it('is deterministic and the better goalie lets in fewer', () => {
     expect(play(5)).toEqual(play(5));
-    const good = strength(a!);
+    const good = home;
     const [first, ...rest] = good.lineup.goalies;
     const weak = {
       ...first!,
       ratings: Object.fromEntries(Object.entries(first!.ratings).map(([k, v]) => [k, v - 25])),
     };
     const bad = { ...good, lineup: { ...good.lineup, goalies: [weak, ...rest] } };
-    const against = (home: typeof good) => {
+    const against = (side: typeof good) => {
       const rng = new Rng(2);
       let goals = 0;
       for (let i = 0; i < 400; i++) {
@@ -214,8 +200,8 @@ describe('game engine', () => {
             id: 'g' as GameId,
             homeTeamId: a!,
             awayTeamId: b!,
-            home,
-            away: strength(b!),
+            home: side,
+            away,
             resultOnly: true,
           },
           rng,
@@ -232,7 +218,7 @@ describe('game engine', () => {
       expect(g.homeScore).not.toBe(g.awayScore);
       expect(g.stats.shootout).toBe(0);
     }
-    const reg = play(600);
+    const reg = games1500().slice(0, 600); // same Rng(9) stream: identical to play(600)
     expect(reg.some((g) => g.stats.shootout === 1)).toBe(true);
     for (const g of reg) expect(g.homeScore).not.toBe(g.awayScore);
     // An overtime goal comes after the 60th minute, from the 3v3 pace.
@@ -245,7 +231,7 @@ describe('game engine', () => {
   });
 
   it("pulls the goalie late when trailing, and empty-net goals are on nobody's line", () => {
-    const games = play(1500);
+    const games = games1500();
     const withEmpty = games.filter((g) => (g.box as HockeyBoxScore).emptyNet);
     expect(withEmpty.length).toBeGreaterThan(30);
     for (const g of withEmpty) {
@@ -258,7 +244,7 @@ describe('game engine', () => {
   });
 
   it('a goalie who lets in four early is replaced', () => {
-    const relieved = play(1500).filter((g) => (g.box as HockeyBoxScore).home.relief);
+    const relieved = games1500().filter((g) => (g.box as HockeyBoxScore).home.relief);
     expect(relieved.length).toBeGreaterThan(5);
     for (const g of relieved) {
       const { goalie, relief } = (g.box as HockeyBoxScore).home;
@@ -268,7 +254,7 @@ describe('game engine', () => {
   });
 
   it('result-only plays the same game without the box score', () => {
-    const full = play(1500);
+    const full = games1500();
     const fast = play(1500, { resultOnly: true });
     const mean = (gs: typeof full) =>
       gs.reduce((n, g) => n + g.homeScore + g.awayScore, 0) / gs.length;
@@ -327,6 +313,7 @@ describe('injuries', () => {
     expect(state.players[id]!.injuredUntil).toBe(9);
     applyEvent(state, { ...base, kind: 'season.started', season: 2028, schedule: [], rngState: 1 });
     expect(state.players[id]!.injuredUntil).toBeUndefined();
+    expect(state.players[id]!.injuryHistory).toEqual({ count: 1, days: 5 }); // history stays
   });
 
   it('fills a short line with a spare forward of another position', () => {

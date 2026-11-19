@@ -3,11 +3,38 @@
 First roadmap for the GM game (NHL first). Full feature detail lives in
 [FEATURE_SPEC.md](FEATURE_SPEC.md); architecture rules in [ARCHITECTURE.md](ARCHITECTURE.md).
 
-**Goal of v0.1 (Early Access):** a complete multi-season loop, polished. Season, playoffs,
-draft, re-signing, free agency, next season, for 20+ years without hitting a wall.
-Fewer features, each one finished.
+**Goal of the first public release:** the full NHL game, Phase 1 and Phase 2 together: a
+complete multi-season loop, polished (season, playoffs, draft, re-signing, free agency, next
+season, for 20+ years without hitting a wall), plus the owner and finance layer, front office,
+live draft and free-agency rooms, media, match viewer, cutscenes, sandbox and multiplayer.
+Phase 3 (NBA, NFL) stays after release. Fewer features, each one finished.
 
 Status: `[ ]` not started · `[~]` in progress · `[x]` done
+
+## Next up (in order)
+
+Ready jobs, each one PR. Pick from the top. Update this list in the PR that finishes a job.
+
+Ready now (code can start):
+
+1. Draft-room trades: the lottery is now drawn when the champion is crowned and round-one picks trade at their real slot (done); trading during the live draft stays with the Phase 2 draft room.
+2. Contract bonuses and trade protection: done. Signing bonuses (CBA-capped share of the cap hit, liked by the player, never bought out) and no-trade clauses (ruleset age and per-team limit, trades refuse them). Performance bonuses done (first-round entry deals, paid at season end, overage on next season's cap). A waiver flow for no-trade stays open.
+3. Holdouts: done (opening day, greed and pay decide; a talk or the weeks end it). AI teams' core players hold out at half the human-team chance (about 4 a league-season); a win-now GM, or a good balanced one, extends him once his deal is in its last year and the raise fits next season's cap; a builder waits him out. AI GMs trading a holdout stays open.
+4. Chemistry: personalities and leaders done (two settled leaders make the room whole; hot-headed, unprofessional players wear on it; lab flat). Builds fit done (a finisher with a creator on a line, an offensive with a home defenceman on a pair; mean-neutral, lab flat). Linemates done (games together by pair in the save; a line and pair that have played 20 games together gain up to a point, strangers lose one).
+5. Re-injury risk: done (hurt earlier this season +30%, +3% per past injury, capped at 2x; injuries per team-season 7.9-8.1 to 8.2-8.5).
+6. Player profile screen of its own and more face variety: done (open it from Leaders or the roster card).
+
+Front office (also the lasting-team-edge fix): all jobs in
+[research/2026-11-front-office.md](research/2026-11-front-office.md) done; the points % spread
+gap narrowed (0.077-0.080 to 0.079-0.082); season form, a fresh team edge each season, takes it
+to 0.083-0.087 (in range on the mean of three seeds, seed 1 still short) with r 0.43-0.46 and
+playoff turnover 31-32% ([research/2026-11-spread-second-mechanism.md](research/2026-11-spread-second-mechanism.md)). League & events:
+all five jobs of [research/2026-11-league-events.md](research/2026-11-league-events.md) done (the pulse ranks by playoff odds; a young team out of it rebuilds, an old bubble team with cap space buys; crisis on top).
+
+Needs a design first (a short brief in `docs/research/`, then jobs):
+
+- Minor / junior leagues; camp and a trade deadline that matters; player traits and clustered builds.
+- Every other Phase 2 headline below.
 
 ---
 
@@ -24,7 +51,7 @@ Builds the engines everything else depends on.
 - [x] NHL-only held-out study done ([report](M1_PROTOTYPE_REPORT.md)); rating list v2 in code ([RATINGS.md](RATINGS.md)); `faceoffs` effect measured and calibrated (`ml/src/faceoffs.py`); M1 signed off on the NHL-only prototype
 - [x] Hidden ratings (list v2) + stats-to-ratings model v1 (`ratingsFromStats`, fitted on the sim by `pnpm ratings:fit`, with uncertainty); roster import does not use it yet (M4)
 - [x] Line-by-line game sim (`sports/hockey/game.ts`) + "result only" mode; shot quality is a rules table behind `GoalModel` (`gm-xg-table`), tuned in the lab
-- [x] Balance lab: league-health report (`pnpm lab`) with multi-year checks (talent drift, dynasties, cap, playoff turnover, goalie save % repeatability, faceoff effect, goals vs expected); green except "better team wins a best-of-7", about half a point under its floor since goalie form
+- [x] Balance lab: league-health report (`pnpm lab`) with multi-year checks (talent drift, dynasties, cap, playoff turnover, goalie save % repeatability, faceoff effect, goals vs expected, points % spread and repeatability against real NHL seasons); green apart from the long-run known gaps it lists ([why](research/2026-11-long-run-spread.md))
 - [x] Speed test in CI: day, season and year-20 budgets, plus year-20 screen data (standings, leaders, cap sheet)
 - [x] Design system: tokens, team theming, Card, Button, PercentileBar, PlayerCard, BroadcastCaption
 - [x] Command layer + event log + single reducer (multiplayer-ready)
@@ -36,31 +63,31 @@ Build order, owners and "done when" for each step: **[V0.1_PLAN.md](V0.1_PLAN.md
 
 **Engines**
 
-- [~] Players (`sim/players`): percentiles, builds and role tags (rules), injuries done; traits, injury history to do
+- [~] Players (`sim/players`): percentiles, builds and role tags (rules), injuries and injury history (shown on the player card) done; re-injury risk done; traits, clustered builds to do
 - [x] Value (`sim/value`): per-team surplus value (can be negative), market value, pick value curve (rules-based, tuned in the lab)
-- [~] People (`sim/people`): personalities (from the player id) and free-agent priorities by age and personality done; morale, AI GM styles to do
+- [x] People (`sim/people`): personalities (from the player id), free-agent priorities by age and personality, AI GM styles and skill, team plans, morale (shown on the player card; no effects yet) done
 - [~] Models and calibration (`ml/`, [ADR 0005](adr/0005-calibrate-first.md): ML only where a fit is needed): faceoff effect and goalie form measured on NHL data, stats-to-ratings v1 fitted on the sim; trained stats-to-ratings and development models, "better team wins a best-of-7" back in range, playtest analysis to do
-- [ ] League & events (`sim/league`): calendar, team status (league pulse), event engine, news
+- [~] League & events (`sim/league`): calendar, team status (league pulse from playoff odds, roster age and cap space, crisis when a losing team's owner loses faith), event engine (trade requests, holdouts, disputes, breakouts in the summer and in season, AI owners' frustration, AI fire sales), news, a stop filter (saved with the league) done; the "talk extension" To do for breakouts to do
 - [ ] Minor / junior / European leagues: light stats-only sim for prospects
 
 **Features**
 
 - [~] Full season calendar: 84 games (divisions, conferences, back-to-backs) → playoffs → awards → draft → re-sign → FA done; camp and a trade deadline that matters wait for trades (M6)
-- [~] Trades v1: surplus value per team (status, rentals, negative contracts), anti-quantity, cap and position checks, AI explains itself, trade screen, AI-to-AI trades (both GMs must accept), retained salary, draft picks (next three drafts, value curve by projected slot) done, AI GMs pay with picks; trade block, conditional picks to do
-- [~] Contracts & cap: CBA checks, buyouts, cap sheet screen, cap advisor, offseason re-signing and in-season extensions done; RFA / UFA, bonuses, trade protection to do
-- [~] Free agency v1: free-agency window in the summer, offers with an interest meter (money, winning, role, term weighted by age), signings any time outside the playoffs done; personalities, loyalty and hometown discounts, AI bidding to do
-- [~] Draft v1: class announced after the playoffs with scouted potential ranges (AI sees the same ranges), your ranked list drives your picks; scout reports and draft-room trades to do
+- [~] Trades v1: surplus value per team (status, rentals, negative contracts), anti-quantity, cap and position checks, AI explains itself, trade screen, AI-to-AI trades (both GMs must accept), retained salary, draft picks (next three drafts, value curve by projected slot) done, AI GMs pay with picks, trade block (listed players draw more AI offers; AI buyers call AI teams with listed players first, so fire-sale players move), top-N protected picks done
+- [~] Contracts & cap: CBA checks, buyouts, cap sheet screen, cap advisor, offseason re-signing and in-season extensions, RFA rights with offer sheets the rights team can match, and compensation picks when it does not (NHL-style tiers by cap hit), done; signing bonuses, no-trade clauses and performance bonuses (overage carries to next season's cap) done
+- [~] Free agency v1: free-agency window in the summer, offers with an interest meter (money, winning, role, term weighted by age), signings any time outside the playoffs, personalities (greed, ambition), AI offers, AI re-signing by loyalty and ambition, and loyalty (to his old team) and hometown pulls on the interest meter done
+- [~] Draft v1: class announced after the playoffs with scouted potential ranges (AI sees the same ranges), your ranked list drives your picks, scout reports (best and weakest skills, ready or raw) done; lottery drawn before the draft so picks trade at their real slot done; the live draft room is Phase 2
 - [x] Playoffs: bracket, NHL-style wild cards, honest momentum (per-game goalie form, calibrated), Playoff MVP, playoff cap; the cup is "Champion" until it is named
 - [x] Awards, records, history (own award names, Playoff MVP included)
-- [~] Living league: feed with names (trades, signings, extensions, long injuries, first pick), league pulse, playoff odds and power rating, sim until it matters (your team and league-wide moments only), race nights (odds if you win or lose the next game), streak news, trade requests with a talk (personality decides) done; slumps, holdouts, hot seat to do
-- [~] Chemistry: v1 from time together (visible on Lines, changes with every move, capped at ±1 rating point per unit) done; linemates, builds, personalities and leaders to do
+- [~] Living league: feed with names (trades, signings, extensions, long injuries, first pick), league pulse, playoff odds and power rating, sim until it matters (your team and league-wide moments only, with a stop filter on the sim bar), race nights (odds if you win or lose the next game), streak news, trade requests with a talk (personality decides), disputes over a role (an unhappy player, by his morale, kept down the lines asks for more: promise a role, ask for patience, or list him; a broken promise becomes a trade request), slump news (a top-6 skater 10 games without a point), breakout news (23 or younger, up 7+ overall in a summer), holdouts (underpaid, greedy core players; AI GMs extend or wait them out), the hot seat (coaches fired in-season and at the review; your owner warns you, then fires you at a review, and teams with a vacancy offer you a job), AI owners losing patience in the news (once a season per team), AI fire sales (best expiring players on the block, in the news) done
+- [~] Chemistry: v1 from time together (visible on Lines, changes with every move, capped at ±1 rating point per unit) done; locker room (leaders and toxic personalities), builds fit and linemates done
 
 **Screens**
 
-- [~] Home hub: top strip (record, place, playoff odds, cap space, next game), To do that clears to zero, news, playoffs done; sim-to-date bar to do
-- [~] Roster & lines: roster screen with stats and player cards, Lines screen (your depth order sets lines, pairs and the starting goalie, used every game) done; drag-and-drop, PP/PK formations, goalie rotation rules to do
-- [~] Player profile, stats & leaders, standings, team pages, game center: percentile player card, leaders, standings, game center done; full profile (career stats, history) to do
-- [~] Generated faces: deterministic SVG face per player that greys and lines with age, on the player card; more variety and use across screens to do
+- [~] Home hub: top strip (record, place, playoff odds, cap space, next game), To do that clears to zero, news, playoffs done (with a sim-to-date bar)
+- [~] Roster & lines: roster screen with stats and player cards, Lines screen (your depth order sets lines, pairs and the starting goalie, used every game), drag-and-drop, PP/PK units and a goalie rotation rule (backup on back-to-backs, starter always but tired, or split) done
+- [~] Player profile, stats & leaders, standings, team pages, game center: percentile player card, leaders, standings, game center done; career stats with totals, awards and moves history on the card, and a profile screen of its own, done
+- [~] Generated faces: deterministic SVG face per player that greys and lines with age, on the player card; more variety (hair, facial hair, eyes, ears, scars) done; also on the roster, trade, draft, leaders and news-feed rows
 
 **Rosters**
 
@@ -73,10 +100,10 @@ Build order, owners and "done when" for each step: **[V0.1_PLAN.md](V0.1_PLAN.md
 - [ ] Legal consult (licensing, company)
 - [ ] Steam store page up early for wishlists; price; demo (Next Fest)
 
-## Phase 2 — Post-launch updates (one headline each)
+## Phase 2 — Part of the first release (one headline each)
 
-- [ ] Owner & finance: decision cards, pricing policy, fans, projects, owner meetings
-- [ ] Front office: scouting, analytics, medical, coaching, development staff
+- [x] Owner & finance: decision cards, pricing policy, fans, projects, owner meetings; owners and markets, the money ledger, fans and ticket pricing, confidence, meetings and cards, the Owner screen, projects and more cards, the head coach (salary, heat, AI firings in-season and at the review, the fire-or-keep card), and your job on the line (hot-seat warning, fired at a review, job offers, a "can be fired" option, AI GMs fired on confidence) (all 8 jobs in [the brief](research/2026-11-owner-finance.md))
+- [~] Front office: scouting, analytics, medical, coaching, development staff. Department heads with a quality and a salary, coach quality in games, development staff (replacing GM skill), per-team draft reads, medical injury days, the staff market (leave, poaching, owner budgets), the Front Office screen with three candidates a season, tuned against the long-run benchmarks (all jobs of [the brief](research/2026-11-front-office.md); the price curve was tried and dropped), an assistant GM for human teams whose advice on Home (extend first, take or turn down an offer) is as accurate as his quality, done; department returns (what each department added against an average one, on the Front Office screen) and firing a head without a replacement (an interim, severance) done; hired head coaches drawn from the owner-tilted market (coaching measured around the league's average coach) and medical scaling re-injury risk done; an analytics department (a fourth head; a weak one blurs what you see of other teams' players, a fixed amount per player, view only) done; the assistant's other jobs to do
 - [ ] Live draft trade room
 - [ ] Free-agency live bidding war + full contract negotiation
 - [ ] Media & press conferences (text)

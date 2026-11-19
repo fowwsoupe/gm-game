@@ -35,18 +35,6 @@ export class Rng {
     return this.next() < p;
   }
 
-  /** Poisson-distributed count with mean `lambda` (Knuth). Fine for small means like goals. */
-  poisson(lambda: number): number {
-    const limit = Math.exp(-lambda);
-    let k = 0;
-    let p = 1;
-    do {
-      k++;
-      p *= this.next();
-    } while (p > limit);
-    return k - 1;
-  }
-
   pick<T>(items: readonly T[]): T {
     if (items.length === 0) throw new Error('pick from empty array');
     return items[Math.floor(this.next() * items.length)] as T;

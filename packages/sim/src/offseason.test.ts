@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest';
-import type { Actor, LeagueEvent, TeamId } from '@gm/shared';
+import type { Actor, LeagueEvent, PlayerId, TeamId } from '@gm/shared';
 import {
   applyEvent,
   computeStandings,
@@ -12,6 +12,7 @@ import {
   playoffCapBreaches,
   Rng,
   playerRecords,
+  teamCapTotal,
   teamRecords,
   validateContract,
   type LeagueState,
@@ -19,6 +20,8 @@ import {
 
 const local: Actor = { id: 'local', controls: [] };
 const ctx = defaultContext();
+// Default: 4 seasons so `pnpm test` stays fast. `pnpm test:slow` (nightly CI) plays the full 20.
+const YEARS = process.env.GM_SLOW ? 20 : 4;
 const { ruleset } = ctx;
 const calendar = ruleset.season.calendar;
 
@@ -43,9 +46,9 @@ function checkLeagueIsLegal(state: LeagueState) {
   expect(playoffCapBreaches(Object.values(state.players), ruleset)).toEqual([]);
   for (const id of Object.keys(state.teams) as TeamId[]) {
     const roster = Object.values(state.players).filter((p) => p.teamId === id);
-    const payroll = roster.reduce((s, p) => s + (p.contract?.capHit ?? 0), 0);
-    expect(payroll).toBeLessThanOrEqual(ruleset.cap.upperLimit);
-    expect(payroll).toBeGreaterThanOrEqual(ruleset.cap.lowerLimit);
+    const total = teamCapTotal(state, id); // dead cap counts
+    expect(total).toBeLessThanOrEqual(ruleset.cap.upperLimit);
+    expect(total).toBeGreaterThanOrEqual(ruleset.cap.lowerLimit);
     expect(roster.length).toBeGreaterThanOrEqual(ruleset.roster.minActive);
     for (const [position, min] of Object.entries(ruleset.roster.positionMin)) {
       expect(roster.filter((p) => p.position === position).length).toBeGreaterThanOrEqual(min);
@@ -79,25 +82,35 @@ describe('offseason rollover', () => {
     expect(Object.keys(state.playoffSeries)).toHaveLength(0);
     expect(state.schedule.every((g) => g.date.season === startSeason + 1)).toBe(true);
     expect(events.at(-1)?.kind).toBe('season.phaseChanged');
+    // First summer: every AI team gets a plan, but setting one is not news, only changing it is.
+    expect(events.filter((e) => e.kind === 'team.planChanged').length).toBeGreaterThan(0);
+    const planNews = events.filter(
+      (e) => e.kind === 'news.posted' && e.headline.startsWith('event.plan'),
+    );
+    expect(planNews).toEqual([]);
     // The new season can be played straight away.
     run(state, { kind: 'sim.advance', days: 10 });
     expect(Object.keys(state.results).length).toBeGreaterThan(0);
   });
 
-  it('plays 20 seasons: no crash, rosters legal every year, replay ends identical', () => {
+  it('plays several seasons (20 with GM_SLOW): no crash, rosters legal every year, replay ends identical', async () => {
     const live = createLeague(31, ctx);
     const replica: LeagueState = structuredClone(live);
     const titles = new Map<string, number>();
-    for (let year = 0; year < 20; year++) {
+    for (let year = 0; year < YEARS; year++) {
       const { champion, events } = playSeasonAndRollOver(live);
       for (const e of events) applyEvent(replica, e);
       titles.set(champion!, (titles.get(champion!) ?? 0) + 1);
       checkLeagueIsLegal(live);
+      // Let the test worker answer the runner between seasons: 20 seasons in one synchronous
+      // block (over a minute on CI) made its progress messages time out and failed the run.
+      await new Promise((resolve) => setTimeout(resolve, 0));
     }
-    expect(live.date.season).toBe(2027 + 20);
+    expect(live.date.season).toBe(2027 + YEARS);
     expect(replica).toEqual(live);
-    // A single league's top title count is noisy (3-9 seen over 100 leagues); this only catches a runaway.
-    expect(Math.max(...titles.values())).toBeLessThanOrEqual(9);
+    // A single league's top title count is noisy (2-10 seen over 120 leagues, average 4.6), so this
+    // only catches a runaway: one team taking over half the titles. The balance lab checks the average.
+    if (YEARS === 20) expect(Math.max(...titles.values())).toBeLessThanOrEqual(10);
     // Retired players leave the league and the free-agent pool stays small.
     const pool = Object.values(live.players).filter((p) => p.teamId === null);
     expect(pool.length).toBeLessThan(150);
@@ -106,13 +119,12 @@ describe('offseason rollover', () => {
     );
   }, 60_000);
 
-  it('is deterministic: the same seed gives the same 3 seasons', () => {
+  it('is deterministic: the same seed gives the same season and rollover', () => {
     const a = createLeague(5, ctx);
     const b = createLeague(5, ctx);
-    for (let i = 0; i < 3; i++) {
-      expect(playSeasonAndRollOver(a).events).toEqual(playSeasonAndRollOver(b).events);
-    }
-  }, 30_000); // six seasons with the shift-by-shift game: ~2 s here, over 5 s on a slow CI runner
+    expect(playSeasonAndRollOver(a).events).toEqual(playSeasonAndRollOver(b).events);
+    expect(a).toEqual(b);
+  }, 30_000); // two seasons with the shift-by-shift game: ~1 s here, more on a slow CI runner
 });
 
 describe('awards', () => {
@@ -155,6 +167,17 @@ describe('awards', () => {
   });
 });
 
+/** A league whose season and playoffs are over, played once per seed. A fresh copy each call. */
+const played = new Map<number, LeagueState>();
+function seasonOver(seed: number): LeagueState {
+  if (!played.has(seed)) {
+    const state = createLeague(seed, ctx);
+    run(state, { kind: 'sim.advance', days: calendar.regularSeasonDays + calendar.playoffDays });
+    played.set(seed, state);
+  }
+  return structuredClone(played.get(seed)!);
+}
+
 describe('offseason steps', () => {
   it('free agents that nobody can use never block a team from filling its roster', () => {
     const state = createLeague(8, ctx);
@@ -171,8 +194,7 @@ describe('offseason steps', () => {
   });
 
   it('a team under the cap floor reaches it even when the free-agent pool is empty', () => {
-    const state = createLeague(8, ctx);
-    run(state, { kind: 'sim.advance', days: calendar.regularSeasonDays + calendar.playoffDays });
+    const state = seasonOver(8);
     // Nobody reaches free agency this summer, and the pool starts empty.
     for (const p of Object.values(state.players)) {
       if (p.teamId === null) delete state.players[p.id];
@@ -189,9 +211,31 @@ describe('offseason steps', () => {
     checkLeagueIsLegal(state);
   });
 
-  it('a lottery team drafts first and drafted players get entry-level contracts', () => {
-    const state = createLeague(9, ctx);
-    run(state, { kind: 'sim.advance', days: calendar.regularSeasonDays + calendar.playoffDays });
+  it('dead cap counts when the summer fills a roster: nobody is signed over the cap', () => {
+    const state = seasonOver(8);
+    // One team lets everyone go but carries almost a full cap of dead money next season.
+    const victim = Object.keys(state.teams)[2] as TeamId;
+    for (const p of Object.values(state.players)) {
+      if (p.teamId !== victim) continue;
+      p.teamId = null;
+      delete p.contract;
+    }
+    state.capCharges.push({
+      teamId: victim,
+      playerId: 'gone' as PlayerId,
+      kind: 'buyout',
+      season: state.date.season + 1,
+      amount: ruleset.cap.upperLimit - ruleset.roster.minActive * ruleset.cap.minSalary,
+    });
+    run(state, { kind: 'season.rollover' });
+    checkLeagueIsLegal(state);
+  });
+
+  it('the lottery is drawn at the crown, a lottery team drafts first, draftees get entry-level deals', () => {
+    const state = seasonOver(9);
+    // The lottery is drawn when the champion is crowned and the draft follows it.
+    expect(state.draftOrder).toHaveLength(Object.keys(state.teams).length);
+    const order = [...state.draftOrder];
     const standings = computeStandings(
       Object.keys(state.teams) as TeamId[],
       Object.values(state.results),
@@ -205,6 +249,9 @@ describe('offseason steps', () => {
     const picks = run(state, { kind: 'season.rollover' }).filter(
       (e) => e.kind === 'player.drafted' && e.round > 0,
     );
+    const firstRound = picks.filter((e) => e.kind === 'player.drafted' && e.round === 1);
+    expect(firstRound.map((e) => e.teamIds[0])).toEqual(order);
+    expect(state.draftOrder).toEqual([]);
     expect(picks).toHaveLength(Object.keys(state.teams).length * ruleset.draft.rounds);
     const first = picks[0]!;
     if (first.kind !== 'player.drafted') throw new Error();

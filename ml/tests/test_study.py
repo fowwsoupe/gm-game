@@ -1,9 +1,9 @@
-import csv
 import tempfile
 import unittest
 from pathlib import Path
 
 from ml.src.study import _evaluate, _shot_holdout
+from ml.tests.csvfile import write_csv
 
 
 class StudyTest(unittest.TestCase):
@@ -22,22 +22,12 @@ class StudyTest(unittest.TestCase):
         self.assertEqual(actual["test_rows"], 20)
 
     def test_shot_geometry_beats_base_rate_on_known_pattern(self):
+        shots = [{"season": season, "x": 85 if close else 20, "y": 0, "shot_type": "wrist",
+                  "is_goal": int(close and i % 10 < 2), "xg": 0.1 if close else 0.01}
+                 for season in (2024, 2025) for i in range(400) for close in [i % 2 == 0]]
         with tempfile.TemporaryDirectory() as temp:
             path = Path(temp) / "shots.csv"
-            with path.open("w", newline="", encoding="utf-8") as stream:
-                writer = csv.DictWriter(stream,
-                                        fieldnames=("season", "x", "y", "shot_type",
-                                                    "is_goal", "xg"))
-                writer.writeheader()
-                for season in (2024, 2025):
-                    for i in range(400):
-                        close = i % 2 == 0
-                        writer.writerow({
-                            "season": season, "x": 85 if close else 20,
-                            "y": 0, "shot_type": "wrist",
-                            "is_goal": int(close and i % 10 < 2),
-                            "xg": 0.1 if close else 0.01,
-                        })
+            write_csv(path, shots)
             result = _shot_holdout(path, 2025)
             self.assertEqual(result["train_shots"], 400)
             self.assertEqual(result["test_shots"], 400)

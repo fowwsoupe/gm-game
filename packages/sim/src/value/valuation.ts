@@ -1,6 +1,6 @@
 import type { Player, TeamStatus } from '@gm/shared';
 import type { Dollars } from '../core';
-import type { Ruleset } from '../cba';
+import { contractIn, type Ruleset } from '../cba';
 import { overall } from '../players';
 import { salaryForOverall } from './market';
 
@@ -14,9 +14,10 @@ export interface TeamContext {
   season: number;
   /** Share of that season still to play, 0–1 (1 before it starts): rentals lose value as it runs out. */
   seasonLeft: number;
-  capSpace: Dollars;
   /** Positions the team is short of, e.g. ['D']. */
   needs: string[];
+  /** The GM's lean, -1 (builder: the future) to 1 (win now). Absent or 0: the situation alone. */
+  lean?: number;
 }
 
 export type ValueReason = 'negative_contract' | 'rental' | 'prospect' | 'fills_need';
@@ -46,8 +47,17 @@ const HORIZON: Record<TeamStatus, { now: number; later: number }> = {
   crisis: { now: 0.6, later: 0.9 },
 };
 
+/** How far a GM's lean moves this season's weight, and each later season's. */
+const LEAN_NOW = 0.2;
+const LEAN_LATER = 0.06;
+
+/**
+ * A restricted player (younger than the UFA age) re-signs at this share of his market ask: his
+ * team holds his rights. This is where cheap young cores come from.
+ */
+export const RFA_DISCOUNT = 0.75;
 /** After his deal a restricted player re-signs this far below his worth. */
-const CONTROL_DISCOUNT = 0.25;
+const CONTROL_DISCOUNT = 1 - RFA_DISCOUNT;
 /** Restricted years counted at most. */
 const MAX_CONTROL_YEARS = 3;
 /**
@@ -63,7 +73,7 @@ const NEED_BONUS = 0.1;
  * Expected overall `years` from now. A rough sport-neutral curve (young players close on their
  * potential, players past 30 fade); the development model owns the real one.
  */
-export function projectedOverall(player: Player, age: number, years: number): number {
+function projectedOverall(player: Player, age: number, years: number): number {
   let rating = overall(player);
   for (let y = 1; y <= years; y++) {
     const a = age + y;
@@ -82,18 +92,21 @@ export function projectedOverall(player: Player, age: number, years: number): nu
 export const surplusValuator: PlayerValuator = {
   value(player, team, rules) {
     const age = team.season - player.birthYear;
+    const lean = team.lean ?? 0;
     const h = HORIZON[team.status];
-    const weight = (y: number) => (y === 0 ? h.now * team.seasonLeft : h.later ** y);
-    const cost = player.contract?.capHit ?? 0;
-    const years = player.contract
-      ? Math.max(0, player.contract.expiresAfterSeason - team.season + 1)
-      : 0;
+    const now = h.now * (1 + LEAN_NOW * lean);
+    const later = Math.min(0.99, h.later * (1 - LEAN_LATER * lean));
+    const weight = (y: number) => (y === 0 ? now * team.seasonLeft : later ** y);
+    // An extension signed but not started yet counts: it is his deal for those seasons.
+    const deal = player.extension ?? player.contract;
+    const years = deal ? Math.max(0, deal.expiresAfterSeason - team.season + 1) : 0;
+    const cost = (y: number) => contractIn(player, team.season + y)?.capHit ?? 0;
     const worth = (y: number) =>
       salaryForOverall(rules, projectedOverall(player, age, y)) *
       (team.needs.includes(player.position) ? 1 + NEED_BONUS : 1);
 
     let surplus = 0;
-    for (let y = 0; y < years; y++) surplus += weight(y) * (worth(y) - CAP_DOLLAR_COST * cost);
+    for (let y = 0; y < years; y++) surplus += weight(y) * (worth(y) - CAP_DOLLAR_COST * cost(y));
     const control = Math.max(
       0,
       Math.min(MAX_CONTROL_YEARS, rules.contracts.ufaAge - (age + years)),

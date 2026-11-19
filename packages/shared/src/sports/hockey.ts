@@ -9,6 +9,16 @@ export type HockeyPosition = (typeof HOCKEY_POSITIONS)[number];
 export const SPECIAL_UNITS = ['pp1', 'pp2', 'pk1', 'pk2'] as const;
 export type SpecialUnit = (typeof SPECIAL_UNITS)[number];
 /**
+ * How a team shares starts between its goalies. `backToBack`: the backup starts the second night
+ * of a back-to-back (the default every AI team uses). `always`: the starter plays every game,
+ * tired on the second night of a back-to-back. `split`: the backup also starts every fourth day.
+ */
+export const GOALIE_ROTATIONS = ['backToBack', 'always', 'split'] as const;
+export type GoalieRotation = (typeof GOALIE_ROTATIONS)[number];
+/** A starter on the second night of a back-to-back plays at this share of his rating. */
+export const TIRED_GOALIE = 0.92;
+
+/**
  * Skaters in a saved unit. A power play is any five skaters with 3 to 5 forwards (4F+1D is the
  * common mix, 3F+2D and 5F are used too). A penalty kill is 2 forwards and 2 defencemen.
  */
@@ -31,8 +41,6 @@ export const SKATER_RATINGS = [
   'faceoffs',
 ] as const;
 export const GOALIE_RATINGS = ['reflexes', 'positioning', 'reboundControl', 'consistency'] as const;
-export type SkaterRating = (typeof SKATER_RATINGS)[number];
-export type GoalieRating = (typeof GOALIE_RATINGS)[number];
 
 /** Hockey's extra numbers stored in GameResult.stats. */
 export interface HockeyGameStats extends Record<string, number> {

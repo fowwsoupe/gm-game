@@ -26,7 +26,6 @@ export type RosterImport =
 
 export interface SportModule<Strength = unknown> {
   id: Sport;
-  name: string;
 
   /** Position codes in display order, e.g. hockey: C, LW, RW, D, G. */
   positions: readonly string[];
@@ -35,9 +34,6 @@ export interface SportModule<Strength = unknown> {
 
   /** Pythagorean exponent for win share from scoring (hockey about 2), for odds and power rankings. */
   pythagoreanExponent: number;
-
-  /** Rules shipped with the sport (season length, cap, contracts...). */
-  defaultRuleset: Ruleset;
 
   /** Builds a fictional league for this sport, with payrolls legal under `ruleset`. */
   generateLeague(rng: Rng, ruleset: Ruleset): { teams: Team[]; players: Player[] };
@@ -84,6 +80,12 @@ export interface SportModule<Strength = unknown> {
     awards: readonly string[];
   }): { inducted: boolean; totals: Record<string, number> };
 
+  /**
+   * Share (0-1) of his performance bonus a player earned with this season's stat line
+   * (`playerLines`), out of `seasonGames` regular-season games.
+   */
+  bonusEarned(line: Readonly<Record<string, number>>, seasonGames: number): number;
+
   /** Standout individual nights in a finished game (hockey: hat tricks, shutouts), as news keys. */
   highlights(result: GameResult): { key: string; playerId: PlayerId; teamId: TeamId }[];
 
@@ -96,13 +98,17 @@ export interface SportModule<Strength = unknown> {
   /**
    * Summarizes a roster into whatever the sport's game sim needs. `depth` is the GM's order of
    * players, best first; the lineup follows it ahead of ratings. `chemistry` (0–1, default 0.5)
-   * is the people engine's team chemistry; the sport decides its (capped) effect.
+   * is the people engine's team chemistry; the sport decides its (capped) effect. `linemates` is
+   * the team's games together by pair (`LeagueState.linemates`).
    */
   teamStrength(
     players: readonly Player[],
     depth?: readonly string[],
     chemistry?: number,
     units?: Partial<Record<string, readonly string[]>>,
+    linemates?: Readonly<Record<string, number>>,
+    /** Rating points the head coach and the team's season form add to every player (negative: take away). */
+    coaching?: number,
   ): Strength;
 
   /** Power-play / penalty-kill units as the game uses them (`custom` = set by the GM, else auto). */
@@ -135,6 +141,12 @@ export interface SportModule<Strength = unknown> {
       /** The team also played yesterday (hockey: its backup goalie starts). */
       homeBackToBack?: boolean;
       awayBackToBack?: boolean;
+      /** The starter plays the second night of a back-to-back anyway (hockey: a little worse). */
+      homeTired?: boolean;
+      awayTired?: boolean;
+      /** The medical staff's factor on re-injury risk (1 = average, below 1 = better). */
+      homeMedical?: number;
+      awayMedical?: number;
     },
     rng: Rng,
   ): GameResult;

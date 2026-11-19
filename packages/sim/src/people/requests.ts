@@ -1,12 +1,18 @@
-import type { TeamStatus } from '@gm/shared';
+import type { TeamId, TeamStatus } from '@gm/shared';
 import type { Emit, LeagueState, Rng } from '../core';
-import { overall } from '../players';
+import { byOverall } from '../players';
 import { personalityOf } from './personality';
 
 /** Weekly chance an eligible player goes to the GM. */
 const REQUEST_CHANCE = 0.08;
 const STRUGGLING: readonly TeamStatus[] = ['seller', 'rebuilder', 'crisis'];
+/** A team's core: its best players by overall (ties by id), who can ask out or hold out. */
 const CORE_PLAYERS = 6;
+export const corePlayers = (state: LeagueState, teamId: TeamId) =>
+  Object.values(state.players)
+    .filter((p) => p.teamId === teamId)
+    .sort(byOverall)
+    .slice(0, CORE_PLAYERS);
 const MIN_AGE = 27;
 const AMBITIOUS = 0.7;
 /** He withdraws after a talk if his loyalty and professionalism add up to this. */
@@ -23,11 +29,7 @@ export function tradeRequests(state: LeagueState, rng: Rng, emit: Emit): void {
       continue;
     }
     if (state.tradeRequests.some((r) => r.teamId === team.id)) continue;
-    const core = Object.values(state.players)
-      .filter((p) => p.teamId === team.id)
-      .sort((a, b) => overall(b) - overall(a) || a.id.localeCompare(b.id))
-      .slice(0, CORE_PLAYERS);
-    for (const p of core) {
+    for (const p of corePlayers(state, team.id)) {
       if (state.date.season - p.birthYear < MIN_AGE) continue;
       if (personalityOf(p.id).ambition < AMBITIOUS) continue;
       if (!rng.chance(REQUEST_CHANCE)) continue;

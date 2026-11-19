@@ -1,16 +1,22 @@
 import { isGoalie, SPECIAL_UNIT_SIZE, type Player, type SpecialUnit } from '@gm/shared';
-import { overall } from '../../players';
+import { linemateKey } from '../../core';
+import { byOverall } from '../../players';
 
 const avg = (xs: number[]) => (xs.length ? xs.reduce((a, b) => a + b, 0) / xs.length : 50);
 
 export interface TeamStrength {
   offense: number;
   defense: number;
-  /** The starting goalie's rating, and the backup's (who plays the second night of a back-to-back). */
+  /** The starting goalie's rating. */
   goaltending: number;
-  backupGoaltending: number;
   /** Chemistry's bonus to every unit's attack and defence, in rating points (±CHEMISTRY_POINTS). */
   chemistry: number;
+  /**
+   * Each forward line's and defence pair's own bonus in rating points (builds fit, linemates), by unit,
+   * added in the game to the units on the ice. `offense` and `defense` above include their
+   * ice-time-weighted sum.
+   */
+  unitBonus: { forwards: UnitBonus[]; defense: UnitBonus[] };
   /** The depth chart these numbers come from (also who is credited in the box score). */
   lineup: Lineup;
 }
@@ -22,6 +28,11 @@ export interface Lineup {
   goalies: Player[];
   /** Saved power-play and penalty-kill units that can be dressed tonight; others are auto. */
   special?: Partial<Record<SpecialUnit, Player[]>>;
+}
+
+export interface UnitBonus {
+  offense: number;
+  defense: number;
 }
 
 /** Saved units by player id (see `SpecialUnit`). */
@@ -87,7 +98,89 @@ export const FACEOFF_WEIGHT = 0.2;
  */
 export const CHEMISTRY_POINTS = 1;
 
-const byRating = (a: Player, b: Player) => overall(b) - overall(a) || a.id.localeCompare(b.id);
+/**
+ * Builds fit: a forward line wants a finisher (shooting over passing) and a creator (passing over
+ * shooting) as different players; a defence pair wants one who joins the attack and one who stays
+ * home. A unit's fit is 0-1: how far its most extreme player on each side is from even, up to a
+ * span of rating points. Three of a kind, or three generalists, fit at 0.
+ */
+export const FIT_SPAN = { forwards: 15, defense: 8 } as const;
+/** Rating points a team with a perfectly fitting set of units adds (units weighted by ice time). */
+export const FIT_POINTS = 3;
+/**
+ * The league's typical team fit (ice-time-weighted, measured on generated leagues), subtracted so
+ * an average team nets zero and the bonus only separates teams.
+ */
+export const FIT_BASELINE = { forwards: 0.21, defense: 0.12 } as const;
+
+/**
+ * Linemates: games a pair has played in the same unit before a unit counts as fully together.
+ * A unit's value is the mean over its pairs; it moves the unit's attack and defence by up to
+ * `LINEMATES_POINTS` either way around a half-together unit (a line and a pair on the ice
+ * together: twice that). Kept small, like chemistry.
+ */
+export const LINEMATES_FULL_GAMES = 20;
+export const LINEMATES_POINTS = 0.5;
+
+/** 0-1: how much a unit's players have played together (1 = every pair `LINEMATES_FULL_GAMES` games). */
+export function unitTogether(
+  unit: readonly Player[],
+  linemates: Readonly<Record<string, number>>,
+): number {
+  let sum = 0;
+  let pairs = 0;
+  for (let i = 0; i < unit.length; i++) {
+    for (let j = i + 1; j < unit.length; j++) {
+      sum += Math.min(
+        1,
+        (linemates[linemateKey(unit[i]!.id, unit[j]!.id)] ?? 0) / LINEMATES_FULL_GAMES,
+      );
+      pairs++;
+    }
+  }
+  return pairs ? sum / pairs : 0;
+}
+
+/** A team's time together, ice-time-weighted, for its forward lines and its defence pairs. */
+export function lineupTogether(
+  lineup: Lineup,
+  linemates: Readonly<Record<string, number>> = {},
+): { forwards: number; defense: number } {
+  const sum = (units: Player[][], w: readonly number[]) =>
+    units.reduce((t, u, i) => t + w[i]! * unitTogether(u, linemates), 0);
+  return {
+    forwards: sum(lineup.forwards, ICE_TIME.forwardLines),
+    defense: sum(lineup.defense, ICE_TIME.defensePairs),
+  };
+}
+
+const finisher = (p: Player) => r(p, 'shooting') - r(p, 'passing');
+const rusher = (p: Player) => attack(p) - defence(p);
+
+/** 0-1: how well a unit's players complement each other, by how `lean` splits them. */
+export function unitFit(
+  unit: readonly Player[],
+  lean: (p: Player) => number,
+  span: number,
+): number {
+  if (unit.length < 2) return 0;
+  const leans = unit.map(lean);
+  return Math.max(0, Math.min(1, Math.min(Math.max(...leans), -Math.min(...leans)) / span));
+}
+
+/** A team's fit, ice-time-weighted, for its forward lines and its defence pairs. */
+export function lineupFit(lineup: Lineup): { forwards: number; defense: number } {
+  const sum = (
+    units: Player[][],
+    w: readonly number[],
+    lean: (p: Player) => number,
+    span: number,
+  ) => units.reduce((t, u, i) => t + w[i]! * unitFit(u, lean, span), 0);
+  return {
+    forwards: sum(lineup.forwards, ICE_TIME.forwardLines, finisher, FIT_SPAN.forwards),
+    defense: sum(lineup.defense, ICE_TIME.defensePairs, rusher, FIT_SPAN.defense),
+  };
+}
 
 /**
  * The lineup a coach would pick: the best centre, left wing and right wing together on line 1,
@@ -99,13 +192,13 @@ const byRating = (a: Player, b: Player) => overall(b) - overall(a) || a.id.local
 export function autoLineup(players: readonly Player[], depth: readonly string[] = []): Lineup {
   const rank = new Map(depth.map((id, i) => [id, i]));
   const order = (a: Player, b: Player) =>
-    (rank.get(a.id) ?? Infinity) - (rank.get(b.id) ?? Infinity) || byRating(a, b);
+    (rank.get(a.id) ?? Infinity) - (rank.get(b.id) ?? Infinity) || byOverall(a, b);
   const at = (position: string) => players.filter((p) => p.position === position).sort(order);
   const [c, lw, rw, d] = [at('C'), at('LW'), at('RW'), at('D')];
   // A line short of a centre or winger (injuries) takes the best spare forward of any position.
   const spares = [c, lw, rw]
     .flatMap((list) => list.slice(ICE_TIME.forwardLines.length))
-    .sort(byRating);
+    .sort(byOverall);
   const lines = ICE_TIME.forwardLines.map((_, i) =>
     [c[i] ?? spares.shift(), lw[i] ?? spares.shift(), rw[i] ?? spares.shift()].filter(
       (p) => p !== undefined,
@@ -165,13 +258,33 @@ export function teamStrength(
   depth: readonly string[] = [],
   chemistry = 0.5,
   saved: SavedUnits = {},
+  linemates: Readonly<Record<string, number>> = {},
+  coaching = 0,
 ): TeamStrength {
-  const chem = CHEMISTRY_POINTS * 2 * (Math.max(0, Math.min(1, chemistry)) - 0.5);
+  const chem = CHEMISTRY_POINTS * 2 * (Math.max(0, Math.min(1, chemistry)) - 0.5) + coaching;
   const lineup = autoLineup(players, depth);
   lineup.special = dressedUnits(lineup, saved);
   const { forwards, defense, goalies } = lineup;
   const f = ICE_TIME.forwardLines;
   const d = ICE_TIME.defensePairs;
+  // Builds fit: a line's fit moves its attack, a pair's its defence. Linemates move both.
+  const together = (u: Player[]) => LINEMATES_POINTS * (2 * unitTogether(u, linemates) - 1);
+  const unitBonus = {
+    forwards: forwards.map((u) => ({
+      offense:
+        FIT_POINTS * (unitFit(u, finisher, FIT_SPAN.forwards) - FIT_BASELINE.forwards) +
+        together(u),
+      defense: together(u),
+    })),
+    defense: defense.map((u) => ({
+      offense: together(u),
+      defense:
+        FIT_POINTS * (unitFit(u, rusher, FIT_SPAN.defense) - FIT_BASELINE.defense) + together(u),
+    })),
+  };
+  const byIce = (k: keyof UnitBonus) =>
+    unitBonus.forwards.reduce((s, b, i) => s + f[i]! * b[k], 0) +
+    unitBonus.defense.reduce((s, b, i) => s + d[i]! * b[k], 0);
   const mix = (w: { forwards: number; defense: number }, skill: (p: Player) => number) =>
     w.forwards * weighted(forwards, f, skill) + w.defense * weighted(defense, d, skill);
   // The first player on each line takes its draws (its centre, or whoever fills that slot).
@@ -184,11 +297,11 @@ export function teamStrength(
     ) -
       50);
   return {
-    offense: mix(UNIT_WEIGHT.offense, attack) + draws + chem,
-    defense: mix(UNIT_WEIGHT.defense, defence) + draws + chem,
+    offense: mix(UNIT_WEIGHT.offense, attack) + draws + chem + byIce('offense'),
+    defense: mix(UNIT_WEIGHT.defense, defence) + draws + chem + byIce('defense'),
     goaltending: goalies[0] ? goalieScore(goalies[0]) : 40,
-    backupGoaltending: goalies[1] ? goalieScore(goalies[1]) : 40,
     chemistry: chem,
+    unitBonus,
     lineup,
   };
 }
@@ -206,6 +319,15 @@ export function lineupUnits(
   ];
 }
 
+/** The auto penalty kill: the four best defensive forwards (ties by lineup order), two a unit. */
+export const autoKillers = (lineup: Lineup): Player[] =>
+  lineup.forwards
+    .flat()
+    .map((p, i) => [p, i] as const)
+    .sort((a, b) => rating(b[0], 'defense') - rating(a[0], 'defense') || a[1] - b[1])
+    .slice(0, 4)
+    .map(([p]) => p);
+
 /** Power-play and penalty-kill units as the game would use them, and whether the GM set them. */
 export function specialUnitsView(
   players: readonly Player[],
@@ -214,13 +336,7 @@ export function specialUnitsView(
 ): Record<SpecialUnit, { playerIds: string[]; custom: boolean }> {
   const lineup = autoLineup(players, depth);
   const mine = dressedUnits(lineup, saved);
-  // The auto kill: the four best defensive forwards (ties by lineup order), two a unit.
-  const killers = lineup.forwards
-    .flat()
-    .map((p, i) => [p, i] as const)
-    .sort((a, b) => rating(b[0], 'defense') - rating(a[0], 'defense') || a[1] - b[1])
-    .slice(0, 4)
-    .map(([p]) => p);
+  const killers = autoKillers(lineup);
   const auto = (unit: SpecialUnit, k: number) =>
     unit.startsWith('pp')
       ? [...(lineup.forwards[k] ?? []).slice(0, 3), ...(lineup.defense[k] ?? []).slice(0, 2)]

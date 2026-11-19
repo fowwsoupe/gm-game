@@ -1,7 +1,10 @@
-import type { DraftProspect, Player, TeamId } from '@gm/shared';
-import type { Emit, LeagueState, Rng } from '../core';
+import type { DraftProspect, Player, Team, TeamId } from '@gm/shared';
+import { Rng, teamName, type Emit, type LeagueState } from '../core';
 import type { SimContext } from '../context';
+import { deadCap } from '../cba';
 import { pickId, pickOwner } from '../league';
+import { hash, staffOf } from '../people';
+import { clampRating } from '../players';
 import { entryContract, rosterOf } from './roster';
 
 /** How far a scout's read of a prospect's potential is off, on average (rating points). */
@@ -9,8 +12,40 @@ const SCOUT_SD = 4;
 /** Half the width of the scouted range. */
 const SCOUT_HALF_RANGE = 5;
 
-const clampRating = (n: number) => Math.max(1, Math.min(99, Math.round(n)));
 const scouted = (d: DraftProspect) => (d.low + d.high) / 2;
+
+/**
+ * A prospect's potential range as this team's scouts read it: a good scouting department reads
+ * close to the truth and narrower than the public range, a poor one wider and further off. The
+ * read is the same every time for the same department and prospect; nothing is stored.
+ */
+export function teamRange(
+  team: Team,
+  d: DraftProspect,
+  ctx: SimContext,
+  season: number,
+): { low: number; high: number } {
+  const fo = ctx.ruleset.frontOffice;
+  const q = staffOf(team, 'scouting', fo.salary, season).quality;
+  const sd = fo.scouting.best + (1 - q) * (fo.scouting.worst - fo.scouting.best);
+  const read =
+    d.player.potential + new Rng(hash(`draftRead:${team.id}:${q}:${d.player.id}`)).normal(0, sd);
+  const half = (SCOUT_HALF_RANGE * sd) / SCOUT_SD;
+  return { low: clampRating(read - half), high: clampRating(read + half) };
+}
+
+/** An AI GM without a board picks the best potential as his scouts read it among the next few. */
+const AI_LOOKS_AT = 12;
+function aiPick(team: Team, pool: readonly DraftProspect[], ctx: SimContext, season: number) {
+  let best = 0;
+  let bestRead = -Infinity;
+  pool.slice(0, AI_LOOKS_AT).forEach((d, i) => {
+    const r = teamRange(team, d, ctx, season);
+    const read = (r.low + r.high) / 2;
+    if (read > bestRead) [best, bestRead] = [i, read];
+  });
+  return best;
+}
 
 /**
  * Next season's draft class with its scouted ranges, best scouted first. Every team sees the
@@ -31,8 +66,46 @@ export function draftClass(state: LeagueState, ctx: SimContext, rng: Rng): Draft
 }
 
 /** Announces the class once the champion is crowned, so teams can scout and rank it. */
-export function announceDraftClass(state: LeagueState, ctx: SimContext, rng: Rng, emit: Emit) {
-  emit('notable', [], { kind: 'draft.classAnnounced', prospects: draftClass(state, ctx, rng) });
+export function announceDraftClass(
+  state: LeagueState,
+  ctx: SimContext,
+  rng: Rng,
+  emit: Emit,
+  /** Teams from worst to best. */
+  order: readonly TeamId[],
+) {
+  const firstRound = drawLottery(state, ctx, rng.fork('lottery'), emit, order);
+  emit('notable', [], {
+    kind: 'draft.classAnnounced',
+    prospects: draftClass(state, ctx, rng),
+    firstRound,
+  });
+}
+
+/** Draws round one (the lottery), with news when a team jumps to the top. */
+function drawLottery(
+  state: LeagueState,
+  ctx: SimContext,
+  rng: Rng,
+  emit: Emit,
+  order: readonly TeamId[],
+): TeamId[] {
+  const { lottery } = ctx.ruleset.draft;
+  const firstRound = lotteryOrder(
+    order,
+    lottery,
+    order.length - ctx.ruleset.playoffs.teamsQualifying,
+    rng,
+  );
+  if (lottery && firstRound[0] !== order[0] && firstRound[0]) {
+    const team = state.teams[firstRound[0]]!;
+    emit('notable', [team.id], {
+      kind: 'news.posted',
+      headline: 'event.lotteryWon',
+      params: { team: teamName(team) },
+    });
+  }
+  return firstRound;
 }
 
 /**
@@ -51,21 +124,10 @@ export function runDraft(
   /** Teams from worst to best. */
   order: readonly TeamId[],
 ) {
-  const { lottery } = ctx.ruleset.draft;
-  const firstRound = lotteryOrder(
-    order,
-    lottery,
-    order.length - ctx.ruleset.playoffs.teamsQualifying,
-    rng.fork('lottery'),
-  );
-  if (lottery && firstRound[0] !== order[0] && firstRound[0]) {
-    const team = state.teams[firstRound[0]]!;
-    emit('notable', [team.id], {
-      kind: 'news.posted',
-      headline: 'event.lotteryWon',
-      params: { team: `${team.city} ${team.name}` },
-    });
-  }
+  // Drawn when the class was announced; an old save without it draws now.
+  const firstRound = state.draftOrder.length
+    ? state.draftOrder
+    : drawLottery(state, ctx, rng.fork('lottery'), emit, order);
   const pool = state.draftClass.length
     ? [...state.draftClass]
     : draftClass(state, ctx, rng.fork('class'));
@@ -73,14 +135,37 @@ export function runDraft(
   for (let i = 0; pool.length > 0 && i < order.length * ctx.ruleset.draft.rounds; i++) {
     const round = Math.floor(i / order.length) + 1;
     const slotTeam = (i < order.length ? firstRound : order)[i % order.length]!;
-    const teamId = pickOwner(state, pickId(season, round, slotTeam), slotTeam);
+    const id = pickId(season, round, slotTeam);
+    const protection = state.pickProtection[id];
+    // A protected pick that lands high stays with the team that traded it.
+    const teamId =
+      round === 1 && protection && i + 1 <= protection.top
+        ? protection.keeper
+        : pickOwner(state, id, slotTeam);
     const board = state.draftBoards[teamId] ?? [];
-    const wanted = board
-      .map((id) => pool.findIndex((d) => d.player.id === id))
-      .find((at) => at >= 0);
+    const team = state.teams[teamId]!;
+    const wanted =
+      board.map((id) => pool.findIndex((d) => d.player.id === id)).find((at) => at >= 0) ??
+      (team.userControlled ? undefined : aiPick(team, pool, ctx, season));
     const [{ player: prospect }] = pool.splice(wanted ?? 0, 1) as [DraftProspect];
-    const contract = entryContract(ctx.ruleset, rosterOf(state, teamId), prospect, season);
-    const player: Player = contract ? { ...prospect, teamId, contract } : prospect;
+    const contract = entryContract(
+      ctx.ruleset,
+      rosterOf(state, teamId),
+      prospect,
+      season,
+      deadCap(state, teamId, season),
+    );
+    // First-rounders sign with the most the rules allow in performance bonuses.
+    const player: Player = contract
+      ? {
+          ...prospect,
+          teamId,
+          contract:
+            round === 1
+              ? { ...contract, perfBonus: ctx.ruleset.contracts.maxPerformanceBonus }
+              : contract,
+        }
+      : prospect;
     emit(i === 0 ? 'notable' : 'minor', [teamId], {
       kind: 'player.drafted',
       player,

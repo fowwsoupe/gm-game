@@ -2,13 +2,15 @@ import type {
   AwardEntry,
   CapSheet,
   CareerLine,
+  CoachProfile,
+  Department,
   Dashboard,
   DraftPick,
   DraftBoardEntry,
   GameDetail,
   GameSummary,
   HallOfFamer,
-  Leaderboard,
+  LeaderboardView,
   PlayerProfile,
   PlayoffSeries,
   PulseRow,
@@ -18,12 +20,20 @@ import type {
   StandingsRow,
   Team,
   LeagueStatus,
+  OwnerProfile,
+  StaffProfile,
+  DepartmentReturns,
+  OwnerReport,
+  TeamFans,
   SigningInterest,
   TeamId,
   TradeEvaluation,
+  FreeAgentOffer,
+  PlayerHistory,
   TradeOffer,
   TradeProposal,
 } from './domain';
+import type { GoalieRotation } from './sports/hockey';
 import type { Command, CommandResult } from './commands';
 import type { Importance, LeagueEvent } from './events';
 
@@ -35,9 +45,6 @@ import type { Importance, LeagueEvent } from './events';
  * Add a query here first, then implement it in main and call it from the UI.
  */
 export interface GmApi {
-  app: {
-    version(): Promise<string>;
-  };
   league: {
     newLeague(input: { seed: number }): Promise<{ teams: Team[] }>;
     /** Opens a file picker for a roster JSON file and starts a league from it. */
@@ -52,7 +59,7 @@ export interface GmApi {
     /** Every award given so far, newest season first. */
     awards(): Promise<AwardEntry[]>;
     /** Stat leaders of the season so far. */
-    leaders(): Promise<Leaderboard[]>;
+    leaders(): Promise<LeaderboardView[]>;
     /** Team records over all finished seasons. */
     records(): Promise<RecordEntry[]>;
     /** A team's cap sheet: the cap year in play, then future seasons. */
@@ -82,14 +89,53 @@ export interface GmApi {
       /** Power-play and penalty-kill units (pp1, pp2, pk1, pk2) as games use them. */
       special: Record<string, { playerIds: string[]; custom: boolean }>;
       /** Team chemistry 0–1 and the average seasons together it comes from. */
-      chemistry: { value: number; seasons: number };
+      chemistry: { value: number; seasons: number; leaders: number };
+      /** How well the lines' and pairs' builds complement each other, 0–1 (ice-time weighted). */
+      fit: { forwards: number; defense: number };
+      /** How much the lines and pairs have played together, 0–1 (ice-time weighted). */
+      together: { forwards: number; defense: number };
+      /** How the team's goalies share starts. */
+      rotation: GoalieRotation;
+      /** Players unhappy with their role; `until`: the day a promised role is due. */
+      disputes: { playerId: string; until?: number; listed?: true }[];
     }>;
     /** A player's finished regular seasons, oldest first. */
     career(input: { playerId: string }): Promise<CareerLine[]>;
+    /** A player's awards and the moves in his career (drafted, signed, traded...). */
+    history(input: { playerId: string }): Promise<PlayerHistory>;
     /** Draft picks a team owns in the drafts that can be traded. */
     picks(input: { teamId: TeamId }): Promise<DraftPick[]>;
     /** Players on a team who asked to be traded. */
     tradeRequests(input: { teamId: TeamId }): Promise<string[]>;
+    /** A team's owner, head coach, department heads, market size (0.65-1.75), arena seats, fans and ticket price step. */
+    owner(input: { teamId: TeamId }): Promise<{
+      owner: OwnerProfile;
+      coach: CoachProfile;
+      /** The assistant GM only on a human team. */
+      staff: Record<Exclude<Department, 'assistant'>, StaffProfile> & { assistant?: StaffProfile };
+      market: number;
+      capacity: number;
+      fans: TeamFans;
+      ticketPct: number;
+    }>;
+    /**
+     * Who a team can hire for each department this season (`staff.hire` takes the index), and
+     * whether it already hired one (once a department a season).
+     */
+    staffCandidates(input: {
+      teamId: TeamId;
+    }): Promise<Partial<Record<Department, { candidates: StaffProfile[]; locked: boolean }>>>;
+    /**
+     * What each department returned last season against an average one: rating points a year
+     * added to players 24 or younger, the share of injury time saved (negative: lost), and how
+     * far its read of the last draft's picks was off (rating points; null: no picks), with the
+     * league's average.
+     */
+    departmentReturns(input: { teamId: TeamId }): Promise<DepartmentReturns>;
+    /** The Owner screen for a team (money flow and meetings come from the event log). */
+    ownerReport(input: { teamId: TeamId }): Promise<OwnerReport>;
+    /** Offer sheets other teams gave this team's restricted free agents (match or decline). */
+    offerSheets(input: { teamId: TeamId }): Promise<FreeAgentOffer[]>;
     /** AI GMs' open offers to a team. */
     tradeOffers(input: { teamId: TeamId }): Promise<TradeOffer[]>;
     /** What the other team would say to a trade, without making it. */
@@ -110,14 +156,17 @@ export interface GmApi {
       teamId: TeamId;
       salary: number;
       years: number;
+      noTrade?: true;
+      bonusPct?: number;
     }): Promise<SigningInterest | null>;
   };
   feed: {
-    /** Newest first, with the names of the players they mention (retired ones included). */
-    list(input: {
-      limit: number;
-      minImportance?: Importance;
-    }): Promise<{ events: LeagueEvent[]; names: Record<string, string> }>;
+    /** Newest first, with the names and ages of the players they mention (retired ones included). */
+    list(input: { limit: number; minImportance?: Importance }): Promise<{
+      events: LeagueEvent[];
+      names: Record<string, string>;
+      ages: Record<string, number>;
+    }>;
   };
   commands: {
     /** The only way to change game state. */
@@ -130,7 +179,6 @@ export interface GmApi {
 
 /** IPC channel names. */
 export const IPC = {
-  appVersion: 'app:version',
   newLeague: 'league:new',
   newLeagueFromRoster: 'league:newFromRoster',
   listTeams: 'league:listTeams',
@@ -150,8 +198,14 @@ export const IPC = {
   career: 'league:career',
   lines: 'league:lines',
   picks: 'league:picks',
+  offerSheets: 'league:offerSheets',
+  history: 'league:history',
   tradeOffers: 'league:tradeOffers',
   tradeRequests: 'league:tradeRequests',
+  owner: 'league:owner',
+  staffCandidates: 'league:staffCandidates',
+  departmentReturns: 'league:departmentReturns',
+  ownerReport: 'league:ownerReport',
   evaluateTrade: 'league:evaluateTrade',
   status: 'league:status',
   pulse: 'league:pulse',

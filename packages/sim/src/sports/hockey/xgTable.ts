@@ -1,4 +1,4 @@
-import { HOCKEY_TUNING, type GoalModel } from './game';
+import { HOCKEY_TUNING, type GoalModel } from './tuning';
 
 /**
  * A shot-quality model as plain data, so the sim stays pure (no ONNX runtime, no files) and a
@@ -89,7 +89,7 @@ export function xgTableFromModel(
   opts: { cellFeet?: number; xMax?: number; yMax?: number; source?: string } = {},
 ): XgTable {
   const cellFeet = opts.cellFeet ?? 5;
-  const reference = 65;
+  const reference = HOCKEY_TUNING.shootingReference;
   const rows = Math.ceil((opts.xMax ?? 70) / cellFeet);
   const cols = Math.ceil((opts.yMax ?? 45) / cellFeet);
   const round = (v: number) => Math.round(v * 1e5) / 1e5;
@@ -110,7 +110,7 @@ export function xgTableFromModel(
         ),
       ),
     ),
-    shooting: { reference, exponent: 0.7 },
+    shooting: { reference, exponent: HOCKEY_TUNING.shootingExponent },
     powerPlay: HOCKEY_TUNING.powerPlayQuality,
   };
 }

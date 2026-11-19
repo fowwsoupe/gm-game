@@ -218,11 +218,10 @@ describe('buyout command', () => {
         state.teams[p.teamId]!.userControlled &&
         p.contract!.expiresAfterSeason === state.date.season,
     );
-    if (expiring) {
-      expect(
-        handleCommand(state, { kind: 'contract.buyout', playerId: expiring.id }, local, ctx),
-      ).toMatchObject({ ok: false, error: { code: 'invalid' } });
-    }
+    expect(expiring).toBeDefined();
+    expect(
+      handleCommand(state, { kind: 'contract.buyout', playerId: expiring!.id }, local, ctx),
+    ).toMatchObject({ ok: false, error: { code: 'invalid' } });
   });
 });
 

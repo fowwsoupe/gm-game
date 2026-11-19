@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest';
-import type { Actor } from '@gm/shared';
+import type { Actor, TeamId } from '@gm/shared';
 import {
   createLeague,
   defaultContext,
@@ -31,6 +31,28 @@ describe('pick value', () => {
 });
 
 describe('trading picks', () => {
+  it('values next-draft picks alike before any games (no tie-break by team id)', () => {
+    const state = createLeague(81, ctx);
+    expect(Object.keys(state.results)).toHaveLength(0);
+    const ids = (Object.keys(state.teams) as TeamId[]).sort();
+    const mine = Object.values(state.teams).find((t) => t.userControlled)!.id;
+    const partner = ids.find((id) => id !== mine && !state.teams[id]!.userControlled)!;
+    const [first, last] = [ids[0]!, ids[ids.length - 1]!].map((id) => {
+      const pick = pickId(state.date.season + 1, 1, id);
+      state.pickOwners[pick] = mine;
+      return pick;
+    });
+    const value = (pick: string) =>
+      evaluateTrade(state, ctx, {
+        fromTeamId: mine,
+        toTeamId: partner,
+        give: [],
+        get: [],
+        givePicks: [pick],
+      }).value;
+    expect(value(first!)).toBe(value(last!));
+  });
+
   it('your traded first-rounder is made by the team that owns it', () => {
     const state = createLeague(81, ctx);
     const teams = Object.values(state.teams);

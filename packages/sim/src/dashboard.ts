@@ -1,7 +1,10 @@
-import type { Dashboard, TeamId, TodoItem } from '@gm/shared';
-import { phaseOf, type LeagueState } from './core';
+import type { Dashboard, Player, TeamId, TodoItem } from '@gm/shared';
+import { phaseOf, playerName, type LeagueState } from './core';
 import { capYearIssues, teamCapTotal } from './cba';
 import { resignOffers } from './offseason';
+import { assistantSees, departmentsOf, staffOf } from './people';
+import { overall } from './players';
+import { cachedContext } from './trades';
 import type { SimContext } from './context';
 
 /** Days before the trade deadline when Home starts reminding you. */
@@ -16,11 +19,25 @@ export function dashboard(state: LeagueState, ctx: SimContext, teamId: TeamId): 
   const cal = ruleset.season.calendar;
   const roster = Object.values(state.players).filter((p) => p.teamId === teamId);
   const todo: TodoItem[] = [];
+  // A human GM's assistant adds advice, only as good as his read of the players
+  // (docs/research/2026-11-assistant-gm.md). The human still decides.
+  const team = state.teams[teamId];
+  const assistant =
+    team && departmentsOf(team).includes('assistant')
+      ? staffOf(team, 'assistant', ruleset.frontOffice.salary, state.date.season)
+      : undefined;
+  const seen = (p: Player) => (assistant ? assistantSees(assistant, teamId, p) : p);
 
   // Extensions are optional in season; after the final it is now or never.
-  const expiring = state.championTeamId ? resignOffers(state, ctx, teamId).length : 0;
-  if (expiring > 0 && !state.freeAgencyOpen) {
-    todo.push({ code: 'resign', params: { count: expiring }, screen: 'cap' });
+  const expiring = state.championTeamId ? resignOffers(state, ctx, teamId) : [];
+  if (expiring.length > 0 && !state.freeAgencyOpen) {
+    todo.push({ code: 'resign', params: { count: expiring.length }, screen: 'cap' });
+    if (assistant) {
+      const first = expiring
+        .map((o) => state.players[o.playerId]!)
+        .sort((a, b) => overall(seen(b)) - overall(seen(a)))[0]!;
+      todo.push({ code: 'adviceResign', params: { player: playerName(first) }, screen: 'cap' });
+    }
   }
   if (state.draftClass.length > 0 && !(state.draftBoards[teamId]?.length ?? 0)) {
     todo.push({ code: 'draftList', screen: 'draft' });
@@ -31,13 +48,49 @@ export function dashboard(state: LeagueState, ctx: SimContext, teamId: TeamId): 
     if (p) {
       todo.push({
         code: 'tradeRequest',
-        params: { player: `${p.firstName} ${p.lastName}` },
+        params: { player: playerName(p) },
         screen: 'trades',
       });
     }
   }
-  const offers = state.tradeOffers.filter((o) => o.proposal.toTeamId === teamId).length;
-  if (offers > 0) todo.push({ code: 'tradeOffers', params: { count: offers }, screen: 'trades' });
+  for (const d of state.disputes.filter(
+    (x) => x.teamId === teamId && x.until === undefined && !x.listed,
+  )) {
+    const p = state.players[d.playerId];
+    if (p) todo.push({ code: 'dispute', params: { player: playerName(p) }, screen: 'lines' });
+  }
+  for (const h of state.holdouts.filter((x) => x.teamId === teamId)) {
+    const p = state.players[h.playerId];
+    if (p) {
+      todo.push({
+        code: 'holdout',
+        params: { player: playerName(p) },
+        screen: 'roster',
+      });
+    }
+  }
+  const offers = state.tradeOffers.filter((o) => o.proposal.toTeamId === teamId);
+  if (offers.length > 0) {
+    todo.push({ code: 'tradeOffers', params: { count: offers.length }, screen: 'trades' });
+  }
+  if (assistant && offers.length > 0) {
+    const context = cachedContext(state, ctx, teamId);
+    const players = (ids: readonly string[]) => ids.flatMap((id) => state.players[id] ?? []);
+    // ponytail: players only; AI offers carry no picks yet (add pickValue when they do).
+    const worth = (ids: readonly string[]) =>
+      players(ids).reduce(
+        (sum, p) => sum + ctx.models.valuation.value(seen(p), context, ruleset).surplus,
+        0,
+      );
+    const names = (ids: readonly string[]) => players(ids).map(playerName).join(', ');
+    for (const { proposal } of offers) {
+      todo.push({
+        code: worth(proposal.give) > worth(proposal.get) ? 'adviceTake' : 'adviceDecline',
+        params: { give: names(proposal.give), get: names(proposal.get) },
+        screen: 'trades',
+      });
+    }
+  }
   const hurt = roster.filter((p) => (p.injuredUntil ?? 0) > state.date.day).length;
   if (hurt > 0) todo.push({ code: 'injured', params: { count: hurt }, screen: 'roster' });
   for (const [position, min] of Object.entries(ruleset.roster.positionMin)) {
@@ -71,6 +124,7 @@ export function dashboard(state: LeagueState, ctx: SimContext, teamId: TeamId): 
     .sort((a, b) => a.date.day - b.date.day)[0];
   return {
     todo,
+    ownerCards: state.ownerCards.filter((c) => c.teamId === teamId),
     nextGame: next
       ? {
           opponentId: next.homeTeamId === teamId ? next.awayTeamId : next.homeTeamId,

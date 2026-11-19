@@ -2,7 +2,7 @@ import type { DraftPick, TeamId } from '@gm/shared';
 import type { LeagueState } from '../core';
 
 /** Drafts ahead whose picks can be traded (this coming one and the two after). */
-export const TRADEABLE_DRAFTS = 3;
+const TRADEABLE_DRAFTS = 3;
 
 export const pickId = (season: number, round: number, originalTeamId: string) =>
   `${season}-${round}-${originalTeamId}`;

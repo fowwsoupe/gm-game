@@ -27,7 +27,6 @@ export const PRIORITIES = [
   'term',
 ] as const;
 export type Priority = (typeof PRIORITIES)[number];
-export type Priorities = Record<Priority, number>;
 
 export function randomPersonality(rng: Rng): Personality {
   const p = {} as Personality;
@@ -36,7 +35,7 @@ export function randomPersonality(rng: Rng): Personality {
 }
 
 /** FNV-1a: a stable 32-bit number from a string. */
-function hash(text: string): number {
+export function hash(text: string): number {
   let h = 0x811c9dc5;
   for (let i = 0; i < text.length; i++) h = Math.imul(h ^ text.charCodeAt(i), 0x01000193);
   return h >>> 0;
@@ -48,6 +47,10 @@ function hash(text: string): number {
  */
 export const personalityOf = (playerId: string): Personality =>
   randomPersonality(new Rng(hash(`personality:${playerId}`)));
+
+/** The team of his hometown: stable from his id and the team list, like his personality. */
+export const hometownOf = (playerId: string, teamIds: readonly string[]): string | undefined =>
+  [...teamIds].sort()[hash(`home:${playerId}`) % Math.max(1, teamIds.length)];
 
 /** Traits strong (or, for temperament, weak) enough to mention, strongest first, at most two. */
 export function notableTraits(p: Personality): string[] {

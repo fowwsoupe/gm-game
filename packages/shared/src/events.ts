@@ -1,14 +1,24 @@
-import type { SpecialUnit } from './sports/hockey';
+import type { StopCategory } from './commands';
+import type { GoalieRotation, SpecialUnit } from './sports/hockey';
 import type {
   CapCharge,
   Contract,
+  CardEffects,
   DraftProspect,
+  FinanceLines,
   GameResult,
+  Department,
+  GmProfile,
+  StaffProfile,
+  OwnerCard,
+  OwnerStanding,
   Player,
+  TeamPlan,
   PlayerId,
   PlayoffSeries,
   RetainedSalary,
   ScheduledGame,
+  TeamFans,
   TeamId,
   FreeAgentOffer,
   TradeOffer,
@@ -77,14 +87,79 @@ export type LeagueEvent =
       contract: Contract;
     })
   /** Contract ran out: the player becomes a free agent. */
-  | (EventBase & { kind: 'contract.expired'; playerId: PlayerId })
+  /** `rightsTeamId`: a restricted free agent; that team may match another team's offer sheet. */
+  | (EventBase & { kind: 'contract.expired'; playerId: PlayerId; rightsTeamId?: TeamId })
   /**
    * A new player enters the league through the draft (the event carries the whole player).
    * `round` and `pick` are 0 for an undrafted free agent signed to fill a roster.
    */
   | (EventBase & { kind: 'player.drafted'; player: Player; round: number; pick: number })
-  /** Re-signing, free agency or an undrafted free agent: player joins `teamId` on `contract`. */
-  | (EventBase & { kind: 'player.signed'; playerId: PlayerId; teamId: TeamId; contract: Contract })
+  /**
+   * Re-signing, free agency or an undrafted free agent: player joins `teamId` on `contract`.
+   * `staying`: he re-signs with the team whose contract just expired, so his time there carries on.
+   */
+  | (EventBase & {
+      kind: 'player.signed';
+      playerId: PlayerId;
+      teamId: TeamId;
+      contract: Contract;
+      staying?: true;
+      /** An offer sheet signed him away: these draft picks go to the team that held his rights. */
+      compensation?: { toTeamId: TeamId; picks: string[] };
+    })
+  /**
+   * End of the playoffs: performance bonuses earned this season, and the part of each team's
+   * that went over the cap, charged to next season's cap.
+   */
+  | (EventBase & {
+      kind: 'bonuses.paid';
+      season: number;
+      paid: { playerId: PlayerId; teamId: TeamId; amount: number }[];
+      charges: CapCharge[];
+    })
+  /**
+   * A team's cash for a month (or the playoffs) settles: revenue in, costs out, over `homeDates`
+   * home dates. `fans`: the team's fans after the month.
+   */
+  | (EventBase &
+      ({
+        kind: 'finance.settled';
+        teamId: TeamId;
+        homeDates: number;
+        fans: TeamFans;
+      } & FinanceLines))
+  /** An owner meeting (preseason objectives, deadline check-in, season-end review): his standing after it. */
+  | (EventBase & {
+      kind: 'owner.meeting';
+      teamId: TeamId;
+      meeting: 'preseason' | 'deadline' | 'review';
+      owner: OwnerStanding;
+    })
+  /** A month of results moved the owner's confidence in the GM. */
+  | (EventBase & { kind: 'owner.confidenceMoved'; teamId: TeamId; confidence: number })
+  /** An AI owner's frustration made the news (once a season). */
+  | (EventBase & { kind: 'owner.frustrated'; teamId: TeamId })
+  /** The owner puts a decision to a human GM. */
+  | (EventBase & { kind: 'owner.cardOpened'; card: OwnerCard })
+  /** A card was answered (by an AI GM, a human, or by default at the next meeting): `effects` apply. */
+  | (EventBase & {
+      kind: 'owner.cardAnswered';
+      teamId: TeamId;
+      cardId: string;
+      cardKind: OwnerCard['kind'];
+      option: OwnerCard['options'][number]['key'];
+      effects: CardEffects;
+    })
+  /** A project is done: the arena now seats `capacity`, and fan interest moves by `fanInterest`. */
+  | (EventBase & {
+      kind: 'project.finished';
+      teamId: TeamId;
+      projectId: string;
+      capacity: number;
+      fanInterest: number;
+    })
+  /** A team's ticket price policy changed (see `TICKET_STEPS`); the next settlement uses it. */
+  | (EventBase & { kind: 'finance.ticketPriceSet'; teamId: TeamId; pct: number })
   /** End of season: who won an award. `playerId` is absent for team awards (champion). */
   | (EventBase & {
       kind: 'award.given';
@@ -93,8 +168,12 @@ export type LeagueEvent =
       teamId: TeamId;
       playerId?: PlayerId;
     })
-  /** The playoffs are over: next draft's class, with scouted ranges. */
-  | (EventBase & { kind: 'draft.classAnnounced'; prospects: DraftProspect[] })
+  /** The playoffs are over: next draft's class, with scouted ranges, and the lottery's round-one order. */
+  | (EventBase & {
+      kind: 'draft.classAnnounced';
+      prospects: DraftProspect[];
+      firstRound?: TeamId[];
+    })
   /** A team ranked the prospects it wants; its picks follow this order. */
   | (EventBase & { kind: 'draft.boardSet'; teamId: TeamId; order: PlayerId[] })
   /** End of a regular season: every player's stat line, kept for career stats (sport-defined keys). */
@@ -107,8 +186,16 @@ export type LeagueEvent =
   | (EventBase & { kind: 'lines.set'; teamId: TeamId; order: PlayerId[] })
   /** A team's power-play or penalty-kill unit changed (empty = auto). */
   | (EventBase & { kind: 'units.set'; teamId: TeamId; unit: SpecialUnit; playerIds: PlayerId[] })
+  /** A human team listed a player as available (or took him off the block). */
+  | (EventBase & { kind: 'trade.blockSet'; teamId: TeamId; playerId: PlayerId; onBlock: boolean })
+  /** A team changed how its goalies share starts. */
+  | (EventBase & { kind: 'goalies.rotationSet'; teamId: TeamId; rotation: GoalieRotation })
   /** A team made a free agent an offer (replaces its earlier one); he answers next day. */
   | (EventBase & { kind: 'freeAgency.offered'; offer: FreeAgentOffer })
+  /** An offer sheet to a restricted free agent: the team holding his rights may match it or not. */
+  | (EventBase & { kind: 'freeAgency.sheetReceived'; offer: FreeAgentOffer })
+  /** A sheet that cannot be signed any more (cap room moved): it is gone. */
+  | (EventBase & { kind: 'freeAgency.sheetDropped'; playerId: PlayerId })
   /** The offseason's free-agency window opened (closes when the next season starts). */
   | (EventBase & { kind: 'freeAgency.opened' })
   /** A new season: fresh schedule, clock back to opening night, results cleared. */
@@ -117,6 +204,8 @@ export type LeagueEvent =
       season: number;
       schedule: ScheduledGame[];
       rngState: number;
+      /** Each team's form this season, rating points (absent in old saves: none). */
+      form?: Record<TeamId, number>;
     })
   /** A trade went through: `give` moved from `fromTeamId` to `toTeamId`, `get` the other way. */
   | (EventBase & {
@@ -128,16 +217,62 @@ export type LeagueEvent =
       retained?: RetainedSalary[];
       givePicks?: string[];
       getPicks?: string[];
+      /** Top-N protection on the picks `fromTeamId` gave (it keeps one that lands that high). */
+      protectTop?: number;
     })
   /** An unhappy player asks his (human) team to trade him. */
   | (EventBase & { kind: 'player.tradeRequested'; playerId: PlayerId; teamId: TeamId })
   /** A trade request ends: withdrawn after a talk, or he was traded. */
   | (EventBase & { kind: 'player.tradeRequestEnded'; playerId: PlayerId; withdrawn: boolean })
+  /** A player unhappy with his role (he sits well down the depth order for his rating) asks for more. */
+  | (EventBase & { kind: 'player.disputeStarted'; playerId: PlayerId; teamId: TeamId })
+  /** The GM put him on the block: the dispute stays open while he is listed (unlisted: he asks out). */
+  | (EventBase & { kind: 'player.disputeListed'; playerId: PlayerId })
+  /** The GM promised him a bigger role by day `until` (of this season). */
+  | (EventBase & { kind: 'player.disputePromised'; playerId: PlayerId; until: number })
+  /** Settled: he accepted (`settled`), the GM kept his word (`kept`), or it is over without peace (`request`: he asks out; `listed`: he is on the block). */
+  | (EventBase & {
+      kind: 'player.disputeEnded';
+      playerId: PlayerId;
+      outcome: 'settled' | 'kept' | 'request' | 'listed';
+    })
+  /** A player under contract refuses to report until he is paid, talked round or traded. */
+  | (EventBase & { kind: 'player.holdoutStarted'; playerId: PlayerId; teamId: TeamId })
+  /** A holdout ends with the player back at work (`talked`: after a talk with the GM). */
+  | (EventBase & { kind: 'player.holdoutEnded'; playerId: PlayerId; talked: boolean })
   /** An AI GM offers a human team a trade (see `TradeOffer`). */
   | (EventBase & { kind: 'trade.offered'; offer: TradeOffer })
   /** An offer is gone: accepted (a `trade.completed` follows), declined or expired. */
   | (EventBase & { kind: 'trade.offerClosed'; offerId: string; accepted: boolean })
   | (EventBase & { kind: 'team.controlChanged'; teamId: TeamId; userControlled: boolean })
+  /** An AI team has a new GM (the old one was fired or moved on). */
+  | (EventBase & { kind: 'team.gmChanged'; teamId: TeamId; gm: GmProfile; fired: boolean })
+  /** A department head left (`poached`: hired away after a good season) and `head` took over. */
+  | (EventBase & {
+      kind: 'staff.hired';
+      teamId: TeamId;
+      department: Department;
+      head: StaffProfile;
+      poached: boolean;
+    })
+  /** A human GM fired a department head: `head`, an interim, took over and `severance` left the cash. */
+  | (EventBase & {
+      kind: 'staff.fired';
+      teamId: TeamId;
+      department: Department;
+      head: StaffProfile;
+      severance: number;
+    })
+  /** The owner fired a human GM at the review: the team goes to `gm`, an AI GM, and you are out of work. */
+  | (EventBase & { kind: 'career.fired'; teamId: TeamId; gm: GmProfile })
+  /** Teams with a vacancy that want the GM who is out of work (replaces any earlier ones). */
+  | (EventBase & { kind: 'career.offers'; offers: TeamId[] })
+  /** The GM out of work took a job: he runs `teamId` now, with a new owner's honeymoon. */
+  | (EventBase & { kind: 'career.hired'; teamId: TeamId })
+  /** A save option changed: "can be fired" or the sim bar's stop filter (only the one that changed). */
+  | (EventBase & { kind: 'league.optionSet'; canBeFired?: boolean; stopOn?: StopCategory[] })
+  /** An AI GM sets a new plan for his team (contend, retool, rebuild). */
+  | (EventBase & { kind: 'team.planChanged'; teamId: TeamId; plan: TeamPlan })
   | (EventBase & { kind: 'season.phaseChanged'; from: SeasonPhase; to: SeasonPhase })
   | (EventBase & { kind: 'team.statusChanged'; teamId: TeamId; from: TeamStatus; to: TeamStatus })
   | (EventBase & {
@@ -146,5 +281,3 @@ export type LeagueEvent =
       body?: string;
       params?: Record<string, string | number>;
     });
-
-export type LeagueEventKind = LeagueEvent['kind'];

@@ -3,9 +3,6 @@ import { IPC, type GmApi } from '@gm/shared/ipc';
 
 /** Exposes exactly GmApi to the UI as `window.gm`. Nothing else from Node leaks through. */
 const api: GmApi = {
-  app: {
-    version: () => ipcRenderer.invoke(IPC.appVersion),
-  },
   league: {
     newLeague: (input) => ipcRenderer.invoke(IPC.newLeague, input),
     newLeagueFromRoster: (input) => ipcRenderer.invoke(IPC.newLeagueFromRoster, input),
@@ -23,11 +20,17 @@ const api: GmApi = {
     roster: (input) => ipcRenderer.invoke(IPC.roster, input),
     resignOffers: (input) => ipcRenderer.invoke(IPC.resignOffers, input),
     players: (input) => ipcRenderer.invoke(IPC.players, input),
+    history: (input) => ipcRenderer.invoke(IPC.history, input),
     career: (input) => ipcRenderer.invoke(IPC.career, input),
     lines: (input) => ipcRenderer.invoke(IPC.lines, input),
     picks: (input) => ipcRenderer.invoke(IPC.picks, input),
+    offerSheets: (input) => ipcRenderer.invoke(IPC.offerSheets, input),
     tradeOffers: (input) => ipcRenderer.invoke(IPC.tradeOffers, input),
     tradeRequests: (input) => ipcRenderer.invoke(IPC.tradeRequests, input),
+    owner: (input) => ipcRenderer.invoke(IPC.owner, input),
+    staffCandidates: (input) => ipcRenderer.invoke(IPC.staffCandidates, input),
+    departmentReturns: (input) => ipcRenderer.invoke(IPC.departmentReturns, input),
+    ownerReport: (input) => ipcRenderer.invoke(IPC.ownerReport, input),
     evaluateTrade: (input) => ipcRenderer.invoke(IPC.evaluateTrade, input),
     status: () => ipcRenderer.invoke(IPC.status),
     pulse: () => ipcRenderer.invoke(IPC.pulse),

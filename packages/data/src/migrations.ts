@@ -146,4 +146,29 @@ export const migrations: readonly string[] = [
   `
   ALTER TABLE players ADD COLUMN joined_season INTEGER;
   `,
+  // 14: the AI GM running each team (style and skill). NULL = derived from the team id.
+  `
+  ALTER TABLE teams ADD COLUMN gm_json TEXT;
+  `,
+  // 15: the AI GM's plan for his team (contend, retool, rebuild). NULL = none yet.
+  `
+  ALTER TABLE teams ADD COLUMN plan_json TEXT;
+  `,
+  // 16: career injuries and days missed (injury history).
+  `
+  ALTER TABLE players ADD COLUMN injury_count INTEGER NOT NULL DEFAULT 0;
+  ALTER TABLE players ADD COLUMN injury_days INTEGER NOT NULL DEFAULT 0;
+  `,
+  // 17: events by kind (the Owner screen reads a team's settlements and meetings).
+  `
+  CREATE INDEX IF NOT EXISTS events_kind ON events(kind, seq);
+  `,
+  // 18: each team's head coach. NULL = derived from the team id.
+  `
+  ALTER TABLE teams ADD COLUMN coach_json TEXT;
+  `,
+  // 19: each team's front-office department heads. NULL = all derived from the team id.
+  `
+  ALTER TABLE teams ADD COLUMN staff_json TEXT;
+  `,
 ];
