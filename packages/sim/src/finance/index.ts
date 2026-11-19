@@ -4,7 +4,8 @@
  * with one more settlement for the playoffs; the reducer adds the difference to `state.cash` and
  * keeps the fans the event carries. Fan interest sets the crowd (with the arena's capacity, the
  * market and the ticket price) and prices the sponsorship and local media deals.
- * Later: budgets and projects (owner objectives live in `sim/owner`).
+ * Staff (the coach and department heads) are paid in `costs.staff`, projects in `costs.projects`
+ * (owner objectives and project decisions live in `sim/owner`).
  */
 import { NEW_FANS, type FinanceLines, type PlayerId, type TeamFans, type TeamId } from '@gm/shared';
 import type { Emit, LeagueState } from '../core';
