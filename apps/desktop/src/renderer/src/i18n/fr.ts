@@ -20,6 +20,13 @@ export const fr: Record<MessageKey, string> = {
   'frontOffice.hire': 'Embaucher',
   'frontOffice.hiredNow':
     'Embauche faite cette saison : le prochain changement attend la saison prochaine.',
+  'frontOffice.fire': 'Congédier, un intérimaire le remplace',
+  'frontOffice.return.development':
+    '{n} points de cote par an pour les joueurs de 24 ans ou moins, face à un département moyen',
+  'frontOffice.return.medical': '{n} % des jours de blessure face à un département moyen',
+  'frontOffice.return.scouting':
+    'Dernier repêchage : écart de {n} points sur {picks} choix (ligue {league})',
+  'frontOffice.return.none': 'Aucun choix du dernier repêchage à évaluer.',
   'owner.empty': 'Choisissez votre équipe dans Accueil pour rencontrer son propriétaire.',
   'owner.confidence': 'Confiance en vous',
   'owner.cash': 'Encaisse',
@@ -485,6 +492,7 @@ export const fr: Record<MessageKey, string> = {
   'trait.hotHeaded': 'Tête brûlée',
   'home.raceNight': 'prochain match : victoire {win} · défaite {lose}',
   'event.slump': '{player} ({team}) est resté {n} matchs sans point',
+  'event.breakoutPace': '{player} ({team}) éclate : {n} points en {gp} matchs',
   'event.breakout': '{player} ({team}) éclate : {n} points de plus cet été',
   'event.winStreak': 'Les {team} ont gagné {n} matchs de suite',
   'event.losingStreak': 'Les {team} ont perdu {n} matchs de suite',

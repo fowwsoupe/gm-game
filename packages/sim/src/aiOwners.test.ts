@@ -27,5 +27,8 @@ describe('AI owners in the feed', () => {
     );
     expect(news.length).toBeGreaterThan(0);
     for (const e of news) expect(state.teams[e.teamIds[0]!]!.userControlled).toBe(false);
+    // At most one headline per team a season, however often confidence crosses the line.
+    const keys = news.map((e) => `${e.teamIds[0]}:${e.date.season}`);
+    expect(new Set(keys).size).toBe(keys.length);
   });
 });

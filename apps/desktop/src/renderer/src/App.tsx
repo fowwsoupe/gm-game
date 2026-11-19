@@ -47,7 +47,7 @@ const NAV: { id: Screen; label: MessageKey }[] = [
 
 export function App() {
   const t = useT();
-  const { screen, setScreen, locale, setLocale, stopOn } = useUi();
+  const { screen, setScreen, locale, setLocale } = useUi();
   const { data: steam } = useSteam();
   const { data: teams = [], isError } = useTeams();
   const newLeague = useNewLeague();
@@ -153,7 +153,10 @@ export function App() {
           <Button disabled={!hasLeague || dispatch.isPending} onClick={() => sim(7)}>
             {t('actions.simWeek')}
           </Button>
-          <Button disabled={!hasLeague || dispatch.isPending} onClick={() => sim(400, stopOn)}>
+          <Button
+            disabled={!hasLeague || dispatch.isPending}
+            onClick={() => sim(400, status?.stopOn)}
+          >
             {t('actions.simToNext')}
           </Button>
           {status &&
