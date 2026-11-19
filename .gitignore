@@ -29,3 +29,7 @@ steam_appid.txt
 research_notes/
 reports/
 graphify-out/
+
+# Stray clones of other repos (never commit)
+*-clean/
+fantasy-clean/
