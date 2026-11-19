@@ -591,6 +591,7 @@ export const en = {
   'build.playmaker': 'Playmaker',
   'build.powerForward': 'Power forward',
   'build.twoWay': 'Two-way forward',
+  'build.defensiveF': 'Defensive forward',
   'build.grinder': 'Grinder',
   'build.offensiveD': 'Offensive defenceman',
   'build.shutdownD': 'Shutdown defenceman',

@@ -606,6 +606,7 @@ export const fr: Record<MessageKey, string> = {
   'build.playmaker': 'Fabricant de jeux',
   'build.powerForward': 'Attaquant de puissance',
   'build.twoWay': 'Attaquant complet',
+  'build.defensiveF': 'Attaquant défensif',
   'build.grinder': 'Plombier',
   'build.offensiveD': 'Défenseur offensif',
   'build.shutdownD': 'Défenseur défensif',
