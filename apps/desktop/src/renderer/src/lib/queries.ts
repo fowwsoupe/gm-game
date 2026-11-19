@@ -3,7 +3,7 @@ import type { Command, GmApi, Importance, TeamId, TradeProposal } from '@gm/shar
 import { useUi } from '@/stores/ui';
 
 /** All data hooks in one place so query keys stay consistent. */
-export const keys = {
+const keys = {
   teams: ['league', 'teams'] as const,
   standings: ['league', 'standings'] as const,
   playoffs: ['league', 'playoffs'] as const,

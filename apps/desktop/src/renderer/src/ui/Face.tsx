@@ -126,14 +126,14 @@ export function Face({ seed, age, size = 64 }: { seed: string; age: number; size
       />
       {facial === 0 && (
         <path
-          d={`M${52 - jaw} 58 Q50 ${92} ${48 + jaw} 58 Q50 ${eyeY + 30} ${52 - jaw} 58 Z`}
+          d={`M${52 - jaw} 58 Q50 92 ${48 + jaw} 58 Q50 ${eyeY + 30} ${52 - jaw} 58 Z`}
           fill={hair}
           opacity="0.85"
         />
       )}
       {facial === 1 && (
         <path
-          d={`M${52 - jaw} 60 Q50 ${88} ${48 + jaw} 60 Q50 ${eyeY + 32} ${52 - jaw} 60 Z`}
+          d={`M${52 - jaw} 60 Q50 88 ${48 + jaw} 60 Q50 ${eyeY + 32} ${52 - jaw} 60 Z`}
           fill={hair}
           opacity="0.35"
         />
