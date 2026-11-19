@@ -2,7 +2,7 @@ import type { DraftClock, DraftProspect, Player, Team, TeamId, TradeProposal } f
 import { Rng, teamName, type Emit, type LeagueState } from '../core';
 import type { SimContext } from '../context';
 import { deadCap } from '../cba';
-import { draftPicks, draftSlot, pickLabel, worstFirst } from '../league';
+import { draftPicks, draftSlot, parsePick, pickLabel, worstFirst } from '../league';
 import { evaluateTrade, newTradeCache } from '../trades';
 import { hash, staffOf } from '../people';
 import { clampRating } from '../players';
@@ -305,7 +305,14 @@ export function draftPlayer(
             : contract,
       }
     : prospect;
-  emit(pick === 1 ? 'notable' : 'minor', [teamId], { kind: 'player.drafted', player, round, pick });
+  const via = parsePick(clock.id)?.originalTeamId;
+  emit(pick === 1 ? 'notable' : 'minor', [teamId], {
+    kind: 'player.drafted',
+    player,
+    round,
+    pick,
+    ...(via && via !== teamId && { via }),
+  });
   // A trade offer for a pick lasts while it is on the clock.
   for (const o of state.tradeOffers) {
     if (![...(o.proposal.givePicks ?? []), ...(o.proposal.getPicks ?? [])].includes(clock.id))

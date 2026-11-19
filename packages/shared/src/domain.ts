@@ -691,6 +691,19 @@ export interface DraftClock {
   id: string;
 }
 
+/** A pick made in the latest draft (from the event log), for the draft results. */
+export interface DraftResult {
+  pick: number;
+  round: number;
+  teamId: TeamId;
+  /** The team the pick belonged to, when another team made it. */
+  via?: TeamId;
+  playerId: PlayerId;
+  firstName: string;
+  lastName: string;
+  position: string;
+}
+
 export interface DraftBoardEntry {
   id: PlayerId;
   firstName: string;

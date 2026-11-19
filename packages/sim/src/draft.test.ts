@@ -132,6 +132,8 @@ describe('draft', () => {
       (e) => e.kind === 'player.drafted' && e.pick === onClock.pick,
     );
     expect(madeWithIt?.kind === 'player.drafted' && madeWithIt.player.teamId).toBe(other);
+    // The pick is tracked as yours, made by the team you traded it to.
+    expect(madeWithIt?.kind === 'player.drafted' && madeWithIt.via).toBe(mine);
     // Your next pick is on the clock, or you had none left and free agency is open.
     const next = onTheClock(state, ctx);
     if (next) {

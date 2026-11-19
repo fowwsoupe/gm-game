@@ -554,8 +554,9 @@ export class LeagueService {
   }
 
   draftClass(teamId: TeamId) {
-    const { state } = this.open();
+    const { save, state } = this.open();
     const ctx = defaultContext(state.rulesetId);
+    const latest = save.latestDraft();
     return {
       prospects: state.draftClass.map((pd) => {
         // Your scouting department's read, not the public range.
@@ -575,6 +576,8 @@ export class LeagueService {
       }),
       board: state.draftBoards[teamId] ?? [],
       order: picksLeft(state, ctx),
+      made: latest.picks,
+      madeSeason: latest.season,
     };
   }
 
