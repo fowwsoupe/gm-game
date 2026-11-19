@@ -1,4 +1,4 @@
-import type { Actor, Command, CommandResult, LeagueEvent, Team, TradeProposal } from '@gm/shared';
+import type { Actor, Command, CommandResult, HallOfFamer, LeagueEvent, Team, TradeProposal } from '@gm/shared';
 import { GOALIE_ROTATIONS, STOP_CATEGORIES, TICKET_STEPS } from '@gm/shared';
 import {
   Rng,
@@ -58,6 +58,8 @@ export function handleCommand(
   command: Command,
   actor: Actor,
   ctx: SimContext,
+  /** Hall of Famers (the save's, not the league state's): who can come back as staff. */
+  legends: readonly HallOfFamer[] = [],
 ): CommandResult {
   switch (command.kind) {
     case 'sim.advance':
@@ -408,7 +410,9 @@ export function handleCommand(
       if (!departmentsOf(team).includes(command.department)) return invalid('unknown department');
       // Next season's once the champion is crowned, so a summer hire counts for the season ahead.
       const season = capYearOf(state);
-      const head = staffCandidates(team, command.department, ctx, season)[command.candidate];
+      const head = staffCandidates(team, command.department, ctx, season, legends)[
+        command.candidate
+      ];
       if (!head) return invalid('unknown candidate');
       if (team.staff?.[command.department]?.hired === season) {
         return invalid('already hired for this department this season');

@@ -110,7 +110,7 @@ Build order, owners and "done when" for each step: **[V0.1_PLAN.md](V0.1_PLAN.md
 - [ ] Match viewer (2D) + coach from the bench
 - [ ] Cutscenes (trophy lift, draft pick, signing)
 - [ ] Summer training, camp battles, international tournament
-- [~] Hall of Fame, legends return as staff, awards named after legends: Hall of Fame (rule-based induction, History screen) done; the rest to do
+- [~] Hall of Fame, legends return as staff, awards named after legends: Hall of Fame (rule-based induction, History screen) and legends as staff (a Hall of Famer is one of a human team's candidates, one a team-season) done; the rest to do
 - [ ] League sandbox: expansion, relocation, identity editor, commissioner mode
 - [ ] Multiplayer step 1: shared save (hot-seat)
 - [ ] Multiplayer step 2: hosted online league over Steam

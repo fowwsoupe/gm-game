@@ -413,11 +413,12 @@ export class LeagueService {
     if (!team) throw new Error(`No team ${teamId}`);
     const ctx = defaultContext(state.rulesetId);
     const season = capYearOf(state);
+    const legends = this.hallOfFame();
     return Object.fromEntries(
       departmentsOf(team).map((d) => [
         d,
         {
-          candidates: staffCandidates(team, d, ctx, season),
+          candidates: staffCandidates(team, d, ctx, season, legends),
           locked: team.staff?.[d]?.hired === season,
         },
       ]),
@@ -611,7 +612,8 @@ export class LeagueService {
 
   private async runCommand(command: Command): Promise<CommandResult> {
     const { save, state } = this.open();
-    const result = await this.runInWorker({ state, command, actor: LOCAL, xg: this.xg });
+    const legends = command.kind === 'staff.hire' ? this.hallOfFame() : [];
+    const result = await this.runInWorker({ state, command, actor: LOCAL, xg: this.xg, legends });
     if (result.ok) {
       for (const e of result.events) applyEvent(state, e);
       try {

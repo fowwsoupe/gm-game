@@ -1,6 +1,6 @@
 import { parentPort } from 'node:worker_threads';
 import { handleCommand, type LeagueState } from '@gm/sim';
-import type { Actor, Command, CommandResult } from '@gm/shared';
+import type { Actor, Command, CommandResult, HallOfFamer } from '@gm/shared';
 import { contextWithXg } from './simContext';
 
 /**
@@ -14,6 +14,8 @@ export interface WorkerRequest {
   actor: Actor;
   /** The shot-model file's JSON, if the user has one (see main/league.ts). */
   xg?: unknown;
+  /** Only for `staff.hire`: the Hall of Famers who can be a candidate. */
+  legends?: HallOfFamer[];
 }
 
 parentPort?.on('message', (req: WorkerRequest) => {
@@ -22,7 +24,7 @@ parentPort?.on('message', (req: WorkerRequest) => {
   // is a throwaway copy, so reporting the error and carrying on is safe.
   let result: CommandResult;
   try {
-    result = handleCommand(req.state, req.command, req.actor, ctx);
+    result = handleCommand(req.state, req.command, req.actor, ctx, req.legends);
   } catch (err) {
     result = {
       ok: false,

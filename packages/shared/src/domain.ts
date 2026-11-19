@@ -252,6 +252,8 @@ export interface StaffProfile {
   hired: number;
   /** Whole dollars a season. */
   salary: number;
+  /** A Hall of Famer back as staff (his career set the quality). */
+  legend?: boolean;
 }
 
 /**
