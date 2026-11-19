@@ -45,12 +45,13 @@ const INJURY_DAYS = [
 const RE_INJURY = 0.3;
 const PER_PAST_INJURY = 0.03;
 const MAX_INJURY_RISK = 2;
-export const injuryRisk = (p: Player): number =>
+export const injuryRisk = (p: Player, medical = 1): number =>
   Math.min(
     MAX_INJURY_RISK,
     1 +
-      (p.injuredUntil !== undefined ? RE_INJURY : 0) +
-      PER_PAST_INJURY * (p.injuryHistory?.count ?? 0),
+      ((p.injuredUntil !== undefined ? RE_INJURY : 0) +
+        PER_PAST_INJURY * (p.injuryHistory?.count ?? 0)) *
+        medical,
   );
 const REGULATION = 3600;
 const PLAYOFF_OVERTIME = 1200;
@@ -85,6 +86,8 @@ function playGame(
     away: TeamStrength;
     homeBackup: boolean;
     awayBackup: boolean;
+    /** Medical factor on re-injury risk, home and away. */
+    medical: [number, number];
     playoff: boolean;
     keepBox: boolean;
   },
@@ -225,7 +228,8 @@ function playGame(
       for (const k of s.onIce) {
         if (
           !rng.chance(
-            (INJURY_PER_GAME * injuryRisk(s.players[k]!) * T.shiftSeconds) / (AVG_TOI * 60),
+            (INJURY_PER_GAME * injuryRisk(s.players[k]!, input.medical[n]) * T.shiftSeconds) /
+              (AVG_TOI * 60),
           )
         )
           continue;
@@ -452,6 +456,9 @@ export interface MatchupInput {
   /** The starter is playing the second night of a back-to-back: he is a little worse. */
   homeTired?: boolean;
   awayTired?: boolean;
+  /** The medical staff's factor on re-injury risk (1 = average, below 1 = better). */
+  homeMedical?: number;
+  awayMedical?: number;
 }
 
 export function simGame(
@@ -477,6 +484,7 @@ export function simGame(
       away: rested(input.away, input.awayTired),
       homeBackup: backup(input.homeBackToBack),
       awayBackup: backup(input.awayBackToBack),
+      medical: [input.homeMedical ?? 1, input.awayMedical ?? 1],
       playoff: !!input.playoff,
       keepBox: !input.resultOnly,
     },

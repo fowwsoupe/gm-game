@@ -16,6 +16,7 @@ import {
   coachSeasonsLeft,
   gmOf,
   marketOf,
+  hireQuality,
   newCoach,
   ownerOf,
   randomGm,
@@ -457,7 +458,12 @@ function coachOnTheSeat(
   args: { teamId: TeamId; heat: number; payout: Dollars; hired: number; startHeat: number },
 ) {
   const team = state.teams[args.teamId]!;
-  const hire = newCoach(rng.fork('hire'), args.hired, ctx.ruleset.finance.coach);
+  const hire = newCoach(
+    rng.fork('hire'),
+    args.hired,
+    ctx.ruleset.finance.coach,
+    hireQuality(rng.fork('hireQuality'), team, ctx.ruleset.frontOffice),
+  );
   const gone = coachOf(team, ctx.ruleset.finance.coach, state.date.season).name;
   offer(
     state,

@@ -141,9 +141,19 @@ describe('the head coach in games', () => {
       return strengthFor(state, ctx, teamId, players) as { offense: number; defense: number };
     };
     const [great, poor] = [strength(1), strength(0)];
-    const points = 2 * ctx.ruleset.frontOffice.coaching.points;
+    // Measured around the league's average coach, which this team's own quality moves a little.
+    const n = Object.keys(state.teams).length;
+    const points = (2 * ctx.ruleset.frontOffice.coaching.points * (n - 1)) / n;
     expect(great.offense - poor.offense).toBeCloseTo(points);
     expect(great.defense - poor.defense).toBeCloseTo(points);
+    // A league of equal coaches is a league of average ones.
+    const equal = (quality: number) => {
+      for (const t of Object.values(state.teams)) {
+        t.coach = { name: 'A B', hired: 2026, salary: 1, years: 3, quality };
+      }
+      return (strengthFor(state, ctx, teamId, players) as { offense: number }).offense;
+    };
+    expect(equal(0.9)).toBeCloseTo(equal(0.1));
   });
 });
 

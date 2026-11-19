@@ -31,6 +31,7 @@ export {
   DEPARTMENTS,
   departmentsOf,
   marketOf,
+  hireQuality,
   newCoach,
   ownerOf,
   staffOf,
