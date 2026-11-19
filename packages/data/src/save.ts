@@ -35,7 +35,7 @@ export function openSave(path: string): SaveFile {
   return new SaveFile(db);
 }
 
-export function migrate(db: Db): void {
+function migrate(db: Db): void {
   const current = db.pragma('user_version', { simple: true }) as number;
   if (current > migrations.length)
     throw new Error('This save is from a newer version of the game.');
@@ -439,9 +439,6 @@ export class SaveFile {
             );
             break;
           }
-          case 'series.won':
-          case 'champion.crowned':
-            break;
           case 'players.developed':
             for (const c of e.changes)
               setRatings.run(JSON.stringify(c.ratings), c.potential, c.playerId);
@@ -612,6 +609,8 @@ export class SaveFile {
               for (const c of r.charges) insertCharge(c);
             }
             break;
+          case 'series.won':
+          case 'champion.crowned':
           case 'clock.advanced':
           case 'season.phaseChanged':
           case 'news.posted':
