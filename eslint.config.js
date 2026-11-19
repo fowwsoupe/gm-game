@@ -18,7 +18,18 @@ const engineBoundary = {
 };
 
 export default tseslint.config(
-  { ignores: ['**/dist/**', '**/out/**', '**/release/**', '**/node_modules/**', 'ml/**'] },
+  {
+    ignores: [
+      '**/dist/**',
+      '**/out/**',
+      '**/release/**',
+      '**/node_modules/**',
+      'ml/**',
+      'fantasy-clean/**',
+      '.claude/**',
+      'graphify-out/**',
+    ],
+  },
   js.configs.recommended,
   ...tseslint.configs.recommended,
   {

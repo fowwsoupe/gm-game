@@ -5,3 +5,6 @@ release
 pnpm-lock.yaml
 ml
 .claude/
+fantasy-clean
+.claude
+graphify-out

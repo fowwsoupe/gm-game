@@ -44,7 +44,7 @@ calibration or a new engine, Fable = the largest, least bounded jobs. Tick a lin
 A. Leftovers (Sonnet 5.5, medium)
 
 - [x] Assistant GM's return (delegation stays maybe)
-- [ ] Steam Workshop for roster import (release prep)
+- [ ] Steam Workshop for roster import (blocked: needs the real Steam App ID to test and publish)
 
 B. Balance and calibration (Opus 5.5 unless noted)
 
