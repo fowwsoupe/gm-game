@@ -78,7 +78,7 @@ D. Phase 2 headlines
 - [ ] League news tab (Opus for storylines, Sonnet for UI; high, brief first)
 - [x] Media and press conferences, text (Sonnet, medium, 2-3 PRs)
 - [~] Summer training, camp battles, international tournament (Opus, high, 3 PRs): brief, summer training plans and the international tournament done; camp battles wait for camp
-- [ ] Cutscenes (Sonnet, medium, 3 PRs)
+- [x] Cutscenes (Sonnet, medium, 3 PRs)
 - [ ] Match viewer (2D) with coach from the bench (Fable 5.2, xhigh, 6+ PRs)
 - [ ] League sandbox (Sonnet, high, 4 PRs)
 - [ ] Multiplayer step 1, hot-seat (Opus, high, 2 PRs)
@@ -157,7 +157,7 @@ Build order, owners and "done when" for each step: **[V0.1_PLAN.md](V0.1_PLAN.md
 - [ ] League news tab, social-media style: a feed page of posts with the generated face of the player and of the AI GM (or coach, owner) in each one, built on the existing `news.posted` events and the news-feed faces. Storylines that run over weeks and seasons (a holdout becoming a trade, a breakout and his extension ask, a GM's fire sale, a contender clearing cap for a star, a rivalry, a coach on the hot seat), each told as a short thread of linked posts; generated GM faces; likes and follows only if they carry a use. Needs a design first (a short brief in `docs/research/`).
 - [x] Media & press conferences (text)
 - [ ] Match viewer (2D) + coach from the bench
-- [ ] Cutscenes (trophy lift, draft pick, signing): trophy lift (a skippable full-screen Cup lift when your team wins, once per title) done; draft pick (a skippable cutscene when one of your picks lands during the session) done
+- [x] Cutscenes (trophy lift, draft pick, signing): trophy lift (a skippable full-screen Cup lift when your team wins, once per title) done; draft pick (a skippable cutscene when one of your picks lands during the session) done; signing (a skippable cutscene when you sign a free agent) done
 - [~] Summer training, camp battles, international tournament: summer training plans (a focus per player on a human team reshapes his ratings at development, never past his ceiling) done; an international tournament every four years (a nation per player, six nations, two groups of three, semi-finals and a final, late in the summer on its own random stream; the champion and top scorer on History, your players' medals in your news) done
 - [~] Hall of Fame, legends return as staff, awards named after legends: Hall of Fame (rule-based induction, History screen), awards named after legends (the first inducted goalie, defenceman and forward lend their surname to the goalie, defence and MVP awards from the next season, on History) and legends as staff (a Hall of Famer is one of a human team's candidates, one a team-season) done
 - [ ] League sandbox: expansion, relocation, identity editor, commissioner mode

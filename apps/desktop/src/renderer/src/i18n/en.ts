@@ -215,6 +215,7 @@ export const en = {
   'playoffs.champion': 'Champion: {team}',
   'cutscene.trophy': '{team} win the Cup!',
   'cutscene.draft': 'Pick {pick}: you select {player} ({pos})!',
+  'cutscene.signing': '{player} signs with {team}!',
   'cutscene.skip': 'Click or press any key to skip',
   'status.contender': 'contender',
   'status.buyer': 'buyer',

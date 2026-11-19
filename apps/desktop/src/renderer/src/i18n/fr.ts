@@ -219,6 +219,7 @@ export const fr: Record<MessageKey, string> = {
   'playoffs.champion': 'Champion : {team}',
   'cutscene.trophy': '{team} remporte la Coupe !',
   'cutscene.draft': 'Choix {pick} : vous repêchez {player} ({pos}) !',
+  'cutscene.signing': '{player} signe avec {team} !',
   'cutscene.skip': 'Cliquez ou appuyez sur une touche pour passer',
   'status.contender': 'aspirant',
   'status.buyer': 'acheteur',
