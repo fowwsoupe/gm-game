@@ -1,8 +1,8 @@
-import type { DraftProspect, Player, Team, TeamId } from '@gm/shared';
+import type { DraftClock, DraftProspect, Player, Team, TeamId } from '@gm/shared';
 import { Rng, teamName, type Emit, type LeagueState } from '../core';
 import type { SimContext } from '../context';
 import { deadCap } from '../cba';
-import { pickId, pickOwner } from '../league';
+import { draftSlot, worstFirst } from '../league';
 import { hash, staffOf } from '../people';
 import { clampRating } from '../players';
 import { entryContract, rosterOf } from './roster';
@@ -109,70 +109,98 @@ function drawLottery(
 }
 
 /**
- * Step 4: the draft. Round one follows the lottery; later rounds go worst to best. Each team
- * takes the first player still on its board, else the best scouted one left. Drafted players
- * sign an entry-level contract; a pick the team cannot fit under the cap goes to the free-agent
- * pool instead. A league with no announced class (an old save) gets one now.
- * TODO(feature): draft rights and prospects kept off the roster.
+ * Step 4 opens the draft: the lottery and class were drawn when the class was announced; an old
+ * save without them draws them now.
  */
-export function runDraft(
+export function openDraft(
   state: LeagueState,
   ctx: SimContext,
   rng: Rng,
   emit: Emit,
-  season: number,
   /** Teams from worst to best. */
   order: readonly TeamId[],
 ) {
-  // Drawn when the class was announced; an old save without it draws now.
-  const firstRound = state.draftOrder.length
-    ? state.draftOrder
-    : drawLottery(state, ctx, rng.fork('lottery'), emit, order);
-  const pool = state.draftClass.length
-    ? [...state.draftClass]
-    : draftClass(state, ctx, rng.fork('class'));
-
-  for (let i = 0; pool.length > 0 && i < order.length * ctx.ruleset.draft.rounds; i++) {
-    const round = Math.floor(i / order.length) + 1;
-    const slotTeam = (i < order.length ? firstRound : order)[i % order.length]!;
-    const id = pickId(season, round, slotTeam);
-    const protection = state.pickProtection[id];
-    // A protected pick that lands high stays with the team that traded it.
-    const teamId =
-      round === 1 && protection && i + 1 <= protection.top
-        ? protection.keeper
-        : pickOwner(state, id, slotTeam);
-    const board = state.draftBoards[teamId] ?? [];
-    const team = state.teams[teamId]!;
-    const wanted =
-      board.map((id) => pool.findIndex((d) => d.player.id === id)).find((at) => at >= 0) ??
-      (team.userControlled ? undefined : aiPick(team, pool, ctx, season));
-    const [{ player: prospect }] = pool.splice(wanted ?? 0, 1) as [DraftProspect];
-    const contract = entryContract(
-      ctx.ruleset,
-      rosterOf(state, teamId),
-      prospect,
-      season,
-      deadCap(state, teamId, season),
-    );
-    // First-rounders sign with the most the rules allow in performance bonuses.
-    const player: Player = contract
-      ? {
-          ...prospect,
-          teamId,
-          contract:
-            round === 1
-              ? { ...contract, perfBonus: ctx.ruleset.contracts.maxPerformanceBonus }
-              : contract,
-        }
-      : prospect;
-    emit(i === 0 ? 'notable' : 'minor', [teamId], {
-      kind: 'player.drafted',
-      player,
-      round,
-      pick: i + 1,
-    });
+  if (!state.draftClass.length || !state.draftOrder.length) {
+    const prospects = state.draftClass.length
+      ? state.draftClass
+      : draftClass(state, ctx, rng.fork('class'));
+    const firstRound = drawLottery(state, ctx, rng.fork('lottery'), emit, order);
+    emit('notable', [], { kind: 'draft.classAnnounced', prospects, firstRound });
   }
+  emit('minor', [], { kind: 'draft.started' });
+}
+
+/** The pick on the clock in the live draft; null when no draft is under way or every pick is made. */
+export function onTheClock(
+  state: LeagueState,
+  ctx: SimContext,
+  order: readonly TeamId[] = worstFirst(state, ctx.ruleset),
+): DraftClock | null {
+  const made = state.draftPicksMade;
+  if (made === null || !state.draftClass.length || made >= order.length * ctx.ruleset.draft.rounds)
+    return null;
+  return draftSlot(state, order, made);
+}
+
+/**
+ * The live draft from the pick on the clock until every pick is made or, with `stopForHumans`, a
+ * human team is on the clock. Each team takes the first player still on its board, else (AI) the
+ * best its scouts read, else (human) the best scouted one left.
+ */
+export function draftUntil(
+  state: LeagueState,
+  ctx: SimContext,
+  emit: Emit,
+  stopForHumans: boolean,
+) {
+  const order = worstFirst(state, ctx.ruleset);
+  for (let clock = onTheClock(state, ctx, order); clock; clock = onTheClock(state, ctx, order)) {
+    const team = state.teams[clock.teamId]!;
+    if (stopForHumans && team.userControlled) return;
+    const pool = state.draftClass;
+    const wanted =
+      (state.draftBoards[team.id] ?? [])
+        .map((id) => pool.findIndex((d) => d.player.id === id))
+        .find((at) => at >= 0) ??
+      (team.userControlled ? 0 : aiPick(team, pool, ctx, state.date.season + 1));
+    draftPlayer(state, ctx, emit, clock, pool[wanted]!.player.id);
+  }
+}
+
+/**
+ * `clock`'s team drafts `playerId`, who signs an entry-level contract; a pick the team cannot fit
+ * under the cap goes to the free-agent pool instead.
+ * TODO(feature): draft rights and prospects kept off the roster.
+ */
+export function draftPlayer(
+  state: LeagueState,
+  ctx: SimContext,
+  emit: Emit,
+  clock: DraftClock,
+  playerId: string,
+) {
+  const season = state.date.season + 1;
+  const { teamId, round, pick } = clock;
+  const prospect = state.draftClass.find((d) => d.player.id === playerId)!.player;
+  const contract = entryContract(
+    ctx.ruleset,
+    rosterOf(state, teamId),
+    prospect,
+    season,
+    deadCap(state, teamId, season),
+  );
+  // First-rounders sign with the most the rules allow in performance bonuses.
+  const player: Player = contract
+    ? {
+        ...prospect,
+        teamId,
+        contract:
+          round === 1
+            ? { ...contract, perfBonus: ctx.ruleset.contracts.maxPerformanceBonus }
+            : contract,
+      }
+    : prospect;
+  emit(pick === 1 ? 'notable' : 'minor', [teamId], { kind: 'player.drafted', player, round, pick });
 }
 
 /**

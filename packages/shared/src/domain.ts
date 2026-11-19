@@ -627,6 +627,8 @@ export interface LeagueStatus {
   championTeamId: TeamId | null;
   /** Between opening free agency and starting the next season. */
   freeAgencyOpen: boolean;
+  /** The live draft is under way (started, free agency not open yet). */
+  draftLive: boolean;
   tradeDeadlineDay: number;
   /** First day of the playoffs, and the last day they can run (the calendar's, as day indexes). */
   playoffsStartDay: number;
@@ -679,6 +681,14 @@ export interface ScoutReport {
 }
 
 /** A prospect as the draft board shows him: no hidden ratings. */
+/** The pick on the clock in the live draft, and the team that makes it. */
+export interface DraftClock {
+  /** Overall pick number, from 1. */
+  pick: number;
+  round: number;
+  teamId: TeamId;
+}
+
 export interface DraftBoardEntry {
   id: PlayerId;
   firstName: string;

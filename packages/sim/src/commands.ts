@@ -32,6 +32,10 @@ import {
 import {
   isExpiring,
   acceptSheet,
+  continueDraft,
+  draftPlayer,
+  onTheClock,
+  startDraft,
   marketDay,
   openFreeAgency,
   resignContract,
@@ -363,6 +367,31 @@ export function handleCommand(
       }
       const events: LeagueEvent[] = [];
       openFreeAgency(state, ctx, emitter(state, events));
+      return { ok: true, events };
+    }
+
+    case 'offseason.startDraft': {
+      if (!state.championTeamId || state.freeAgencyOpen || state.draftPicksMade !== null) {
+        return invalid('the draft opens once, after the season');
+      }
+      const events: LeagueEvent[] = [];
+      startDraft(state, ctx, emitter(state, events));
+      return { ok: true, events };
+    }
+
+    case 'draft.pick': {
+      const team = state.teams[command.teamId];
+      if (!team) return invalid('unknown team');
+      if (!controls(actor, team)) return notYours;
+      const clock = onTheClock(state, ctx);
+      if (!clock || clock.teamId !== team.id) return invalid('not on the clock');
+      if (!state.draftClass.some((d) => d.player.id === command.playerId)) {
+        return invalid('not in the draft class');
+      }
+      const events: LeagueEvent[] = [];
+      const emit = emitter(state, events);
+      draftPlayer(state, ctx, emit, clock, command.playerId);
+      continueDraft(state, ctx, emit, true);
       return { ok: true, events };
     }
 

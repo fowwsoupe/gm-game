@@ -1,6 +1,15 @@
 import { describe, expect, it } from 'vitest';
 import type { Actor } from '@gm/shared';
-import { createLeague, defaultContext, handleCommand, type LeagueState } from './index';
+import {
+  createLeague,
+  defaultContext,
+  draftPicks,
+  draftSlot,
+  handleCommand,
+  onTheClock,
+  worstFirst,
+  type LeagueState,
+} from './index';
 
 const local: Actor = { id: 'local', controls: [] };
 const ctx = defaultContext();
@@ -50,6 +59,51 @@ describe('draft', () => {
     expect(state.draftClass).toEqual([]);
     // Everyone else picked the best scouted player left.
     expect(picks.length).toBe(Object.keys(state.teams).length * ctx.ruleset.draft.rounds);
+  });
+
+  it('holds the draft live: AI teams pick until you are on the clock, then you pick', () => {
+    const { state, mine } = finished(34);
+    const total = Object.keys(state.teams).length * ctx.ruleset.draft.rounds;
+    const start = handleCommand(state, { kind: 'offseason.startDraft' }, local, ctx);
+    if (!start.ok) throw new Error(start.error.message);
+    expect(state.freeAgencyOpen).toBe(false);
+    const clock = onTheClock(state, ctx)!;
+    expect(clock.teamId).toBe(mine);
+    expect(state.draftPicksMade).toBe(clock.pick - 1);
+    expect(handleCommand(state, { kind: 'offseason.startDraft' }, local, ctx).ok).toBe(false);
+    // Picks already made are gone from the trade market; yours on the clock is still there.
+    const tradeable = draftPicks(state, ctx.ruleset).map((p) => p.id);
+    const order = worstFirst(state, ctx.ruleset);
+    expect(tradeable).toContain(draftSlot(state, order, clock.pick - 1).id);
+    for (let i = 0; i < clock.pick - 1; i++) {
+      expect(tradeable).not.toContain(draftSlot(state, order, i).id);
+    }
+
+    const other = Object.values(state.teams).find((t) => !t.userControlled)!.id;
+    const sleeper = state.draftClass.at(-1)!.player.id;
+    expect(
+      handleCommand(state, { kind: 'draft.pick', teamId: other, playerId: sleeper }, local, ctx),
+    ).toMatchObject({ ok: false, error: { code: 'not_allowed' } });
+    const pick = handleCommand(
+      state,
+      { kind: 'draft.pick', teamId: mine, playerId: sleeper },
+      local,
+      ctx,
+    );
+    if (!pick.ok) throw new Error(pick.error.message);
+    expect(state.players[sleeper]?.teamId).toBe(mine);
+    expect(onTheClock(state, ctx)?.teamId).toBe(mine);
+
+    // Opening free agency finishes the draft for you, by your board.
+    const rest = handleCommand(state, { kind: 'offseason.openFreeAgency' }, local, ctx);
+    if (!rest.ok) throw new Error(rest.error.message);
+    expect(state.draftClass).toEqual([]);
+    expect(state.draftPicksMade).toBeNull();
+    expect(state.freeAgencyOpen).toBe(true);
+    const drafted = [...start.events, ...pick.events, ...rest.events].filter(
+      (e) => e.kind === 'player.drafted' && e.round > 0,
+    );
+    expect(drafted.length).toBe(total);
   });
 
   it('refuses a board with players outside the class, or for another team', () => {

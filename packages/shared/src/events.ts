@@ -176,6 +176,8 @@ export type LeagueEvent =
     })
   /** A team ranked the prospects it wants; its picks follow this order. */
   | (EventBase & { kind: 'draft.boardSet'; teamId: TeamId; order: PlayerId[] })
+  /** The live draft opens (contracts have run out); picks follow one at a time. */
+  | (EventBase & { kind: 'draft.started' })
   /** End of a regular season: every player's stat line, kept for career stats (sport-defined keys). */
   | (EventBase & {
       kind: 'stats.archived';
