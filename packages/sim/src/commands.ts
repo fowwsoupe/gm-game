@@ -456,7 +456,7 @@ export function handleCommand(
         effects: chosen.effects,
       });
       applyEvent(state, ev);
-      if (card.kind !== 'pressWin' && card.kind !== 'pressLoss') return { ok: true, events: [ev] };
+      if (!card.kind.startsWith('press')) return { ok: true, events: [ev] };
       // Your answer becomes a headline.
       const quote = makeEvent(state, 'notable', [card.teamId], {
         kind: 'news.posted',

@@ -398,6 +398,8 @@ export const en = {
     "Your job is on the line: the owner's confidence is down to {n}. Below {fire} at a season review, he fires you.",
   'owner.card.pressWin': 'The press wants to know how your team has won {n} in a row.',
   'owner.card.pressLoss': 'The press asks what is wrong after {n} straight losses.',
+  'owner.card.pressSeries': 'The press asks how your team won round {n} of the playoffs.',
+  'owner.card.pressOut': 'The press asks what went wrong in round {n} of the playoffs.',
   'owner.option.deflect': 'Deflect',
   'owner.option.confident': 'Sound confident',
   'owner.option.honest': 'Be honest',
