@@ -369,6 +369,8 @@ export const fr: Record<MessageKey, string> = {
     "Montez dans l'ordre en échangeant pour un choix ici; pour céder le vôtre, offrez-le à l'écran Échanges. Si vous échangez le choix en cours, le repêchage continue.",
   'draft.orderLine': '{pick}. Ronde {round} : {team}',
   'draft.tradeFor': 'Échanger pour ce choix',
+  'draft.call': 'Les {team} appellent : ils veulent votre choix et offrent {give}.',
+  'draft.pickNumber': 'le choix n° {pick}',
   'draft.pick': 'Repêcher',
   'standings.team': 'Équipe',
   'standings.gp': 'PJ',

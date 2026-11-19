@@ -363,6 +363,8 @@ export const en = {
     'Trade up for a pick here; to trade yours away, offer it on the Trades screen. If you trade the pick on the clock, the draft goes on.',
   'draft.orderLine': '{pick}. Round {round}: {team}',
   'draft.tradeFor': 'Trade for it',
+  'draft.call': 'The {team} call: they want your pick and offer {give}.',
+  'draft.pickNumber': 'pick {pick}',
   'draft.pick': 'Draft',
   'standings.team': 'Team',
   'standings.gp': 'GP',

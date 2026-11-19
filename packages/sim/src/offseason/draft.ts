@@ -1,8 +1,9 @@
-import type { DraftClock, DraftProspect, Player, Team, TeamId } from '@gm/shared';
+import type { DraftClock, DraftProspect, Player, Team, TeamId, TradeProposal } from '@gm/shared';
 import { Rng, teamName, type Emit, type LeagueState } from '../core';
 import type { SimContext } from '../context';
 import { deadCap } from '../cba';
-import { draftSlot, worstFirst } from '../league';
+import { draftPicks, draftSlot, pickLabel, worstFirst } from '../league';
+import { evaluateTrade, newTradeCache } from '../trades';
 import { hash, staffOf } from '../people';
 import { clampRating } from '../players';
 import { entryContract, rosterOf } from './roster';
@@ -152,10 +153,73 @@ export function picksLeft(state: LeagueState, ctx: SimContext): DraftClock[] {
   );
 }
 
+/** A team trades up only for a player its scouts read this much above the best it expects at its own pick. */
+const TRADE_UP_GAP = 5;
+/** ...and from at most this many picks back. */
+const TRADE_UP_REACH = 8;
+
+/**
+ * A draft-day call for the pick on the clock: the nearest AI team behind it (within reach) whose
+ * scouts read the best player left `TRADE_UP_GAP` above the best they expect at their own next
+ * pick (the picks in between going by the public order) offers that pick, plus its cheapest other
+ * pick when it takes one, for a deal the holder wins as an AI GM judges it (`evaluateTrade`), so
+ * a human holder is only called with a deal worth taking.
+ * ponytail: one extra pick at most, whatever the gap; a price tied to the gap if calls feel cheap.
+ */
+export function tradeUpCall(
+  state: LeagueState,
+  ctx: SimContext,
+  clock: DraftClock,
+  order: readonly TeamId[],
+): TradeProposal | null {
+  const pool = state.draftClass;
+  const season = state.date.season + 1;
+  const best = (team: Team, from: number) =>
+    Math.max(
+      ...pool.slice(from, from + AI_LOOKS_AT).map((d) => {
+        const r = teamRange(team, d, ctx, season);
+        return (r.low + r.high) / 2;
+      }),
+    );
+  const holder = state.teams[clock.teamId]!;
+  const judge = {
+    ...state,
+    teams: { ...state.teams, [holder.id]: { ...holder, userControlled: false } },
+  };
+  const cache = newTradeCache();
+  const seen = new Set<TeamId>([holder.id]);
+  const last = Math.min(order.length * ctx.ruleset.draft.rounds, clock.pick + TRADE_UP_REACH);
+  for (let at = clock.pick; at < last; at++) {
+    const next = draftSlot(state, order, at);
+    const caller = state.teams[next.teamId]!;
+    if (seen.has(caller.id)) continue;
+    seen.add(caller.id);
+    if (caller.userControlled || best(caller, 0) - best(caller, at - clock.pick + 1) < TRADE_UP_GAP)
+      continue;
+    const extras = draftPicks(state, ctx.ruleset, caller.id)
+      .filter((p) => p.id !== next.id)
+      .sort((a, b) => b.season - a.season || b.round - a.round); // cheapest first
+    for (const extra of [[], ...extras.map((p) => [p.id])]) {
+      const call: TradeProposal = {
+        fromTeamId: caller.id,
+        toTeamId: holder.id,
+        give: [],
+        get: [],
+        givePicks: [next.id, ...extra],
+        getPicks: [clock.id],
+      };
+      if (evaluateTrade(judge, ctx, call, cache).accepted) return call;
+    }
+  }
+  return null;
+}
+
 /**
  * The live draft from the pick on the clock until every pick is made or, with `stopForHumans`, a
  * human team is on the clock. Each team takes the first player still on its board, else (AI) the
- * best its scouts read, else (human) the best scouted one left.
+ * best its scouts read, else (human) the best scouted one left. Live, a team behind may call to
+ * trade up (`tradeUpCall`) before each pick: an AI team takes the deal, a human gets the offer,
+ * open while the pick is on the clock.
  */
 export function draftUntil(
   state: LeagueState,
@@ -164,9 +228,40 @@ export function draftUntil(
   stopForHumans: boolean,
 ) {
   const order = worstFirst(state, ctx.ruleset);
+  let traded = 0; // one trade per pick
   for (let clock = onTheClock(state, ctx, order); clock; clock = onTheClock(state, ctx, order)) {
     const team = state.teams[clock.teamId]!;
-    if (stopForHumans && team.userControlled) return;
+    if (stopForHumans && team.userControlled) {
+      const open = state.tradeOffers.some((o) => o.proposal.getPicks?.includes(clock!.id));
+      const call = open ? null : tradeUpCall(state, ctx, clock, order);
+      if (call) {
+        emit('notable', [team.id, call.fromTeamId], {
+          kind: 'trade.offered',
+          offer: {
+            id: `o${state.date.season}_pick${clock.pick}_${team.id}`,
+            proposal: call,
+            expiresDay: state.date.day,
+          },
+        });
+      }
+      return;
+    }
+    const call = stopForHumans && traded !== clock.pick && tradeUpCall(state, ctx, clock, order);
+    if (call) {
+      traded = clock.pick;
+      emit('major', [call.fromTeamId, team.id], { kind: 'trade.completed', ...call });
+      emit('notable', [call.fromTeamId, team.id], {
+        kind: 'news.posted',
+        headline: 'event.trade',
+        params: {
+          from: teamName(state.teams[call.fromTeamId]!),
+          to: teamName(team),
+          give: call.givePicks!.map((id) => pickLabel(state, id)).join(', '),
+          get: pickLabel(state, clock.id),
+        },
+      });
+      continue;
+    }
     const pool = state.draftClass;
     const wanted =
       (state.draftBoards[team.id] ?? [])
@@ -211,6 +306,16 @@ export function draftPlayer(
       }
     : prospect;
   emit(pick === 1 ? 'notable' : 'minor', [teamId], { kind: 'player.drafted', player, round, pick });
+  // A trade offer for a pick lasts while it is on the clock.
+  for (const o of state.tradeOffers) {
+    if (![...(o.proposal.givePicks ?? []), ...(o.proposal.getPicks ?? [])].includes(clock.id))
+      continue;
+    emit('minor', [o.proposal.toTeamId, o.proposal.fromTeamId], {
+      kind: 'trade.offerClosed',
+      offerId: o.id,
+      accepted: false,
+    });
+  }
 }
 
 /**

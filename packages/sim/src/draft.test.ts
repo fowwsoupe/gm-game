@@ -140,6 +140,57 @@ describe('draft', () => {
     } else expect(state.freeAgencyOpen).toBe(true);
   });
 
+  it('draft-day calls: AI teams trade up with each other, and call you while you are on the clock', () => {
+    const { state, mine } = finished(31);
+    const start = handleCommand(state, { kind: 'offseason.startDraft' }, local, ctx);
+    if (!start.ok) throw new Error(start.error.message);
+    const clock = onTheClock(state, ctx)!;
+    expect(clock.teamId).toBe(mine);
+    const call = state.tradeOffers.find((o) => o.proposal.getPicks?.includes(clock.id))!;
+    const caller = call.proposal.fromTeamId;
+    expect(state.teams[caller]!.userControlled).toBe(false);
+    // The caller moves up with a later pick of this draft (and maybe one more).
+    expect(picksLeft(state, ctx).find((p) => p.id === call.proposal.givePicks![0])?.teamId).toBe(
+      caller,
+    );
+
+    // You take it: the caller makes your pick, and his picks are yours.
+    const took = handleCommand(
+      state,
+      { kind: 'trade.respond', offerId: call.id, accept: true },
+      local,
+      ctx,
+    );
+    if (!took.ok) throw new Error(took.error.message);
+    const used = took.events.find((e) => e.kind === 'player.drafted' && e.pick === clock.pick);
+    expect(used?.kind === 'player.drafted' && used.player.teamId).toBe(caller);
+    for (const id of call.proposal.givePicks!) expect(state.pickOwners[id]).toBe(mine);
+    expect(state.tradeOffers.some((o) => o.id === call.id)).toBe(false);
+
+    // A call you do not answer closes when the pick on the clock is made.
+    const next = onTheClock(state, ctx)!;
+    expect(next.teamId).toBe(mine);
+    const second = state.tradeOffers.find((o) => o.proposal.getPicks?.includes(next.id))!;
+    expect(second).toBeDefined();
+    const pick = handleCommand(
+      state,
+      { kind: 'draft.pick', teamId: mine, playerId: state.draftClass[0]!.player.id },
+      local,
+      ctx,
+    );
+    if (!pick.ok) throw new Error(pick.error.message);
+    expect(state.tradeOffers.some((o) => o.id === second.id)).toBe(false);
+
+    // AI teams traded picks with each other along the way.
+    const aiTrades = [...start.events, ...took.events, ...pick.events].filter(
+      (e) =>
+        e.kind === 'trade.completed' &&
+        !state.teams[e.fromTeamId]!.userControlled &&
+        !state.teams[e.toTeamId]!.userControlled,
+    );
+    expect(aiTrades.length).toBeGreaterThan(0);
+  });
+
   it('refuses a board with players outside the class, or for another team', () => {
     const { state, mine } = finished(33);
     const bad = handleCommand(

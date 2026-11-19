@@ -16,6 +16,12 @@ export function parsePick(
   return m ? { season: Number(m[1]), round: Number(m[2]), originalTeamId: m[3] as TeamId } : null;
 }
 
+/** A pick as the news names it: `2027 R1 (TOR)`. */
+export function pickLabel(state: LeagueState, id: string): string {
+  const p = parsePick(id);
+  return p ? `${p.season} R${p.round} (${state.teams[p.originalTeamId]?.abbreviation})` : id;
+}
+
 /** Who makes this pick: whoever it was traded to, else the team it belongs to. */
 export const pickOwner = (state: LeagueState, id: string, originalTeamId: TeamId): TeamId =>
   state.pickOwners[id] ?? originalTeamId;
