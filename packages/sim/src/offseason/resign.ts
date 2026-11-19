@@ -15,9 +15,10 @@ import { ageIn, capRoom, drawYears, rosterOf, resignAsk } from './roster';
 /**
  * The re-sign window: during the season (an extension that starts next season) and after the
  * champion is crowned until free agency opens, a team may sign its players whose contracts end
- * this season. Not during the playoffs. Negotiation is a flat ask for v0.1: the market
- * salary (less the RFA discount for a restricted player, `resignAsk`), any term the CBA allows. The cap advisor shows what a deal would do to each season;
- * only CBA contract rules (term, minimum, maximum) can refuse a deal, never the cap.
+ * this season. Not during the playoffs. His ask is the market salary (less the RFA discount for a
+ * restricted player, `resignAsk`); a human team negotiates through the signing meter (his line,
+ * his agent's counter), an AI team re-signs at the ask. The cap advisor shows what a deal would do
+ * to each season; only CBA contract rules (term, minimum, maximum) can refuse a deal, never the cap.
  */
 
 const expiring = (state: LeagueState, p: Player) =>
@@ -58,24 +59,45 @@ export function resignOffers(state: LeagueState, ctx: SimContext, teamId: TeamId
   );
 }
 
-/** The contract for re-signing `player` for `years` starting next season, or why it is illegal. */
+/**
+ * The contract for re-signing `player` on this offer from next season, or why it is illegal (the
+ * CBA's terms only: whether he wants it is the meter's call, `signingInterest` with `resign`).
+ */
 export function resignContract(
   state: LeagueState,
   ctx: SimContext,
   player: Player,
-  years: number,
+  offer: { salary: number; years: number; noTrade?: true; bonusPct?: number },
 ): { contract: Contract } | { issues: ContractIssue[] } {
   const season = state.date.season + 1;
-  const capHit = resignAsk(ctx, player, season);
+  const capHit = Math.round(offer.salary);
+  const { years, noTrade, bonusPct } = offer;
   const issues = validateContract(ctx.ruleset, {
-    // A fractional or NaN term would throw in Array(); it is empty instead (refused).
-    salaries: Array<number>(Number.isInteger(years) ? Math.max(0, years) : 0).fill(capHit),
+    // A fractional or NaN term (or a NaN salary) would throw or slip through; it is empty instead.
+    salaries: Array<number>(
+      Number.isInteger(years) && Number.isFinite(capHit) ? Math.max(0, years) : 0,
+    ).fill(capHit),
     signingAge: ageIn(player, season),
     isResign: true,
+    ...(bonusPct !== undefined && { bonusPct }),
+    ...(noTrade && {
+      noTrade: {
+        held: rosterOf(state, player.teamId!).filter(
+          (p) => p.id !== player.id && p.contract?.noTrade,
+        ).length,
+      },
+    }),
   });
   return issues.length > 0
     ? { issues }
-    : { contract: { capHit, expiresAfterSeason: season + years - 1 } };
+    : {
+        contract: {
+          capHit,
+          expiresAfterSeason: season + years - 1,
+          ...(noTrade && { noTrade }),
+          ...(bonusPct && { bonus: Math.round((capHit * bonusPct) / 100) }),
+        },
+      };
 }
 
 export { expiring as isExpiring };
@@ -114,7 +136,8 @@ export function aiHoldouts(state: LeagueState, ctx: SimContext, rng: Rng, emit: 
     const offer = resignOffers(state, ctx, team.id).find((o) => o.playerId === h.playerId);
     if (!offer || offer.issues[0]!.length > 0) continue;
     const p = state.players[h.playerId]!;
-    const deal = resignContract(state, ctx, p, drawYears(ageIn(p, state.date.season + 1), rng));
+    const years = drawYears(ageIn(p, state.date.season + 1), rng);
+    const deal = resignContract(state, ctx, p, { salary: offer.ask, years });
     if ('issues' in deal) continue;
     // The raise must leave room to fill next season's roster at the minimum, as a signing must.
     const next = state.date.season + 1;

@@ -204,14 +204,20 @@ describe('SaveFile', () => {
     const expiring = Object.values(state.players).find(
       (p) => p.teamId === mine && p.contract!.expiresAfterSeason === state.date.season,
     )!;
-    const res = handleCommand(
-      state,
-      { kind: 'contract.resign', playerId: expiring.id, years: 2 },
-      local,
-      ctx,
-    );
-    if (!res.ok) throw new Error(res.error.message);
-    save.persist(res.events, state);
+    // At his current salary, then (if his agent counters, kept in the save as talks) his counter.
+    let salary = expiring.contract!.capHit;
+    for (let round = 0; round < 2 && !state.players[expiring.id]!.extension; round++) {
+      const res = handleCommand(
+        state,
+        { kind: 'contract.resign', playerId: expiring.id, salary, years: 2 },
+        local,
+        ctx,
+      );
+      if (!res.ok) throw new Error(res.error.message);
+      save.persist(res.events, state);
+      const ev = res.events[0]!;
+      if (ev.kind === 'contract.countered') salary = ev.counter ?? salary;
+    }
     expect(save.loadState().players[expiring.id]!.extension).toBeDefined();
     expect(save.loadState()).toEqual(state);
     save.close();

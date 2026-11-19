@@ -90,6 +90,11 @@ export interface LeagueState {
   faOffers: FreeAgentOffer[];
   /** Market days played since free agency last opened (0 when it opens). */
   marketDay: number;
+  /**
+   * Rounds of talks each team has left with a player, by player then team (absent: his full
+   * patience; 0: broken off). Cleared when free agency opens and when the season starts.
+   */
+  talks: Record<PlayerId, Record<TeamId, number>>;
   /** First-round picks traded with top-N protection: if the pick lands in the top `top`, `keeper` keeps it. */
   pickProtection: Record<string, { top: number; keeper: TeamId }>;
   /** Players human teams listed as available: AI GMs make offers for them more often. */
@@ -531,6 +536,9 @@ export function applyEvent(state: LeagueState, event: LeagueEvent): void {
     case 'freeAgency.dayPassed':
       state.marketDay = event.day;
       return;
+    case 'contract.countered':
+      (state.talks[event.playerId] ??= {})[event.teamId] = event.rounds;
+      return;
     case 'contract.extended': {
       const p = state.players[event.playerId];
       if (!p) throw new Error(`unknown player ${event.playerId}`);
@@ -559,6 +567,7 @@ export function applyEvent(state: LeagueState, event: LeagueEvent): void {
       state.tradeOffers = [];
       state.seasonTrades = [];
       state.faOffers = [];
+      state.talks = {};
       state.rfaRights = {};
       state.formerTeams = {};
       state.rfaSheets = [];
@@ -574,6 +583,7 @@ export function applyEvent(state: LeagueState, event: LeagueEvent): void {
       state.freeAgencyOpen = true;
       state.draftPicksMade = null;
       state.marketDay = 0;
+      state.talks = {};
       return;
     case 'team.statusChanged':
       state.teamStatus[event.teamId] = event.to;

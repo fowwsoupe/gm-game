@@ -1,6 +1,6 @@
 import { useEffect, useState } from 'react';
 import { useUi } from '@/stores/ui';
-import type { PlayerId, PlayerProfile, TeamId } from '@gm/shared';
+import type { LeagueEvent, PlayerId, PlayerProfile, RosterPlayer, TeamId } from '@gm/shared';
 import {
   useCareer,
   useHistory,
@@ -304,15 +304,20 @@ export function Profile({
   );
 }
 
-/** Offer a free agent a contract; his interest meter answers before you send it. */
-function Offer({
+/**
+ * Offer a free agent a contract, or with `resign` one of your players whose deal ends; his
+ * interest meter moves as you type, and under his (hidden) line his agent answers with a counter.
+ */
+export function Offer({
   player,
   teamId,
   onSigned,
+  resign,
 }: {
-  player: PlayerProfile;
+  player: RosterPlayer & Pick<PlayerProfile, 'ask' | 'rightsTeamId' | 'bids'>;
   teamId: TeamId;
-  onSigned: (text: string) => void;
+  onSigned?: (text: string) => void;
+  resign?: boolean;
 }) {
   const t = useT();
   const { data: teams = [] } = useTeams();
@@ -323,15 +328,25 @@ function Offer({
   const [message, setMessage] = useState<string | null>(null);
   const [noTrade, setNoTrade] = useState(false);
   const [bonusPct, setBonusPct] = useState(0);
-  const { data: view } = useSigningInterest({
+  const terms = {
     playerId: player.id,
-    teamId,
     salary,
     years,
     ...(noTrade && { noTrade: true as const }),
     ...(bonusPct > 0 && { bonusPct }),
+  };
+  const { data: view } = useSigningInterest({
+    ...terms,
+    teamId,
+    ...(resign && { resign: true as const }),
   });
   const dispatch = useDispatch();
+  const reply = (ev: Extract<LeagueEvent, { kind: 'contract.countered' }>) =>
+    ev.counter
+      ? t('sign.counter', { amount: money(ev.counter) })
+      : ev.holdsBack
+        ? t(`sign.holdsBack.${ev.holdsBack}`)
+        : t('sign.talksOff');
   return (
     <Card title={t('sign.title')}>
       <p className="mb-2 text-sm text-muted">{t('sign.ask', { amount: money(player.ask) })}</p>
@@ -429,40 +444,43 @@ function Offer({
               value={f.score}
             />
           ))}
-          <p className="text-xs text-muted">{t('sign.threshold', { n: view.threshold })}</p>
+          <p className={`text-xs ${view.talks > 0 ? 'text-muted' : 'text-bad'}`}>
+            {view.talks > 0 ? t('sign.talks', { n: view.talks }) : t('sign.talksOff')}
+          </p>
         </div>
       )}
       <div className="mt-3 flex items-center gap-3">
         <Button
           variant="primary"
-          disabled={!view || view.interest < view.threshold || dispatch.isPending}
+          disabled={!view || view.talks === 0 || dispatch.isPending}
           onClick={() =>
             dispatch.mutate(
-              {
-                kind: 'contract.sign',
-                playerId: player.id,
-                teamId,
-                salary,
-                years,
-                ...(noTrade && { noTrade: true as const }),
-                ...(bonusPct > 0 && { bonusPct }),
-              },
+              resign
+                ? { kind: 'contract.resign', ...terms }
+                : { kind: 'contract.sign', teamId, ...terms },
               {
                 onSuccess: (res) => {
+                  const ev = res.ok ? res.events[0] : undefined;
                   if (res.ok && res.events.some((e) => e.kind === 'player.signed')) {
-                    onSigned(
+                    onSigned?.(
                       t('cutscene.signing', {
                         player: fullName(player),
                         team: teamName(teams, teamId),
                       }),
                     );
                   }
+                  // His agent's counter goes in the box, ready to send back.
+                  if (ev?.kind === 'contract.countered' && ev.counter) {
+                    setText((ev.counter / 1e6).toFixed(2));
+                  }
                   setMessage(
                     !res.ok
                       ? res.error.message
-                      : res.events[0]?.kind === 'freeAgency.offered'
-                        ? t('sign.pending')
-                        : t('sign.done'),
+                      : ev?.kind === 'contract.countered'
+                        ? reply(ev)
+                        : ev?.kind === 'freeAgency.offered'
+                          ? t('sign.pending')
+                          : t('sign.done'),
                   );
                 },
               },

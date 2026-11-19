@@ -225,6 +225,17 @@ describe('buyout command', () => {
   });
 });
 
+/** Re-signs him at his ask, or at his agent's counter if he wants more; the salary offered last. */
+function resign(state: LeagueState, playerId: PlayerId, ask: number, years: number) {
+  const send = (salary: number) =>
+    handleCommand(state, { kind: 'contract.resign', playerId, salary, years }, local, ctx);
+  const first = send(ask);
+  const ev = first.ok ? first.events[0] : undefined;
+  if (ev?.kind !== 'contract.countered') return { res: first, salary: ask };
+  if (!ev.counter) throw new Error('no counter');
+  return { res: send(ev.counter), salary: ev.counter };
+}
+
 describe('re-sign command', () => {
   const finished = (seed: number): LeagueState => {
     const state = createLeague(seed, ctx);
@@ -234,20 +245,15 @@ describe('re-sign command', () => {
   };
   const mine = (state: LeagueState) => Object.values(state.teams).find((t) => t.userControlled)!.id;
 
-  it('signs an expiring player at his ask, and the rollover keeps him', () => {
+  it('signs an expiring player on terms he takes, and the rollover keeps him', () => {
     const state = finished(7);
     const teamId = mine(state);
     const offer = resignOffers(state, ctx, teamId)[0];
     if (!offer) throw new Error('no expiring player on the user team');
-    const res = handleCommand(
-      state,
-      { kind: 'contract.resign', playerId: offer.playerId, years: 3 },
-      local,
-      ctx,
-    );
+    const { res, salary } = resign(state, offer.playerId, offer.ask, 3);
     if (!res.ok) throw new Error(res.error.message);
     const p = state.players[offer.playerId]!;
-    expect(p.contract).toEqual({ capHit: offer.ask, expiresAfterSeason: state.date.season + 3 });
+    expect(p.contract).toEqual({ capHit: salary, expiresAfterSeason: state.date.season + 3 });
     handleCommand(state, { kind: 'season.rollover' }, local, ctx);
     expect(state.players[offer.playerId]!.teamId).toBe(teamId);
   });
@@ -258,7 +264,7 @@ describe('re-sign command', () => {
     expect(
       handleCommand(
         state,
-        { kind: 'contract.resign', playerId: offer.playerId, years: 9 },
+        { kind: 'contract.resign', playerId: offer.playerId, salary: offer.ask, years: 9 },
         local,
         ctx,
       ),
@@ -267,7 +273,12 @@ describe('re-sign command', () => {
       (p) => p.teamId && !state.teams[p.teamId]!.userControlled,
     )!;
     expect(
-      handleCommand(state, { kind: 'contract.resign', playerId: other.id, years: 1 }, local, ctx),
+      handleCommand(
+        state,
+        { kind: 'contract.resign', playerId: other.id, salary: offer.ask, years: 1 },
+        local,
+        ctx,
+      ),
     ).toMatchObject({ ok: false, error: { code: 'not_allowed' } });
     const res = handleCommand(state, { kind: 'season.rollover' }, local, ctx);
     if (!res.ok) throw new Error(res.error.message);
@@ -291,17 +302,12 @@ describe('in-season extensions', () => {
     const offer = resignOffers(state, ctx, mine)[0];
     if (!offer) throw new Error('no expiring player in this league');
     const before = structuredClone(state.players[offer.playerId]!.contract);
-    const res = handleCommand(
-      state,
-      { kind: 'contract.resign', playerId: offer.playerId, years: 3 },
-      local,
-      ctx,
-    );
+    const { res, salary } = resign(state, offer.playerId, offer.ask, 3);
     if (!res.ok) throw new Error(res.error.message);
     expect(res.events[0]!.kind).toBe('contract.extended');
     const p = state.players[offer.playerId]!;
     expect(p.contract).toEqual(before);
-    expect(p.extension).toEqual({ capHit: offer.ask, expiresAfterSeason: state.date.season + 3 });
+    expect(p.extension).toEqual({ capHit: salary, expiresAfterSeason: state.date.season + 3 });
     // Off the re-sign list, on next season's books.
     expect(resignOffers(state, ctx, mine).some((o) => o.playerId === p.id)).toBe(false);
     const sheet = capSheet(ctx.ruleset, {
@@ -312,7 +318,7 @@ describe('in-season extensions', () => {
       years: 3,
       phase: 'regular',
     });
-    expect(sheet.seasons[1]!.contracts.find((c) => c.playerId === p.id)?.capHit).toBe(offer.ask);
+    expect(sheet.seasons[1]!.contracts.find((c) => c.playerId === p.id)?.capHit).toBe(salary);
 
     // No extensions in the playoffs; at the summer the extension becomes his contract.
     handleCommand(state, { kind: 'sim.advance', days: 400, stopOn: 'never' }, local, ctx);
@@ -320,7 +326,7 @@ describe('in-season extensions', () => {
     expect(state.players[p.id]?.teamId ?? mine).toBe(mine);
     if (state.players[p.id]) {
       expect(state.players[p.id]!.contract).toEqual({
-        capHit: offer.ask,
+        capHit: salary,
         expiresAfterSeason: state.date.season + 2,
       });
       expect(state.players[p.id]!.extension).toBeUndefined();

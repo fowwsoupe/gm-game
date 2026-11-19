@@ -130,9 +130,7 @@ export const fr: Record<MessageKey, string> = {
   'resign.title': 'Resigner',
   'resign.ask': 'Demande',
   'resign.years': 'Années',
-  'resign.action': 'Resigner',
   'resign.warn': 'Attention : {issues}',
-  'resign.failed': 'Impossible de resigner :',
   'nav.games': 'Matchs',
   'games.matchupTitle': 'Jouer un match',
   'games.home': 'Domicile',
@@ -366,7 +364,15 @@ export const fr: Record<MessageKey, string> = {
   'sign.factor.term': 'Durée',
   'sign.factor.loyalty': 'Loyauté envers son ancienne équipe',
   'sign.factor.home': 'Ville natale',
-  'sign.threshold': 'Il signe à {n} ou plus.',
+  'sign.talks':
+    'Rondes de discussion restantes : {n}. Une offre refusée en coûte une, une offre au rabais deux ; son agent fait une contre-offre.',
+  'sign.talksOff':
+    "Il a rompu les discussions avec vous jusqu'à l'ouverture du marché ou le début de la saison.",
+  'sign.counter': 'Son agent demande {amount} par année à ces conditions (inscrit dans la case).',
+  'sign.holdsBack.winning': "Pas de contre-offre. Ce n'est pas l'argent : il veut gagner.",
+  'sign.holdsBack.role': "Pas de contre-offre. Ce n'est pas l'argent : il veut un plus grand rôle.",
+  'sign.holdsBack.term':
+    "Pas de contre-offre. Ce n'est pas l'argent : il veut un contrat plus long.",
   'sign.action': 'Le signer',
   'sign.done': 'Signé.',
   'sign.bonus': 'Prime de signature %',
