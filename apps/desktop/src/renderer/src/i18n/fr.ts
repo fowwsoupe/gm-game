@@ -13,7 +13,7 @@ export const fr: Record<MessageKey, string> = {
   'nav.frontOffice': 'Personnel hockey',
   'frontOffice.empty': 'Prenez les commandes d’une équipe pour diriger son personnel hockey.',
   'frontOffice.intro':
-    'Le dépistage évalue les espoirs du repêchage, le développement fait progresser vos jeunes, le médical écourte les blessures. Les meilleurs coûtent plus cher; ils partent aussi, ou se font embaucher ailleurs quand vous gagnez.',
+    'Le dépistage évalue les espoirs du repêchage, le développement fait progresser vos jeunes, le médical écourte les blessures, l’analytique précise ce que vous voyez des joueurs adverses. Les meilleurs coûtent plus cher; ils partent aussi, ou se font embaucher ailleurs quand vous gagnez.',
   'frontOffice.since': 'depuis {season}',
   'frontOffice.candidate': 'Disponibles cette saison',
   'frontOffice.quality': 'Qualité',
@@ -68,6 +68,7 @@ export const fr: Record<MessageKey, string> = {
   'team.staff.scouting': 'Dépistage',
   'team.staff.development': 'Développement des joueurs',
   'team.staff.medical': 'Médical',
+  'team.staff.analytics': 'Analytique',
   'staff.quality.poor': 'Faible',
   'staff.quality.average': 'Moyen',
   'staff.quality.good': 'Bon',

@@ -4,7 +4,7 @@ import { money, qualityKey } from '@/lib/format';
 import { useT } from '@/i18n';
 import { Button, Card, Td, Th } from '@/ui';
 
-const DEPARTMENTS: readonly Department[] = ['scouting', 'development', 'medical'];
+const DEPARTMENTS: readonly Department[] = ['scouting', 'development', 'medical', 'analytics'];
 
 /** Your front office: each department's head, and who you could hire in his place this season. */
 export function FrontOffice() {

@@ -224,12 +224,12 @@ export interface Team {
   plan?: TeamPlan;
   /** The head coach. Absent: derived from the id. His quality moves the team's strength in games. */
   coach?: CoachProfile;
-  /** Front-office department heads. A department absent: derived from the id. No effects yet. */
+  /** Front-office department heads. A department absent: derived from the id. */
   staff?: Partial<Record<Department, StaffProfile>>;
 }
 
 /** Front-office departments besides the head coach (docs/research/2026-11-front-office.md). */
-export type Department = 'scouting' | 'development' | 'medical';
+export type Department = 'scouting' | 'development' | 'medical' | 'analytics';
 
 /** The head of a front-office department; his salary stands for the whole department's cost. */
 export interface StaffProfile {

@@ -26,7 +26,12 @@ export function coachOf(team: Team, terms: CoachTerms, season: number): CoachPro
 const qualityOf = (c: CoachProfile) =>
   round2(new Rng(hash(`coachQuality:${c.name}:${c.hired}`)).next());
 
-export const DEPARTMENTS: readonly Department[] = ['scouting', 'development', 'medical'];
+export const DEPARTMENTS: readonly Department[] = [
+  'scouting',
+  'development',
+  'medical',
+  'analytics',
+];
 
 /** A department head's salary: rises with quality squared, to the nearest $10K. */
 export const staffSalary = (quality: number, range: { min: number; max: number }) =>
