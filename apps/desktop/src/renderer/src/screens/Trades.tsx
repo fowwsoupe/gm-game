@@ -115,6 +115,33 @@ export function Trades() {
           >
             {t('trade.propose')}
           </Button>
+          {proposal && myPlayers.some((p) => give.includes(p.id) && p.contract?.noTrade) && (
+            <Button
+              disabled={dispatch.isPending}
+              onClick={() =>
+                dispatch.mutate(
+                  { kind: 'contract.askWaiveNoTrade', proposal },
+                  {
+                    onSuccess: (res) => {
+                      const done = res.ok && res.events.some((e) => e.kind === 'trade.completed');
+                      setMessage(
+                        !res.ok ? res.error.message : done ? t('trade.done') : t('trade.waiveNo'),
+                      );
+                      if (done) {
+                        setGive([]);
+                        setGet([]);
+                        setRetain({});
+                        setGivePicks([]);
+                        setGetPicks([]);
+                      }
+                    },
+                  },
+                )
+              }
+            >
+              {t('trade.askWaive')}
+            </Button>
+          )}
           {message && <span className="text-sm text-muted">{message}</span>}
         </div>
       </Card>

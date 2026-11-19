@@ -19,7 +19,7 @@ export interface Contract {
   capHit: number;
   /** Season the contract ends, e.g. 2029 means it expires after 2028–29. */
   expiresAfterSeason: number;
-  /** He cannot be traded without his say; trades involving him are refused (no waiver yet). */
+  /** He cannot be traded without his say: trades involving him are refused unless he waives it (`contract.askWaiveNoTrade`). */
   noTrade?: true;
   /** Whole dollars of each year's cap hit paid as a signing bonus: cash up front, never bought out. */
   bonus?: number;
