@@ -404,6 +404,7 @@ export const en = {
   'todo.draftList': 'Rank the draft class for your picks',
   'todo.freeAgency': 'Free agency is open: sign players, then start the next season',
   'todo.holdout': '{player} is holding out',
+  'todo.breakoutExtend': '{player} is breaking out: talk extension now, his price only rises',
   'todo.dispute': '{player} wants a bigger role',
   'event.disputeStarted': '{player} wants a bigger role',
   'event.disputeSettled': '{player} is happy with his role again',

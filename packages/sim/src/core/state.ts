@@ -86,6 +86,8 @@ export interface LeagueState {
   tradeRequests: { playerId: PlayerId; teamId: TeamId }[];
   /** Players on human teams holding out: they sit out until paid, talked round or traded. */
   holdouts: { playerId: PlayerId; teamId: TeamId }[];
+  /** Players on human teams who broke out, by the season it counts for (Home's "extend now"). */
+  breakouts: Record<PlayerId, number>;
   /** Players unhappy with their role on a human team; `until`: the day a promised role is due. */
   disputes: { playerId: PlayerId; teamId: TeamId; until?: number; listed?: true }[];
   /**
@@ -337,6 +339,12 @@ export function applyEvent(state: LeagueState, event: LeagueEvent): void {
       return;
     case 'player.holdoutEnded':
       state.holdouts = state.holdouts.filter((h) => h.playerId !== event.playerId);
+      return;
+    case 'player.brokeOut':
+      for (const [id, season] of Object.entries(state.breakouts)) {
+        if (season < event.season) delete state.breakouts[id as PlayerId];
+      }
+      state.breakouts[event.playerId] = event.season;
       return;
     case 'trade.offered':
       state.tradeOffers.push(structuredClone(event.offer));

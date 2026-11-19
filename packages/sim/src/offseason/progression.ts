@@ -102,5 +102,13 @@ export function breakoutNews(
       headline: 'event.breakout',
       params: { player: playerName(p), team: teamName(team), n: gain },
     });
+    if (team.userControlled) {
+      emit('minor', [team.id], {
+        kind: 'player.brokeOut',
+        playerId: p.id,
+        teamId: team.id,
+        season,
+      });
+    }
   }
 }

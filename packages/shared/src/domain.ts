@@ -695,6 +695,7 @@ export interface TodoItem {
     | 'tradeRequest'
     | 'holdout'
     | 'dispute'
+    | 'breakoutExtend'
     // The assistant GM's advice: who to extend first, take or turn down an offer, who to sign.
     | 'adviceResign'
     | 'adviceSign'

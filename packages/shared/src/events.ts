@@ -240,6 +240,8 @@ export type LeagueEvent =
   | (EventBase & { kind: 'player.holdoutStarted'; playerId: PlayerId; teamId: TeamId })
   /** A holdout ends with the player back at work (`talked`: after a talk with the GM). */
   | (EventBase & { kind: 'player.holdoutEnded'; playerId: PlayerId; talked: boolean })
+  /** A young player on a human team broke out, for `season`: Home asks if you talk extension now. */
+  | (EventBase & { kind: 'player.brokeOut'; playerId: PlayerId; teamId: TeamId; season: number })
   /** An AI GM offers a human team a trade (see `TradeOffer`). */
   | (EventBase & { kind: 'trade.offered'; offer: TradeOffer })
   /** An offer is gone: accepted (a `trade.completed` follows), declined or expired. */
