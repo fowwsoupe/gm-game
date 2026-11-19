@@ -79,6 +79,7 @@ const JSON_META = {
   goalieRotation: '{}',
   tradeBlock: '[]',
   rfaSheets: '[]',
+  teamForm: '{}',
   lastSeason: '{}',
 } satisfies Partial<Record<keyof LeagueState, string>>;
 

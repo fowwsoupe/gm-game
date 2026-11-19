@@ -107,7 +107,7 @@ export interface SportModule<Strength = unknown> {
     chemistry?: number,
     units?: Partial<Record<string, readonly string[]>>,
     linemates?: Readonly<Record<string, number>>,
-    /** Rating points the head coach adds to every player (negative: takes away). */
+    /** Rating points the head coach and the team's season form add to every player (negative: take away). */
     coaching?: number,
   ): Strength;
 

@@ -9,7 +9,7 @@
  * human teams too, until the draft screen exists.
  */
 import { Rng, phaseOf, type Emit, type LeagueState } from '../core';
-import { makeSchedule, worstFirst } from '../league';
+import { drawForm, makeSchedule, worstFirst } from '../league';
 import type { SimContext } from '../context';
 import { runDraft } from './draft';
 import { changeGms, setPlans } from './gms';
@@ -94,6 +94,7 @@ export function finishRollover(state: LeagueState, ctx: SimContext, emit: Emit):
       rng.fork('schedule'),
     ),
     rngState: rng.fork('games').state,
+    form: drawForm(Object.keys(state.teams), ctx.ruleset.season.form, rng.fork('form')),
   });
   emit('major', [], { kind: 'season.phaseChanged', from, to: 'regular' });
 }

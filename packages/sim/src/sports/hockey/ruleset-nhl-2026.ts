@@ -20,6 +20,10 @@ export const NHL_2026: Ruleset = {
     gamesPerTeam: 84,
     calendar: { preseasonDays: 21, regularSeasonDays: 190, tradeDeadlineDay: 140, playoffDays: 62 },
     points: { win: 2, overtimeLoss: 1 },
+    // docs/research/2026-11-spread-second-mechanism.md: unverified, tuned in the balance lab. The
+    // part of team quality a roster does not carry into next season: widens the points % spread
+    // and lowers its year-to-year r together (4.5: spread 0.088 but r on its 0.40 floor).
+    form: 3.5,
   },
   playoffs: {
     teamsQualifying: 16,
