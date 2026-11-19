@@ -37,7 +37,7 @@ describe('in-season breakouts', () => {
     'fire a few a league-season on average, for players 23 or under only',
     { timeout: 60_000 },
     () => {
-      const state = createLeague(3, ctx);
+      const state = createLeague(6, ctx);
       const counts: number[] = [];
       for (let s = 0; s < 3; s++) {
         const news = run(state, { kind: 'sim.advance', days: cal.regularSeasonDays });

@@ -10,6 +10,7 @@ import {
 import { payroll, type Ruleset } from '../../cba';
 import { FIRST, LAST, pct, type Rng } from '../../core';
 import { clampRating } from '../../players';
+import { HOCKEY_DEVELOPMENT } from './aging';
 import { SHAPE_POINTS, SKATER_BUILD_CLUSTERS } from './tuning';
 
 const CITIES = [
@@ -76,11 +77,11 @@ const DRAFT_POSITIONS: HockeyPosition[] = [
  * Prospect tuning: potential = base + two dice of 0-15; today's rating is potential minus a gap.
  * The base and the fictional league's starting ages (20-34) are set together so that a league
  * 20 years on, built only from prospects, has the average rating it started with (balance lab,
- * "League avg rating drift"). 52 until picks waited in the prospect pool: with the teenagers off
- * the rosters the rostered average drifted up 3.5 by year 15 (4 leagues); 48 keeps the largest
- * drift at 2.3-2.7 (seeds 1, 101, 201).
+ * "League avg rating drift"). 48 kept the largest drift at 2.5-2.8 (seeds 1, 101, 201) until the
+ * aging curves were fitted to NHL data: prospects then reached their potential sooner and the
+ * league rose 2.5 by year 20 (4 leagues); 46 keeps the largest at 2.0-2.7.
  */
-const PROSPECT = { potentialBase: 48, gap: [12, 26] as const };
+const PROSPECT = { potentialBase: 46, gap: [12, 26] as const };
 
 /** One value per rating key, drawn in the order the keys are listed. */
 const rate = (keys: readonly string[], r: (key: string) => number) =>
@@ -160,15 +161,21 @@ export function generateFictionalLeague(
     const teamStart = players.length;
     for (const position of ROSTER) {
       const base = 62 + quality + rng.int(-10, 12);
+      const firstName = rng.pick(FIRST);
+      const lastName = rng.pick(LAST);
+      const birthYear = rng.int(1993, 2007);
+      // Upside shrinks with age the way development closes it; the youngest (20) keep it all.
+      const { growth } = HOCKEY_DEVELOPMENT.curves[position] ?? HOCKEY_DEVELOPMENT.fallback;
+      const upside = rng.int(0, 15) * (1 - growth) ** (2007 - birthYear);
       const p: Player = {
         id: `p${players.length}` as PlayerId,
-        firstName: rng.pick(FIRST),
-        lastName: rng.pick(LAST),
-        birthYear: rng.int(1993, 2007),
+        firstName,
+        lastName,
+        birthYear,
         teamId: id,
         position,
         ratings: {},
-        potential: clampRating(base + rng.int(0, 15)),
+        potential: clampRating(base + upside),
         contract: { capHit: rng.int(8, 100) * 100_000, expiresAfterSeason: 2027 + rng.int(0, 5) },
       };
       p.ratings = ratingsFor(position, base, rng);

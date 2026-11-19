@@ -57,13 +57,15 @@ Surplus value per team (can be negative). Default: `surplusValuator` (market sal
 ## 4. Development: `DevelopmentModel` (M4)
 
 Yearly rating and potential changes with age. Default: `rulesDevelopment(HOCKEY_DEVELOPMENT)`
-(hand-set curves in `sports/hockey/aging.ts`). **Trained model:** fitted on NHL careers with
-player fixed effects (survivor bias), exported in the same `RulesDevelopmentConfig` shape: an
-`AgingCurve` per position (`peakAge`, `declineAge`, `declineStart`, `declineStep`, `noise`)
-plus retirement. Shipping it waits on data rights. Check: lab "Skater points/60 a year" by age
-band, the targets from `ml/src/aging.py` (NHL 2022-25: +3.6% to 24, -1.4% at 25-29, -4.0% at
-30-34; today's curves match the decline but still grow at 25-29, +3.3-3.5%, a known gap), "league
-avg rating drift", career-shape tests, and rates of peaks, busts and late bloomers.
+(curves in `sports/hockey/aging.ts`, fitted in the lab to the targets below). **Trained model:**
+fitted on NHL careers with player fixed effects (survivor bias), exported in the same
+`RulesDevelopmentConfig` shape: an `AgingCurve` per position (`growth`, `peakAge`, `declineAge`,
+`declineStart`, `declineStep`, `noise`) plus retirement. Shipping it waits on data rights. Check:
+lab "Skater points/60 a year" by age band, the targets from `ml/src/aging.py` (NHL 2022-25: +3.6%
+to 24, -1.4% at 25-29, -4.0% at 30-34; the fitted curves give +4.6 to +5.0%, -0.9 to -1.2% and
+-3.9 to -4.1% on seeds 1, 101 and 201), "league avg rating drift", career-shape tests, and rates
+of peaks, busts and late bloomers. The value engine's projection (`projectedOverall`) is a rough
+copy of the curve shape; keep it in step when the curves move.
 
 ## 5. Stats to ratings: `ratingsFromStats(table, position, totals, seasonGames)` (hockey)
 

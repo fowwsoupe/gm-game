@@ -73,15 +73,18 @@ const CAP_DOLLAR_COST = 0.75;
 const NEED_BONUS = 0.1;
 
 /**
- * Expected overall `years` from now. A rough sport-neutral curve (young players close on their
- * potential, players past 30 fade); the development model owns the real one.
+ * Expected overall `years` from now. A rough sport-neutral curve (young players close most of the
+ * gap to their potential each year to 24, then fade a little more each year); the development
+ * model owns the real one (hockey: sports/hockey/aging.ts). Out of step with it, AI GMs paid for
+ * a decline they did not see coming and dynasties ran longer (balance lab seed 1: the top
+ * team's titles 5.7 against 4.6 in step).
  */
 function projectedOverall(player: Player, age: number, years: number): number {
   let rating = overall(player);
   for (let y = 1; y <= years; y++) {
     const a = age + y;
-    if (a <= 26) rating += Math.max(0, player.potential - rating) / Math.max(1, 27 - a);
-    else if (a >= 31) rating -= 1 + 0.5 * (a - 31);
+    if (a <= 24) rating += Math.max(0, player.potential - rating) * 0.7;
+    else rating -= 0.3 + 0.2 * (a - 25);
   }
   return rating;
 }
