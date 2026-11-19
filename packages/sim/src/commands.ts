@@ -1,4 +1,12 @@
-import type { Actor, Command, CommandResult, HallOfFamer, LeagueEvent, Team, TradeProposal } from '@gm/shared';
+import type {
+  Actor,
+  Command,
+  CommandResult,
+  HallOfFamer,
+  LeagueEvent,
+  Team,
+  TradeProposal,
+} from '@gm/shared';
 import { GOALIE_ROTATIONS, STOP_CATEGORIES, TICKET_STEPS } from '@gm/shared';
 import {
   Rng,
