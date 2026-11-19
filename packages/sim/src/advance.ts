@@ -30,7 +30,7 @@ import {
 } from './league';
 import { giveSeasonAwards } from './awards';
 import { aiHoldouts, announceDraftClass } from './offseason';
-import { aiOffers, aiTrades } from './trades';
+import { aiOffers, aiTrades, deadlineRecap, inDeadlineWeek } from './trades';
 import {
   campReport,
   disputesWeek,
@@ -58,9 +58,9 @@ import type { SimContext } from './context';
 /**
  * The day loop behind `sim.advance`: each day plays its games (and playoff games), records
  * injuries, highlights and streaks, moves the playoffs on, crowns the champion and announces the
- * draft class, refreshes the league pulse weekly (with AI trade talks), and changes phase. Every
- * change is an event applied as it is made. Stops early on what matters to a human team when
- * `stopOn` is 'major'.
+ * draft class, refreshes the league pulse weekly (with AI trade talks, daily in deadline week),
+ * and changes phase. Every change is an event applied as it is made. Stops early on what matters
+ * to a human team when `stopOn` is 'major'.
  */
 export function advance(
   state: LeagueState,
@@ -482,7 +482,14 @@ export function advance(
       disputesWeek(state, ctx, rng.fork(`disputes${today.day}`), emitter(state, events));
       if (events.length > before) loadRosters();
       coachWeek(state, ctx, rng.fork(`coach${today.day}`), emitter(state, events));
+    } else if (inDeadlineWeek(cal, today.day)) {
+      // Deadline week is a market: trade talks and calls every day, not once a week.
+      const before = events.length;
+      aiTrades(state, ctx, rng.fork(`trades${today.day}`), emitter(state, events));
+      aiOffers(state, ctx, rng.fork(`offers${today.day}`), emitter(state, events));
+      if (events.length > before) loadRosters();
     }
+    if (today.day === cal.tradeDeadlineDay) deadlineRecap(state, ctx, emitter(state, events));
 
     const tomorrow = { season: today.season, day: today.day + 1 };
     const fromPhase = phaseOf(cal, today);

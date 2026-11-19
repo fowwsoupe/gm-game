@@ -556,6 +556,9 @@ export const en = {
   'event.camp.sharp': 'Camp report: {coach} says the {team} look sharp',
   'event.camp.expected': 'Camp report: {coach} says the {team} look as expected',
   'event.camp.flat': 'Camp report: {coach} says the {team} look flat',
+  'event.deadlineRecap':
+    'Trade deadline: {n} trade(s) in the final week; the {team} added the most',
+  'event.deadlineQuiet': 'Trade deadline: a quiet final week, no trades',
   'home.simBarTitle': 'Sim to a date',
   'home.simBarDeadline': 'Deadline',
   'home.simBarPlayoffs': 'Playoffs',

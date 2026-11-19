@@ -66,6 +66,7 @@ export function createLeague(
     pickOwners: {},
     pickProtection: {},
     tradeOffers: [],
+    seasonTrades: [],
     tradeRequests: [],
     holdouts: [],
     breakouts: {},

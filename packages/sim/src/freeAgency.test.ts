@@ -142,6 +142,28 @@ describe('free agency', () => {
       error: { message: 'signings are closed in the playoffs' },
     });
   });
+
+  it('closes signings after the trade deadline, except to fill a position minimum', () => {
+    const state = createLeague(25, ctx);
+    const mine = Object.values(state.teams).find((t) => t.userControlled)!.id;
+    state.date = { ...state.date, day: ctx.ruleset.season.calendar.tradeDeadlineDay + 1 };
+    const goalies = Object.values(state.players).filter(
+      (p) => p.teamId === mine && p.position === 'G',
+    );
+    const target = Object.values(state.players).find(
+      (p) => p.teamId !== mine && p.position === 'G',
+    )!;
+    target.teamId = null;
+    const offer = { salary: 20_000_000, years: 1 };
+    expect(signFreeAgent(state, ctx, target, mine, offer)).toEqual({
+      error: 'signings are closed after the trade deadline',
+    });
+    // Down to one goalie under the minimum of two: he may sign one.
+    for (const g of goalies.slice(ctx.ruleset.roster.positionMin.G! - 1)) g.teamId = null;
+    expect(signFreeAgent(state, ctx, target, mine, offer)).not.toEqual({
+      error: 'signings are closed after the trade deadline',
+    });
+  });
 });
 
 describe('AI offers in free agency', () => {
