@@ -14,7 +14,7 @@ import { useUi } from '@/stores/ui';
 import { money, moneyParams, pct, teamName } from '@/lib/format';
 import { usePosts } from '@/lib/news';
 import { useT, type MessageKey } from '@/i18n';
-import { Button, Card, Face, StatRow, TeamSelect } from '@/ui';
+import { Button, Card, Face, PersonFace, StatRow, TeamSelect } from '@/ui';
 
 export function Home({
   hasLeague,
@@ -217,8 +217,10 @@ function FeedCard() {
         <ul className="space-y-1 text-sm">
           {lines.map((l) => (
             <li key={l.event.id}>
-              {l.player && ages[l.player] !== undefined && (
+              {l.player && ages[l.player] !== undefined ? (
                 <Face seed={l.player} age={ages[l.player]!} size={22} />
+              ) : (
+                l.by && <PersonFace role={l.by.role} name={l.by.name} size={22} />
               )}
               {l.text}
             </li>

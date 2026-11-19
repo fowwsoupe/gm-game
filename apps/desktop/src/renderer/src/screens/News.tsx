@@ -3,7 +3,7 @@ import { useTeams } from '@/lib/queries';
 import { usePosts, type Post } from '@/lib/news';
 import { teamName } from '@/lib/format';
 import { useT } from '@/i18n';
-import { Button, Card, Face } from '@/ui';
+import { Button, Card, Face, PersonFace } from '@/ui';
 
 /** Moves a team announces itself (its account, no face); the league insider posts the rest. */
 const TEAM_POSTS = new Set(['player.signed', 'contract.extended', 'player.drafted']);
@@ -51,13 +51,16 @@ function PostCard({
 }) {
   const t = useT();
   const { data: teams = [] } = useTeams();
-  const { event, text, player } = post;
+  const { event, text, player, by } = post;
+  // A person speaking posts as himself, a team's own move as the team, the rest as the insider.
   const teamId = TEAM_POSTS.has(event.kind) ? event.teamIds[0] : undefined;
-  const abbr = teams.find((x) => x.id === teamId)?.abbreviation;
+  const abbr = teams.find((x) => x.id === (teamId ?? event.teamIds[0]))?.abbreviation;
   return (
     <Card>
       <div className="flex gap-3">
-        {teamId ? (
+        {by ? (
+          <PersonFace role={by.role} name={by.name} size={40} />
+        ) : teamId ? (
           <div className="flex h-10 w-10 shrink-0 items-center justify-center rounded-[var(--radius-card)] bg-[var(--team-primary)] text-xs font-semibold text-bg">
             {abbr}
           </div>
@@ -67,11 +70,15 @@ function PostCard({
         <div className="min-w-0 flex-1">
           <div className="flex flex-wrap items-baseline gap-x-2 text-sm">
             <span className="font-semibold">
-              {teamId ? teamName(teams, teamId) : t('news.insider')}
+              {by ? by.name : teamId ? teamName(teams, teamId) : t('news.insider')}
             </span>
             <span className="text-xs text-muted">
-              {teamId ? `@${abbr}` : t('news.insiderHandle')} ·{' '}
-              {t('news.date', { day: event.date.day, season: event.date.season })}
+              {by
+                ? `${t(`team.${by.role}`)}${abbr ? `, ${abbr}` : ''}`
+                : teamId
+                  ? `@${abbr}`
+                  : t('news.insiderHandle')}{' '}
+              · {t('news.date', { day: event.date.day, season: event.date.season })}
             </span>
           </div>
           <p className="mt-1 text-sm">{text}</p>

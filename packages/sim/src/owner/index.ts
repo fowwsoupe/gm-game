@@ -538,6 +538,7 @@ function coachOnTheSeat(
     kind: 'news.posted',
     headline: 'event.coachFired',
     params: { team: teamName(team), coach: gone, next: hire.name },
+    by: { role: 'coach', name: gone },
   });
 }
 
@@ -603,10 +604,11 @@ export function ownerMonth(state: LeagueState, ctx: SimContext, emit: Emit): voi
       standing.frustrated !== state.date.season
     ) {
       emit('minor', [teamId], { kind: 'owner.frustrated', teamId });
-      emit('minor', [teamId], {
+      emit('notable', [teamId], {
         kind: 'news.posted',
         headline: 'event.ownerFrustrated',
         params: { team: teamName(team) },
+        by: { role: 'owner', name: ownerOf(team).name },
       });
     }
   }

@@ -21,16 +21,18 @@ export function changeGms(state: LeagueState, rng: Rng, emit: Emit) {
     const fired = aiGmFired(state, teamId);
     if (!fired && !r.chance(GM_LEAVES)) continue;
     vacancies.push(teamId);
+    const gone = gmOf(team).name; // emit applies the change, so read it first
     emit(fired ? 'notable' : 'minor', [teamId], {
       kind: 'team.gmChanged',
       teamId,
       gm: randomGm(r.fork('new')),
       fired,
     });
-    emit('minor', [teamId], {
+    emit('notable', [teamId], {
       kind: 'news.posted',
       headline: fired ? 'event.gmFired' : 'event.gmLeft',
       params: { team: teamName(team) },
+      by: { role: 'gm', name: gone },
     });
   }
   // ponytail: one GM out of work at a time; a list of careers when multiplayer needs it.

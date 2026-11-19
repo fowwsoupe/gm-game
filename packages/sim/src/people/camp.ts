@@ -35,6 +35,7 @@ export function campReport(state: LeagueState, ctx: SimContext, rng: Rng, emit: 
       kind: 'news.posted',
       headline: `event.camp.${read}`,
       params: { coach: coach.name, team: teamName(team) },
+      by: { role: 'coach', name: coach.name },
     });
   }
 }

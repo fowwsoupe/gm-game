@@ -112,9 +112,11 @@ export interface GmApi {
     picks(input: { teamId: TeamId }): Promise<DraftPick[]>;
     /** Players on a team who asked to be traded. */
     tradeRequests(input: { teamId: TeamId }): Promise<string[]>;
-    /** A team's owner, head coach, department heads, market size (0.65-1.75), arena seats, fans and ticket price step. */
+    /** A team's owner, AI GM, head coach, department heads, market size (0.65-1.75), arena seats, fans and ticket price step. */
     owner(input: { teamId: TeamId }): Promise<{
       owner: OwnerProfile;
+      /** The AI GM's name (null on a human team). */
+      gm: string | null;
       coach: CoachProfile;
       /** The assistant GM only on a human team. */
       staff: Record<Exclude<Department, 'assistant'>, StaffProfile> & { assistant?: StaffProfile };

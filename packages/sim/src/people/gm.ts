@@ -9,7 +9,7 @@ import type {
   TeamPlanKind,
   TeamStatus,
 } from '@gm/shared';
-import { Rng } from '../core';
+import { FIRST, LAST, Rng } from '../core';
 import { hash } from './personality';
 
 const GM_STYLES: readonly GmStyle[] = ['winNow', 'balanced', 'builder'];
@@ -17,13 +17,27 @@ const GM_STYLES: readonly GmStyle[] = ['winNow', 'balanced', 'builder'];
 /** Each style's lean between now (1) and the future (-1), as the valuator reads it. */
 export const GM_LEAN: Record<GmStyle, number> = { winNow: 1, balanced: 0, builder: -1 };
 
-/** A new AI GM: any style, skill anywhere from poor to excellent. */
-export function randomGm(rng: Rng): GmProfile {
-  return { style: rng.pick(GM_STYLES), skill: Math.round(rng.next() * 100) / 100 };
+type NamedGm = GmProfile & { name: string };
+
+/** A new AI GM: any style, skill anywhere from poor to excellent; the name drawn last. */
+export function randomGm(rng: Rng): NamedGm {
+  return {
+    style: rng.pick(GM_STYLES),
+    skill: Math.round(rng.next() * 100) / 100,
+    name: `${rng.pick(FIRST)} ${rng.pick(LAST)}`,
+  };
 }
 
-/** A team's GM; teams from old saves and roster files get one derived from the team id. */
-export const gmOf = (team: Team): GmProfile => team.gm ?? randomGm(new Rng(hash(`gm:${team.id}`)));
+/**
+ * A team's GM; teams from old saves and roster files get one derived from the team id, and an
+ * old save's GM without a name a name derived from it too.
+ */
+export function gmOf(team: Team): NamedGm {
+  const gm = team.gm ?? randomGm(new Rng(hash(`gm:${team.id}`)));
+  return gm.name === undefined
+    ? { ...gm, name: randomGm(new Rng(hash(`gmName:${team.id}`))).name }
+    : (gm as NamedGm);
+}
 
 /** How far (SD, rating points) a GM's read of a player is off: the best GM 1, the worst 6. */
 const READ_SD = { best: 1, worst: 6 };
