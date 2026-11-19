@@ -74,6 +74,25 @@ describe('the assistant GM', () => {
   });
 });
 
+describe('the assistant GM in free agency', () => {
+  it('names a free agent you can afford; AI teams get no advice', () => {
+    const state = createLeague(55, ctx);
+    const mine = Object.values(state.teams).find((t) => t.userControlled)!;
+    const theirs = Object.values(state.teams).find((t) => !t.userControlled)!;
+    handleCommand(state, { kind: 'sim.advance', days: 300 }, local, ctx);
+    handleCommand(state, { kind: 'offseason.openFreeAgency' }, local, ctx);
+    const advice = (id = mine.id) =>
+      dashboard(state, ctx, id).todo.find((i) => i.code === 'adviceSign');
+    expect(advice(theirs.id)).toBeUndefined();
+    expect(advice()?.params?.player).toBeTruthy();
+    // No cap room, no advice.
+    for (const p of Object.values(state.players)) {
+      if (p.teamId === mine.id && p.contract) p.contract.capHit = ctx.ruleset.cap.upperLimit;
+    }
+    expect(advice()).toBeUndefined();
+  });
+});
+
 describe('sim until it matters', () => {
   it('stops only on league-wide moments, your team, a long injury or an offer to you', () => {
     const state = createLeague(53, ctx);

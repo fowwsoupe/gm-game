@@ -1,7 +1,7 @@
 import type { Dashboard, Player, TeamId, TodoItem } from '@gm/shared';
-import { phaseOf, playerName, type LeagueState } from './core';
+import { capYearOf, phaseOf, playerName, type LeagueState } from './core';
 import { capYearIssues, teamCapTotal } from './cba';
-import { resignOffers } from './offseason';
+import { freeAgents, resignOffers, wantedYears } from './offseason';
 import { assistantSees, departmentsOf, staffOf } from './people';
 import { overall } from './players';
 import { cachedContext } from './trades';
@@ -42,7 +42,35 @@ export function dashboard(state: LeagueState, ctx: SimContext, teamId: TeamId): 
   if (state.draftClass.length > 0 && !(state.draftBoards[teamId]?.length ?? 0)) {
     todo.push({ code: 'draftList', screen: 'draft' });
   }
-  if (state.freeAgencyOpen) todo.push({ code: 'freeAgency', screen: 'roster' });
+  if (state.freeAgencyOpen) {
+    todo.push({ code: 'freeAgency', screen: 'roster' });
+    if (assistant) {
+      // The free agent with the most surplus on a deal at his ask that fits the cap room, on his read.
+      const room = ruleset.cap.upperLimit - teamCapTotal(state, teamId);
+      const context = cachedContext(state, ctx, teamId);
+      const season = capYearOf(state);
+      const surplus = (p: Player, ask: number) =>
+        ctx.models.valuation.value(
+          seen({
+            ...p,
+            contract: {
+              capHit: ask,
+              expiresAfterSeason: season + wantedYears(season - p.birthYear) - 1,
+            },
+          }),
+          context,
+          ruleset,
+        ).surplus;
+      const best = freeAgents(state)
+        .map((p) => ({ p, ask: ctx.models.contractDemand.ask(ruleset, p) }))
+        .filter((x) => x.ask <= room)
+        .map((x) => ({ p: x.p, value: surplus(x.p, x.ask) }))
+        .sort((a, b) => b.value - a.value || a.p.id.localeCompare(b.p.id))[0];
+      if (best && best.value > 0) {
+        todo.push({ code: 'adviceSign', params: { player: playerName(best.p) }, screen: 'roster' });
+      }
+    }
+  }
   for (const r of state.tradeRequests.filter((x) => x.teamId === teamId)) {
     const p = state.players[r.playerId];
     if (p) {

@@ -695,8 +695,9 @@ export interface TodoItem {
     | 'tradeRequest'
     | 'holdout'
     | 'dispute'
-    // The assistant GM's advice: who to extend first, and take or turn down an offer.
+    // The assistant GM's advice: who to extend first, take or turn down an offer, who to sign.
     | 'adviceResign'
+    | 'adviceSign'
     | 'adviceTake'
     | 'adviceDecline';
   params?: Record<string, string | number>;

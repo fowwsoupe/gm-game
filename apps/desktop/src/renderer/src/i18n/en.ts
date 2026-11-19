@@ -522,6 +522,7 @@ export const en = {
   'trade.decline': 'Decline',
   'todo.tradeOffers': '{count} trade offer(s) waiting',
   'todo.adviceResign': 'Your assistant GM: extend {player} first',
+  'todo.adviceSign': 'Your assistant GM: the best value for your cap room is {player}',
   'todo.adviceTake': 'Your assistant GM: take {give} for {get}',
   'todo.adviceDecline': 'Your assistant GM: turn down {give} for {get}',
   'event.tradeOffered': 'The {team} made you a trade offer',

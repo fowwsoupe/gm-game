@@ -528,6 +528,8 @@ export const fr: Record<MessageKey, string> = {
   'trade.decline': 'Refuser',
   'todo.tradeOffers': '{count} offre(s) d’échange en attente',
   'todo.adviceResign': 'Votre DG adjoint : prolongez d’abord {player}',
+  'todo.adviceSign':
+    'Votre DG adjoint : le meilleur rapport qualité-prix pour votre marge salariale est {player}',
   'todo.adviceTake': 'Votre DG adjoint : acceptez {give} contre {get}',
   'todo.adviceDecline': 'Votre DG adjoint : refusez {give} contre {get}',
   'event.tradeOffered': 'Les {team} vous ont fait une offre d’échange',
