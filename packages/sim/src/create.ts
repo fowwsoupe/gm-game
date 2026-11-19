@@ -82,6 +82,7 @@ export function createLeague(
     goalieRotation: {},
     tradeBlock: [],
     rfaSheets: [],
+    lastSeason: {},
     eventSeq: 0,
   };
 }

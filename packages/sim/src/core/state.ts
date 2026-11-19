@@ -80,6 +80,8 @@ export interface LeagueState {
   rfaRights: Record<PlayerId, TeamId>;
   /** Offer sheets waiting for a human rights team's answer; no answer by the next day declines. */
   rfaSheets: FreeAgentOffer[];
+  /** Last season's games and points for each skater who played, to spot in-season breakouts. */
+  lastSeason: Record<PlayerId, { gp: number; points: number }>;
   /** Players on human teams who asked to be traded (cleared by a talk that works or a trade). */
   tradeRequests: { playerId: PlayerId; teamId: TeamId }[];
   /** Players on human teams holding out: they sit out until paid, talked round or traded. */
@@ -528,8 +530,14 @@ export function applyEvent(state: LeagueState, event: LeagueEvent): void {
       state.fans[event.teamId] = { ...fans, interest };
       return;
     }
-    case 'award.given':
     case 'stats.archived':
+      state.lastSeason = {};
+      for (const l of event.lines) {
+        const { gp, points } = l.stats;
+        if (gp && points !== undefined) state.lastSeason[l.playerId] = { gp, points };
+      }
+      return;
+    case 'award.given':
     case 'season.phaseChanged':
     case 'news.posted':
       return; // informational; no state change
