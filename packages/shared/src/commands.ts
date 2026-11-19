@@ -54,6 +54,8 @@ export type Command =
   | { kind: 'career.takeJob'; teamId: TeamId }
   /** The save option: whether owners may fire you. */
   | { kind: 'league.setCanBeFired'; on: boolean }
+  /** The save option: what stops "sim until it matters". */
+  | { kind: 'league.setStopOn'; stopOn: StopCategory[] }
   /** Answer one of your owner's cards with one of its options. */
   | { kind: 'owner.answerCard'; cardId: string; option: string }
   /** Your ticket price policy, `pct` one of `TICKET_STEPS` around the league's reference price. */
