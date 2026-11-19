@@ -10,6 +10,7 @@ changes a number in the game, the ruleset or balance lab links back here.
 | 2026-11 | [Owner & finance](2026-11-owner-finance.md)         | Real NHL revenue, costs, attendance and coach turnover; the owner, money, fans, pricing, meetings and hot-seat design; ruleset data, lab checks and jobs  |
 | 2026-11 | [Front office](2026-11-front-office.md)             | Staff (scouting, development, medical, coach) with quality, salaries, a market and poaching: the lasting-team-edge fix; ruleset data, lab checks and jobs |
 | 2026-11 | [League & events](2026-11-league-events.md)         | What the living league still lacks (pulse inputs and crisis, breakouts, disputes, AI team events, a stop filter) and its jobs                             |
+| 2026-11 | [Assistant GM](2026-11-assistant-gm.md)             | What an assistant GM does for the human (advice on Home's To do), how his quality sets its accuracy, why AI teams have none, and its jobs                 |
 
 Rules: never edit an old report (add a new dated one); copy any number you use into the
 ruleset or balance lab with a link back to the report section.

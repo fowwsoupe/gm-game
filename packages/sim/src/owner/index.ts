@@ -552,7 +552,13 @@ export function ownerMonth(state: LeagueState, ctx: SimContext, emit: Emit): voi
     warnIfHot(state, emit, teamId, confidence);
     // An AI owner losing faith makes the league's news as he crosses the line he fires a GM below.
     const team = state.teams[teamId]!;
-    if (!team.userControlled && was >= AI_FIRED_BELOW && confidence < AI_FIRED_BELOW) {
+    if (
+      !team.userControlled &&
+      was >= AI_FIRED_BELOW &&
+      confidence < AI_FIRED_BELOW &&
+      standing.frustrated !== state.date.season
+    ) {
+      emit('minor', [teamId], { kind: 'owner.frustrated', teamId });
       emit('minor', [teamId], {
         kind: 'news.posted',
         headline: 'event.ownerFrustrated',

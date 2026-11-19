@@ -4,6 +4,8 @@
  * (see ./sports/hockey.ts). We start with the NHL only; NBA and NFL reuse everything here.
  */
 
+import type { StopCategory } from './commands';
+
 export type Sport = 'nhl' | 'nba' | 'nfl';
 
 /** Branded IDs stop you from passing a TeamId where a PlayerId is expected. */
@@ -228,8 +230,18 @@ export interface Team {
   staff?: Partial<Record<Department, StaffProfile>>;
 }
 
-/** Front-office departments besides the head coach (docs/research/2026-11-front-office.md). */
-export type Department = 'scouting' | 'development' | 'medical';
+/**
+ * Front-office departments besides the head coach (docs/research/2026-11-front-office.md). The
+ * assistant GM only works for a human GM (docs/research/2026-11-assistant-gm.md).
+ */
+export type Department = 'scouting' | 'development' | 'medical' | 'assistant';
+
+/** What a team's departments returned against an average one (see `GmApi.departmentReturns`). */
+export interface DepartmentReturns {
+  development: number;
+  medical: number;
+  scouting: { error: number; league: number; picks: number } | null;
+}
 
 /** The head of a front-office department; his salary stands for the whole department's cost. */
 export interface StaffProfile {
@@ -326,6 +338,8 @@ export interface OwnerStanding {
   coachAsked?: number;
   /** The season the owner last warned a human GM that his job is on the line (absent: never). */
   warned?: number;
+  /** The season an AI owner's frustration last made the news (absent: never): once a season. */
+  frustrated?: number;
 }
 
 /**
@@ -604,6 +618,8 @@ export interface LeagueStatus {
   career: Career | null;
   /** The save option: owners may fire a human GM (default on). */
   canBeFired: boolean;
+  /** The save option: what stops "sim until it matters" (the sim bar's filter). */
+  stopOn: StopCategory[];
 }
 
 /**
@@ -678,7 +694,11 @@ export interface TodoItem {
     | 'tradeOffers'
     | 'tradeRequest'
     | 'holdout'
-    | 'dispute';
+    | 'dispute'
+    // The assistant GM's advice: who to extend first, and take or turn down an offer.
+    | 'adviceResign'
+    | 'adviceTake'
+    | 'adviceDecline';
   params?: Record<string, string | number>;
   screen: 'roster' | 'cap' | 'draft' | 'trades' | 'lines';
 }

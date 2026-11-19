@@ -13,13 +13,20 @@ export const fr: Record<MessageKey, string> = {
   'nav.frontOffice': 'Personnel hockey',
   'frontOffice.empty': 'Prenez les commandes d’une équipe pour diriger son personnel hockey.',
   'frontOffice.intro':
-    'Le dépistage évalue les espoirs du repêchage, le développement fait progresser vos jeunes, le médical écourte les blessures. Les meilleurs coûtent plus cher; ils partent aussi, ou se font embaucher ailleurs quand vous gagnez.',
+    'Le dépistage évalue les espoirs du repêchage, le développement fait progresser vos jeunes, le médical écourte les blessures, et votre DG adjoint vous conseille dans Accueil (un meilleur se trompe moins souvent). Les meilleurs coûtent plus cher; ils partent aussi, ou se font embaucher ailleurs quand vous gagnez.',
   'frontOffice.since': 'depuis {season}',
   'frontOffice.candidate': 'Disponibles cette saison',
   'frontOffice.quality': 'Qualité',
   'frontOffice.hire': 'Embaucher',
   'frontOffice.hiredNow':
     'Embauche faite cette saison : le prochain changement attend la saison prochaine.',
+  'frontOffice.fire': 'Congédier, un intérimaire le remplace',
+  'frontOffice.return.development':
+    '{n} points de cote par an pour les joueurs de 24 ans ou moins, face à un département moyen',
+  'frontOffice.return.medical': '{n} % des jours de blessure face à un département moyen',
+  'frontOffice.return.scouting':
+    'Dernier repêchage : écart de {n} points sur {picks} choix (ligue {league})',
+  'frontOffice.return.none': 'Aucun choix du dernier repêchage à évaluer.',
   'owner.empty': 'Choisissez votre équipe dans Accueil pour rencontrer son propriétaire.',
   'owner.confidence': 'Confiance en vous',
   'owner.cash': 'Encaisse',
@@ -68,6 +75,7 @@ export const fr: Record<MessageKey, string> = {
   'team.staff.scouting': 'Dépistage',
   'team.staff.development': 'Développement des joueurs',
   'team.staff.medical': 'Médical',
+  'team.staff.assistant': 'DG adjoint',
   'staff.quality.poor': 'Faible',
   'staff.quality.average': 'Moyen',
   'staff.quality.good': 'Bon',
@@ -484,6 +492,7 @@ export const fr: Record<MessageKey, string> = {
   'trait.hotHeaded': 'Tête brûlée',
   'home.raceNight': 'prochain match : victoire {win} · défaite {lose}',
   'event.slump': '{player} ({team}) est resté {n} matchs sans point',
+  'event.breakoutPace': '{player} ({team}) éclate : {n} points en {gp} matchs',
   'event.breakout': '{player} ({team}) éclate : {n} points de plus cet été',
   'event.winStreak': 'Les {team} ont gagné {n} matchs de suite',
   'event.losingStreak': 'Les {team} ont perdu {n} matchs de suite',
@@ -517,6 +526,9 @@ export const fr: Record<MessageKey, string> = {
   'trade.accept': 'Accepter',
   'trade.decline': 'Refuser',
   'todo.tradeOffers': '{count} offre(s) d’échange en attente',
+  'todo.adviceResign': 'Votre DG adjoint : prolongez d’abord {player}',
+  'todo.adviceTake': 'Votre DG adjoint : acceptez {give} contre {get}',
+  'todo.adviceDecline': 'Votre DG adjoint : refusez {give} contre {get}',
   'event.tradeOffered': 'Les {team} vous ont fait une offre d’échange',
   'trade.requestsTitle': 'Demandes d’échange',
   'trade.requestLine':
