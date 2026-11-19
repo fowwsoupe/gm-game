@@ -80,6 +80,9 @@ export interface SportModule<Strength = unknown> {
     awards: readonly string[];
   }): { inducted: boolean; totals: Record<string, number> };
 
+  /** The award a legend of this position can lend his name to (hockey: goalie, defenceman, forward). */
+  legendAward(position: string): string;
+
   /**
    * Share (0-1) of his performance bonus a player earned with this season's stat line
    * (`playerLines`), out of `seasonGames` regular-season games.
