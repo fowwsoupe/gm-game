@@ -413,7 +413,7 @@ export function advance(
       tradeRequests(state, rng.fork(`requests${today.day}`), emitter(state, events));
       aiHoldouts(state, ctx, rng.fork(`aiHoldouts${today.day}`), emitter(state, events));
       holdoutsWeek(state, rng.fork(`holdouts${today.day}`), emitter(state, events));
-      disputesWeek(state, rng.fork(`disputes${today.day}`), emitter(state, events));
+      disputesWeek(state, ctx, rng.fork(`disputes${today.day}`), emitter(state, events));
       if (events.length > before) loadRosters();
       coachWeek(state, ctx, rng.fork(`coach${today.day}`), emitter(state, events));
     }
