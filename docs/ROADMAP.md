@@ -71,7 +71,7 @@ B. Balance and calibration (Opus 5.5 unless noted)
 - [ ] Points % spread, seed 1 still short (high; compare seeds 1/101/201)
 - [ ] Lasting edges after the prospect pool (high; seeds 1/101/201): the points % spread is in range (0.095-0.096) but playoff turnover fell under its floor (27.5-28.6%) and goalie SV% r over its ceiling (0.30-0.33). Season form 4.5 raised turnover a point and cut titles in a trial, but it also moves the single-season checks and seed-pinned tests
 - [x] "Better team wins a best-of-7" back in range (high)
-- [ ] Trained stats-to-ratings and development models (xhigh, 2-3 PRs): stats to ratings v2 done (beats v1 on every key); penalty-kill time and penalty minutes in roster stats, and the development model, to do
+- [ ] Trained stats-to-ratings and development models (xhigh, 2-3 PRs): stats to ratings v2 done (beats v1 on every key); development targets measured on NHL data (`ml/src/aging.py`, lab "Skater points/60 a year": the decline is in range, growth runs past 24); fitting the aging curves to them, and penalty-kill time and penalty minutes in roster stats, to do
 - [ ] Playtest analysis (Sonnet 5.5, medium)
 - [ ] Player traits and clustered builds (high; brief done: [research/2026-11-player-traits.md](research/2026-11-player-traits.md); job 1 done: [clusters and trait evidence](research/2026-11-player-builds-evidence.md), jobs 2-3 next)
 
@@ -123,7 +123,7 @@ Build order, owners and "done when" for each step: **[V0.1_PLAN.md](V0.1_PLAN.md
 - [~] Players (`sim/players`): percentiles, builds and role tags (rules), injuries and injury history (shown on the player card) done; re-injury risk done; traits, clustered builds to do ([brief](research/2026-11-player-traits.md))
 - [x] Value (`sim/value`): per-team surplus value (can be negative), market value, pick value curve (rules-based, tuned in the lab)
 - [x] People (`sim/people`): personalities (from the player id), free-agent priorities by age and personality, AI GM styles and skill, team plans, morale (shown on the player card; no effects yet) done
-- [~] Models and calibration (`ml/`, [ADR 0005](adr/0005-calibrate-first.md): ML only where a fit is needed): faceoff effect and goalie form measured on NHL data, stats-to-ratings v2 fitted on the sim (per-game and workload features, 120 leagues); special-teams stats for stats to ratings, the trained development model, playtest analysis to do; "better team wins a best-of-7" back in range done
+- [~] Models and calibration (`ml/`, [ADR 0005](adr/0005-calibrate-first.md): ML only where a fit is needed): faceoff effect and goalie form measured on NHL data, stats-to-ratings v2 fitted on the sim (per-game and workload features, 120 leagues), development targets (aging by age band) measured on NHL data; special-teams stats for stats to ratings, aging curves fitted to the targets, playtest analysis to do; "better team wins a best-of-7" back in range done
 - [~] League & events (`sim/league`): calendar, team status (league pulse from playoff odds, roster age and cap space, crisis when a losing team's owner loses faith), event engine (trade requests, holdouts, disputes, breakouts in the summer and in season, AI owners' frustration, AI fire sales), news, a stop filter (saved with the league), a "talk extension" To do for your breakouts done
 - [ ] Minor / junior / European leagues: light stats-only sim for prospects
 

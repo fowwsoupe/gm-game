@@ -69,8 +69,9 @@ leakage, and coverage when using the study to tune a game model.
 The [MoneyPuck download page](https://moneypuck.com/data.htm) links the season shot
 ZIPs and skater/goalie season CSVs. The converter uses only these published files. For
 the four completed seasons in the current prototype, place `shots_2022.zip` through
-`shots_2025.zip`, `skaters_2022.csv` through `skaters_2025.csv`, and `goalies_2022.csv`
-through `goalies_2025.csv` in `ml/data/raw/moneypuck/`, then run:
+`shots_2025.zip`, `skaters_2022.csv` through `skaters_2025.csv`, `goalies_2022.csv`
+through `goalies_2025.csv` and the player lookup `allPlayersLookup.csv` (birth dates, for
+`aging`) in `ml/data/raw/moneypuck/`, then run:
 
 ```bash
 python3 -m ml.src.moneypuck --seasons 2022 2023 2024 2025
@@ -79,6 +80,7 @@ python3 -m ml.src.analyze --processed ml/data/processed
 python3 -m ml.src.study --processed ml/data/processed
 python3 -m ml.src.faceoffs --processed ml/data/processed
 python3 -m ml.src.form --processed ml/data/processed
+python3 -m ml.src.aging --processed ml/data/processed
 python3 -m ml.src.builds --raw ml/data/raw/moneypuck --processed ml/data/processed
 ```
 
@@ -94,6 +96,11 @@ lab's "Faceoff effect" check measures the same number in the sim.
 chance (variance ratio; 1.169 in 2022-25). That excess is the ceiling for per-game goalie form,
 the sim's honest playoff momentum (`HOCKEY_TUNING.goalieFormSd`); the balance lab's "Goals vs
 expected" check measures the same ratio in the sim.
+
+`aging` writes `aging_study.json`: how a skater's points/60 (over the league's) changes a year
+by age, from his own seasons in a row (the delta method: each player is his own baseline). In
+2022-25 it is +3.6% a year to 24, -1.4% at 25-29 and -4.0% at 30-34. These are the development
+model's targets; the balance lab's "Skater points/60 a year" checks measure the same in the sim.
 
 The adapter filters playoffs, normalizes shot coordinates and positions, preserves
 shootout winners, and records source inconsistencies. Its drafts and contracts files
@@ -122,7 +129,9 @@ with a fixed seed in the lab before switching.
   (0.24-0.32) have the most room.
 - **Development** (`RulesDevelopmentConfig`): trained on NHL careers with player fixed
   effects (or imputation) against survivor bias; an `AgingCurve` per position plus
-  retirement, with `noise` from the spread between careers. Shipping waits on data rights.
+  retirement, with `noise` from the spread between careers. Shipping waits on data rights;
+  until then `aging` sets the hand-set curves' targets (their decline matches, their growth runs
+  past 24).
 
 ## Next studies
 - "Better team wins a best-of-7" back above its floor (about half a point under since goalie form)
