@@ -82,10 +82,9 @@ export {
   HOCKEY_TUNING,
   SKATER_BUILD_CLUSTERS,
   type GoalModel,
-  type ShotInfo,
 } from './tuning';
-export { simGame, type MatchupInput } from './game';
-export { parseXgTable, xgTableFromModel, type XgTable, type XgTableResult } from './xgTable';
+export { simGame } from './game';
+export { parseXgTable, xgTableFromModel } from './xgTable';
 export {
   teamStrength,
   autoLineup,
@@ -95,24 +94,19 @@ export {
   LINEMATES_FULL_GAMES,
   unitFit,
   ICE_TIME,
-  type TeamStrength,
-  type Lineup,
 } from './strength';
 export { importHockeyRoster, exportHockeyRoster } from './roster';
-export { hockeySeasonStats, type SkaterTotals, type GoalieTotals } from './stats';
+export { hockeySeasonStats } from './stats';
 export {
   ratingsFromStats,
   statFeatures,
   ratingGroup,
   FULL_SAMPLE,
-  SKATER_FEATURES,
-  GOALIE_FEATURES,
   type RatingGroup,
   type RatingFit,
-  type RatingEstimate,
   type StatsToRatingsTable,
 } from './ratingsFromStats';
 export { STATS_TO_RATINGS } from './ratingsFromStatsTable';
-export { HOCKEY_LEAGUES, type RatingsToStatsTable } from './leagueLines';
+export { type RatingsToStatsTable } from './leagueLines';
 export { HOCKEY_DEVELOPMENT } from './aging';
-export { PLAY_TRAITS, playTraitOf, type PlayTrait } from './builds';
+export { PLAY_TRAITS, playTraitOf } from './builds';

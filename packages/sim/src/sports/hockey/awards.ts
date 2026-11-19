@@ -1,6 +1,6 @@
 import type { GameResult, Player, PlayerId, TeamId } from '@gm/shared';
 import type { SportModule } from '../sport';
-import { hockeySeasonStats } from './stats';
+import { hockeySeasonStats, savePctQualifier } from './stats';
 
 /**
  * Hockey award formulas (our own names; keys map to translated names in the UI), from box scores:
@@ -29,23 +29,9 @@ export const pickAwards: SportModule['pickAwards'] = ({
     return t ? t.goals + t.assists : -Infinity;
   };
 
-  /** The player with the highest score; ties go to the lower id so the result never depends on order. */
-  const best = (pool: readonly Player[], score: (p: Player) => number): PlayerId | null => {
-    let winner: Player | null = null;
-    let top = -Infinity;
-    for (const p of pool) {
-      const s = score(p);
-      if (s > top || (s === top && winner && p.id < winner.id)) [winner, top] = [p, s];
-    }
-    return winner?.id ?? null;
-  };
-
   const rostered = players.filter((p) => p.teamId !== null && skaters.has(p.id));
-  const busiest = Math.max(0, ...[...goalies.values()].map((g) => g.gp));
-  const qualified = players.filter((p) => {
-    const g = goalies.get(p.id);
-    return p.teamId !== null && g && g.gp >= busiest / 4 && g.shotsAgainst > 0;
-  });
+  const qualifies = savePctQualifier(goalies);
+  const qualified = players.filter((p) => p.teamId !== null && qualifies(goalies.get(p.id)));
 
   const winners: [string, PlayerId | null][] = [
     [
@@ -79,9 +65,20 @@ export const pickAwards: SportModule['pickAwards'] = ({
     ],
   ];
   if (championTeamId)
-    winners.push(['playoffMvp', playoffMvp(players, playoffResults, championTeamId, best)]);
+    winners.push(['playoffMvp', playoffMvp(players, playoffResults, championTeamId)]);
   return winners.flatMap(([award, playerId]) => (playerId ? [{ award, playerId }] : []));
 };
+
+/** The player with the highest score; ties go to the lower id so the result never depends on order. */
+function best(pool: readonly Player[], score: (p: Player) => number): PlayerId | null {
+  let winner: Player | null = null;
+  let top = -Infinity;
+  for (const p of pool) {
+    const s = score(p);
+    if (s > top || (s === top && winner && p.id < winner.id)) [winner, top] = [p, s];
+  }
+  return winner?.id ?? null;
+}
 
 /** A goalie legend lends his name to the goalie award, a defenceman to the defence award, a forward to the MVP. */
 export const hockeyLegendAward: SportModule['legendAward'] = (position) =>
@@ -98,7 +95,6 @@ function playoffMvp(
   players: readonly Player[],
   results: readonly GameResult[],
   championTeamId: TeamId,
-  best: (pool: readonly Player[], score: (p: Player) => number) => PlayerId | null,
 ): PlayerId | null {
   const { skaters, goalies } = hockeySeasonStats(results);
   let shots = 0;

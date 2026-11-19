@@ -11,13 +11,18 @@ import type {
   TeamId,
 } from '@gm/shared';
 import type { Rng } from '../../core';
-import { FACEOFF_WEIGHT, goalieScore, rating, UNIT_WEIGHT, type TeamStrength } from './strength';
+import {
+  FACEOFF_WEIGHT,
+  goalieScore,
+  mean,
+  rating,
+  UNIT_WEIGHT,
+  type TeamStrength,
+} from './strength';
 import { HOCKEY_TUNING, rulesGoalModel, type GoalModel } from './tuning';
 import { finishBox, makeSide } from './side';
-import { buildUnit, mean, pick } from './units';
+import { buildUnit, pick } from './units';
 import { playShootout } from './shootout';
-
-// ---------- the play-by-play engine ----------
 
 /** Who shoots: defencemen take far fewer shots than forwards. */
 const D_SHOOTING = 0.35;
@@ -140,12 +145,9 @@ function playGame(
   const lam: [number, number] = [0, 0];
   const penRate: [number, number] = [0, 0];
 
-  const build = (n: 0 | 1, kind: 'ev' | 'pp' | 'pk', size: number) =>
-    buildUnit(S[n], kind, size, rng);
-
   /** Seconds before the end of regulation a side pulls its goalie (down one or two), else 0. */
   const pullWindow = (n: 0 | 1) => {
-    const down = score(1 - n) - score(n);
+    const down = goals[1 - n]! - goals[n];
     return down >= 1 && down <= 2 ? T.pullSeconds[down - 1]! : 0;
   };
 
@@ -158,9 +160,9 @@ function playGame(
     }
     for (const n of [0, 1] as const) {
       const mine = count(n);
-      const kind =
-        mine > count((1 - n) as 0 | 1) ? 'pp' : mine < count((1 - n) as 0 | 1) ? 'pk' : 'ev';
-      S[n].onIce = build(n, kind, mine + (S[n].pulled ? 1 : 0));
+      const theirs = count((1 - n) as 0 | 1);
+      const kind = mine > theirs ? 'pp' : mine < theirs ? 'pk' : 'ev';
+      S[n].onIce = buildUnit(S[n], kind, mine + (S[n].pulled ? 1 : 0), rng);
       const f = S[n].onIce.filter((k) => !S[n].isD[k]);
       const d = S[n].onIce.filter((k) => S[n].isD[k]);
       // The first forward takes the draws (his line's centre), as in the team strength numbers.
@@ -203,7 +205,6 @@ function playGame(
       penRate[n] = allowPenalties && S[n].penalties.length < 2 ? T.penaltiesPerTeam / 3600 : 0;
     }
   };
-  const score = (n: number) => goals[n as 0 | 1];
 
   const account = (dt: number) => {
     for (const n of [0, 1] as const) {
@@ -426,23 +427,18 @@ function playGame(
     }
   }
 
-  const credited: [number, number] = [goals[0], goals[1]];
-  let box: HockeyBoxScore | undefined;
-  if (input.keepBox) {
-    box = finishBox(S, shots, penalties, emptyNet);
-  }
   return {
-    goals: credited,
+    goals,
     shots: shotCount,
     overtimeGoal,
     shootoutWinner,
     overtime,
-    ...(box ? { box } : {}),
+    ...(input.keepBox ? { box: finishBox(S, shots, penalties, emptyNet) } : {}),
     injuries,
   };
 }
 
-export interface MatchupInput {
+interface MatchupInput {
   id: GameId;
   homeTeamId: TeamId;
   awayTeamId: TeamId;

@@ -100,7 +100,7 @@ export const SKATER_BUILD_CLUSTERS = {
 export const SHAPE_POINTS = 5;
 
 /** What a goal model sees of a shot. */
-export interface ShotInfo {
+interface ShotInfo {
   /** Feet from the goal line toward the dots, and from the middle of the ice (net at 0, 0). */
   x: number;
   y: number;
