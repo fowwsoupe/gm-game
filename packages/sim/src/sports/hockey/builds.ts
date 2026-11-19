@@ -62,7 +62,7 @@ export const PLAY_TRAITS = {
   disciplined: { shotSpread: 1, penaltyWeight: 2 / 3 },
   undisciplined: { shotSpread: 1, penaltyWeight: 1.5 },
 } as const;
-export type PlayTrait = keyof typeof PLAY_TRAITS;
+type PlayTrait = keyof typeof PLAY_TRAITS;
 /** Percent of skaters with each trait: four traits, one skater in five has one. */
 const TRAIT_SHARE = 5;
 const NO_TRAIT = { shotSpread: 1, penaltyWeight: 1 };

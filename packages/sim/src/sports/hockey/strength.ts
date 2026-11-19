@@ -2,7 +2,8 @@ import { isGoalie, SPECIAL_UNIT_SIZE, type Player, type SpecialUnit } from '@gm/
 import { linemateKey } from '../../core';
 import { byOverall } from '../../players';
 
-const avg = (xs: number[]) => (xs.length ? xs.reduce((a, b) => a + b, 0) / xs.length : 50);
+/** Mean of the values, or 50 (an average rating) for none. */
+export const mean = (xs: number[]) => (xs.length ? xs.reduce((a, b) => a + b, 0) / xs.length : 50);
 
 export interface TeamStrength {
   offense: number;
@@ -22,7 +23,7 @@ export interface TeamStrength {
 }
 
 /** A depth chart: forward lines (C, LW, RW), defence pairs, goalies. Best first. */
-export interface Lineup {
+interface Lineup {
   forwards: Player[][];
   defense: Player[][];
   goalies: Player[];
@@ -30,13 +31,13 @@ export interface Lineup {
   special?: Partial<Record<SpecialUnit, Player[]>>;
 }
 
-export interface UnitBonus {
+interface UnitBonus {
   offense: number;
   defense: number;
 }
 
 /** Saved units by player id (see `SpecialUnit`). */
-export type SavedUnits = Partial<Record<SpecialUnit, readonly string[]>>;
+type SavedUnits = Partial<Record<SpecialUnit, readonly string[]>>;
 
 const isD = (p: Player) => p.position === 'D';
 
@@ -96,7 +97,7 @@ export const FACEOFF_WEIGHT = 0.2;
  * points either way around a settled-average team (0.5). Capped by design: worth a few percent
  * of goal difference at most.
  */
-export const CHEMISTRY_POINTS = 1;
+const CHEMISTRY_POINTS = 1;
 
 /**
  * Builds fit: a forward line wants a finisher (shooting over passing) and a creator (passing over
@@ -104,9 +105,9 @@ export const CHEMISTRY_POINTS = 1;
  * home. A unit's fit is 0-1: how far its most extreme player on each side is from even, up to a
  * span of rating points. Three of a kind, or three generalists, fit at 0.
  */
-export const FIT_SPAN = { forwards: 15, defense: 8 } as const;
+const FIT_SPAN = { forwards: 15, defense: 8 } as const;
 /** Rating points a team with a perfectly fitting set of units adds (units weighted by ice time). */
-export const FIT_POINTS = 3;
+const FIT_POINTS = 3;
 /**
  * The league's typical team fit (ice-time-weighted, measured on 60 generated leagues with shaped
  * skaters; the balance lab's "Builds fit" checks), subtracted so an average team nets zero and the
@@ -121,10 +122,10 @@ export const FIT_BASELINE = { forwards: 0.19, defense: 0.12 } as const;
  * together: twice that). Kept small, like chemistry.
  */
 export const LINEMATES_FULL_GAMES = 20;
-export const LINEMATES_POINTS = 0.5;
+const LINEMATES_POINTS = 0.5;
 
 /** 0-1: how much a unit's players have played together (1 = every pair `LINEMATES_FULL_GAMES` games). */
-export function unitTogether(
+function unitTogether(
   unit: readonly Player[],
   linemates: Readonly<Record<string, number>>,
 ): number {
@@ -244,10 +245,7 @@ function weighted(
   weights: readonly number[],
   skill: (p: Player) => number,
 ): number {
-  return units.reduce(
-    (sum, unit, i) => sum + weights[i]! * (unit.length ? avg(unit.map(skill)) : 50),
-    0,
-  );
+  return units.reduce((sum, unit, i) => sum + weights[i]! * mean(unit.map(skill)), 0);
 }
 
 /**

@@ -9,7 +9,7 @@ import { HOCKEY_TUNING, type GoalModel } from './tuning';
  * `(shooting / reference) ** exponent`, a power play by `powerPlay`.
  * See docs/MODEL_CONTRACTS.md.
  */
-export interface XgTable {
+interface XgTable {
   format: 'gm-xg-table';
   version: 1;
   /** Where the numbers came from (data, model, date). Shown in the lab. */
@@ -23,7 +23,7 @@ export interface XgTable {
 const MAX_CELLS = 200;
 const isNum = (v: unknown): v is number => typeof v === 'number' && Number.isFinite(v);
 
-export type XgTableResult =
+type XgTableResult =
   { ok: true; model: GoalModel; table: XgTable } | { ok: false; errors: string[] };
 
 /** Checks an untrusted file and builds the model. Never throws: errors come back readable. */

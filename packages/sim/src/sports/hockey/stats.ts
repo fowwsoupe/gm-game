@@ -54,6 +54,12 @@ export function hockeySeasonStats(results: readonly GameResult[]) {
   return { skaters, goalies };
 }
 
+/** Who counts for save %: a quarter of the games the busiest goalie played, and a shot faced. */
+export function savePctQualifier(goalies: ReadonlyMap<string, GoalieTotals>) {
+  const busiest = Math.max(0, ...[...goalies.values()].map((g) => g.gp));
+  return (g: GoalieTotals | undefined) => !!g && g.gp >= busiest / 4 && g.shotsAgainst > 0;
+}
+
 /** Stat lines for player cards: skaters get points and shots, goalies saves and save %. */
 export function hockeyPlayerLines(results: readonly GameResult[]) {
   const { skaters, goalies } = hockeySeasonStats(results);
@@ -105,7 +111,7 @@ export function hockeyLeaders(
   });
   const skater = (value: (t: SkaterTotals) => number) =>
     [...skaters].map(([id, t]) => [id, t.gp, value(t)] as [string, number, number]);
-  const busiest = Math.max(0, ...[...goalies.values()].map((g) => g.gp));
+  const qualifies = savePctQualifier(goalies);
   return [
     board(
       'points',
@@ -122,7 +128,7 @@ export function hockeyLeaders(
     board(
       'savePct',
       [...goalies]
-        .filter(([, g]) => g.gp >= busiest / 4 && g.shotsAgainst > 0)
+        .filter(([, g]) => qualifies(g))
         .map(([id, g]) => [id, g.gp, g.saves / g.shotsAgainst] as [string, number, number]),
     ),
   ];
