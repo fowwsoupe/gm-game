@@ -1,4 +1,4 @@
-import type { Contract, Player } from '@gm/shared';
+import type { Contract, Player, Prospect } from '@gm/shared';
 import { pct, type Dollars } from '../core';
 import type { Ruleset } from './ruleset';
 
@@ -106,6 +106,20 @@ export function elcYears(rules: Ruleset, signingAge: number): number | null {
     (r) => signingAge >= r.minAge && signingAge <= r.maxAge,
   );
   return row ? row.years : null;
+}
+
+/**
+ * The entry deal a prospect signs for `season` (first-rounders with the most performance bonus
+ * the rules allow), or null if his age has none. Trades value a prospect on it.
+ */
+export function prospectDeal(rules: Ruleset, pr: Prospect, season: number): Contract | null {
+  const years = elcYears(rules, season - pr.player.birthYear);
+  if (years === null) return null;
+  return {
+    capHit: rules.contracts.elcSalary,
+    expiresAfterSeason: season + years - 1,
+    ...(pr.round === 1 && { perfBonus: rules.contracts.maxPerformanceBonus }),
+  };
 }
 
 /** Summers a team holds the rights of a pick drafted at `draftAge` (0: none). */

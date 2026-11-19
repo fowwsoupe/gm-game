@@ -594,10 +594,11 @@ export class LeagueService {
     };
   }
 
-  prospects(teamId: TeamId): ProspectEntry[] {
+  /** `teamId`'s prospects, each range as `by`'s scouts read it (default: his own team's). */
+  prospects(teamId: TeamId, by = teamId): ProspectEntry[] {
     const { state } = this.open();
-    const team = state.teams[teamId];
-    if (!team) throw new Error(`No team ${teamId}`);
+    const team = state.teams[by];
+    if (!team || !state.teams[teamId]) throw new Error(`No team ${teamId}`);
     const ctx = defaultContext(state.rulesetId);
     const season = state.date.season;
     return prospectsOf(state, teamId).map(({ player: p, league, rightsEnd, line }) => ({

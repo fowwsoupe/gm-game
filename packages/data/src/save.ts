@@ -894,9 +894,10 @@ export class SaveFile {
           }
           break;
         case 'trade.completed':
-          // `give` goes to `toTeamId`, `get` comes to `fromTeamId`.
-          if (e.give.includes(playerId)) moves.push({ season, kind: 'traded', teamId: e.toTeamId });
-          else if (e.get.includes(playerId)) {
+          // `give` goes to `toTeamId`, `get` comes to `fromTeamId` (a prospect's rights too).
+          if ([...e.give, ...(e.giveProspects ?? [])].includes(playerId)) {
+            moves.push({ season, kind: 'traded', teamId: e.toTeamId });
+          } else if ([...e.get, ...(e.getProspects ?? [])].includes(playerId)) {
             moves.push({ season, kind: 'traded', teamId: e.fromTeamId });
           }
           break;

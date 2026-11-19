@@ -1,7 +1,7 @@
-import type { Contract, Player, PlayerId, Prospect, TeamId, TeamStatus } from '@gm/shared';
-import type { Emit, LeagueState, Rng } from '../core';
+import type { Player, PlayerId, Prospect, TeamId, TeamStatus } from '@gm/shared';
+import { prospectsOf, type Emit, type LeagueState, type Rng } from '../core';
 import type { SimContext } from '../context';
-import { deadCap, elcYears, payroll } from '../cba';
+import { deadCap, payroll, prospectDeal } from '../cba';
 import { byOverall, overall } from '../players';
 import { personalityOf, planStatus, seenBy } from '../people';
 import { teamRange } from './draft';
@@ -147,27 +147,6 @@ export function reSignPlayers(
   }
 }
 
-/** A team's prospects (docs/research/2026-11-minor-leagues.md), by id. */
-export const prospectsOf = (state: LeagueState, teamId: TeamId): Prospect[] =>
-  Object.values(state.prospects)
-    .filter((x) => x.player.teamId === teamId)
-    .sort((a, b) => a.player.id.localeCompare(b.player.id));
-
-/**
- * The entry deal a prospect signs for `season` (first-rounders with the most performance bonus
- * the rules allow), or null if his age has none.
- */
-export function prospectDeal(ctx: SimContext, pr: Prospect, season: number): Contract | null {
-  const { contracts } = ctx.ruleset;
-  const years = elcYears(ctx.ruleset, ageIn(pr.player, season));
-  if (years === null) return null;
-  return {
-    capHit: contracts.elcSalary,
-    expiresAfterSeason: season + years - 1,
-    ...(pr.round === 1 && { perfBonus: contracts.maxPerformanceBonus }),
-  };
-}
-
 /** An AI or fill-in signing: he signs if his team has the room (`capRoom`). Whether he signed. */
 function signIfRoom(
   state: LeagueState,
@@ -177,7 +156,7 @@ function signIfRoom(
   season: number,
 ): boolean {
   const teamId = pr.player.teamId!;
-  const deal = prospectDeal(ctx, pr, season);
+  const deal = prospectDeal(ctx.ruleset, pr, season);
   const roster = rosterOf(state, teamId);
   if (
     !deal ||

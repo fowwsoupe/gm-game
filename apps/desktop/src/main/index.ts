@@ -102,7 +102,9 @@ function registerIpc() {
   ipcMain.handle(IPC.pulse, () => league.pulse());
   ipcMain.handle(IPC.dashboard, (_e, input: In<'dashboard'>) => league.dashboard(input.teamId));
   ipcMain.handle(IPC.draftClass, (_e, input: In<'draftClass'>) => league.draftClass(input.teamId));
-  ipcMain.handle(IPC.prospects, (_e, input: In<'prospects'>) => league.prospects(input.teamId));
+  ipcMain.handle(IPC.prospects, (_e, input: In<'prospects'>) =>
+    league.prospects(input.teamId, input.by),
+  );
   ipcMain.handle(IPC.signingInterest, (_e, input: In<'signingInterest'>) =>
     league.signingInterest(input.playerId, input.teamId, input),
   );
