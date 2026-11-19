@@ -80,6 +80,13 @@ export function playerProfiles(
         stats: lines.get(p.id) ?? {},
         ask: ctx.models.contractDemand.ask(ctx.ruleset, p),
         ...(state.tradeBlock.includes(p.id) && { onBlock: true as const }),
+        ...(p.teamId !== null &&
+          state.teams[p.teamId]?.userControlled && {
+            training: {
+              ...(state.trainingPlans[p.id] && { focus: state.trainingPlans[p.id] }),
+              options: Object.keys(sport.trainingFocus(p.position)),
+            },
+          }),
         ...(p.teamId !== null && { morale: moraleOf(state, ctx, p) }),
         ...(p.teamId === null && state.rfaRights[p.id] && { rightsTeamId: state.rfaRights[p.id] }),
         rivalOffers: state.faOffers.filter(

@@ -40,9 +40,8 @@ Minor / junior / European leagues: brief in
 prospect pool, lines, prospects in trades, the farm team) are ready, in that order.
 
 Summer training, camp battles, international tournament: brief in
-[research/2026-11-summer-training.md](research/2026-11-summer-training.md); its first two jobs
-(summer training plans, the international tournament) are ready; camp battles wait for the camp
-job above.
+[research/2026-11-summer-training.md](research/2026-11-summer-training.md); summer training plans
+are done, the international tournament is ready; camp battles wait for the camp job above.
 
 Needs a design first (a short brief in `docs/research/`, then jobs):
 
@@ -78,7 +77,7 @@ D. Phase 2 headlines
 - [ ] Free-agency bidding war and contract negotiation (Opus, xhigh, brief first)
 - [ ] League news tab (Opus for storylines, Sonnet for UI; high, brief first)
 - [x] Media and press conferences, text (Sonnet, medium, 2-3 PRs)
-- [~] Summer training, camp battles, international tournament (Opus, high, 3 PRs): brief done
+- [~] Summer training, camp battles, international tournament (Opus, high, 3 PRs): brief and summer training plans done
 - [ ] Cutscenes (Sonnet, medium, 3 PRs)
 - [ ] Match viewer (2D) with coach from the bench (Fable 5.2, xhigh, 6+ PRs)
 - [ ] League sandbox (Sonnet, high, 4 PRs)
@@ -159,7 +158,7 @@ Build order, owners and "done when" for each step: **[V0.1_PLAN.md](V0.1_PLAN.md
 - [x] Media & press conferences (text)
 - [ ] Match viewer (2D) + coach from the bench
 - [ ] Cutscenes (trophy lift, draft pick, signing)
-- [ ] Summer training, camp battles, international tournament
+- [~] Summer training, camp battles, international tournament: summer training plans (a focus per player on a human team reshapes his ratings at development, never past his ceiling) done
 - [~] Hall of Fame, legends return as staff, awards named after legends: Hall of Fame (rule-based induction, History screen), awards named after legends (the first inducted goalie, defenceman and forward lend their surname to the goalie, defence and MVP awards from the next season, on History) and legends as staff (a Hall of Famer is one of a human team's candidates, one a team-season) done
 - [ ] League sandbox: expansion, relocation, identity editor, commissioner mode
 - [ ] Multiplayer step 1: shared save (hot-seat)

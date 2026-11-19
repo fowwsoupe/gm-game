@@ -162,6 +162,8 @@ export interface PlayerProfile extends RosterPlayer {
   morale?: { value: number; factors: { key: string; score: number }[] };
   /** On your trade block: AI GMs call about him more often. */
   onBlock?: true;
+  /** Players on a human team: his summer training focus (absent = balanced) and the sport's choices. */
+  training?: { focus?: string; options: string[] };
   /** Restricted free agent: the team holding his rights (it may match another team's offer sheet). */
   rightsTeamId?: TeamId;
 }

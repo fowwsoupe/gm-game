@@ -62,6 +62,8 @@ export interface LeagueState {
   draftPicksMade: number | null;
   /** Each human team's depth order for its lines, best first (absent = by rating). */
   depthCharts: Record<string, string[]>;
+  /** Summer training focus by player (a key of the sport's `trainingFocus`); only human teams' count. */
+  trainingPlans: Record<PlayerId, string>;
   /** Each human team's saved power-play / penalty-kill units (absent = auto). */
   specialUnits: Record<string, Partial<Record<SpecialUnit, PlayerId[]>>>;
   /** Owners of traded draft picks, by pick id (`season-round-originalTeam`). Untraded picks are absent. */
@@ -293,6 +295,7 @@ export function applyEvent(state: LeagueState, event: LeagueEvent): void {
       delete state.players[event.playerId];
       delete state.rfaRights[event.playerId];
       delete state.formerTeams[event.playerId];
+      delete state.trainingPlans[event.playerId];
       state.rfaSheets = state.rfaSheets.filter((o) => o.playerId !== event.playerId);
       state.tradeBlock = state.tradeBlock.filter((id) => id !== event.playerId);
       endRequest(state, event.playerId);
@@ -372,6 +375,10 @@ export function applyEvent(state: LeagueState, event: LeagueEvent): void {
       return;
     case 'lines.set':
       state.depthCharts[event.teamId] = [...event.order];
+      return;
+    case 'training.planSet':
+      if (event.focus === null) delete state.trainingPlans[event.playerId];
+      else state.trainingPlans[event.playerId] = event.focus;
       return;
     case 'trade.blockSet':
       state.tradeBlock = state.tradeBlock.filter((id) => id !== event.playerId);
