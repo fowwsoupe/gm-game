@@ -173,6 +173,13 @@ const BLOCK_OFFER_CHANCE = 0.7;
 /** Days an offer stays open. */
 const OFFER_DAYS = 7;
 
+/** The last day an offer made today stays open: a week on, or the trade deadline if sooner. */
+export function offerExpires(state: LeagueState, ctx: SimContext): number {
+  const { day } = state.date;
+  const deadline = ctx.ruleset.season.calendar.tradeDeadlineDay;
+  return state.championTeamId ? day + OFFER_DAYS : Math.min(day + OFFER_DAYS, deadline);
+}
+
 /**
  * AI GMs make offers to human teams: one AI team picks the human's player it values most above
  * what he is worth to his own team, and offers a player of its own the human team should value
@@ -188,11 +195,8 @@ export function aiOffers(state: LeagueState, ctx: SimContext, rng: Rng, emit: Em
       accepted: false,
     });
   }
-  const cal = ctx.ruleset.season.calendar;
   const { day } = state.date;
-  const expiresDay = state.championTeamId
-    ? day + OFFER_DAYS
-    : Math.min(day + OFFER_DAYS, cal.tradeDeadlineDay);
+  const expiresDay = offerExpires(state, ctx);
   if (!tradeWindowOpen(state, ctx) || expiresDay <= day) return;
   const teams = Object.values(state.teams).sort((a, b) => a.id.localeCompare(b.id));
   const ai = teams.filter((t) => !t.userControlled).map((t) => t.id);

@@ -9,14 +9,16 @@ import type { SimContext } from './context';
 /**
  * Player cards for one team (`null` = the free agents): where each hidden rating ranks among
  * rostered players with the same rating keys, and this regular season's stat line.
- * Sorted by the sport's position order, then name. A player not on a human team is seen through
- * the human's analytics department: each rating is off by a fixed amount per player, smaller the
+ * Sorted by the sport's position order, then name. Seen by `viewerId`'s GM (hot-seat: the one at
+ * the controls; absent or not human = the first human team): a player not on his team is seen
+ * through his analytics department, each rating off by a fixed amount per player, smaller the
  * better the department. View only; the sim and the AI use true ratings.
  */
 export function playerProfiles(
   state: LeagueState,
   ctx: SimContext,
   teamId: TeamId | null,
+  viewerId?: TeamId,
 ): PlayerProfile[] {
   const { sport } = ctx;
   const all = Object.values(state.players);
@@ -39,12 +41,14 @@ export function playerProfiles(
   };
   const lines = sport.playerLines(Object.values(state.results).filter((g) => !g.playoffSeriesId));
   const order = (position: string) => sport.positions.indexOf(position);
-  const viewer = Object.values(state.teams).find((t) => t.userControlled);
+  const humans = Object.values(state.teams).filter((t) => t.userControlled);
+  const viewer = humans.find((t) => t.id === viewerId) ?? humans[0];
+  const yours = (p: Player) => viewer !== undefined && p.teamId === viewer.id;
   const fo = ctx.ruleset.frontOffice;
   const q = viewer ? staffOf(viewer, 'analytics', fo.salary, state.date.season).quality : 1;
   const sd = fo.analytics.best + (1 - q) * (fo.analytics.worst - fo.analytics.best);
   const seen = (p: Player, keys: readonly string[]) => {
-    const exact = !viewer || (p.teamId !== null && state.teams[p.teamId]?.userControlled);
+    const exact = !viewer || yours(p);
     const r = new Rng(hash(`analytics:${viewer?.id}:${p.id}`));
     return keys.map((key) => (p.ratings[key] ?? 0) + (exact ? 0 : r.normal(0, sd)));
   };
@@ -52,7 +56,7 @@ export function playerProfiles(
   const bids = (p: Player) => {
     const { ranked, decides } = raceFor(state, ctx, p);
     if (!ranked.length) return {};
-    const rivals = ranked.filter((x) => !state.teams[x.o.teamId]?.userControlled);
+    const rivals = ranked.filter((x) => x.o.teamId !== viewer?.id);
     const mine = ranked.find((x) => x.o.teamId === viewer?.id);
     return {
       bids: {
@@ -97,13 +101,12 @@ export function playerProfiles(
         stats: lines.get(p.id) ?? {},
         ask: ctx.models.contractDemand.ask(ctx.ruleset, p),
         ...(state.tradeBlock.includes(p.id) && { onBlock: true as const }),
-        ...(p.teamId !== null &&
-          state.teams[p.teamId]?.userControlled && {
-            training: {
-              ...(state.trainingPlans[p.id] && { focus: state.trainingPlans[p.id] }),
-              options: Object.keys(sport.trainingFocus(p.position)),
-            },
-          }),
+        ...(yours(p) && {
+          training: {
+            ...(state.trainingPlans[p.id] && { focus: state.trainingPlans[p.id] }),
+            options: Object.keys(sport.trainingFocus(p.position)),
+          },
+        }),
         ...(p.teamId !== null && { morale: moraleOf(state, ctx, p) }),
         ...(p.teamId === null && state.rfaRights[p.id] && { rightsTeamId: state.rfaRights[p.id] }),
         ...(p.teamId === null && bids(p)),

@@ -42,6 +42,10 @@ interface UiState {
   /** Hot-seat: the human team whose GM has the seat (absent or no longer human = the first one). */
   seat: string | undefined;
   setSeat: (teamId: string | undefined) => void;
+  /** Hot-seat hand-over: the seat goes to `teamId`'s GM behind a curtain he lifts himself. */
+  curtain: boolean;
+  handOver: (teamId: string) => void;
+  liftCurtain: () => void;
 }
 
 export const useUi = create<UiState>((set) => ({
@@ -60,4 +64,7 @@ export const useUi = create<UiState>((set) => ({
   setLocale: (locale) => set({ locale }),
   seat: undefined,
   setSeat: (seat) => set({ seat }),
+  curtain: false,
+  handOver: (seat) => set({ seat, curtain: true, screen: 'home', tradeAsk: null }),
+  liftCurtain: () => set({ curtain: false }),
 }));

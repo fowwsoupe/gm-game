@@ -14,7 +14,8 @@ import {
 import type { StopCategory } from '@gm/shared';
 import { useUi, type Screen } from '@/stores/ui';
 import { useT, type MessageKey } from '@/i18n';
-import { Button, TeamSelect, TrophyLift } from '@/ui';
+import { Button, Card, TeamSelect, TrophyLift } from '@/ui';
+import { teamName } from '@/lib/format';
 import { Standings } from '@/screens/Standings';
 import { History } from '@/screens/History';
 import { Leaders } from '@/screens/Leaders';
@@ -50,11 +51,12 @@ const NAV: { id: Screen; label: MessageKey }[] = [
 
 export function App() {
   const t = useT();
-  const { screen, setScreen, locale, setLocale, setSeat } = useUi();
+  const { screen, setScreen, locale, setLocale, handOver, curtain, liftCurtain } = useUi();
   const { data: steam } = useSteam();
   const { data: teams = [], isError } = useTeams();
   const humans = teams.filter((x) => x.userControlled);
   const mine = useMine();
+  const nextGm = humans[(humans.findIndex((x) => x.id === mine?.id) + 1) % humans.length];
   const newLeague = useNewLeague();
   const fromRoster = useNewLeagueFromRoster();
   const dispatch = useDispatch();
@@ -97,6 +99,18 @@ export function App() {
     <div className="flex h-full">
       {tour && <Walkthrough onClose={() => setTour(false)} />}
       {searching && <CommandK screens={NAV} onClose={() => setSearching(false)} />}
+      {curtain && mine && humans.length > 1 && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center bg-bg">
+          <Card title={t('home.handOverTitle')}>
+            <p className="mb-4 text-sm text-muted">
+              {t('home.handOver', { team: teamName(teams, mine.id) })}
+            </p>
+            <Button variant="primary" onClick={liftCurtain}>
+              {t('home.takeSeat', { team: mine.abbreviation })}
+            </Button>
+          </Card>
+        </div>
+      )}
       <aside className="flex w-56 flex-col gap-1 border-r border-line bg-panel p-3">
         <div className="mb-4 px-2 text-lg font-semibold">{t('app.name')}</div>
         {humans.length > 1 && (
@@ -105,8 +119,13 @@ export function App() {
             <TeamSelect
               teams={humans}
               value={mine?.id ?? ''}
-              onChange={(id) => id && setSeat(id)}
+              onChange={(id) => id && id !== mine?.id && handOver(id)}
             />
+            {nextGm && (
+              <Button onClick={() => handOver(nextGm.id)}>
+                {t('home.nextGm', { team: nextGm.abbreviation })}
+              </Button>
+            )}
           </label>
         )}
         {NAV.map((n) => (

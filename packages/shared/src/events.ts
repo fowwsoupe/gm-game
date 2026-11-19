@@ -279,7 +279,7 @@ export type LeagueEvent =
   | (EventBase & { kind: 'player.noTradeWaived'; playerId: PlayerId })
   /** A young player on a human team broke out, for `season`: Home asks if you talk extension now. */
   | (EventBase & { kind: 'player.brokeOut'; playerId: PlayerId; teamId: TeamId; season: number })
-  /** An AI GM offers a human team a trade (see `TradeOffer`). */
+  /** An AI or another human GM offers a human team a trade (see `TradeOffer`). */
   | (EventBase & { kind: 'trade.offered'; offer: TradeOffer })
   /** An offer is gone: accepted (a `trade.completed` follows), declined or expired. */
   | (EventBase & { kind: 'trade.offerClosed'; offerId: string; accepted: boolean })
