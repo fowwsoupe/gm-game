@@ -8,25 +8,33 @@ import math
 from collections import defaultdict
 from pathlib import Path
 
-from ml.src.study import _rows
+from ml.src.study import pearson, read_rows
 
 
 def _pearson(pairs: list[tuple[float, float]]) -> float | None:
     if len(pairs) < 30:
         return None
-    xs, ys = zip(*pairs)
-    mx, my = sum(xs) / len(xs), sum(ys) / len(ys)
-    xx = sum((x - mx) ** 2 for x in xs)
-    yy = sum((y - my) ** 2 for y in ys)
-    if xx == 0 or yy == 0:
+    try:
+        return round(pearson(pairs), 3)
+    except ZeroDivisionError:  # one side has no variance
         return None
-    return round(sum((x - mx) * (y - my) for x, y in pairs) / math.sqrt(xx * yy), 3)
+
+
+def _skater_features(row: dict[str, str], toi: float) -> dict[str, float]:
+    return {
+        "xg_per_60": 60 * float(row["xg"]) / toi,
+        "finishing_over_xg_per_60": 60 * (float(row["goals"]) - float(row["xg"])) / toi,
+        "primary_assists_per_60": 60 * float(row["primary_assists"]) / toi,
+        "hits_per_60": 60 * float(row["hits"]) / toi,
+        "takeaways_per_60": 60 * float(row["takeaways"]) / toi,
+        "on_off_xg_pct_gap": float(row["on_ice_xg_pct"]) - float(row["off_ice_xg_pct"]),
+    }
 
 
 def analyze(processed: Path) -> dict:
-    shots = _rows(processed / "shots.csv")
-    teams = _rows(processed / "team_seasons.csv")
-    players = _rows(processed / "player_features.csv")
+    shots = read_rows(processed / "shots.csv")
+    teams = read_rows(processed / "team_seasons.csv")
+    players = read_rows(processed / "player_features.csv")
     by_distance = defaultdict(lambda: [0, 0])
     by_type = defaultdict(lambda: [0, 0])
     for shot in shots:
@@ -74,25 +82,8 @@ def analyze(processed: Path) -> dict:
             continue
         toi, later_toi = float(row["toi_minutes"]), float(later["toi_minutes"])
         if row["position"] != "G" and min(toi, later_toi) >= 600:
-            current = {
-                "xg_per_60": 60 * float(row["xg"]) / toi,
-                "finishing_over_xg_per_60": 60 * (float(row["goals"]) - float(row["xg"])) / toi,
-                "primary_assists_per_60": 60 * float(row["primary_assists"]) / toi,
-                "hits_per_60": 60 * float(row["hits"]) / toi,
-                "takeaways_per_60": 60 * float(row["takeaways"]) / toi,
-                "on_off_xg_pct_gap": float(row["on_ice_xg_pct"]) -
-                                      float(row["off_ice_xg_pct"]),
-            }
-            following = {
-                "xg_per_60": 60 * float(later["xg"]) / later_toi,
-                "finishing_over_xg_per_60": 60 * (float(later["goals"]) -
-                                                float(later["xg"])) / later_toi,
-                "primary_assists_per_60": 60 * float(later["primary_assists"]) / later_toi,
-                "hits_per_60": 60 * float(later["hits"]) / later_toi,
-                "takeaways_per_60": 60 * float(later["takeaways"]) / later_toi,
-                "on_off_xg_pct_gap": float(later["on_ice_xg_pct"]) -
-                                      float(later["off_ice_xg_pct"]),
-            }
+            current = _skater_features(row, toi)
+            following = _skater_features(later, later_toi)
             for feature, value in current.items():
                 skater_pairs[feature].append((value, following[feature]))
                 skater_pairs[f"{feature}_to_next_goals_per_60"].append(
@@ -115,7 +106,7 @@ def analyze(processed: Path) -> dict:
         return {key: {"pairs": len(values), "r": _pearson(values)}
                 for key, values in sorted(groups.items())}
 
-    report = {
+    return {
         "method": "Shot goal rates are descriptive. Team correlations compare a season's "
                   "features with the same team's following-season win percentage; they "
                   "are not causal. Player correlations compare consecutive seasons for "
@@ -130,7 +121,6 @@ def analyze(processed: Path) -> dict:
         "evidence_ready": len(shots) >= 1000 and
                           all(len(values) >= 30 for values in pairs.values()),
     }
-    return report
 
 
 def main() -> None:

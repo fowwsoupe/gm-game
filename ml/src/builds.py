@@ -24,7 +24,7 @@ import random
 from collections import defaultdict
 from pathlib import Path
 
-from ml.src.study import _rows
+from ml.src.study import pearson, read_rows
 
 MIN_SECONDS = 600 * 60
 MIN_SHOTS = 50
@@ -133,16 +133,6 @@ def cluster(points: list[list[float]], ks: range, seed: int = 1) -> dict:
             "clusters": clusters}
 
 
-def pearson(pairs: list[tuple[float, float]]) -> float:
-    n = len(pairs)
-    mx = sum(a for a, _ in pairs) / n
-    my = sum(b for _, b in pairs) / n
-    sxy = sum((a - mx) * (b - my) for a, b in pairs)
-    sxx = sum((a - mx) ** 2 for a, _ in pairs)
-    syy = sum((b - my) ** 2 for _, b in pairs)
-    return sxy / math.sqrt(sxx * syy)
-
-
 def _slope(pairs: list[tuple[float, float]]) -> float:
     mx = sum(a for a, _ in pairs) / len(pairs)
     my = sum(b for _, b in pairs) / len(pairs)
@@ -160,7 +150,7 @@ def year_to_year(values: dict[tuple[str, int], float]) -> dict:
 def shot_distances(processed: Path) -> dict[tuple[str, int], tuple[float, int]]:
     """Mean distance from the net (x=89, y=0) of each shooter season's unblocked attempts."""
     tally: dict[tuple[str, int], list[float]] = defaultdict(lambda: [0.0, 0])
-    for row in _rows(processed / "shots.csv"):
+    for row in read_rows(processed / "shots.csv"):
         shooter = row["shooter_id"].removesuffix(".0")
         if not shooter.isdigit():  # unknown shooters have placeholder ids
             continue

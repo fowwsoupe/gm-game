@@ -13,12 +13,12 @@ import json
 from collections import defaultdict
 from pathlib import Path
 
-from ml.src.study import _rows
+from ml.src.study import read_rows
 
 
 def study(processed: Path) -> dict:
     games: dict[tuple[str, str], list[float]] = defaultdict(lambda: [0.0, 0.0, 0.0])
-    for row in _rows(processed / "shots.csv"):
+    for row in read_rows(processed / "shots.csv"):
         xg = float(row["xg"])
         tally = games[(row["game_id"], row["team_id"])]
         tally[0] += int(row["is_goal"])

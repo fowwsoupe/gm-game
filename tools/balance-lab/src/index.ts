@@ -5,6 +5,7 @@
  *
  *   pnpm lab                 # 100 seasons, default seeds
  *   pnpm lab --seasons 100   # more seasons = more confidence
+ *   pnpm lab --seed 101      # first seed (league i uses seed + i)
  *   pnpm lab --leagues 10 --years 30   # multi-year section: leagues x years
  *   pnpm lab --xg ml/models/xg.json    # same checks with a shot-quality model file (docs/MODEL_CONTRACTS.md)
  *
@@ -89,8 +90,8 @@ let teamSeasons = 0;
 let ppChances = 0;
 /** Series won by the stronger team: fresh leagues, and multi-year leagues from LONG_RUN_FROM on. */
 const series = { fresh: { won: 0, n: 0 }, longRun: { won: 0, n: 0 } };
-let favouriteWins = 0;
-let decidedByStrength = 0;
+/** Single games won by the stronger team (level games left out): same split as `series`. */
+const favourites = { fresh: { won: 0, n: 0 }, longRun: { won: 0, n: 0 } };
 /** Per team game: goals minus expected goals at an average goalie, and the chance-only variance. */
 let vsExpectedSum = 0;
 let vsExpectedSq = 0;
@@ -105,6 +106,23 @@ const started = performance.now();
 
 const rosterOf = (state: LeagueState, id: string) =>
   Object.values(state.players).filter((p) => p.teamId === id);
+
+const teamStrengths = (state: LeagueState) =>
+  new Map(Object.keys(state.teams).map((id) => [id, teamStrength(rosterOf(state, id))]));
+
+/** Counts the games the stronger team (by `strengthEdge`) won; games between level teams are skipped. */
+function tallyFavourites(
+  results: readonly GameResult[],
+  strength: ReturnType<typeof teamStrengths>,
+  tally: { won: number; n: number },
+) {
+  for (const g of results) {
+    const edge = strengthEdge(strength.get(g.homeTeamId)!, strength.get(g.awayTeamId)!);
+    if (edge === 0) continue;
+    tally.n++;
+    if (edge > 0 === g.homeScore > g.awayScore) tally.won++;
+  }
+}
 
 /** Ice-time-weighted faceoff rating of the players who take each line's draws (as the sim picks them). */
 const drawSkill = (roster: readonly Player[]) =>
@@ -131,13 +149,13 @@ function measureSeries(state: LeagueState, tally: { won: number; n: number }) {
       strengthFor(state, ctx, id as TeamId, rosterOf(state, id)) as ReturnType<typeof teamStrength>,
     ]),
   );
-  for (const series of Object.values(state.playoffSeries)) {
-    if (!series.winnerTeamId) continue;
-    const high = strengths.get(series.higherTeamId)!;
-    const low = strengths.get(series.lowerTeamId)!;
-    const better = strengthEdge(high, low) >= 0 ? series.higherTeamId : series.lowerTeamId;
+  for (const s of Object.values(state.playoffSeries)) {
+    if (!s.winnerTeamId) continue;
+    const high = strengths.get(s.higherTeamId)!;
+    const low = strengths.get(s.lowerTeamId)!;
+    const better = strengthEdge(high, low) >= 0 ? s.higherTeamId : s.lowerTeamId;
     tally.n++;
-    if (series.winnerTeamId === better) tally.won++;
+    if (s.winnerTeamId === better) tally.won++;
   }
 }
 
@@ -165,9 +183,8 @@ for (let i = 0; i < seasons; i++) {
   const top = (key: string) =>
     ctx.sport.leaders(results, Object.values(state.players), 1).find((b) => b.key === key)?.rows[0]
       ?.value ?? 0;
-  const strength = new Map(
-    Object.keys(state.teams).map((id) => [id, teamStrength(rosterOf(state, id))]),
-  );
+  const strength = teamStrengths(state);
+  tallyFavourites(results, strength, favourites.fresh);
   for (const id of Object.keys(state.teams)) {
     const roster = rosterOf(state, id);
     const base = withoutDraws(roster);
@@ -177,11 +194,6 @@ for (let i = 0; i < seasons; i++) {
     fits.defense.push(fit.defense);
   }
   for (const g of results) {
-    const edge = strengthEdge(strength.get(g.homeTeamId)!, strength.get(g.awayTeamId)!);
-    if (edge !== 0) {
-      decidedByStrength++;
-      if (edge > 0 === g.homeScore > g.awayScore) favouriteWins++;
-    }
     const box = g.box as HockeyBoxScore;
     ppChances += box.penalties.length;
     // Goals vs expected goals, as the NHL data measures it (ml/src/form.py). Empty-net goals are
@@ -267,8 +279,6 @@ const trades = { all: 0, deadlineWeek: 0 };
 const LONG_RUN_FROM = Math.min(10, Math.floor(years / 2));
 /** Why the long-run checks fall short (see the doc it names). */
 const KNOWN_SPREAD = 'no lasting team edge';
-let longRunFavouriteWins = 0;
-let longRunDecided = 0;
 /** Spread (SD) of team strength at the start of a season, year 0 and from LONG_RUN_FROM on. */
 const spreadYear0: number[] = [];
 const spreadLongRun: number[] = [];
@@ -326,9 +336,7 @@ for (let l = 0; l < leagues; l++) {
       prospectsATeam.push(Object.keys(state.prospects).length / Object.keys(state.teams).length);
     }
     if (y === 0 || longRun) {
-      const nets = Object.keys(state.teams).map((id) =>
-        netStrength(teamStrength(rosterOf(state, id))),
-      );
+      const nets = [...teamStrengths(state).values()].map(netStrength);
       (longRun ? spreadLongRun : spreadYear0).push(sd(nets));
     }
     // Camp and opening night first (one day loop either way: same games, same numbers).
@@ -354,7 +362,7 @@ for (let l = 0; l < leagues; l++) {
       ctx,
     );
     if (!rest.ok) throw new Error(rest.error.message);
-    const played = { events: [...opening.events, ...rest.events] };
+    const played = [...opening.events, ...rest.events];
     const ppg = [...Object.values(state.prospects), ...state.draftClass]
       .flatMap(({ line }) =>
         line?.season === state.date.season &&
@@ -369,7 +377,7 @@ for (let l = 0; l < leagues; l++) {
       juniorPpg.median.push(ppg[Math.floor(ppg.length / 2)]!);
     }
     const books = new Map<string, { revenue: number; profit: number }>();
-    for (const e of played.events) {
+    for (const e of played) {
       if (e.kind === 'trade.completed') {
         trades.all++;
         if (inDeadlineWeek(cal, e.date.day)) trades.deadlineWeek++;
@@ -409,16 +417,11 @@ for (let l = 0; l < leagues; l++) {
     lastPct = pct;
     if (longRun) {
       measureSeries(state, series.longRun);
-      const strength = new Map(
-        Object.keys(state.teams).map((id) => [id, teamStrength(rosterOf(state, id))]),
+      tallyFavourites(
+        Object.values(state.results).filter((g) => !g.playoffSeriesId),
+        teamStrengths(state),
+        favourites.longRun,
       );
-      for (const g of Object.values(state.results)) {
-        if (g.playoffSeriesId) continue;
-        const edge = strengthEdge(strength.get(g.homeTeamId)!, strength.get(g.awayTeamId)!);
-        if (edge === 0) continue;
-        longRunDecided++;
-        if (edge > 0 === g.homeScore > g.awayScore) longRunFavouriteWins++;
-      }
     }
     titles.set(state.championTeamId!, (titles.get(state.championTeamId!) ?? 0) + 1);
     const playoffTeams = new Set(
@@ -578,7 +581,7 @@ const checks: Check[] = [
   {
     // Research report: the favourite wins about 60% of single games. Favourite = stronger at full health.
     name: 'Favourite wins a single game',
-    value: (100 * favouriteWins) / decidedByStrength,
+    value: (100 * favourites.fresh.won) / favourites.fresh.n,
     min: 57,
     max: 63,
     unit: '%',
@@ -803,7 +806,7 @@ const checks: Check[] = [
   },
   {
     name: `Favourite wins a single game, years ${LONG_RUN_FROM}+`,
-    value: (100 * longRunFavouriteWins) / longRunDecided,
+    value: (100 * favourites.longRun.won) / favourites.longRun.n,
     min: 57,
     max: 60,
     unit: '%',
