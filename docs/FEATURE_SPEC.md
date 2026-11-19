@@ -119,7 +119,7 @@ No overall rating; the sim runs on hidden ratings underneath.
 - Trade protection; buyouts (2/3 or 1/3 by age, twice the remaining term); extensions; 10% over in the offseason.
 - CBA as data, current rules by default (playoff cap, no double retention, 7/6-year max terms, front-loading limits, 84 games).
 - Cap sheet with projection, allocation, what-if; cap advisor and ripple effects (warns, never blocks).
-- Negotiation by personality and agents (design later).
+- Negotiation by personality and agents ([design](research/2026-11-free-agency-bidding.md)).
 
 ### Free agency
 
