@@ -14,6 +14,7 @@ changes a number in the game, the ruleset or balance lab links back here.
 | 2026-11 | [Assistant GM](2026-11-assistant-gm.md)                          | What an assistant GM does for the human (advice on Home's To do), how his quality sets its accuracy, why AI teams have none, and its jobs                         |
 | 2026-11 | [Camp & deadline](2026-11-camp-deadline.md)                      | Why the preseason is never reached and the deadline is only a date; three real camp weeks, a playoff stake in rental value, a deadline-week market, and the jobs  |
 | 2026-11 | [Minor leagues](2026-11-minor-leagues.md)                        | Why every pick plays on a roster at 18; draft rights, a prospect pool, stats-only lines in junior and Europe (NHLe), a farm team under the 23-man limit, the jobs |
+| 2026-11 | [Player traits](2026-11-player-traits.md)                        | Why builds are thin (ratings drawn key by key), builds clustered from real skaters, two play traits gated on real-data repeatability, and their jobs              |
 
 Rules: never edit an old report (add a new dated one); copy any number you use into the
 ruleset or balance lab with a link back to the report section.
