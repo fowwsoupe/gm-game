@@ -41,6 +41,10 @@ def _reader(stream, required: tuple[str, ...], label: str):
     return reader
 
 
+def _position(row: dict[str, str]) -> str:
+    return {"L": "LW", "R": "RW"}.get(row["position"], row["position"])
+
+
 def _whole(value: str, label: str) -> int:
     try:
         number = float(value)
@@ -157,8 +161,7 @@ def convert(raw: Path, staged: Path, seasons: list[int]) -> dict:
                             continue
                         if row["season"] != str(season):
                             raise DataError(f"{path}: unexpected season {row['season']}")
-                        position = {"L": "LW", "R": "RW"}.get(row["position"],
-                                                               row["position"])
+                        position = _position(row)
                         if kind == "skaters":
                             goals = _whole(row["I_F_goals"], "I_F_goals")
                             assists = (_whole(row["I_F_primaryAssists"], "primary assists") +
@@ -188,8 +191,7 @@ def convert(raw: Path, staged: Path, seasons: list[int]) -> dict:
                     for row in _reader(stream, required, str(path)):
                         if row["situation"] != "all":
                             continue
-                        position = {"L": "LW", "R": "RW"}.get(row["position"],
-                                                               row["position"])
+                        position = _position(row)
                         features = {field: 0 for field in TABLES["player_features"][5:]}
                         if kind == "skaters":
                             features.update({
