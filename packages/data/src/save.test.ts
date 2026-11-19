@@ -55,6 +55,22 @@ describe('SaveFile', () => {
     save.close();
   });
 
+  it('keeps the stop filter across a save and load', () => {
+    const save = openSave(':memory:');
+    const state = createLeague(4, ctx);
+    save.saveNewLeague(state);
+    const res = handleCommand(
+      state,
+      { kind: 'league.setStopOn', stopOn: ['injuries'] },
+      local,
+      ctx,
+    );
+    if (!res.ok) throw new Error(res.error.message);
+    save.persist(res.events, state);
+    expect(save.loadState().stopOn).toEqual(['injuries']);
+    save.close();
+  });
+
   it('saves a trade', () => {
     const save = openSave(':memory:');
     const state = createLeague(8, ctx);

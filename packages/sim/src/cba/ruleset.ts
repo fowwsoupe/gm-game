@@ -147,6 +147,8 @@ export interface Ruleset {
     spend: number;
     /** Spread (SD) of a new hire's quality. */
     hireSd: number;
+    /** Quality of the interim head who takes over when you fire one without a replacement. */
+    interim: number;
   };
 
   roster: {

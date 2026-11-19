@@ -16,6 +16,7 @@ import {
   coachSeasonsLeft,
   gmOf,
   marketOf,
+  hireQuality,
   newCoach,
   ownerOf,
   randomGm,
@@ -457,7 +458,12 @@ function coachOnTheSeat(
   args: { teamId: TeamId; heat: number; payout: Dollars; hired: number; startHeat: number },
 ) {
   const team = state.teams[args.teamId]!;
-  const hire = newCoach(rng.fork('hire'), args.hired, ctx.ruleset.finance.coach);
+  const hire = newCoach(
+    rng.fork('hire'),
+    args.hired,
+    ctx.ruleset.finance.coach,
+    hireQuality(rng.fork('hireQuality'), team, ctx.ruleset.frontOffice),
+  );
   const gone = coachOf(team, ctx.ruleset.finance.coach, state.date.season).name;
   offer(
     state,
@@ -546,7 +552,13 @@ export function ownerMonth(state: LeagueState, ctx: SimContext, emit: Emit): voi
     warnIfHot(state, emit, teamId, confidence);
     // An AI owner losing faith makes the league's news as he crosses the line he fires a GM below.
     const team = state.teams[teamId]!;
-    if (!team.userControlled && was >= AI_FIRED_BELOW && confidence < AI_FIRED_BELOW) {
+    if (
+      !team.userControlled &&
+      was >= AI_FIRED_BELOW &&
+      confidence < AI_FIRED_BELOW &&
+      standing.frustrated !== state.date.season
+    ) {
+      emit('minor', [teamId], { kind: 'owner.frustrated', teamId });
       emit('minor', [teamId], {
         kind: 'news.posted',
         headline: 'event.ownerFrustrated',

@@ -6,11 +6,27 @@ import { hash } from './personality';
 type CoachTerms = { salary: number; years: number };
 
 /** A new head coach: a fictional name, on the league's usual deal from `hired`. */
-export const newCoach = (rng: Rng, hired: number, terms: CoachTerms): CoachProfile => ({
+export const newCoach = (
+  rng: Rng,
+  hired: number,
+  terms: CoachTerms,
+  quality?: number,
+): CoachProfile => ({
   name: `${rng.pick(FIRST)} ${rng.pick(LAST)}`,
   hired,
   ...terms,
+  ...(quality === undefined ? {} : { quality }),
 });
+
+/** A hire's quality from the owner-tilted market: centred on his budget, as the staff market does. */
+export const hireQuality = (
+  rng: Rng,
+  team: Team,
+  fo: { spend: number; hireSd: number },
+): number => {
+  const centre = 0.5 + fo.spend * (ownerOf(team).budget - 0.5);
+  return Math.round(Math.max(0, Math.min(1, rng.normal(centre, fo.hireSd))) * 100) / 100;
+};
 
 /**
  * A team's head coach; an old save's is derived from the team id (`season` is today's, so his
@@ -27,6 +43,13 @@ const qualityOf = (c: CoachProfile) =>
   round2(new Rng(hash(`coachQuality:${c.name}:${c.hired}`)).next());
 
 export const DEPARTMENTS: readonly Department[] = ['scouting', 'development', 'medical'];
+
+/**
+ * A team's departments. The assistant GM advises a human GM (docs/research/2026-11-assistant-gm.md);
+ * an AI GM decides on his own read, so AI teams neither pay nor change one.
+ */
+export const departmentsOf = (team: Team): readonly Department[] =>
+  team.userControlled ? [...DEPARTMENTS, 'assistant'] : DEPARTMENTS;
 
 /** A department head's salary: rises with quality squared, to the nearest $10K. */
 export const staffSalary = (quality: number, range: { min: number; max: number }) =>

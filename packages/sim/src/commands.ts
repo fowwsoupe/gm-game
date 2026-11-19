@@ -1,5 +1,5 @@
 import type { Actor, Command, CommandResult, LeagueEvent, Team, TradeProposal } from '@gm/shared';
-import { GOALIE_ROTATIONS, TICKET_STEPS } from '@gm/shared';
+import { GOALIE_ROTATIONS, STOP_CATEGORIES, TICKET_STEPS } from '@gm/shared';
 import {
   Rng,
   applyEvent,
@@ -11,7 +11,7 @@ import {
 } from './core';
 import { buyoutCharges, capYearIssues, capYearOf, teamCapTotal } from './cba';
 import { parsePick } from './league';
-import { DEPARTMENTS, PROMISE_DAYS, talkedDown, talkedRound } from './people';
+import { departmentsOf, PROMISE_DAYS, staffOf, talkedDown, talkedRound } from './people';
 import {
   isExpiring,
   acceptSheet,
@@ -22,6 +22,7 @@ import {
   rolloverSeason,
   signFreeAgent,
   staffCandidates,
+  interimHead,
 } from './offseason';
 import { evaluateTrade, planRetention } from './trades';
 import { advance } from './advance';
@@ -358,6 +359,16 @@ export function handleCommand(
         makeEvent(state, 'minor', [], { kind: 'league.optionSet', canBeFired: command.on }),
       );
 
+    case 'league.setStopOn':
+      if (actor.id !== 'local') return notYours;
+      return applied(
+        state,
+        makeEvent(state, 'minor', [], {
+          kind: 'league.optionSet',
+          stopOn: STOP_CATEGORIES.filter((c) => command.stopOn.includes(c)),
+        }),
+      );
+
     case 'owner.answerCard': {
       const card = state.ownerCards.find((c) => c.id === command.cardId);
       if (!card) return invalid('no such card');
@@ -394,7 +405,7 @@ export function handleCommand(
       const team = state.teams[command.teamId];
       if (!team) return invalid('unknown team');
       if (!controls(actor, team)) return notYours;
-      if (!DEPARTMENTS.includes(command.department)) return invalid('unknown department');
+      if (!departmentsOf(team).includes(command.department)) return invalid('unknown department');
       // Next season's once the champion is crowned, so a summer hire counts for the season ahead.
       const season = capYearOf(state);
       const head = staffCandidates(team, command.department, ctx, season)[command.candidate];
@@ -408,6 +419,27 @@ export function handleCommand(
         department: command.department,
         head,
         poached: false,
+      });
+      return applied(state, ev);
+    }
+
+    case 'staff.fire': {
+      const team = state.teams[command.teamId];
+      if (!team) return invalid('unknown team');
+      if (!controls(actor, team)) return notYours;
+      if (!departmentsOf(team).includes(command.department)) return invalid('unknown department');
+      const season = capYearOf(state);
+      const gone = staffOf(team, command.department, ctx.ruleset.frontOffice.salary, season);
+      if (gone.hired === season) return invalid('already changed for this department this season');
+      // The rest of his salary this season; once the champion is crowned, the whole season ahead.
+      const days = ctx.ruleset.season.calendar.regularSeasonDays;
+      const left = state.championTeamId ? 1 : Math.max(0, (days - state.date.day) / days);
+      const ev = makeEvent(state, 'notable', [team.id], {
+        kind: 'staff.fired',
+        teamId: team.id,
+        department: command.department,
+        head: interimHead(team, command.department, ctx, season),
+        severance: Math.round(gone.salary * left),
       });
       return applied(state, ev);
     }

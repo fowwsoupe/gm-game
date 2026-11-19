@@ -1,4 +1,12 @@
-import type { GameId, GameResult, LeagueEvent, Player, StopCategory, TeamId } from '@gm/shared';
+import type {
+  GameId,
+  GameResult,
+  LeagueEvent,
+  Player,
+  PlayerId,
+  StopCategory,
+  TeamId,
+} from '@gm/shared';
 import { STOP_CATEGORIES } from '@gm/shared';
 import {
   applyEvent,
@@ -72,13 +80,11 @@ export function advance(
     ]),
   );
   const avgMedical = [...medical.values()].reduce((a, b) => a + b, 0) / Math.max(1, medical.size);
+  /** A team's injury factor: below 1 for a better-than-average medical head. */
+  const medicalFactor = (teamId: TeamId | null | undefined) =>
+    1 + fo.medical.days * (avgMedical - (medical.get(teamId!) ?? avgMedical));
   const healed = (teamId: TeamId | null | undefined, days: number) =>
-    Math.max(
-      1,
-      Math.round(
-        days * (1 + fo.medical.days * (avgMedical - (medical.get(teamId!) ?? avgMedical))),
-      ),
-    );
+    Math.max(1, Math.round(days * medicalFactor(teamId)));
 
   // Rosters once per call; a team's strength is rebuilt only when its set of injured players changes.
   const sport = ctx.sport;
@@ -129,6 +135,19 @@ export function advance(
     }
   };
   for (const g of Object.values(state.results)) if (!g.playoffSeriesId) trackDroughts(g);
+  // This season's games and points so far, for the in-season breakout check.
+  const seasonLines = new Map<string, { gp: number; points: number }>();
+  const trackSeason = (game: GameResult) => {
+    const played: string[] = [];
+    for (const [id, line] of sport.playerLines([game])) {
+      if (line.points === undefined || !line.gp) continue;
+      const s = seasonLines.get(id) ?? { gp: 0, points: 0 };
+      seasonLines.set(id, { gp: s.gp + line.gp, points: s.points + line.points });
+      played.push(id);
+    }
+    return played;
+  };
+  for (const g of Object.values(state.results)) if (!g.playoffSeriesId) trackSeason(g);
   /** Records a finished game and the injuries it caused (the injuries are not kept on the result). */
   const finishGame = (result: GameResult, day: number) => {
     const { injuries = [], ...game } = result;
@@ -158,6 +177,24 @@ export function advance(
     // Streaks and slumps: news when a run reaches a milestone (regular season only).
     if (!game.playoffSeriesId) {
       trackDroughts(game);
+      // Young skater on a pace well above last season's, checked once, at his 20th game (news only).
+      for (const id of trackSeason(game)) {
+        const s = seasonLines.get(id)!;
+        const p = state.players[id];
+        const last = state.lastSeason[id as PlayerId];
+        const team = p?.teamId ? state.teams[p.teamId] : undefined;
+        if (s.gp !== BREAKOUT_GAMES || !p || !team || !last) continue;
+        if (state.date.season - p.birthYear > BREAKOUT_AGE) continue;
+        if (last.points < BREAKOUT_MIN_POINTS || last.gp < BREAKOUT_MIN_GAMES) continue;
+        if (s.points / s.gp < (last.points / last.gp) * BREAKOUT_PACE) continue;
+        emit(
+          makeEvent(state, team.userControlled ? 'notable' : 'minor', [team.id], {
+            kind: 'news.posted',
+            headline: 'event.breakoutPace',
+            params: { player: playerName(p), team: teamName(team), n: s.points, gp: s.gp },
+          }),
+        );
+      }
       for (const teamId of [game.homeTeamId, game.awayTeamId]) {
         const stars = Object.values(state.players)
           .filter((p) => p.teamId === teamId && droughts.has(p.id))
@@ -263,6 +300,8 @@ export function advance(
           awayBackToBack: awayRest.backup,
           homeTired: homeRest.tired,
           awayTired: awayRest.tired,
+          homeMedical: medicalFactor(g.homeTeamId),
+          awayMedical: medicalFactor(g.awayTeamId),
         },
         rng,
       );
@@ -287,6 +326,8 @@ export function advance(
             home: strengthOf(homeTeamId, today.day),
             away: strengthOf(awayTeamId, today.day),
             playoff: true,
+            homeMedical: medicalFactor(homeTeamId),
+            awayMedical: medicalFactor(awayTeamId),
           },
           rng,
         );
@@ -405,7 +446,7 @@ export function advance(
       tradeRequests(state, rng.fork(`requests${today.day}`), emitter(state, events));
       aiHoldouts(state, ctx, rng.fork(`aiHoldouts${today.day}`), emitter(state, events));
       holdoutsWeek(state, rng.fork(`holdouts${today.day}`), emitter(state, events));
-      disputesWeek(state, rng.fork(`disputes${today.day}`), emitter(state, events));
+      disputesWeek(state, ctx, rng.fork(`disputes${today.day}`), emitter(state, events));
       if (events.length > before) loadRosters();
       coachWeek(state, ctx, rng.fork(`coach${today.day}`), emitter(state, events));
     }
@@ -462,6 +503,14 @@ const PULSE_CORE = 8;
 
 /** Win or losing streaks of these lengths make the news. */
 const STREAK_MILESTONES = [6, 9, 12];
+
+/** A skater this young or younger, 20 games in, scoring 50% above last season's pace has broken out. */
+const BREAKOUT_AGE = 23;
+const BREAKOUT_GAMES = 20;
+const BREAKOUT_PACE = 1.5;
+/** Last season's sample must be real: a rookie's handful of games proves nothing. */
+const BREAKOUT_MIN_POINTS = 30;
+const BREAKOUT_MIN_GAMES = 40;
 
 /** A top-6 skater without a point for this many games is in a slump. */
 const SLUMP_GAMES = 10;

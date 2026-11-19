@@ -1,5 +1,6 @@
 import { NEW_FANS } from '@gm/shared';
 import type {
+  StopCategory,
   CapCharge,
   Career,
   DraftProspect,
@@ -79,6 +80,8 @@ export interface LeagueState {
   rfaRights: Record<PlayerId, TeamId>;
   /** Offer sheets waiting for a human rights team's answer; no answer by the next day declines. */
   rfaSheets: FreeAgentOffer[];
+  /** Last season's games and points for each skater who played, to spot in-season breakouts. */
+  lastSeason: Record<PlayerId, { gp: number; points: number }>;
   /** Players on human teams who asked to be traded (cleared by a talk that works or a trade). */
   tradeRequests: { playerId: PlayerId; teamId: TeamId }[];
   /** Players on human teams holding out: they sit out until paid, talked round or traded. */
@@ -108,6 +111,8 @@ export interface LeagueState {
   career: Career | null;
   /** Save option: owners may fire a human GM. */
   canBeFired: boolean;
+  /** Save option: what stops "sim until it matters". */
+  stopOn: StopCategory[];
   /** Count of events applied so far; the next event's id is built from it. */
   eventSeq: number;
 }
@@ -171,6 +176,12 @@ export function applyEvent(state: LeagueState, event: LeagueEvent): void {
       if (team) team.staff = { ...team.staff, [event.department]: event.head };
       return;
     }
+    case 'staff.fired': {
+      const team = state.teams[event.teamId];
+      if (team) team.staff = { ...team.staff, [event.department]: event.head };
+      state.cash[event.teamId] = (state.cash[event.teamId] ?? 0) - event.severance;
+      return;
+    }
     case 'team.gmChanged': {
       const team = state.teams[event.teamId];
       if (team) team.gm = event.gm;
@@ -196,7 +207,8 @@ export function applyEvent(state: LeagueState, event: LeagueEvent): void {
       state.career = null;
       return;
     case 'league.optionSet':
-      state.canBeFired = event.canBeFired;
+      if (event.canBeFired !== undefined) state.canBeFired = event.canBeFired;
+      if (event.stopOn) state.stopOn = [...event.stopOn];
       return;
     case 'team.controlChanged': {
       const team = state.teams[event.teamId];
@@ -470,6 +482,11 @@ export function applyEvent(state: LeagueState, event: LeagueEvent): void {
       if (owner) owner.confidence = event.confidence;
       return;
     }
+    case 'owner.frustrated': {
+      const owner = state.owners[event.teamId];
+      if (owner) owner.frustrated = event.date.season;
+      return;
+    }
     case 'owner.cardOpened': {
       state.ownerCards.push(structuredClone(event.card));
       const owner = state.owners[event.card.teamId];
@@ -519,8 +536,14 @@ export function applyEvent(state: LeagueState, event: LeagueEvent): void {
       state.fans[event.teamId] = { ...fans, interest };
       return;
     }
-    case 'award.given':
     case 'stats.archived':
+      state.lastSeason = {};
+      for (const l of event.lines) {
+        const { gp, points } = l.stats;
+        if (gp && points !== undefined) state.lastSeason[l.playerId] = { gp, points };
+      }
+      return;
+    case 'award.given':
     case 'season.phaseChanged':
     case 'news.posted':
       return; // informational; no state change

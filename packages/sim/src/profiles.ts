@@ -1,7 +1,7 @@
-import type { Player, PlayerProfile, TeamId } from '@gm/shared';
+import type { PlayerProfile, TeamId } from '@gm/shared';
 import type { LeagueState } from './core';
-import { byOverall, percentileRank } from './players';
-import { morale, notableTraits, personalityOf } from './people';
+import { percentileRank } from './players';
+import { moraleOf, notableTraits, personalityOf } from './people';
 import type { SimContext } from './context';
 
 /**
@@ -75,19 +75,4 @@ export function playerProfiles(
         ).length,
       };
     });
-}
-
-function moraleOf(state: LeagueState, ctx: SimContext, p: Player) {
-  const mates = Object.values(state.players)
-    .filter((x) => x.teamId === p.teamId && x.position === p.position)
-    .sort(byOverall);
-  const ask = ctx.models.contractDemand.ask(ctx.ruleset, p);
-  return morale(p.id, {
-    teamStatus: state.teamStatus[p.teamId!] ?? 'bubble',
-    depthRank: mates.findIndex((x) => x.id === p.id),
-    depth: ctx.ruleset.roster.positionMin[p.position] ?? 2,
-    ...(p.contract && ask > 0 && { paidRatio: p.contract.capHit / ask }),
-    seasons: p.joined === undefined ? 3 : Math.max(0, state.date.season - p.joined),
-    wantsOut: state.tradeRequests.some((r) => r.playerId === p.id),
-  });
 }

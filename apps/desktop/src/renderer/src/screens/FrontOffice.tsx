@@ -1,10 +1,17 @@
 import type { Department } from '@gm/shared';
-import { useDispatch, useOwner, useStaffCandidates, useTeams } from '@/lib/queries';
+import {
+  useDepartmentReturns,
+  useDispatch,
+  useOwner,
+  useStaffCandidates,
+  useTeams,
+} from '@/lib/queries';
 import { money, qualityKey } from '@/lib/format';
 import { useT } from '@/i18n';
 import { Button, Card, Td, Th } from '@/ui';
 
-const DEPARTMENTS: readonly Department[] = ['scouting', 'development', 'medical'];
+const signed = (n: number) => `${n > 0 ? '+' : ''}${n.toFixed(1)}`;
+const DEPARTMENTS: readonly Department[] = ['scouting', 'development', 'medical', 'assistant'];
 
 /** Your front office: each department's head, and who you could hire in his place this season. */
 export function FrontOffice() {
@@ -13,6 +20,7 @@ export function FrontOffice() {
   const mine = teams.find((x) => x.userControlled);
   const { data: owned } = useOwner(mine?.id);
   const { data: candidates } = useStaffCandidates(mine?.id);
+  const { data: returns } = useDepartmentReturns(mine?.id);
   const dispatch = useDispatch();
   if (!mine) return <p className="text-muted">{t('frontOffice.empty')}</p>;
   if (!owned || !candidates) return null;
@@ -28,13 +36,28 @@ export function FrontOffice() {
       </Card>
       {DEPARTMENTS.map((d) => {
         const head = owned.staff[d];
-        const hiredNow = candidates[d].locked;
+        const open = candidates[d];
+        if (!head || !open) return null;
+        const hiredNow = open.locked;
         return (
           <Card key={d} title={t(`team.staff.${d}`)}>
             <div className="mb-3 text-sm">
               <span className="font-semibold">{head.name}</span> · {t(qualityKey(head.quality))} ·{' '}
               {money(head.salary)} · {t('frontOffice.since', { season: head.hired })}
             </div>
+            {returns && d !== 'assistant' && (
+              <p className="mb-3 text-xs text-muted">
+                {d === 'scouting'
+                  ? returns.scouting
+                    ? t('frontOffice.return.scouting', {
+                        n: returns.scouting.error.toFixed(1),
+                        picks: returns.scouting.picks,
+                        league: returns.scouting.league.toFixed(1),
+                      })
+                    : t('frontOffice.return.none')
+                  : t(`frontOffice.return.${d}`, { n: signed(returns[d]) })}
+              </p>
+            )}
             <table className="w-full text-sm">
               <thead>
                 <tr>
@@ -45,7 +68,7 @@ export function FrontOffice() {
                 </tr>
               </thead>
               <tbody>
-                {candidates[d].candidates.map((c, i) => (
+                {open.candidates.map((c, i) => (
                   <tr key={c.name + i}>
                     <Td>{c.name}</Td>
                     <Td>{t(qualityKey(c.quality))}</Td>
@@ -69,6 +92,16 @@ export function FrontOffice() {
                 ))}
               </tbody>
             </table>
+            <div className="mt-2">
+              <Button
+                disabled={hiredNow}
+                onClick={() =>
+                  dispatch.mutate({ kind: 'staff.fire', teamId: mine.id, department: d })
+                }
+              >
+                {t('frontOffice.fire')}
+              </Button>
+            </div>
             {hiredNow && <p className="mt-2 text-xs text-muted">{t('frontOffice.hiredNow')}</p>}
           </Card>
         );

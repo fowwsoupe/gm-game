@@ -144,6 +144,9 @@ export interface SportModule<Strength = unknown> {
       /** The starter plays the second night of a back-to-back anyway (hockey: a little worse). */
       homeTired?: boolean;
       awayTired?: boolean;
+      /** The medical staff's factor on re-injury risk (1 = average, below 1 = better). */
+      homeMedical?: number;
+      awayMedical?: number;
     },
     rng: Rng,
   ): GameResult;

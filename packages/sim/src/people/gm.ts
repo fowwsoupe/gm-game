@@ -2,6 +2,7 @@ import type {
   GmProfile,
   GmStyle,
   Player,
+  StaffProfile,
   Team,
   TeamId,
   TeamPlan,
@@ -33,9 +34,12 @@ const READ_SD = { best: 1, worst: 6 };
  * blind spots of his own; nothing is stored and no draw comes from the league's random stream.
  */
 export function misread(gm: GmProfile, teamId: TeamId, playerId: string): number {
-  const sd = READ_SD.best + (1 - gm.skill) * (READ_SD.worst - READ_SD.best);
-  return new Rng(hash(`read:${teamId}:${gm.style}:${gm.skill}:${playerId}`)).normal(0, sd);
+  return readOff(`read:${teamId}:${gm.style}:${gm.skill}:${playerId}`, gm.skill);
 }
+
+/** A read `skill` (0-1) good, fixed by `key`: SD from READ_SD.worst down to READ_SD.best. */
+const readOff = (key: string, skill: number) =>
+  new Rng(hash(key)).normal(0, READ_SD.best + (1 - skill) * (READ_SD.worst - READ_SD.best));
 
 const clamp = (n: number) => Math.max(1, Math.min(99, n));
 
@@ -43,8 +47,20 @@ const clamp = (n: number) => Math.max(1, Math.min(99, n));
  * The player as this team's GM sees him: every rating and his potential shifted by his misread.
  * AI decisions (who to sign, keep, draft or trade for) look at this copy, never at the truth.
  */
-export function seenBy(team: Team, player: Player): Player {
-  const off = misread(gmOf(team), team.id, player.id);
+export const seenBy = (team: Team, player: Player): Player =>
+  shifted(player, misread(gmOf(team), team.id, player.id));
+
+/**
+ * The player as a human team's assistant GM sees him: off as far as an AI GM of the same skill,
+ * fixed per assistant and player (docs/research/2026-11-assistant-gm.md).
+ */
+export const assistantSees = (head: StaffProfile, teamId: TeamId, player: Player): Player =>
+  shifted(
+    player,
+    readOff(`assistant:${teamId}:${head.name}:${head.hired}:${player.id}`, head.quality),
+  );
+
+function shifted(player: Player, off: number): Player {
   if (off === 0) return player;
   const ratings: Record<string, number> = {};
   for (const [k, v] of Object.entries(player.ratings)) ratings[k] = clamp(v + off);
