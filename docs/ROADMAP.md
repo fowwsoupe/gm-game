@@ -26,8 +26,10 @@ Ready now (code can start):
 
 Front office (also the lasting-team-edge fix): all jobs in
 [research/2026-11-front-office.md](research/2026-11-front-office.md) done; the points % spread
-gap narrowed (0.077-0.080 to 0.079-0.082) but is still open. League & events:
-jobs 2-5 of [research/2026-11-league-events.md](research/2026-11-league-events.md) done, job 1 in part (crisis; odds, age and cap in the pulse to do).
+gap narrowed (0.077-0.080 to 0.079-0.082); season form, a fresh team edge each season, takes it
+to 0.083-0.087 (in range on the mean of three seeds, seed 1 still short) with r 0.43-0.46 and
+playoff turnover 31-32% ([research/2026-11-spread-second-mechanism.md](research/2026-11-spread-second-mechanism.md)). League & events:
+all five jobs of [research/2026-11-league-events.md](research/2026-11-league-events.md) done (the pulse ranks by playoff odds; a young team out of it rebuilds, an old bubble team with cap space buys; crisis on top).
 
 Needs a design first (a short brief in `docs/research/`, then jobs):
 
@@ -64,7 +66,7 @@ Build order, owners and "done when" for each step: **[V0.1_PLAN.md](V0.1_PLAN.md
 - [~] Players (`sim/players`): percentiles, builds and role tags (rules), injuries and injury history (shown on the player card) done; re-injury risk done; traits, clustered builds to do
 - [x] Value (`sim/value`): per-team surplus value (can be negative), market value, pick value curve (rules-based; calibrated curve is Azmi's)
 - [x] People (`sim/people`): personalities (from the player id), free-agent priorities by age and personality, AI GM styles and skill, team plans, morale (shown on the player card; no effects yet) done
-- [~] League & events (`sim/league`): calendar, team status (league pulse, crisis when a losing team's owner loses faith), event engine (trade requests, holdouts, disputes, breakouts, AI owners' frustration, AI fire sales), news, a stop filter done; the pulse reading playoff odds, roster age and cap space, and the in-season breakout trigger, to do
+- [~] League & events (`sim/league`): calendar, team status (league pulse from playoff odds, roster age and cap space, crisis when a losing team's owner loses faith), event engine (trade requests, holdouts, disputes, breakouts in the summer and in season, AI owners' frustration, AI fire sales), news, a stop filter (saved with the league) done; the "talk extension" To do for breakouts to do
 - [ ] Minor / junior / European leagues: light stats-only sim for prospects
 
 **Features**
@@ -76,7 +78,7 @@ Build order, owners and "done when" for each step: **[V0.1_PLAN.md](V0.1_PLAN.md
 - [~] Draft v1: class announced after the playoffs with scouted potential ranges (AI sees the same ranges), your ranked list drives your picks, scout reports (best and weakest skills, ready or raw) done; lottery drawn before the draft so picks trade at their real slot done; the live draft room is Phase 2
 - [x] Playoffs: bracket, NHL-style wild cards, honest momentum (per-game goalie form, calibrated), Playoff MVP, playoff cap; the cup is "Champion" until it is named
 - [x] Awards, records, history (own award names, Playoff MVP included)
-- [~] Living league: feed with names (trades, signings, extensions, long injuries, first pick), league pulse, playoff odds and power rating, sim until it matters (your team and league-wide moments only, with a stop filter on the sim bar), race nights (odds if you win or lose the next game), streak news, trade requests with a talk (personality decides), disputes over a role (an ambitious player kept down the lines asks for more: promise a role, ask for patience, or list him; a broken promise becomes a trade request), slump news (a top-6 skater 10 games without a point), breakout news (23 or younger, up 7+ overall in a summer), holdouts (underpaid, greedy core players; AI GMs extend or wait them out), the hot seat (coaches fired in-season and at the review; your owner warns you, then fires you at a review, and teams with a vacancy offer you a job), AI owners losing patience in the news, AI fire sales (best expiring players on the block, in the news) done
+- [~] Living league: feed with names (trades, signings, extensions, long injuries, first pick), league pulse, playoff odds and power rating, sim until it matters (your team and league-wide moments only, with a stop filter on the sim bar), race nights (odds if you win or lose the next game), streak news, trade requests with a talk (personality decides), disputes over a role (an unhappy player, by his morale, kept down the lines asks for more: promise a role, ask for patience, or list him; a broken promise becomes a trade request), slump news (a top-6 skater 10 games without a point), breakout news (23 or younger, up 7+ overall in a summer), holdouts (underpaid, greedy core players; AI GMs extend or wait them out), the hot seat (coaches fired in-season and at the review; your owner warns you, then fires you at a review, and teams with a vacancy offer you a job), AI owners losing patience in the news (once a season per team), AI fire sales (best expiring players on the block, in the news) done
 - [~] Chemistry: v1 from time together (visible on Lines, changes with every move, capped at ±1 rating point per unit) done; locker room (leaders and toxic personalities), builds fit and linemates done
 
 **Screens**
@@ -100,7 +102,7 @@ Build order, owners and "done when" for each step: **[V0.1_PLAN.md](V0.1_PLAN.md
 ## Phase 2 — Part of the first release (one headline each)
 
 - [x] Owner & finance: decision cards, pricing policy, fans, projects, owner meetings; owners and markets, the money ledger, fans and ticket pricing, confidence, meetings and cards, the Owner screen, projects and more cards, the head coach (salary, heat, AI firings in-season and at the review, the fire-or-keep card), and your job on the line (hot-seat warning, fired at a review, job offers, a "can be fired" option, AI GMs fired on confidence) (all 8 jobs in [the brief](research/2026-11-owner-finance.md))
-- [~] Front office: scouting, analytics, medical, coaching, development staff. Department heads with a quality and a salary, coach quality in games, development staff (replacing GM skill), per-team draft reads, medical injury days, the staff market (leave, poaching, owner budgets), the Front Office screen with three candidates a season, tuned against the long-run benchmarks (all jobs of [the brief](research/2026-11-front-office.md); the price curve was tried and dropped) done; analytics, an assistant GM and department returns to do
+- [~] Front office: scouting, analytics, medical, coaching, development staff. Department heads with a quality and a salary, coach quality in games, development staff (replacing GM skill), per-team draft reads, medical injury days, the staff market (leave, poaching, owner budgets), the Front Office screen with three candidates a season, tuned against the long-run benchmarks (all jobs of [the brief](research/2026-11-front-office.md); the price curve was tried and dropped), an assistant GM for human teams whose advice on Home (extend first, take or turn down an offer) is as accurate as his quality, done; department returns (what each department added against an average one, on the Front Office screen) and firing a head without a replacement (an interim, severance) done; hired head coaches drawn from the owner-tilted market (coaching measured around the league's average coach) and medical scaling re-injury risk done; an analytics department (a fourth head; a weak one blurs what you see of other teams' players, a fixed amount per player, view only) done; the assistant's other jobs to do
 - [ ] Live draft trade room
 - [ ] Free-agency live bidding war + full contract negotiation
 - [ ] Media & press conferences (text)

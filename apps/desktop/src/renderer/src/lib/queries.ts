@@ -91,6 +91,12 @@ export const useStaffCandidates = (teamId: TeamId | undefined) =>
     queryFn: () => window.gm.league.staffCandidates({ teamId: teamId! }),
     enabled: !!teamId,
   });
+export const useDepartmentReturns = (teamId: TeamId | undefined) =>
+  useQuery({
+    queryKey: ['league', 'departmentReturns', teamId] as const,
+    queryFn: () => window.gm.league.departmentReturns({ teamId: teamId! }),
+    enabled: !!teamId,
+  });
 export const useOwnerReport = (teamId: TeamId | undefined) =>
   useQuery({
     queryKey: ['league', 'ownerReport', teamId] as const,

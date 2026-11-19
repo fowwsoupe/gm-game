@@ -137,5 +137,11 @@ describe('re-injury risk', () => {
     expect(injuryRisk(p)).toBeCloseTo(1.33);
     p.injuryHistory = { count: 100, days: 1000 };
     expect(injuryRisk(p)).toBe(2);
+    // The medical factor scales the re-injury extra, not the base chance.
+    p.injuryHistory = { count: 1, days: 10 };
+    expect(injuryRisk(p, 0.5)).toBeCloseTo(1.165);
+    delete p.injuredUntil;
+    delete p.injuryHistory;
+    expect(injuryRisk(p, 0.5)).toBe(1);
   });
 });

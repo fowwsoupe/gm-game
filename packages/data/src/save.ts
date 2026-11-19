@@ -72,12 +72,15 @@ const JSON_META = {
   arenas: '{}',
   career: 'null',
   canBeFired: 'true',
+  stopOn: '["league","yours","offers","injuries"]',
   faOffers: '[]',
   rfaRights: '{}',
   formerTeams: '{}',
   goalieRotation: '{}',
   tradeBlock: '[]',
   rfaSheets: '[]',
+  teamForm: '{}',
+  lastSeason: '{}',
 } satisfies Partial<Record<keyof LeagueState, string>>;
 
 const IMPORTANCE_RANK: Record<Importance, number> = { minor: 0, notable: 1, major: 2 };
@@ -457,6 +460,7 @@ export class SaveFile {
           case 'team.gmChanged':
             setGm.run(JSON.stringify(e.gm), e.teamId);
             break;
+          case 'staff.fired':
           case 'staff.hired':
             setStaff.run(JSON.stringify(state.teams[e.teamId]?.staff ?? null), e.teamId);
             break;
@@ -507,6 +511,7 @@ export class SaveFile {
           case 'finance.ticketPriceSet':
           case 'owner.meeting':
           case 'owner.confidenceMoved':
+          case 'owner.frustrated':
           case 'owner.cardOpened':
           case 'project.finished':
             break; // stored with the clock below

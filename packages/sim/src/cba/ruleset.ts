@@ -20,6 +20,11 @@ export interface Ruleset {
     calendar: CalendarConfig;
     /** Points for a win, and for an overtime / shootout loss. */
     points: { win: number; overtimeLoss: number };
+    /**
+     * SD of a team's season form: rating points it plays above or below its roster in every game
+     * of one season, drawn fresh when the season starts (nothing carries over).
+     */
+    form: number;
   };
 
   playoffs: {
@@ -137,6 +142,8 @@ export interface Ruleset {
     scouting: { best: number; worst: number };
     /** Injury days x (1 + days x (league average - quality)): the best medical staff shortens them. */
     medical: { days: number };
+    /** How far the human's read of another team's player is off (SD, rating points), the best analytics to the worst. View only. */
+    analytics: { best: number; worst: number };
     /** Rating points the best head coach adds to every player in games, the worst takes away. */
     coaching: { points: number };
     /** Yearly chance a department head leaves, however the team did. */
@@ -147,6 +154,8 @@ export interface Ruleset {
     spend: number;
     /** Spread (SD) of a new hire's quality. */
     hireSd: number;
+    /** Quality of the interim head who takes over when you fire one without a replacement. */
+    interim: number;
   };
 
   roster: {

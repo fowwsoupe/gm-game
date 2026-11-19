@@ -80,6 +80,9 @@ function registerIpc() {
   ipcMain.handle(IPC.staffCandidates, (_e, input: In<'staffCandidates'>) =>
     league.staffCandidates(input.teamId),
   );
+  ipcMain.handle(IPC.departmentReturns, (_e, input: In<'departmentReturns'>) =>
+    league.departmentReturns(input.teamId),
+  );
   ipcMain.handle(IPC.ownerReport, (_e, input: In<'ownerReport'>) =>
     league.ownerReport(input.teamId),
   );

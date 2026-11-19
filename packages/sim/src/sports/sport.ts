@@ -107,7 +107,7 @@ export interface SportModule<Strength = unknown> {
     chemistry?: number,
     units?: Partial<Record<string, readonly string[]>>,
     linemates?: Readonly<Record<string, number>>,
-    /** Rating points the head coach adds to every player (negative: takes away). */
+    /** Rating points the head coach and the team's season form add to every player (negative: take away). */
     coaching?: number,
   ): Strength;
 
@@ -144,6 +144,9 @@ export interface SportModule<Strength = unknown> {
       /** The starter plays the second night of a back-to-back anyway (hockey: a little worse). */
       homeTired?: boolean;
       awayTired?: boolean;
+      /** The medical staff's factor on re-injury risk (1 = average, below 1 = better). */
+      homeMedical?: number;
+      awayMedical?: number;
     },
     rng: Rng,
   ): GameResult;

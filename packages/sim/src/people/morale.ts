@@ -1,4 +1,7 @@
-import type { TeamStatus } from '@gm/shared';
+import type { Player, TeamStatus } from '@gm/shared';
+import type { SimContext } from '../context';
+import type { LeagueState } from '../core';
+import { byOverall } from '../players';
 import { personalityOf } from './personality';
 
 /** How a team's standing feels to a player (0-100). */
@@ -52,4 +55,20 @@ export function morale(playerId: string, input: MoraleInput) {
   const avg = factors.reduce((s, f) => s + f.score * f.weight, 0) / total;
   const value = Math.round(input.wantsOut ? Math.min(avg, 25) : avg);
   return { value, factors: factors.map((f) => ({ key: f.key, score: Math.round(f.score) })) };
+}
+
+/** A rostered player's morale as his card shows it. */
+export function moraleOf(state: LeagueState, ctx: SimContext, p: Player) {
+  const mates = Object.values(state.players)
+    .filter((x) => x.teamId === p.teamId && x.position === p.position)
+    .sort(byOverall);
+  const ask = ctx.models.contractDemand.ask(ctx.ruleset, p);
+  return morale(p.id, {
+    teamStatus: state.teamStatus[p.teamId!] ?? 'bubble',
+    depthRank: mates.findIndex((x) => x.id === p.id),
+    depth: ctx.ruleset.roster.positionMin[p.position] ?? 2,
+    ...(p.contract && ask > 0 && { paidRatio: p.contract.capHit / ask }),
+    seasons: p.joined === undefined ? 3 : Math.max(0, state.date.season - p.joined),
+    wantsOut: state.tradeRequests.some((r) => r.playerId === p.id),
+  });
 }

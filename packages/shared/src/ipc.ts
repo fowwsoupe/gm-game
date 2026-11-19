@@ -22,6 +22,7 @@ import type {
   LeagueStatus,
   OwnerProfile,
   StaffProfile,
+  DepartmentReturns,
   OwnerReport,
   TeamFans,
   SigningInterest,
@@ -110,7 +111,8 @@ export interface GmApi {
     owner(input: { teamId: TeamId }): Promise<{
       owner: OwnerProfile;
       coach: CoachProfile;
-      staff: Record<Department, StaffProfile>;
+      /** The assistant GM only on a human team. */
+      staff: Record<Exclude<Department, 'assistant'>, StaffProfile> & { assistant?: StaffProfile };
       market: number;
       capacity: number;
       fans: TeamFans;
@@ -122,7 +124,14 @@ export interface GmApi {
      */
     staffCandidates(input: {
       teamId: TeamId;
-    }): Promise<Record<Department, { candidates: StaffProfile[]; locked: boolean }>>;
+    }): Promise<Partial<Record<Department, { candidates: StaffProfile[]; locked: boolean }>>>;
+    /**
+     * What each department returned last season against an average one: rating points a year
+     * added to players 24 or younger, the share of injury time saved (negative: lost), and how
+     * far its read of the last draft's picks was off (rating points; null: no picks), with the
+     * league's average.
+     */
+    departmentReturns(input: { teamId: TeamId }): Promise<DepartmentReturns>;
     /** The Owner screen for a team (money flow and meetings come from the event log). */
     ownerReport(input: { teamId: TeamId }): Promise<OwnerReport>;
     /** Offer sheets other teams gave this team's restricted free agents (match or decline). */
@@ -195,6 +204,7 @@ export const IPC = {
   tradeRequests: 'league:tradeRequests',
   owner: 'league:owner',
   staffCandidates: 'league:staffCandidates',
+  departmentReturns: 'league:departmentReturns',
   ownerReport: 'league:ownerReport',
   evaluateTrade: 'league:evaluateTrade',
   status: 'league:status',
