@@ -1,6 +1,7 @@
 import { describe, expect, it } from 'vitest';
 import type { Actor, Command } from '@gm/shared';
 import {
+  applyEvent,
   available,
   createLeague,
   defaultContext,
@@ -79,13 +80,14 @@ describe('holdouts', () => {
     expect(state.holdouts.some((h) => h.playerId === playerId)).toBe(false);
   });
 
-  it('an AI GM pays a holdout in his last season if he plays to win; a builder waits him out', () => {
+  it('an AI GM pays a holdout in his last season if he plays to win; a builder shops him', () => {
     const cases = [
       { style: 'winNow', skill: 1, yearsLeft: 0, pays: true },
       { style: 'winNow', skill: 1, yearsLeft: 1, pays: false }, // not his last season yet
       { style: 'balanced', skill: 0.6, yearsLeft: 0, pays: true },
-      { style: 'balanced', skill: 0.4, yearsLeft: 0, pays: false },
-      { style: 'builder', skill: 1, yearsLeft: 0, pays: false },
+      { style: 'balanced', skill: 0.4, yearsLeft: 0, pays: false, shops: true },
+      { style: 'builder', skill: 1, yearsLeft: 0, pays: false, shops: true },
+      { style: 'builder', skill: 1, yearsLeft: 1, pays: false, shops: true },
       // No room left to fill next season's roster at the minimum once he is paid.
       { style: 'winNow', skill: 1, yearsLeft: 0, pays: false, squeezed: true },
     ] as const;
@@ -110,13 +112,13 @@ describe('holdouts', () => {
         throw new Error('no AI holdout in 40 seeds');
       })();
       const { state, playerId } = found;
+      const teamId = state.players[playerId]!.teamId;
       if ('squeezed' in c) {
-        const teamId = state.players[playerId]!.teamId!;
         const { upperLimit, minSalary } = ctx.ruleset.cap;
         // Dead cap next season: everything but the minimum for a full roster, less one dollar.
         const amount = upperLimit - ctx.ruleset.roster.minActive * minSalary - 1;
         state.capCharges.push({
-          teamId,
+          teamId: teamId!,
           playerId: playerId, // any id: the charge only takes cap room
           kind: 'buyout',
           season: state.date.season + 1,
@@ -125,8 +127,35 @@ describe('holdouts', () => {
       }
       run(state, { kind: 'sim.advance', days: 6 }); // to the first weekly check
       expect(state.players[playerId]!.extension !== undefined).toBe(pays);
+      // A shopped holdout is on the block, or already traded away (AI buyers call the block first).
+      const gone = state.players[playerId]!.teamId !== teamId;
+      expect(state.tradeBlock.includes(playerId) || gone).toBe('shops' in c);
       if (pays) expect(state.holdouts.some((h) => h.playerId === playerId)).toBe(false);
     }
+  });
+});
+
+describe('a holdout that ends', () => {
+  it("leaves an AI team's trade block, but not a human team's own list", () => {
+    const state = createLeague(5, ctx);
+    const on = (userControlled: boolean) => {
+      const team = Object.values(state.teams).find((t) => t.userControlled === userControlled)!;
+      const p = Object.values(state.players).find((x) => x.teamId === team.id)!;
+      state.holdouts.push({ playerId: p.id, teamId: team.id });
+      state.tradeBlock.push(p.id);
+      applyEvent(state, {
+        id: 'e',
+        date: state.date,
+        importance: 'minor',
+        teamIds: [team.id],
+        kind: 'player.holdoutEnded',
+        playerId: p.id,
+        talked: false,
+      });
+      return state.tradeBlock.includes(p.id);
+    };
+    expect(on(false)).toBe(false);
+    expect(on(true)).toBe(true);
   });
 });
 
