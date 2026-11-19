@@ -33,7 +33,7 @@ all five jobs of [research/2026-11-league-events.md](research/2026-11-league-eve
 
 Needs a design first (a short brief in `docs/research/`, then jobs):
 
-- Minor / junior leagues; camp and a trade deadline that matters; player traits and clustered builds.
+- Minor / junior leagues; camp and a trade deadline that matters.
 - Every other Phase 2 headline below.
 
 ## Queue (model · effort)
@@ -52,7 +52,7 @@ B. Balance and calibration (Opus 5.5 unless noted)
 - [ ] "Better team wins a best-of-7" back in range (high)
 - [ ] Trained stats-to-ratings and development models (xhigh, 2-3 PRs)
 - [ ] Playtest analysis (Sonnet 5.5, medium)
-- [ ] Player traits and clustered builds (high, brief first)
+- [ ] Player traits and clustered builds (high; brief done: [research/2026-11-player-traits.md](research/2026-11-player-traits.md), its 3 jobs next)
 
 C. Design brief first, then jobs (Opus 5.5)
 
@@ -99,7 +99,7 @@ Build order, owners and "done when" for each step: **[V0.1_PLAN.md](V0.1_PLAN.md
 
 **Engines**
 
-- [~] Players (`sim/players`): percentiles, builds and role tags (rules), injuries and injury history (shown on the player card) done; re-injury risk done; traits, clustered builds to do
+- [~] Players (`sim/players`): percentiles, builds and role tags (rules), injuries and injury history (shown on the player card) done; re-injury risk done; traits, clustered builds to do ([brief](research/2026-11-player-traits.md))
 - [x] Value (`sim/value`): per-team surplus value (can be negative), market value, pick value curve (rules-based, tuned in the lab)
 - [x] People (`sim/people`): personalities (from the player id), free-agent priorities by age and personality, AI GM styles and skill, team plans, morale (shown on the player card; no effects yet) done
 - [~] Models and calibration (`ml/`, [ADR 0005](adr/0005-calibrate-first.md): ML only where a fit is needed): faceoff effect and goalie form measured on NHL data, stats-to-ratings v1 fitted on the sim; trained stats-to-ratings and development models, "better team wins a best-of-7" back in range, playtest analysis to do

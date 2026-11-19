@@ -12,6 +12,7 @@ changes a number in the game, the ruleset or balance lab links back here.
 | 2026-11 | [Spread: a second mechanism](2026-11-spread-second-mechanism.md) | Why roster-side levers raise spread and carry-over together; season form (a fresh team edge each season) and its lab results                              |
 | 2026-11 | [League & events](2026-11-league-events.md)                      | What the living league still lacks (pulse inputs and crisis, breakouts, disputes, AI team events, a stop filter) and its jobs                             |
 | 2026-11 | [Assistant GM](2026-11-assistant-gm.md)                          | What an assistant GM does for the human (advice on Home's To do), how his quality sets its accuracy, why AI teams have none, and its jobs                 |
+| 2026-11 | [Player traits](2026-11-player-traits.md)                        | Why builds are thin (ratings drawn key by key), builds clustered from real skaters, two play traits gated on real-data repeatability, and their jobs      |
 
 Rules: never edit an old report (add a new dated one); copy any number you use into the
 ruleset or balance lab with a link back to the report section.
