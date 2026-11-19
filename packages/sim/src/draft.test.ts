@@ -7,6 +7,7 @@ import {
   draftSlot,
   handleCommand,
   onTheClock,
+  picksLeft,
   worstFirst,
   type LeagueState,
 } from './index';
@@ -104,6 +105,39 @@ describe('draft', () => {
       (e) => e.kind === 'player.drafted' && e.round > 0,
     );
     expect(drafted.length).toBe(total);
+  });
+
+  it('trading the pick on the clock to an AI team: he makes it and the draft runs on', () => {
+    const { state, mine } = finished(35);
+    const total = Object.keys(state.teams).length * ctx.ruleset.draft.rounds;
+    const start = handleCommand(state, { kind: 'offseason.startDraft' }, local, ctx);
+    if (!start.ok) throw new Error(start.error.message);
+    const onClock = picksLeft(state, ctx)[0]!;
+    expect(onClock).toEqual(onTheClock(state, ctx));
+    expect(onClock.teamId).toBe(mine);
+    expect(picksLeft(state, ctx).length).toBe(total - onClock.pick + 1);
+
+    const other = Object.values(state.teams).find((t) => !t.userControlled)!.id;
+    const traded = handleCommand(
+      state,
+      {
+        kind: 'trade.propose',
+        proposal: { fromTeamId: mine, toTeamId: other, give: [], get: [], givePicks: [onClock.id] },
+      },
+      local,
+      ctx,
+    );
+    if (!traded.ok) throw new Error(traded.error.message);
+    const madeWithIt = traded.events.find(
+      (e) => e.kind === 'player.drafted' && e.pick === onClock.pick,
+    );
+    expect(madeWithIt?.kind === 'player.drafted' && madeWithIt.player.teamId).toBe(other);
+    // Your next pick is on the clock, or you had none left and free agency is open.
+    const next = onTheClock(state, ctx);
+    if (next) {
+      expect(next.teamId).toBe(mine);
+      expect(next.pick).toBeGreaterThan(onClock.pick);
+    } else expect(state.freeAgencyOpen).toBe(true);
   });
 
   it('refuses a board with players outside the class, or for another team', () => {

@@ -28,11 +28,7 @@ export const nextDraftSeason = (state: LeagueState) =>
  * Pick `i` (from 0) of this summer's draft: round one follows the lottery, later rounds go worst
  * to best (`order`). A protected pick that lands high stays with the team that traded it.
  */
-export function draftSlot(
-  state: LeagueState,
-  order: readonly TeamId[],
-  i: number,
-): DraftClock & { id: string } {
+export function draftSlot(state: LeagueState, order: readonly TeamId[], i: number): DraftClock {
   const round = Math.floor(i / order.length) + 1;
   const slots = round === 1 && state.draftOrder.length ? state.draftOrder : order;
   const original = slots[i % order.length]!;

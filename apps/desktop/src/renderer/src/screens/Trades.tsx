@@ -11,6 +11,7 @@ import {
 } from '@/lib/queries';
 import { useT, type MessageKey } from '@/i18n';
 import { Button, Card, Face, TeamLink, TeamSelect, Td, Th } from '@/ui';
+import { useUi } from '@/stores/ui';
 import { fullName, money, moneyParams, statValue, teamName } from '@/lib/format';
 
 /** Build a trade with another team; its GM answers live, with reasons, before you send it. */
@@ -19,14 +20,15 @@ export function Trades() {
   const { data: teams = [] } = useTeams();
   const mine = teams.find((x) => x.userControlled);
   const others = teams.filter((x) => x.id !== mine?.id);
-  const [partnerPick, setPartner] = useState<TeamId>();
+  const ask = useUi((s) => s.tradeAsk);
+  const [partnerPick, setPartner] = useState(ask?.teamId as TeamId | undefined);
   const partner = partnerPick ?? others[0]?.id;
   const [give, setGive] = useState<PlayerId[]>([]);
   const [get, setGet] = useState<PlayerId[]>([]);
   /** Share of each given player's cap hit you keep paying (0 = none). */
   const [retain, setRetain] = useState<Record<string, number>>({});
   const [givePicks, setGivePicks] = useState<string[]>([]);
-  const [getPicks, setGetPicks] = useState<string[]>([]);
+  const [getPicks, setGetPicks] = useState<string[]>(ask ? [ask.pickId] : []);
   /** Top-N protection on the first-round picks you give (0 = none). */
   const [protectTop, setProtectTop] = useState(0);
   const { data: myPicks = [] } = usePicks(mine?.id);

@@ -735,5 +735,8 @@ function completeTrade(
     },
   });
   applyEvent(state, news);
-  return [ev, news];
+  const events = [ev, news];
+  // A pick on the clock traded to an AI team: the live draft runs on to the next human pick.
+  if (state.draftPicksMade !== null) continueDraft(state, ctx, emitter(state, events), true);
+  return events;
 }

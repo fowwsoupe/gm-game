@@ -35,6 +35,9 @@ interface UiState {
   openRoster: (teamId: string, playerId?: string) => void;
   /** The player's own page. `teamId` null = a free agent. */
   openPlayer: (teamId: string | null, playerId: string) => void;
+  /** Set by the draft room: the Trades screen opens with this team and its pick asked for. */
+  tradeAsk: { teamId: string; pickId: string } | null;
+  openTrade: (teamId: string, pickId: string) => void;
 }
 
 export const useUi = create<UiState>((set) => ({
@@ -47,6 +50,8 @@ export const useUi = create<UiState>((set) => ({
     set({ screen: teamId === 'fa' ? 'freeAgency' : 'roster', focus: { teamId, playerId } }),
   openPlayer: (teamId, playerId) =>
     set({ screen: 'player', focus: { teamId: teamId ?? 'fa', playerId } }),
-  setScreen: (screen) => set({ screen }),
+  tradeAsk: null,
+  openTrade: (teamId, pickId) => set({ screen: 'trades', tradeAsk: { teamId, pickId } }),
+  setScreen: (screen) => set({ screen, tradeAsk: null }),
   setLocale: (locale) => set({ locale }),
 }));

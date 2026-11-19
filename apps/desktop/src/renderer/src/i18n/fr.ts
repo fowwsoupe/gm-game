@@ -364,6 +364,11 @@ export const fr: Record<MessageKey, string> = {
   'draft.yourPick':
     'À vous de choisir : choix n° {pick} (ronde {round}). Repêchez un joueur ci-dessous.',
   'draft.onClock': 'Au tour de {team} : choix n° {pick} (ronde {round}).',
+  'draft.orderTitle': 'Choix à venir',
+  'draft.orderNote':
+    "Montez dans l'ordre en échangeant pour un choix ici; pour céder le vôtre, offrez-le à l'écran Échanges. Si vous échangez le choix en cours, le repêchage continue.",
+  'draft.orderLine': '{pick}. Ronde {round} : {team}',
+  'draft.tradeFor': 'Échanger pour ce choix',
   'draft.pick': 'Repêcher',
   'standings.team': 'Équipe',
   'standings.gp': 'PJ',
