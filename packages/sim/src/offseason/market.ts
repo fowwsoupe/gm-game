@@ -244,6 +244,7 @@ export function decideOffers(
         emit('notable', [o.teamId, ...losers], {
           kind: 'news.posted',
           headline: 'event.biddingWar',
+          playerId: player.id,
           params: {
             player: playerName(player),
             team: teamName(state.teams[o.teamId]!),
