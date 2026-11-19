@@ -33,6 +33,7 @@ import {
   draftPicks,
   playoffOdds,
   teamRatings,
+  assistantGuess,
   evaluateTrade,
   scoutReport,
   teamRange,
@@ -351,7 +352,12 @@ export class LeagueService {
 
   evaluateTrade(proposal: TradeProposal) {
     const { state } = this.open();
-    return evaluateTrade(state, defaultContext(state.rulesetId), proposal);
+    const ctx = defaultContext(state.rulesetId);
+    const guess = assistantGuess(state, ctx, proposal);
+    return {
+      ...evaluateTrade(state, ctx, proposal),
+      ...(guess !== undefined && { assistantGuess: guess }),
+    };
   }
 
   status(): LeagueStatus {

@@ -32,7 +32,7 @@ item it is about, so it costs no new screen:
 | A trade offer waits          | "Take {give} for {get}" or "Turn down ..."   | surplus value in against out, the value engine    |
 | Free agency (later)          | "Best value for your cap room: {player}"     | surplus value at the ask, within cap room         |
 | Lines (later)                | "{player} would help on the top line"        | the lines engine on his read                      |
-| A trade you build (later)    | "They will likely say no" before you propose | the other team's answer on his read of your offer |
+| A trade you build            | "They will likely say no" before you propose | the other team's answer on his read of your offer |
 
 ## How his quality matters
 
@@ -63,7 +63,7 @@ the staff market. So the assistant is a department of human teams only
    unchanged (no AI team has one).
 2. **Free agency and your own trades.** The best value signing for your cap room (done: the
    free agent with the most surplus on a deal at his ask that fits, on his read); his guess at
-   the other team's answer before you propose (to do).
+   the other team's answer before you propose (done: the trade screen shows it, the same evaluation on his read of every player).
 3. **His return.** How often his advice was right last season (with the department returns of
    the front office brief), so a poor one shows himself.
 4. **Delegation (maybe).** Let him handle chores you opt into (fill a short position with the

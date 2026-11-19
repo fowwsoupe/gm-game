@@ -83,6 +83,11 @@ export function Trades() {
             <p className={`font-semibold ${verdict.accepted ? 'text-good' : 'text-bad'}`}>
               {verdict.accepted ? t('trade.yes') : t('trade.no')}
             </p>
+            {verdict.assistantGuess !== undefined && (
+              <p className="mt-1 text-sm text-muted">
+                {verdict.assistantGuess ? t('trade.guessYes') : t('trade.guessNo')}
+              </p>
+            )}
             <ul className="mt-2 space-y-1 text-sm">
               {verdict.reasons.map((r, i) => (
                 <li key={i}>{reasonText(r)}</li>

@@ -266,6 +266,8 @@ export const en = {
   'trade.pickPlayers': 'Pick players on either side to ask.',
   'trade.yes': 'They would accept.',
   'trade.no': 'They would say no.',
+  'trade.guessYes': 'Your assistant GM: they will likely say yes.',
+  'trade.guessNo': 'Your assistant GM: they will likely say no.',
   'trade.propose': 'Make the trade',
   'trade.done': 'Trade done.',
   'trade.stat': 'PTS / SV%',
