@@ -54,6 +54,7 @@ const JSON_META = {
   draftClass: '[]',
   draftOrder: '[]',
   draftBoards: '{}',
+  draftPicksMade: 'null',
   depthCharts: '{}',
   specialUnits: '{}',
   pickOwners: '{}',
@@ -494,6 +495,7 @@ export class SaveFile {
             break;
           case 'draft.classAnnounced':
           case 'draft.boardSet':
+          case 'draft.started':
           case 'lines.set':
           case 'units.set':
           case 'goalies.rotationSet':

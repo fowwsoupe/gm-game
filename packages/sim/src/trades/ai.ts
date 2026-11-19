@@ -92,7 +92,7 @@ export function aiTrades(state: LeagueState, ctx: SimContext, rng: Rng, emit: Em
         .sort((a, b) => gap(b, seller, buyer) - gap(a, seller, buyer))
         .slice(0, OFFERS_TRIED)
         .map((p) => ({ give: [p.id], givePicks: [], label: playerName(p) })),
-      ...draftPicks(state, ctx.ruleset.draft.rounds, buyer)
+      ...draftPicks(state, ctx.ruleset, buyer)
         .sort((a, b) => b.season - a.season || b.round - a.round) // cheapest first
         .slice(0, OFFERS_TRIED)
         .map((pk) => ({
