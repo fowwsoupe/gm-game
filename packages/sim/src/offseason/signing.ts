@@ -182,6 +182,16 @@ export function signFreeAgent(
   const { ruleset } = ctx;
   if (player.teamId !== null) return { error: 'not a free agent' };
   if (!resignWindowOpen(state, ctx)) return { error: 'signings are closed in the playoffs' };
+  // After the deadline, until the champion is crowned, only a team short at his position may sign
+  // (the game tracks no playoff eligibility, so this closes the door the NHL closes with it).
+  if (!state.championTeamId && state.date.day > ruleset.season.calendar.tradeDeadlineDay) {
+    const at = Object.values(state.players).filter(
+      (p) => p.teamId === teamId && p.position === player.position,
+    ).length;
+    if (at >= (ruleset.roster.positionMin[player.position] ?? 0)) {
+      return { error: 'signings are closed after the trade deadline' };
+    }
+  }
   const salary = Math.round(offer.salary);
   if (!Number.isInteger(offer.years)) return { error: 'illegal term' };
   // NaN would slip past every comparison below.

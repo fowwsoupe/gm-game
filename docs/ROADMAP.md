@@ -31,9 +31,10 @@ to 0.085-0.087 on seeds 1, 101 and 201 (re-checked 2026-11-18; 201 is borderline
 playoff turnover 31-32% ([research/2026-11-spread-second-mechanism.md](research/2026-11-spread-second-mechanism.md)). League & events:
 all five jobs of [research/2026-11-league-events.md](research/2026-11-league-events.md) done (the pulse ranks by playoff odds; a young team out of it rebuilds, an old bubble team with cap space buys; crisis on top).
 
-Camp and a trade deadline that matters: brief in
-[research/2026-11-camp-deadline.md](research/2026-11-camp-deadline.md); job 1 (camp) done, job 2
-(the deadline) is ready.
+Camp and a trade deadline that matters: both jobs of
+[research/2026-11-camp-deadline.md](research/2026-11-camp-deadline.md) done (three weeks of camp;
+the playoff run in rental value, daily talks in deadline week, a deadline recap, signings closed
+after it).
 
 Minor / junior / European leagues: brief in
 [research/2026-11-minor-leagues.md](research/2026-11-minor-leagues.md); its four jobs (the
@@ -73,13 +74,13 @@ B. Balance and calibration (Opus 5.5 unless noted)
 C. Design brief first, then jobs (Opus 5.5)
 
 - [ ] Minor / junior / European leagues (xhigh, 4-6 PRs)
-- [ ] Camp and a trade deadline that matters (high, 2-3 PRs)
+- [x] Camp and a trade deadline that matters (high, 2-3 PRs)
 
 D. Phase 2 headlines
 
 - [x] Live draft room with trading (Opus, high, 3-4 PRs)
 - [ ] Free-agency bidding war and contract negotiation (Opus, xhigh; brief done: [research/2026-11-free-agency-bidding.md](research/2026-11-free-agency-bidding.md), job 1 done, jobs 2-3 next)
-- [ ] League news tab (Opus for storylines, Sonnet for UI; high, brief first)
+- [ ] League news tab (Opus for storylines, Sonnet for UI; high; brief done: [research/2026-11-league-news.md](research/2026-11-league-news.md), its 3 jobs next)
 - [x] Media and press conferences, text (Sonnet, medium, 2-3 PRs)
 - [~] Summer training, camp battles, international tournament (Opus, high, 3 PRs): brief, summer training plans and the international tournament done; camp battles wait for camp
 - [x] Cutscenes (Sonnet, medium, 3 PRs)
@@ -124,7 +125,7 @@ Build order, owners and "done when" for each step: **[V0.1_PLAN.md](V0.1_PLAN.md
 
 **Features**
 
-- [~] Full season calendar: 84 games (divisions, conferences, back-to-backs) → playoffs → awards → draft → re-sign → FA done; camp done (three weeks before opening night: holdouts and the owner's meeting on its first day, the coach's camp report on its last); a trade deadline that matters next (M6)
+- [x] Full season calendar: 84 games (divisions, conferences, back-to-backs) → playoffs → awards → draft → re-sign → FA done; camp done (three weeks before opening night: holdouts and the owner's meeting on its first day, the coach's camp report on its last); a trade deadline that matters done (rentals keep the playoff run's worth for buyers, AI talks daily in deadline week, offers expire at the deadline, a recap in the feed, free-agent signings closed after it except to fill a position minimum) (M6)
 - [~] Trades v1: surplus value per team (status, rentals, negative contracts), anti-quantity, cap and position checks, AI explains itself, trade screen, AI-to-AI trades (both GMs must accept), retained salary, draft picks (next three drafts, value curve by projected slot) done, AI GMs pay with picks, trade block (listed players draw more AI offers; AI buyers call AI teams with listed players first, so fire-sale players move), top-N protected picks done
 - [~] Contracts & cap: CBA checks, buyouts, cap sheet screen, cap advisor, offseason re-signing and in-season extensions, RFA rights with offer sheets the rights team can match, and compensation picks when it does not (NHL-style tiers by cap hit), done; signing bonuses, no-trade clauses and performance bonuses (overage carries to next season's cap) done
 - [~] Free agency v1: free-agency window in the summer, offers with an interest meter (money, winning, role, term weighted by age), signings any time outside the playoffs, personalities (greed, ambition), AI offers, AI re-signing by loyalty and ambition, and loyalty (to his old team) and hometown pulls on the interest meter done
@@ -158,7 +159,7 @@ Build order, owners and "done when" for each step: **[V0.1_PLAN.md](V0.1_PLAN.md
 - [~] Front office: scouting, analytics, medical, coaching, development staff. Department heads with a quality and a salary, coach quality in games, development staff (replacing GM skill), per-team draft reads, medical injury days, the staff market (leave, poaching, owner budgets), the Front Office screen with three candidates a season, tuned against the long-run benchmarks (all jobs of [the brief](research/2026-11-front-office.md); the price curve was tried and dropped), an assistant GM for human teams whose advice on Home (extend first, take or turn down an offer) is as accurate as his quality (the best-value free agent for your cap room, who would help on the top line, and a guess at a trade's answer), done; department returns (what each department added against an average one, on the Front Office screen) and firing a head without a replacement (an interim, severance) done; hired head coaches drawn from the owner-tilted market (coaching measured around the league's average coach) and medical scaling re-injury risk done; an analytics department (a fourth head; a weak one blurs what you see of other teams' players, a fixed amount per player, view only) done; his return (how far his read of your roster is off) done; delegation (maybe) to do
 - [x] Live draft trade room: pick by pick, trade for any pick to come, AI teams trade up and call you on the clock, draft results with the picks that changed hands
 - [ ] Free-agency live bidding war + full contract negotiation ([brief](research/2026-11-free-agency-bidding.md): the bidding war done; negotiation, the room and the pitch, to do)
-- [ ] League news tab, social-media style: a feed page of posts with the generated face of the player and of the AI GM (or coach, owner) in each one, built on the existing `news.posted` events and the news-feed faces. Storylines that run over weeks and seasons (a holdout becoming a trade, a breakout and his extension ask, a GM's fire sale, a contender clearing cap for a star, a rivalry, a coach on the hot seat), each told as a short thread of linked posts; generated GM faces; likes and follows only if they carry a use. Needs a design first (a short brief in `docs/research/`).
+- [ ] League news tab, social-media style: a feed page of posts with the generated face of the player and of the AI GM (or coach, owner) in each one, built on the existing `news.posted` events and the news-feed faces. Storylines that run over weeks and seasons (a holdout becoming a trade, a breakout and his extension ask, a GM's fire sale, a contender clearing cap for a star, a rivalry, a coach on the hot seat), each told as a short thread of linked posts; generated GM faces; likes and follows only if they carry a use. Brief done: [research/2026-11-league-news.md](research/2026-11-league-news.md) (no likes or follows), its 3 jobs next.
 - [x] Media & press conferences (text)
 - [ ] Match viewer (2D) + coach from the bench
 - [x] Cutscenes (trophy lift, draft pick, signing): trophy lift (a skippable full-screen Cup lift when your team wins, once per title) done; draft pick (a skippable cutscene when one of your picks lands during the session) done; signing (a skippable cutscene when you sign a free agent) done

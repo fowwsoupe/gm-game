@@ -14,7 +14,7 @@ function run(state: LeagueState, command: Command) {
 
 describe('AI owners in the feed', () => {
   it("an AI owner losing faith in his GM makes the league's news", () => {
-    const state = createLeague(4, ctx);
+    const state = createLeague(5, ctx);
     const events: LeagueEvent[] = [];
     for (let s = 0; s < 3; s++) {
       events.push(

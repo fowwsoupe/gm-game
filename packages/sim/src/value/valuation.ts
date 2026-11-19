@@ -12,7 +12,7 @@ export interface TeamContext {
   status: TeamStatus;
   /** The season the team is planning for (next season once the champion is crowned). */
   season: number;
-  /** Share of that season still to play, 0–1 (1 before it starts): rentals lose value as it runs out. */
+  /** Share of that regular season still to play, 0–1 (1 before it starts): rentals lose value as it runs out. */
   seasonLeft: number;
   /** Positions the team is short of, e.g. ['D']. */
   needs: string[];
@@ -35,16 +35,19 @@ export interface PlayerValuator {
 }
 
 /**
- * How much a team cares about this season (`now`) versus each later one (`later` per year).
- * Contenders spend the future on today; rebuilders the other way round.
+ * How much a team cares about this season (`now`) versus each later one (`later` per year), and
+ * the share of this season that is the playoff run (`playoffs`): it is still ahead at the trade
+ * deadline, so a contender's rental keeps most of its worth while a seller's runs out with the
+ * regular season. Contenders spend the future on today; rebuilders the other way round.
+ * Game numbers from docs/research/2026-11-camp-deadline.md, tuned in the lab.
  */
-const HORIZON: Record<TeamStatus, { now: number; later: number }> = {
-  contender: { now: 1.25, later: 0.6 },
-  buyer: { now: 1.1, later: 0.75 },
-  bubble: { now: 1, later: 0.85 },
-  seller: { now: 0.7, later: 0.9 },
-  rebuilder: { now: 0.45, later: 0.95 },
-  crisis: { now: 0.6, later: 0.9 },
+const HORIZON: Record<TeamStatus, { now: number; later: number; playoffs: number }> = {
+  contender: { now: 1.25, later: 0.6, playoffs: 0.5 },
+  buyer: { now: 1.1, later: 0.75, playoffs: 0.3 },
+  bubble: { now: 1, later: 0.85, playoffs: 0.1 },
+  seller: { now: 0.7, later: 0.9, playoffs: 0 },
+  rebuilder: { now: 0.45, later: 0.95, playoffs: 0 },
+  crisis: { now: 0.6, later: 0.9, playoffs: 0 },
 };
 
 /** How far a GM's lean moves this season's weight, and each later season's. */
@@ -96,7 +99,8 @@ export const surplusValuator: PlayerValuator = {
     const h = HORIZON[team.status];
     const now = h.now * (1 + LEAN_NOW * lean);
     const later = Math.min(0.99, h.later * (1 - LEAN_LATER * lean));
-    const weight = (y: number) => (y === 0 ? now * team.seasonLeft : later ** y);
+    const left = h.playoffs + (1 - h.playoffs) * team.seasonLeft;
+    const weight = (y: number) => (y === 0 ? now * left : later ** y);
     // An extension signed but not started yet counts: it is his deal for those seasons.
     const deal = player.extension ?? player.contract;
     const years = deal ? Math.max(0, deal.expiresAfterSeason - team.season + 1) : 0;

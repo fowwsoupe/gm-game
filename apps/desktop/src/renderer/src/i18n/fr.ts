@@ -570,6 +570,9 @@ export const fr: Record<MessageKey, string> = {
   'event.camp.sharp': 'Rapport du camp : selon {coach}, les {team} sont affûtés',
   'event.camp.expected': 'Rapport du camp : selon {coach}, les {team} sont comme prévu',
   'event.camp.flat': 'Rapport du camp : selon {coach}, les {team} manquent de jus',
+  'event.deadlineRecap':
+    'Date limite des échanges : {n} échange(s) la dernière semaine ; les {team} se sont le plus renforcés',
+  'event.deadlineQuiet': 'Date limite des échanges : dernière semaine calme, aucun échange',
   'home.simBarTitle': 'Simuler jusqu’à une date',
   'home.simBarDeadline': 'Date limite',
   'home.simBarPlayoffs': 'Séries',

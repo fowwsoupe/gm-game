@@ -73,6 +73,14 @@ export interface LeagueState {
   pickOwners: Record<string, TeamId>;
   /** AI GMs' open offers to human teams. */
   tradeOffers: TradeOffer[];
+  /** This season's trades, with the day each was made (deadline day's recap reads its last week). */
+  seasonTrades: {
+    day: number;
+    fromTeamId: TeamId;
+    toTeamId: TeamId;
+    give: PlayerId[];
+    get: PlayerId[];
+  }[];
   /** Open offers to free agents (AI teams' and yours); a free agent picks one on his decision day. */
   faOffers: FreeAgentOffer[];
   /** Market days played since free agency last opened (0 when it opens). */
@@ -463,6 +471,7 @@ export function applyEvent(state: LeagueState, event: LeagueEvent): void {
       state.draftBoards = {};
       state.draftPicksMade = null;
       state.tradeOffers = [];
+      state.seasonTrades = [];
       state.faOffers = [];
       state.rfaRights = {};
       state.formerTeams = {};
@@ -484,6 +493,13 @@ export function applyEvent(state: LeagueState, event: LeagueEvent): void {
       state.teamStatus[event.teamId] = event.to;
       return;
     case 'trade.completed': {
+      state.seasonTrades.push({
+        day: state.date.day,
+        fromTeamId: event.fromTeamId,
+        toTeamId: event.toTeamId,
+        give: [...event.give],
+        get: [...event.get],
+      });
       const gone = new Set([...event.give, ...event.get]);
       state.tradeBlock = state.tradeBlock.filter((id) => !gone.has(id));
       const move = (ids: readonly string[], to: TeamId) => {

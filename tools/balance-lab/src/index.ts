@@ -23,6 +23,7 @@ import {
   handleCommand,
   HOCKEY_TUNING,
   hockeySeasonStats,
+  inDeadlineWeek,
   ICE_TIME,
   overall,
   parseXgTable,
@@ -240,6 +241,8 @@ const coaches = { changed: 0, inSeason: 0, gms: 0, teamSeasons: 0 };
 const staff = { changed: 0, rich: [] as number[], frugal: [] as number[] };
 /** Free agents signed with two or more teams bidding: each one's salary over his ask (a share). */
 const contested = { overAsk: [] as number[] };
+/** AI trades in the season (camp to the end of the playoffs), and those in the deadline's last seven days. */
+const trades = { all: 0, deadlineWeek: 0 };
 /**
  * Long-run parity: from this season on a multi-year league has gone through enough offseasons
  * that its teams are built by the AI GMs, not by league generation.
@@ -296,6 +299,10 @@ for (let l = 0; l < leagues; l++) {
     if (!played.ok) throw new Error(played.error.message);
     const books = new Map<string, { revenue: number; profit: number }>();
     for (const e of played.events) {
+      if (e.kind === 'trade.completed') {
+        trades.all++;
+        if (inDeadlineWeek(cal, e.date.day)) trades.deadlineWeek++;
+      }
       if (e.kind === 'owner.cardAnswered' && e.effects.coach) {
         coaches.changed++;
         if (e.date.day < cal.regularSeasonDays) coaches.inSeason++;
@@ -629,6 +636,20 @@ const checks: Check[] = [
     value: coaches.teamSeasons / Math.max(1, coaches.gms),
     min: 3,
     max: 10,
+  },
+  // Report only: no sourced real-NHL trade volume yet (docs/research/2026-11-camp-deadline.md).
+  {
+    name: 'AI trades a team-season (report only)',
+    value: trades.all / coaches.teamSeasons,
+    min: 0,
+    max: 10,
+  },
+  {
+    name: 'Trades in deadline week (report only)',
+    value: (100 * trades.deadlineWeek) / Math.max(1, trades.all),
+    min: 0,
+    max: 100,
+    unit: '%',
   },
   // Long run (multi-year leagues, LONG_RUN_FROM on): teams converge and games drift toward coin
   // flips, because nothing gives a team a lasting edge (docs/research/2026-11-long-run-spread.md).
