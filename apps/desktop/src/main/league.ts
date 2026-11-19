@@ -370,6 +370,7 @@ export class LeagueService {
       tradesOpen: tradeWindowOpen(state, ctx),
       career: state.career,
       canBeFired: state.canBeFired,
+      stopOn: state.stopOn,
     };
   }
 

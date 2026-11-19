@@ -1,5 +1,5 @@
 import type { Actor, Command, CommandResult, LeagueEvent, Team, TradeProposal } from '@gm/shared';
-import { GOALIE_ROTATIONS, TICKET_STEPS } from '@gm/shared';
+import { GOALIE_ROTATIONS, STOP_CATEGORIES, TICKET_STEPS } from '@gm/shared';
 import {
   Rng,
   applyEvent,
@@ -357,6 +357,16 @@ export function handleCommand(
       return applied(
         state,
         makeEvent(state, 'minor', [], { kind: 'league.optionSet', canBeFired: command.on }),
+      );
+
+    case 'league.setStopOn':
+      if (actor.id !== 'local') return notYours;
+      return applied(
+        state,
+        makeEvent(state, 'minor', [], {
+          kind: 'league.optionSet',
+          stopOn: STOP_CATEGORIES.filter((c) => command.stopOn.includes(c)),
+        }),
       );
 
     case 'owner.answerCard': {
