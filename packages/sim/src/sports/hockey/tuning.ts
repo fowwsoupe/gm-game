@@ -17,8 +17,9 @@ export const HOCKEY_TUNING = {
    * Goalie form: each game, a goalie's goal chance against is multiplied by exp(N(0, sd)), with
    * sd = goalieFormSd x (1.5 - consistency / 100). Calibrated so a team game's goals vary around
    * expected goals as much as in the NHL (balance lab "Goals vs expected" check; ml/src/form.py).
+   * 0.16 since new leagues start with smaller team edges (less goalie spread left 0.14 at the floor).
    */
-  goalieFormSd: 0.14,
+  goalieFormSd: 0.16,
   homeIceBoost: 1.07,
   /** Shot rate changes by this (log) per skater of man advantage: 5v4 is about 1.7 times even strength. */
   manAdvantageStep: 0.55,

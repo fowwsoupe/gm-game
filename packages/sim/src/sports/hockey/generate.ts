@@ -109,7 +109,9 @@ export function generateFictionalLeague(
       userControlled: t === 0,
     });
 
-    const quality = rng.int(-8, 8);
+    // A team's edge in rating points. At +-8 a new league's playoffs were more lopsided than a
+    // settled league's (balance lab: better team won 65% of series against 63% from year 10 on).
+    const quality = rng.int(-6, 6);
     level += quality / teamCount;
     const teamStart = players.length;
     for (const position of ROSTER) {

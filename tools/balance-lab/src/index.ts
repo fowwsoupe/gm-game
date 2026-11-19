@@ -29,6 +29,7 @@ import {
   rulesGoalModel,
   playoffCapBreaches,
   strengthEdge,
+  strengthFor,
   teamStrength,
   type LeagueState,
   net,
@@ -113,12 +114,16 @@ const withoutDraws = (roster: readonly Player[]) =>
     ),
   );
 
-/** How often the stronger team (by full-health strength) wins a playoff series. Needs many series to be stable. */
+/**
+ * How often the stronger team wins a playoff series. Needs many series to be stable. Stronger =
+ * full-health strength as the games play it (lines, chemistry, coach, season form): the research
+ * benchmark judges teams by their true strength that season, not by their rosters alone.
+ */
 function measureSeries(state: LeagueState, tally: { won: number; n: number }) {
   const strengths = new Map(
     Object.keys(state.teams).map((id) => [
       id,
-      teamStrength(Object.values(state.players).filter((p) => p.teamId === id)),
+      strengthFor(state, ctx, id as TeamId, rosterOf(state, id)) as ReturnType<typeof teamStrength>,
     ]),
   );
   for (const series of Object.values(state.playoffSeries)) {
