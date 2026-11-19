@@ -11,6 +11,11 @@ import type {
 import type { Rng } from '../core';
 import type { Ruleset } from '../cba';
 
+/** Result of loading a roster file: a ready league, or readable errors for the user. */
+export type RosterImport =
+  | { ok: true; season: number; name: string; teams: Team[]; players: Player[] }
+  | { ok: false; errors: string[] };
+
 /**
  * What a sport must provide. Everything else (value, people, CBA math, league calendar,
  * standings, events, finance, the UI shell) is shared by every sport.
@@ -19,11 +24,6 @@ import type { Ruleset } from '../cba';
  * implementing this same interface; features built on the shared engines then work for
  * them with little or no change.
  */
-/** Result of loading a roster file: a ready league, or readable errors for the user. */
-export type RosterImport =
-  | { ok: true; season: number; name: string; teams: Team[]; players: Player[] }
-  | { ok: false; errors: string[] };
-
 export interface SportModule<Strength = unknown> {
   id: Sport;
 

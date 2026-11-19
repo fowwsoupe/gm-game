@@ -17,7 +17,7 @@ import math
 from collections import defaultdict
 from pathlib import Path
 
-from ml.src.study import _rows
+from ml.src.study import read_rows
 
 MIN_TOI = 300
 BANDS = ((18, 24), (25, 29), (30, 34))
@@ -25,13 +25,13 @@ BANDS = ((18, 24), (25, 29), (30, 34))
 
 def _birth_years(path: Path) -> dict[str, int]:
     """MoneyPuck's player lookup (`playerId`, `birthDate` as YYYY-MM-DD)."""
-    return {r["playerId"]: int(r["birthDate"][:4]) for r in _rows(path) if r["birthDate"]}
+    return {r["playerId"]: int(r["birthDate"][:4]) for r in read_rows(path) if r["birthDate"]}
 
 
 def study(processed: Path, births: Path) -> dict:
     born = _birth_years(births)
     seasons: dict[tuple[str, int], list[float]] = defaultdict(lambda: [0.0, 0.0])
-    for r in _rows(processed / "player_seasons.csv"):
+    for r in read_rows(processed / "player_seasons.csv"):
         if r["league"] == "nhl" and r["position"] != "G":  # traded players have a row per team
             tally = seasons[(r["player_id"], int(r["season"]))]
             tally[0] += int(r["goals"]) + int(r["assists"])

@@ -286,7 +286,7 @@ export function evaluateTrade(
     : Math.min(1, Math.max(0, state.date.day / ruleset.season.calendar.regularSeasonDays));
   // Only needed to value picks, and costly (every result this season): computed on first use.
   const slotOf = (teamId: TeamId) => {
-    const order = (cache ?? {}) as { worstFirst?: TeamId[] };
+    const order: Pick<TradeCache, 'worstFirst'> = cache ?? {};
     order.worstFirst ??= worstFirst(state, ruleset);
     return order.worstFirst.indexOf(teamId) + 1;
   };

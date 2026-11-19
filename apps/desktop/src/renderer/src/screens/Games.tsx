@@ -1,7 +1,7 @@
 import { useEffect, useMemo, useState } from 'react';
 import type { GameDetail, HockeyBoxScore, HockeyBoxSide, Team, TeamId } from '@gm/shared';
 import { useExhibition, useGames, useOpenGame, useTeams, useMine } from '@/lib/queries';
-import { statValue, teamName } from '@/lib/format';
+import { statValue, teamAbbr, teamName } from '@/lib/format';
 import { useT } from '@/i18n';
 import { Button, Card, TeamLink, TeamSelect, SectionHeader, Td, Th } from '@/ui';
 
@@ -73,8 +73,8 @@ export function Games() {
                     className={`flex w-full justify-between rounded px-2 py-1 text-left hover:bg-panel-2 ${detail?.result.id === g.id ? 'bg-line' : ''}`}
                   >
                     <span>
-                      {teams.find((x) => x.id === g.awayTeamId)?.abbreviation} {g.awayScore} @{' '}
-                      {teams.find((x) => x.id === g.homeTeamId)?.abbreviation} {g.homeScore}
+                      {teamAbbr(teams, g.awayTeamId)} {g.awayScore} @{' '}
+                      {teamAbbr(teams, g.homeTeamId)} {g.homeScore}
                     </span>
                     <span className="text-muted">
                       {g.shootout ? t('games.so') : g.overtime ? t('games.ot') : ''}
@@ -138,7 +138,7 @@ function Replay({ detail, teams }: { detail: GameDetail; teams: Team[] }) {
           at: s[0],
           text:
             t('games.goal', {
-              team: teams.find((x) => x.id === ids[side])?.abbreviation ?? '',
+              team: teamAbbr(teams, ids[side]),
               player: nameOf(side, s[4]),
               assists: helpers.length ? ` (${helpers.join(', ')})` : '',
             }) + (s[8] === 1 ? t('games.goalPp') : ''),
@@ -149,7 +149,7 @@ function Replay({ detail, teams }: { detail: GameDetail; teams: Team[] }) {
       .map((p) => ({
         at: p[0],
         text: t('games.penalty', {
-          team: teams.find((x) => x.id === ids[p[1]])?.abbreviation ?? '',
+          team: teamAbbr(teams, ids[p[1]]),
           player: nameOf(p[1], p[2]),
         }),
       })),
@@ -231,10 +231,8 @@ function Replay({ detail, teams }: { detail: GameDetail; teams: Team[] }) {
         <Card title={t('games.shotMap')}>
           <ShotMap shots={shown} />
           <p className="tabular mt-2 text-xs text-muted">
-            {t('games.shots')}: {teams.find((x) => x.id === ids[1])?.abbreviation}{' '}
-            {shown.filter((s) => s[1] === 1).length} ·{' '}
-            {teams.find((x) => x.id === ids[0])?.abbreviation}{' '}
-            {shown.filter((s) => s[1] === 0).length}
+            {t('games.shots')}: {teamAbbr(teams, ids[1])} {shown.filter((s) => s[1] === 1).length} ·{' '}
+            {teamAbbr(teams, ids[0])} {shown.filter((s) => s[1] === 0).length}
           </p>
         </Card>
         <Card title={t('games.feedTitle')}>

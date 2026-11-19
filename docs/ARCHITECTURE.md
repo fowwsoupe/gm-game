@@ -69,9 +69,10 @@ would need the same thing, it belongs in a shared engine.
 src/
   core/      rng, money, ids, calendar, LeagueState + applyEvent      (imports no engine)
   cba/       Ruleset as data, NHL_2026 default, contract rules
-  players/   percentiles, development model interface, (later) builds, injuries
-  people/    personalities, priorities, (later) morale, chemistry
-  finance/   team finances, (later) revenue, budgets
+  players/   percentiles, builds, injuries, development model interface
+  people/    personalities, priorities, morale, chemistry, holdouts, disputes
+  finance/   team finances, revenue, budgets
+  owner/     owners, confidence, meetings and cards
   value/     PlayerValuator: per-team surplus value (can be negative)
   league/    schedule, standings, playoffs, team status (league pulse)
   offseason/ yearly rollover: development, retirements, expiries, draft, re-sign, free agency, next schedule

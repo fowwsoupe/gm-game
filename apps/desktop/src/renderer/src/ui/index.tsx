@@ -1,3 +1,8 @@
+/**
+ * Design-system components. Screens are built from these, not from raw divs with
+ * one-off styles, so the whole game looks like one product. Add components here first.
+ */
+
 import type { ReactNode, ThHTMLAttributes, TdHTMLAttributes } from 'react';
 import type { Team, TeamId } from '@gm/shared';
 import { useUi } from '@/stores/ui';
@@ -6,11 +11,6 @@ export { Face, PersonFace } from './Face';
 export { Cutscene } from './Cutscene';
 export { TrophyLift } from './TrophyLift';
 export { Palette, type PaletteItem } from './Palette';
-
-/**
- * Design-system components. Screens are built from these, not from raw divs with
- * one-off styles, so the whole game looks like one product. Add components here first.
- */
 
 export function Card({
   title,
@@ -107,35 +107,6 @@ export function PlayerCard({
         ))}
       </div>
     </Card>
-  );
-}
-
-/**
- * Broadcast caption: a lower-third for big moments (goal, series win, trophy).
- * Team-coloured edge; `kicker` is the small label above the headline.
- */
-export function BroadcastCaption({
-  kicker,
-  headline,
-  detail,
-}: {
-  kicker?: ReactNode;
-  headline: ReactNode;
-  detail?: ReactNode;
-}) {
-  return (
-    <div className="flex max-w-xl overflow-hidden rounded-md border border-line bg-panel shadow-lg">
-      <div className="w-1.5 shrink-0 bg-[var(--team-primary)]" />
-      <div className="px-3 py-2">
-        {kicker && (
-          <div className="text-xs font-semibold uppercase tracking-wider text-[var(--team-primary)]">
-            {kicker}
-          </div>
-        )}
-        <div className="text-base font-semibold leading-tight">{headline}</div>
-        {detail && <div className="text-sm text-muted">{detail}</div>}
-      </div>
-    </div>
   );
 }
 

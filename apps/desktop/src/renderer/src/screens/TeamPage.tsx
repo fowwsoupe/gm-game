@@ -198,22 +198,11 @@ function IdentityCard({ team }: { team: Team }) {
     abbreviation: team.abbreviation,
   });
   const [size, setSize] = useState<number>(team.market ?? 1);
-  const fields = ['city', 'name', 'abbreviation'] as const;
   const error = dispatch.data && !dispatch.data.ok ? dispatch.data.error.message : null;
   return (
     <Card title={t('team.identity')}>
       <div className="flex flex-wrap items-end gap-3 text-sm">
-        {fields.map((f) => (
-          <label key={f} className="flex flex-col gap-1">
-            <span className="text-muted">{t(`team.identity.${f}`)}</span>
-            <input
-              value={draft[f]}
-              maxLength={f === 'abbreviation' ? 4 : 24}
-              onChange={(e) => setDraft({ ...draft, [f]: e.target.value })}
-              className="rounded-md border border-line bg-panel px-2 py-1"
-            />
-          </label>
-        ))}
+        <IdentityFields draft={draft} onChange={setDraft} />
         <Button
           variant="primary"
           disabled={dispatch.isPending}
@@ -221,20 +210,7 @@ function IdentityCard({ team }: { team: Team }) {
         >
           {t('team.identity.save')}
         </Button>
-        <label className="flex flex-col gap-1">
-          <span className="text-muted">{t('team.relocate.market')}</span>
-          <select
-            value={size}
-            onChange={(e) => setSize(Number(e.target.value))}
-            className="rounded-md border border-line bg-panel px-2 py-1"
-          >
-            {MARKET_SIZES.map((m) => (
-              <option key={m} value={m}>
-                {t(`team.relocate.market.${m}`)}
-              </option>
-            ))}
-          </select>
-        </label>
+        <MarketSelect value={size} onChange={setSize} />
         <Button
           disabled={dispatch.isPending}
           onClick={() =>
@@ -246,5 +222,60 @@ function IdentityCard({ team }: { team: Team }) {
         {error && <span className="text-xs text-red-500">{error}</span>}
       </div>
     </Card>
+  );
+}
+
+type Identity = { city: string; name: string; abbreviation: string };
+
+/** The city, name and abbreviation inputs of a team's identity (the editor and the expansion form). */
+export function IdentityFields({
+  draft,
+  onChange,
+}: {
+  draft: Identity;
+  onChange: (draft: Identity) => void;
+}) {
+  const t = useT();
+  return (
+    <>
+      {(['city', 'name', 'abbreviation'] as const).map((f) => (
+        <label key={f} className="flex flex-col gap-1">
+          <span className="text-muted">{t(`team.identity.${f}`)}</span>
+          <input
+            value={draft[f]}
+            maxLength={f === 'abbreviation' ? 4 : 24}
+            onChange={(e) => onChange({ ...draft, [f]: e.target.value })}
+            className="rounded-md border border-line bg-panel px-2 py-1"
+          />
+        </label>
+      ))}
+    </>
+  );
+}
+
+/** A franchise's market size, picked from the ruleset's sizes. */
+export function MarketSelect({
+  value,
+  onChange,
+}: {
+  value: number;
+  onChange: (n: number) => void;
+}) {
+  const t = useT();
+  return (
+    <label className="flex flex-col gap-1">
+      <span className="text-muted">{t('team.relocate.market')}</span>
+      <select
+        value={value}
+        onChange={(e) => onChange(Number(e.target.value))}
+        className="rounded-md border border-line bg-panel px-2 py-1"
+      >
+        {MARKET_SIZES.map((m) => (
+          <option key={m} value={m}>
+            {t(`team.relocate.market.${m}`)}
+          </option>
+        ))}
+      </select>
+    </label>
   );
 }

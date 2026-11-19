@@ -1,6 +1,6 @@
 import { GOALIE_RATINGS, SKATER_RATINGS, type Player } from '@gm/shared';
 import type { Rng } from '../../core';
-import { ratingGroup, type RatingGroup } from './ratingsFromStats';
+import { linear, ratingGroup, type RatingGroup } from './ratingsFromStats';
 import { RATINGS_TO_STATS } from './ratingsToStatsTable';
 
 /**
@@ -24,9 +24,7 @@ export interface RatingsToStatsTable {
  * minors' unsourced 0.45, general-knowledge game counts and game-number save % offsets; lab
  * targets until an updated NHLe table is in a report.
  */
-export const HOCKEY_LEAGUES: Readonly<
-  Record<string, { nhle: number; games: number; savePct: number }>
-> = {
+const HOCKEY_LEAGUES: Readonly<Record<string, { nhle: number; games: number; savePct: number }>> = {
   junior: { nhle: 0.3, games: 68, savePct: 0.01 },
   europe: { nhle: 0.82, games: 52, savePct: 0.012 },
   minors: { nhle: 0.45, games: 72, savePct: 0.005 },
@@ -54,11 +52,8 @@ export function hockeyLeagueLine(player: Player, league: string, rng: Rng): Reco
   if (!l) throw new Error(`unknown league ${league}`);
   const group = ratingGroup(player.position);
   const keys = group === 'G' ? GOALIE_RATINGS : SKATER_RATINGS;
-  const fit = (stat: string) =>
-    RATINGS_TO_STATS.groups[group][stat]!.reduce(
-      (s, c, i) => s + c * (i ? (player.ratings[keys[i - 1]!] ?? 50) : 1),
-      0,
-    );
+  const ratings = keys.map((k) => player.ratings[k] ?? 50);
+  const fit = (stat: string) => linear(RATINGS_TO_STATS.groups[group][stat]!, ratings);
   const [lo, hi] = group === 'G' ? PLAYED.goalie : PLAYED.skater;
   const gp = Math.round(l.games * (lo + (hi - lo) * rng.next()));
   if (group === 'G') {

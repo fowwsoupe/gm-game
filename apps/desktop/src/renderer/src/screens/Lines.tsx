@@ -14,8 +14,9 @@ import { Button, Card } from '@/ui';
 import { fullName } from '@/lib/format';
 
 /**
- * Your lines: the lineup the game dresses tonight. Drag a player onto another of his position to swap them (the arrow buttons do the same from the
- * keyboard) and change who plays where; the order is saved as your depth chart and used every game.
+ * Your lines: the lineup the game dresses tonight. Drag a player onto another of his position to
+ * swap them (the arrow buttons do the same from the keyboard) and change who plays where; the order
+ * is saved as your depth chart and used every game.
  */
 export function Lines() {
   const t = useT();
@@ -44,6 +45,8 @@ export function Lines() {
       { kind: 'lines.set', teamId: mine, order: order as PlayerId[] },
       { onSuccess: (res) => setError(res.ok ? null : res.error.message) },
     );
+  const saveOrder = (position: string, list: string[]) =>
+    save(positions.flatMap((pos) => (pos === position ? list : orderOf(pos))));
   const move = (id: string, by: -1 | 1) => {
     const position = byId.get(id)?.position;
     if (!position) return;
@@ -52,7 +55,7 @@ export function Lines() {
     const j = i + by;
     if (j < 0 || j >= list.length) return;
     [list[i], list[j]] = [list[j]!, list[i]!];
-    save(positions.flatMap((pos) => (pos === position ? list : orderOf(pos))));
+    saveOrder(position, list);
   };
 
   // Drag one player onto another of the same position to swap them.
@@ -63,7 +66,7 @@ export function Lines() {
     const i = list.indexOf(a);
     const j = list.indexOf(b);
     [list[i], list[j]] = [list[j]!, list[i]!];
-    save(positions.flatMap((pos) => (pos === position ? list : orderOf(pos))));
+    saveOrder(position, list);
   };
 
   // Power-play and penalty-kill units: pick who fills each slot from the skaters in tonight's lineup.

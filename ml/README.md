@@ -8,9 +8,8 @@ Everything else is calibrated rules ([ADR 0005](../docs/adr/0005-calibrate-first
 ml/
   data/raw/         # downloaded historical data (git-ignored)
   data/processed/   # cleaned features (git-ignored)
-  notebooks/        # exploration
   src/              # pipeline, model training, calibration studies
-models/           # exported model tables (JSON) the game loads (committed, keep them small)
+  models/           # exported model tables (JSON) the game loads (committed, keep them small)
 ```
 
 ## M1 data contract

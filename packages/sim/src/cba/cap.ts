@@ -131,7 +131,7 @@ type RetentionIssue =
  * Whether a team may keep `retainPct` of a contract's cap hit when trading the player.
  * `teamRetainedCount`: contracts the team already retains on. `daysSinceRetained`: days since
  * this same contract was last traded with retention (null if never), for the double-retention ban.
- * Trades check it (`evaluateTrade`); the rules live here so every caller checks them the same way.
+ * Trades check through here (`planRetention`), so every caller applies the same rules.
  */
 export function retentionIssues(
   rules: Ruleset,

@@ -12,10 +12,7 @@ export function pick(weights: readonly number[], rng: Rng): number {
   return i < 0 ? weights.length - 1 : i;
 }
 
-/** Mean of the values, or 50 (an average rating) for none. */
-export const mean = (xs: number[]) => (xs.length ? xs.reduce((a, b) => a + b, 0) / xs.length : 50);
-
-/** A forward line and a defence pair, by ice time (empty ones never play). */
+/** Index of one forward line or defence pair, by ice time (empty ones never play), or -1 if all are empty. */
 function pickShare(units: number[][], shares: readonly number[], rng: Rng) {
   const weights = units.map((u, i) => (u.length ? shares[i]! : 0));
   return weights.some((w) => w > 0) ? pick(weights, rng) : -1;

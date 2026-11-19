@@ -8,7 +8,6 @@ import { initSteam, steamStatus } from './steam';
 // Steam must initialize before any window is created for the overlay to hook in.
 initSteam();
 
-// Keep the sim running when the window loses focus (Electron throttles background windows).
 const league = new LeagueService();
 
 function createWindow() {
@@ -24,7 +23,7 @@ function createWindow() {
       contextIsolation: true,
       nodeIntegration: false,
       sandbox: true,
-      backgroundThrottling: false,
+      backgroundThrottling: false, // keep the UI live when the window loses focus
     },
   });
   win.once('ready-to-show', () => win.show());
@@ -106,7 +105,7 @@ function registerIpc() {
     league.prospects(input.teamId, input.by),
   );
   ipcMain.handle(IPC.signingInterest, (_e, input: In<'signingInterest'>) =>
-    league.signingInterest(input.playerId, input.teamId, input),
+    league.signingInterest(input),
   );
   ipcMain.handle(IPC.feedList, (_e, input: Parameters<GmApi['feed']['list']>[0]) =>
     league.feed(input.limit, input.minImportance),

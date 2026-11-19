@@ -1,6 +1,6 @@
 import type { OwnerObjective } from '@gm/shared';
 import { useDispatch, useOwnerReport, useStatus, useMine } from '@/lib/queries';
-import { money } from '@/lib/format';
+import { money, statValue } from '@/lib/format';
 import { useT, type MessageKey } from '@/i18n';
 import { BarLineChart, Button, Card, StatRow, Td, Th } from '@/ui';
 
@@ -17,7 +17,7 @@ export function Owner() {
   const objective = (o: OwnerObjective) =>
     t(`owner.objective.${o.kind}` as MessageKey, {
       n: o.target,
-      pct: o.target.toFixed(3).replace(/^0/, ''),
+      pct: statValue('savePct', o.target),
       amount: money(o.target),
     });
   const status = (o: OwnerObjective) =>

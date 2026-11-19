@@ -6,7 +6,7 @@ import type { CalendarConfig, Dollars } from '../core';
  * limit or a season length: it reads them from here. This is what makes the sandbox,
  * "classic rules", a future CBA (or a lockout storyline) and other sports cheap to add.
  *
- * Each sport ships its ruleset as a versioned data file (hockey: sports/hockey/ruleset-nhl-2026.ts).
+ * Each sport ships its rulesets as versioned data (hockey: sports/hockey/ruleset-nhl-2026.ts).
  * Saves store the ruleset they use.
  */
 export interface Ruleset {
