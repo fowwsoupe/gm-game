@@ -68,6 +68,7 @@ import type {
   Importance,
   LeagueStatus,
   OwnerReport,
+  Player,
   PlayerId,
   ProspectEntry,
   PulseRow,
@@ -80,6 +81,13 @@ import type { GmApi } from '@gm/shared/ipc';
 import createSimWorker from './sim.worker?nodeWorker';
 import type { WorkerRequest } from './sim.worker';
 import { contextWithXg } from './simContext';
+
+/** The team, or an error when the id is unknown. */
+function teamIn(state: LeagueState, teamId: TeamId) {
+  const team = state.teams[teamId];
+  if (!team) throw new Error(`No team ${teamId}`);
+  return team;
+}
 
 /** Single-player: the local human. Multiplayer will pass real actors from the network. */
 const LOCAL: Actor = { id: 'local', controls: [] };
@@ -115,13 +123,15 @@ export class LeagueService {
     return undefined;
   })();
 
+  /** The save file's path; the folder is created on the way (first run: there is none yet). */
   private savePath() {
-    return join(app.getPath('userData'), 'saves', 'league-1.sqlite');
+    const dir = join(app.getPath('userData'), 'saves');
+    mkdirSync(dir, { recursive: true });
+    return join(dir, 'league-1.sqlite');
   }
 
   private open(): { save: SaveFile; state: LeagueState } {
     if (!this.save) {
-      mkdirSync(join(app.getPath('userData'), 'saves'), { recursive: true }); // first run: no folder yet
       this.save = openSave(this.savePath());
       if (this.save.getMeta('season')) this.state = this.save.loadState();
     }
@@ -148,7 +158,6 @@ export class LeagueService {
   }
 
   private start(state: LeagueState) {
-    mkdirSync(join(app.getPath('userData'), 'saves'), { recursive: true });
     // Build the new save beside the old one and swap it in, so a crash never leaves no save.
     const fresh = `${this.savePath()}.new`;
     rmSync(fresh, { force: true });
@@ -407,8 +416,7 @@ export class LeagueService {
 
   owner(teamId: TeamId) {
     const { state } = this.open();
-    const team = state.teams[teamId];
-    if (!team) throw new Error(`No team ${teamId}`);
+    const team = teamIn(state, teamId);
     const { ruleset } = defaultContext(state.rulesetId);
     return {
       owner: ownerOf(team),
@@ -429,14 +437,13 @@ export class LeagueService {
 
   departmentReturns(teamId: TeamId) {
     const { state } = this.open();
-    if (!state.teams[teamId]) throw new Error(`No team ${teamId}`);
+    teamIn(state, teamId);
     return departmentReturns(state, defaultContext(state.rulesetId), teamId);
   }
 
   staffCandidates(teamId: TeamId) {
     const { state } = this.open();
-    const team = state.teams[teamId];
-    if (!team) throw new Error(`No team ${teamId}`);
+    const team = teamIn(state, teamId);
     const ctx = defaultContext(state.rulesetId);
     const season = capYearOf(state);
     const legends = this.hallOfFame();
@@ -453,8 +460,7 @@ export class LeagueService {
 
   ownerReport(teamId: TeamId): OwnerReport {
     const { save, state } = this.open();
-    const team = state.teams[teamId];
-    if (!team) throw new Error(`No team ${teamId}`);
+    const team = teamIn(state, teamId);
     const { money, meetings } = save.ownerHistory(teamId);
     // Cash after each settlement, counted back from today's (so card payments land in it too).
     let cash = state.cash[teamId] ?? 0;
@@ -614,13 +620,10 @@ export class LeagueService {
     }));
   }
 
-  signingInterest(
-    playerId: string,
-    teamId: TeamId,
-    offer: Parameters<GmApi['league']['signingInterest']>[0],
-  ) {
+  signingInterest(offer: Parameters<GmApi['league']['signingInterest']>[0]) {
+    const { teamId } = offer;
     const { state } = this.open();
-    const player = state.players[playerId];
+    const player = state.players[offer.playerId];
     if (!player || player.teamId !== (offer.resign ? teamId : null) || !state.teams[teamId]) {
       return null;
     }
@@ -639,21 +642,18 @@ export class LeagueService {
     const names: Record<string, string> = {};
     const ages: Record<string, number> = {};
     const missing: string[] = [];
+    const note = (p: Player) => {
+      names[p.id] = `${p.firstName} ${p.lastName}`;
+      ages[p.id] = state.date.season - p.birthYear;
+    };
     for (const id of ids) {
       const p = state.players[id] ?? state.prospects[id as PlayerId]?.player;
-      if (p) {
-        names[id] = `${p.firstName} ${p.lastName}`;
-        ages[id] = state.date.season - p.birthYear;
-      } else missing.push(id);
+      if (p) note(p);
+      else missing.push(id);
     }
     // Retired since: look them up in the save (rare, so only when needed).
     if (missing.length) {
-      for (const p of save.listPlayers(true)) {
-        if (missing.includes(p.id)) {
-          names[p.id] = `${p.firstName} ${p.lastName}`;
-          ages[p.id] = state.date.season - p.birthYear;
-        }
-      }
+      for (const p of save.listPlayers(true)) if (missing.includes(p.id)) note(p);
     }
     return { events, names, ages, stories: storyOf(events) };
   }
