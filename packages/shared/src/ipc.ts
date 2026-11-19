@@ -179,11 +179,15 @@ export interface GmApi {
     }): Promise<SigningInterest | null>;
   };
   feed: {
-    /** Newest first, with the names and ages of the players they mention (retired ones included). */
+    /**
+     * Newest first, with the names and ages of the players they mention (retired ones included)
+     * and the story each event belongs to, by event id (`storyOf`).
+     */
     list(input: { limit: number; minImportance?: Importance }): Promise<{
       events: LeagueEvent[];
       names: Record<string, string>;
       ages: Record<string, number>;
+      stories: Record<string, string>;
     }>;
   };
   commands: {

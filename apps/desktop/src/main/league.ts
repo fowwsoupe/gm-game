@@ -45,6 +45,7 @@ import {
   departmentReturns,
   capYearOf,
   signingInterest,
+  storyOf,
   tradeWindowOpen,
   playerRecords,
   resignOffers,
@@ -646,7 +647,7 @@ export class LeagueService {
         }
       }
     }
-    return { events, names, ages };
+    return { events, names, ages, stories: storyOf(events) };
   }
 
   dispatch(command: Command): Promise<CommandResult> {
