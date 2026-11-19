@@ -22,6 +22,7 @@ export {
   onTheClock,
   picksLeft,
   draftPlayer,
+  prospectSeason,
 } from './draft';
 export { scoutReport } from './scouting';
 export { signingInterest, signFreeAgent, sheetCompensation } from './signing';

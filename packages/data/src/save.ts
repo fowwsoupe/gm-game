@@ -362,6 +362,9 @@ export class SaveFile {
     const archiveLine = this.db.prepare(
       'INSERT OR REPLACE INTO player_seasons (player_id, season, team_id, stats_json) VALUES (?, ?, ?, ?)',
     );
+    const leagueLine = this.db.prepare(
+      'INSERT OR REPLACE INTO player_league_seasons (player_id, season, league, stats_json) VALUES (?, ?, ?, ?)',
+    );
 
     this.db.transaction(() => {
       for (const e of events) {
@@ -511,7 +514,17 @@ export class SaveFile {
               archiveLine.run(l.playerId, e.season, l.teamId, JSON.stringify(l.stats));
             }
             break;
+          case 'prospects.played':
+            for (const l of e.lines) {
+              leagueLine.run(l.playerId, e.season, l.league, JSON.stringify(l.stats));
+            }
+            break;
           case 'draft.classAnnounced':
+            for (const { player, line } of e.prospects) {
+              if (line)
+                leagueLine.run(player.id, line.season, line.league, JSON.stringify(line.stats));
+            }
+            break;
           case 'draft.boardSet':
           case 'draft.started':
           case 'lines.set':
@@ -726,16 +739,26 @@ export class SaveFile {
     return [...out.values()];
   }
 
-  /** A player's archived regular seasons, oldest first. */
+  /** A player's archived regular seasons, oldest first; a lower-league one before the main league's. */
   careerLines(playerId: string): CareerLine[] {
     const rows = this.db
       .prepare(
-        'SELECT season, team_id, stats_json FROM player_seasons WHERE player_id = ? ORDER BY season',
+        `SELECT * FROM (
+           SELECT season, team_id, NULL AS league, stats_json FROM player_seasons WHERE player_id = ?
+           UNION ALL
+           SELECT season, NULL, league, stats_json FROM player_league_seasons WHERE player_id = ?
+         ) ORDER BY season, league IS NULL`,
       )
-      .all(playerId) as { season: number; team_id: TeamId | null; stats_json: string }[];
+      .all(playerId, playerId) as {
+      season: number;
+      team_id: TeamId | null;
+      league: string | null;
+      stats_json: string;
+    }[];
     return rows.map((r) => ({
       season: r.season,
       teamId: r.team_id,
+      ...(r.league !== null && { league: r.league }),
       stats: JSON.parse(r.stats_json) as Record<string, number>,
     }));
   }

@@ -29,7 +29,7 @@ import {
   type PulseInput,
 } from './league';
 import { giveSeasonAwards } from './awards';
-import { aiHoldouts, announceDraftClass } from './offseason';
+import { aiHoldouts, announceDraftClass, prospectSeason } from './offseason';
 import { aiOffers, aiTrades, deadlineRecap, inDeadlineWeek } from './trades';
 import {
   campReport,
@@ -506,6 +506,7 @@ export function advance(
         }),
       );
       if (toPhase === 'playoffs') {
+        prospectSeason(state, ctx, rng.fork('prospects'), emitter(state, events));
         const rows = leagueStandings(state, ctx.ruleset);
         for (const series of seedPlayoffs(
           rows,

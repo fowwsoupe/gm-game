@@ -39,7 +39,9 @@ after it).
 Minor / junior / European leagues: brief in
 [research/2026-11-minor-leagues.md](research/2026-11-minor-leagues.md); job 1, the prospect pool,
 done (picks wait unsigned with their rights, AI GMs sign them when ready, the rookie award goes to
-a first main-league season); lines, prospects in trades and the farm team are next, in that order.
+a first main-league season); job 2, lines, done (every prospect and the draft class get a season
+in junior or Europe drawn from ratings at the sim's rates over an NHLe factor, with a career row
+per league); prospects in trades and the farm team are next, in that order.
 
 Summer training, camp battles, international tournament: brief in
 [research/2026-11-summer-training.md](research/2026-11-summer-training.md); summer training plans

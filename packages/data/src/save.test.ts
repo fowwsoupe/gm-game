@@ -175,9 +175,9 @@ describe('SaveFile', () => {
       if (!res.ok) throw new Error(res.error.message);
       save.persist(res.events, state);
     };
-    step({ kind: 'sim.advance', days: 300 });
     const mine = Object.values(state.teams).find((t) => t.userControlled)!.id;
-    // A prospect of yours whose rights end this summer: he walks when free agency opens.
+    // A prospect of yours whose rights end this summer: he plays a junior season, then walks
+    // when free agency opens.
     const player = ctx.sport.generateProspect(new Rng(1), {
       id: 'gone',
       season: state.date.season + 1,
@@ -188,11 +188,17 @@ describe('SaveFile', () => {
       round: 2,
       rightsEnd: state.date.season,
     };
+    step({ kind: 'sim.advance', days: 300 });
+    const junior = state.prospects['gone' as PlayerId]!.line!;
+    expect(junior).toMatchObject({ season: state.date.season, league: 'junior' });
     step({ kind: 'offseason.openFreeAgency' });
     expect(state.players['gone' as PlayerId]?.teamId).toBeNull();
+    expect(save.careerLines('gone')).toEqual([{ ...junior, teamId: null }]);
     const pick = Object.values(state.prospects).find((x) => x.player.teamId === mine)!;
     step({ kind: 'prospect.sign', teamId: mine, playerId: pick.player.id });
     expect(state.players[pick.player.id]?.debut).toBeDefined();
+    // His draft-year line is the first row of his career.
+    expect(save.careerLines(pick.player.id)).toEqual([{ ...pick.line!, teamId: null }]);
     expect(save.loadState()).toEqual(state);
     save.close();
   });

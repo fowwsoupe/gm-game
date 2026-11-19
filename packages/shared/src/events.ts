@@ -10,6 +10,7 @@ import type {
   Department,
   GmProfile,
   InternationalTournament,
+  LowerLeagueLine,
   StaffProfile,
   OwnerCard,
   OwnerStanding,
@@ -94,7 +95,8 @@ export type LeagueEvent =
    * A new player enters the league through the draft (the event carries the whole player).
    * `round` and `pick` are 0 for an undrafted free agent signed to fill a roster. `via`: the
    * team the pick belonged to, when another team made it (traded or protected). With
-   * `prospect`, a pick: he goes to his team's prospect pool unsigned (`Prospect`).
+   * `prospect`, a pick: he goes to his team's prospect pool unsigned (`Prospect`), with his
+   * draft-year line.
    */
   | (EventBase & {
       kind: 'player.drafted';
@@ -102,7 +104,7 @@ export type LeagueEvent =
       round: number;
       pick: number;
       via?: TeamId;
-      prospect?: { league: string; rightsEnd: number };
+      prospect?: { league: string; rightsEnd: number; line?: LowerLeagueLine };
     })
   /** A prospect signs his entry deal: he leaves the pool and joins his team. */
   | (EventBase & {
@@ -204,6 +206,12 @@ export type LeagueEvent =
       kind: 'stats.archived';
       season: number;
       lines: { playerId: PlayerId; teamId: TeamId | null; stats: Record<string, number> }[];
+    })
+  /** End of a regular season: every prospect's line in the lower league he played in. */
+  | (EventBase & {
+      kind: 'prospects.played';
+      season: number;
+      lines: { playerId: PlayerId; league: string; stats: Record<string, number> }[];
     })
   /** A team's depth order changed (lines). */
   | (EventBase & { kind: 'lines.set'; teamId: TeamId; order: PlayerId[] })

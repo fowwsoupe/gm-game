@@ -3,7 +3,7 @@ import type { PlayerId } from '@gm/shared';
 import { useDispatch, useDraftClass, useTeams, useTradeOffers } from '@/lib/queries';
 import { useT, type MessageKey } from '@/i18n';
 import { Button, Card, Cutscene, Face, RangeBar, Td, Th } from '@/ui';
-import { fullName, pickParams, teamName } from '@/lib/format';
+import { fullName, leagueLineText, pickParams, teamName } from '@/lib/format';
 import { useUi } from '@/stores/ui';
 
 /**
@@ -143,6 +143,7 @@ export function Draft() {
               <Th>{t('roster.pos')}</Th>
               <Th>{t('roster.age')}</Th>
               <Th className="w-1/4">{t('draft.range')}</Th>
+              <Th left>{t('prospects.lastLine')}</Th>
               <Th left>{t('draft.report')}</Th>
               <Th />
             </tr>
@@ -159,6 +160,9 @@ export function Draft() {
                 <Td>{p.age}</Td>
                 <Td>
                   <RangeBar low={p.low} high={p.high} />
+                </Td>
+                <Td left className="text-xs text-muted">
+                  {p.line && leagueLineText(p.line, (k) => t(k as MessageKey))}
                 </Td>
                 <Td left className="text-xs text-muted">
                   {t('draft.reportLine', {

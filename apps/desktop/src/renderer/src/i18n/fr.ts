@@ -266,6 +266,7 @@ export const fr: Record<MessageKey, string> = {
   'prospects.league': 'Ligue',
   'prospects.rightsEnd': 'Droits jusqu’en',
   'prospects.sign': 'Signer',
+  'prospects.lastLine': 'Dernière saison',
   'league.junior': 'Junior',
   'league.europe': 'Europe',
   'rating.skating': 'Patinage',
@@ -392,7 +393,7 @@ export const fr: Record<MessageKey, string> = {
   'draft.empty': 'La cuvée du repêchage est annoncée à la fin des séries.',
   'draft.classTitle': 'Cuvée du repêchage',
   'draft.scoutNote':
-    'Les fourchettes sont l’avis de vos dépisteurs sur le potentiel de chaque espoir. Ils peuvent se tromper, pour toutes les équipes.',
+    'Les fourchettes sont l’avis de vos dépisteurs sur le potentiel de chaque espoir. Ils peuvent se tromper, pour toutes les équipes. La dernière saison montre ce qu’il vaut aujourd’hui, pas ce qu’il peut devenir.',
   'draft.range': 'Potentiel estimé',
   'draft.onBoard': 'Sur votre liste',
   'draft.add': 'Ajouter',

@@ -262,6 +262,7 @@ export const en = {
   'prospects.league': 'League',
   'prospects.rightsEnd': 'Rights through',
   'prospects.sign': 'Sign',
+  'prospects.lastLine': 'Last season',
   'league.junior': 'Junior',
   'league.europe': 'Europe',
   'rating.skating': 'Skating',
@@ -388,7 +389,7 @@ export const en = {
   'draft.empty': 'The draft class is announced when the playoffs end.',
   'draft.classTitle': 'Draft class',
   'draft.scoutNote':
-    "Ranges are your scouts' read of each prospect's potential. They can be wrong, for every team.",
+    "Ranges are your scouts' read of each prospect's potential. They can be wrong, for every team. Last season shows how good he is now, not what he may become.",
   'draft.range': 'Scouted potential',
   'draft.onBoard': 'On your list',
   'draft.add': 'Add',
