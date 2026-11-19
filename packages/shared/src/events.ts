@@ -283,6 +283,14 @@ export type LeagueEvent =
   /** An offer is gone: accepted (a `trade.completed` follows), declined or expired. */
   | (EventBase & { kind: 'trade.offerClosed'; offerId: string; accepted: boolean })
   | (EventBase & { kind: 'team.controlChanged'; teamId: TeamId; userControlled: boolean })
+  /** A team's identity changed (the identity editor). */
+  | (EventBase & {
+      kind: 'team.renamed';
+      teamId: TeamId;
+      city: string;
+      name: string;
+      abbreviation: string;
+    })
   /** An AI team has a new GM (the old one was fired or moved on). */
   | (EventBase & { kind: 'team.gmChanged'; teamId: TeamId; gm: GmProfile; fired: boolean })
   /** A department head left (`poached`: hired away after a good season) and `head` took over. */

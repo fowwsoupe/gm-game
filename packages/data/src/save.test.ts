@@ -16,6 +16,23 @@ describe('SaveFile', () => {
     save.close();
   });
 
+  it('persists a renamed team', () => {
+    const save = openSave(':memory:');
+    const state = createLeague(4, ctx);
+    save.saveNewLeague(state);
+    const teamId = Object.keys(state.teams)[0] as TeamId;
+    const res = handleCommand(
+      state,
+      { kind: 'team.rename', teamId, city: 'Québec', name: 'Fleuves', abbreviation: 'QBF' },
+      local,
+      ctx,
+    );
+    if (!res.ok) throw new Error(res.error.message);
+    save.persist(res.events, state);
+    expect(save.loadState()).toEqual(state);
+    save.close();
+  });
+
   it('persists events so a reopened save matches the live state', () => {
     const save = openSave(':memory:');
     const state = createLeague(8, ctx);

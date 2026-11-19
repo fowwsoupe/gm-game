@@ -23,6 +23,8 @@ export type Command =
   /** `stopOn`: 'major' stops on every category, a list on just those (`STOP_CATEGORIES`). */
   | { kind: 'sim.advance'; days: number; stopOn?: 'never' | 'major' | readonly StopCategory[] }
   | { kind: 'team.setUserControlled'; teamId: TeamId; userControlled: boolean }
+  /** The identity editor: give a team a new city, name and abbreviation (it keeps its id, players and history). */
+  | { kind: 'team.rename'; teamId: TeamId; city: string; name: string; abbreviation: string }
   /** After the champion is crowned: age, retire, draft, re-sign and sign, then start next season. */
   | { kind: 'season.rollover' }
   /** Buy out a player's contract (offseason only, once the champion is crowned). */
