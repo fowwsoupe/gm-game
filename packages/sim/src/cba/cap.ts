@@ -8,7 +8,7 @@ import type {
   TeamId,
 } from '@gm/shared';
 import { capYearOf, pct, type Dollars, type LeagueState } from '../core';
-import { contractIn } from './contracts';
+import { contractIn, countedHit } from './contracts';
 import type { Ruleset } from './ruleset';
 
 /**
@@ -65,10 +65,10 @@ export function capSheet(
     const onBooks = signed
       .flatMap((p) => {
         const c = contractIn(p, season);
-        return c ? [{ id: p.id, c }] : [];
+        return c ? [{ id: p.id, c, hit: countedHit(rules, p, c.capHit) }] : [];
       })
-      .sort((a, b) => b.c.capHit - a.c.capHit || a.id.localeCompare(b.id));
-    const committed = onBooks.reduce((sum, x) => sum + x.c.capHit, 0);
+      .sort((a, b) => b.hit - a.hit || a.id.localeCompare(b.id));
+    const committed = onBooks.reduce((sum, x) => sum + x.hit, 0);
     const deadCap = input.charges
       .filter((c) => c.teamId === input.teamId && c.season === season)
       .reduce((sum, c) => sum + c.amount, 0);
@@ -79,7 +79,7 @@ export function capSheet(
       lowerLimit: rules.cap.lowerLimit,
       contracts: onBooks.map((x) => ({
         playerId: x.id,
-        capHit: x.c.capHit,
+        capHit: x.hit,
         expiresAfterSeason: x.c.expiresAfterSeason,
       })),
       committed,
@@ -155,8 +155,9 @@ export function retentionIssues(
   return issues;
 }
 
-/** What a team's cap counts in the cap year: contracts that run through it, plus dead cap. */
+/** What a team's cap counts in the cap year: contracts that run through it (`countedHit`), plus dead cap. */
 export function teamCapTotal(
+  rules: Ruleset,
   state: LeagueState,
   teamId: TeamId,
   players: readonly Player[] = Object.values(state.players),
@@ -164,7 +165,7 @@ export function teamCapTotal(
   const season = capYearOf(state);
   const committed = players
     .filter((p) => p.teamId === teamId)
-    .reduce((sum, p) => sum + (contractIn(p, season)?.capHit ?? 0), 0);
+    .reduce((sum, p) => sum + countedHit(rules, p, contractIn(p, season)?.capHit ?? 0), 0);
   return committed + deadCap(state, teamId, season);
 }
 

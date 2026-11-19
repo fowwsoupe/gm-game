@@ -20,15 +20,16 @@ export interface RatingsToStatsTable {
 /**
  * Hockey's lower leagues (docs/research/2026-11-minor-leagues.md): `nhle`, the share of a scoring
  * rate that carries over to the main league (NHL equivalency); `games` in a season; `savePct`,
- * what a goalie adds there to his main-league save %. ponytail: the 2014 WHL and KHL factors,
- * general-knowledge game counts and game-number save % offsets; lab targets until an updated
- * NHLe table is in a report.
+ * what a goalie adds there to his main-league save %. ponytail: the 2014 WHL and KHL factors, the
+ * minors' unsourced 0.45, general-knowledge game counts and game-number save % offsets; lab
+ * targets until an updated NHLe table is in a report.
  */
 export const HOCKEY_LEAGUES: Readonly<
   Record<string, { nhle: number; games: number; savePct: number }>
 > = {
   junior: { nhle: 0.3, games: 68, savePct: 0.01 },
   europe: { nhle: 0.82, games: 52, savePct: 0.012 },
+  minors: { nhle: 0.45, games: 72, savePct: 0.005 },
 };
 
 /** Share of his league's games a prospect plays (goalies share the net), and a season's luck. */

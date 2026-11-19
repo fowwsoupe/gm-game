@@ -147,13 +147,17 @@ export function reSignPlayers(
   }
 }
 
-/** An AI or fill-in signing: he signs if his team has the room (`capRoom`). Whether he signed. */
+/**
+ * An AI or fill-in signing: he signs if his team has the room (`capRoom`), with `farm` sent down
+ * from the start. Whether he signed.
+ */
 function signIfRoom(
   state: LeagueState,
   ctx: SimContext,
   emit: Emit,
   pr: Prospect,
   season: number,
+  farm = false,
 ): boolean {
   const teamId = pr.player.teamId!;
   const deal = prospectDeal(ctx.ruleset, pr, season);
@@ -168,6 +172,9 @@ function signIfRoom(
     playerId: pr.player.id,
     teamId,
     contract: deal,
+    ...(farm && {
+      league: ctx.sport.farmLeague(pr.league, season - pr.player.birthYear, ctx.ruleset),
+    }),
   });
   return true;
 }
@@ -176,9 +183,10 @@ function signIfRoom(
  * Step 5, first: an AI GM signs prospects on his read, before he re-signs anyone (his own kids
  * take the spots first, as draft picks did when they joined the roster on draft day): one who
  * would make the roster now (read overall at least the bar he re-signs his own players at), or
- * one whose rights end this summer and whose read potential (his scouts') clears it. Best first,
- * while he has a roster spot and the cap room. The rest wait, or walk when free agency opens
- * (`releaseProspects`).
+ * one whose rights end this summer and whose read potential (his scouts') clears it; that one,
+ * not ready yet, starts on the farm. Best first, while he has a roster spot (the summer counts
+ * the farm too: at camp everyone competes for the roster) and the cap room. The rest wait, or
+ * walk when free agency opens (`releaseProspects`).
  */
 export function signProspects(state: LeagueState, ctx: SimContext, emit: Emit, season: number) {
   const bar = typicalRating(state) - RESIGN_SLACK;
@@ -197,7 +205,7 @@ export function signProspects(state: LeagueState, ctx: SimContext, emit: Emit, s
       .sort((a, b) => seen(b.player) - seen(a.player) || a.player.id.localeCompare(b.player.id));
     for (const pr of wanted) {
       if (rosterOf(state, team.id).length >= ctx.ruleset.roster.maxActive) break;
-      signIfRoom(state, ctx, emit, pr, season);
+      signIfRoom(state, ctx, emit, pr, season, seen(pr.player) < bar);
     }
   }
 }
@@ -284,8 +292,8 @@ export function fillRosters(
 /**
  * Step 7: a team below the cap floor signs the best free agent it can, paying at least what
  * it is short of the floor (real teams overpay to get there). Usually one signing does it.
- * Worst teams go first. This can take a roster past the maximum: until the farm team exists,
- * every signed player counts as rostered.
+ * Worst teams go first. This can take a roster past the maximum: the extra players go to the
+ * farm on opening night (`aiFarmMoves`).
  */
 export function meetCapFloor(
   state: LeagueState,
@@ -301,7 +309,7 @@ export function meetCapFloor(
     for (;;) {
       const roster = rosterOf(state, teamId);
       const dead = deadCap(state, teamId, season);
-      const short = ruleset.cap.lowerLimit - payroll(roster) - dead;
+      const short = ruleset.cap.lowerLimit - payroll(roster, ruleset) - dead;
       if (short <= 0) break;
       const signed = freeAgents(state)
         .sort(byOverall)

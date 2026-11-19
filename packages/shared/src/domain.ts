@@ -99,7 +99,7 @@ export interface CapSeason {
   season: number;
   upperLimit: number;
   lowerLimit: number;
-  /** Players under contract that season, biggest cap hit first. */
+  /** Players under contract that season, biggest cap hit first (a player sent down: the part that counts). */
   contracts: { playerId: PlayerId; capHit: number; expiresAfterSeason: number }[];
   /** Sum of `contracts`. */
   committed: number;
@@ -149,6 +149,8 @@ export interface PlayerProfile extends RosterPlayer {
   injuryHistory?: InjuryHistory;
   /** Refusing to report until he is paid. */
   holdout?: true;
+  /** Sent down to this lower league (`Player.league`). */
+  league?: string;
   percentiles: { key: string; value: number }[];
   /** Sport-defined build and role tags (hockey: 'sniper', 'shutdownD'...; tags 'speed', 'shot'...). */
   build: string;
@@ -225,6 +227,14 @@ export interface Player {
    * season. Absent: in the league from before the pool, so the rookie award goes by age.
    */
   debut?: number;
+  /**
+   * Sent down by his team to a lower league (hockey: 'minors', its farm team, or back to 'junior'):
+   * still its player, off its roster and lineup, his cap hit counting only above `cap.buriedRelief`.
+   * Absent: on the main-league roster (or a free agent).
+   */
+  league?: string;
+  /** The lower league he was drafted from (`Prospect.league`), kept when he signs. Absent: undrafted, or from before the pool. */
+  origin?: string;
   /** Injured: first day (of the current season) he can play again. Absent = healthy. Heals over the summer. */
   injuredUntil?: number;
   /** Career injuries and days missed. Absent = never hurt. */
@@ -837,6 +847,7 @@ export interface TodoItem {
     | 'freeAgency'
     | 'injured'
     | 'rosterShort'
+    | 'rosterOver'
     | 'overCap'
     | 'deadline'
     | 'tradeOffers'

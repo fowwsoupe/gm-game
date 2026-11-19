@@ -52,7 +52,7 @@ export function capRoom(
   dead: number,
 ): number {
   const slots = openSlots(rules, [...roster, player]);
-  return rules.cap.upperLimit - payroll(roster) - dead - slots * rules.cap.minSalary;
+  return rules.cap.upperLimit - payroll(roster, rules) - dead - slots * rules.cap.minSalary;
 }
 
 /** Age in the season being prepared (`season` = the new season). */

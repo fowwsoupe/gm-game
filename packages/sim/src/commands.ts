@@ -16,11 +16,20 @@ import {
   applyEvent,
   emitter,
   makeEvent,
+  onRoster,
   playerName,
   teamName,
   type LeagueState,
 } from './core';
-import { buyoutCharges, capYearIssues, capYearOf, prospectDeal, teamCapTotal } from './cba';
+import {
+  buyoutCharges,
+  capYearIssues,
+  capYearOf,
+  contractIn,
+  countedHit,
+  prospectDeal,
+  teamCapTotal,
+} from './cba';
 import { expansionDraft, pickLabel, thinnestDivision } from './league';
 import {
   departmentsOf,
@@ -526,7 +535,7 @@ export function handleCommand(
       if (!resignWindowOpen(state, ctx)) return invalid('signings are closed in the playoffs');
       const deal = prospectDeal(ctx.ruleset, pr, capYearOf(state));
       if (!deal) return invalid('no entry deal at his age');
-      const total = teamCapTotal(state, team.id) + deal.capHit;
+      const total = teamCapTotal(ctx.ruleset, state, team.id) + deal.capHit;
       if (capYearIssues(ctx.ruleset, state, total).length) return invalid('no cap room');
       return applied(
         state,
@@ -535,6 +544,35 @@ export function handleCommand(
           playerId: pr.player.id,
           teamId: team.id,
           contract: deal,
+        }),
+      );
+    }
+
+    case 'player.assign': {
+      const team = state.teams[command.teamId];
+      const player = state.players[command.playerId];
+      if (!team || !player) return invalid('unknown player or team');
+      if (!controls(actor, team)) return notYours;
+      if (player.teamId !== team.id || !player.contract) return invalid('only your own players');
+      if (command.down !== onRoster(player)) {
+        return invalid(command.down ? 'already sent down' : 'already on the roster');
+      }
+      const season = capYearOf(state);
+      if (!command.down) {
+        const hit = contractIn(player, season)?.capHit ?? 0;
+        const total = teamCapTotal(ctx.ruleset, state, team.id) + hit;
+        if (capYearIssues(ctx.ruleset, state, total - countedHit(ctx.ruleset, player, hit)).length)
+          return invalid('no cap room');
+      }
+      return applied(
+        state,
+        makeEvent(state, 'minor', [team.id], {
+          kind: 'player.assigned',
+          playerId: player.id,
+          teamId: team.id,
+          ...(command.down && {
+            league: ctx.sport.farmLeague(player.origin, season - player.birthYear, ctx.ruleset),
+          }),
         }),
       );
     }
@@ -798,7 +836,7 @@ export function handleCommand(
       }
       // He signs on the sheet's terms, so only cap room can stop a match (no interest check).
       const salary = sheet.salary;
-      const total = teamCapTotal(state, team.id) + salary;
+      const total = teamCapTotal(ctx.ruleset, state, team.id) + salary;
       if (capYearIssues(ctx.ruleset, state, total).length > 0) {
         return invalid('no cap room');
       }

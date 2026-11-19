@@ -646,7 +646,7 @@ export function seasonReview(state: LeagueState, ctx: SimContext, emit: Emit, rn
     let delta = 0;
     for (const o of objectives)
       delta += o.met ? OBJECTIVE_MET : -drop(OBJECTIVE_MISSED, owner.patience);
-    if (teamCapTotal(state, teamId) > prev.payrollBudget)
+    if (teamCapTotal(ctx.ruleset, state, teamId) > prev.payrollBudget)
       delta -= drop(OVER_BUDGET, owner.patience);
     if (profit < 0) delta -= drop(LOST_MONEY, owner.patience);
     delta += FAN_MOOD * (fansOf(state, teamId).interest - 50);

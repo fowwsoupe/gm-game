@@ -146,6 +146,10 @@ send him back down when the injured player returns. Farm players get minors line
    charged), sends a 19-year-old from junior back to junior, and has an AI team call up a centre
    while its centre is hurt and send him down when he is back; a new lab check, AI teams over 23
    at season start, at 0; lab before and after on seeds 1, 101 and 201.
+   _Done._ The AI's summer counts (re-signing, bids, fill-ins) still include its farm players:
+   on opening night everyone signed competes for the roster, so they count as candidates until
+   then, and the 23-man limit holds from opening night. An injured player does not count against
+   the limit, so his call-up fits; a call-up needs cap room before the cuts that follow it.
 
 Not in scope: waivers (a player sent down is never claimed; a claim order, an AI claim rule and
 the 24-hour window are a job of their own), the entry-level slide, college and its rights rule,

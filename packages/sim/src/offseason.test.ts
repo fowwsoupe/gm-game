@@ -48,7 +48,7 @@ function checkLeagueIsLegal(state: LeagueState) {
   expect(playoffCapBreaches(Object.values(state.players), ruleset)).toEqual([]);
   for (const id of Object.keys(state.teams) as TeamId[]) {
     const roster = Object.values(state.players).filter((p) => p.teamId === id);
-    const total = teamCapTotal(state, id); // dead cap counts
+    const total = teamCapTotal(ctx.ruleset, state, id); // dead cap counts
     expect(total).toBeLessThanOrEqual(ruleset.cap.upperLimit);
     expect(total).toBeGreaterThanOrEqual(ruleset.cap.lowerLimit);
     expect(roster.length).toBeGreaterThanOrEqual(ruleset.roster.minActive);

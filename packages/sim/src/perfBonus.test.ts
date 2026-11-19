@@ -22,7 +22,7 @@ describe('performance bonuses', () => {
     const roster = Object.values(state.players).filter((p) => p.teamId === team);
     for (const p of roster) p.contract = { ...p.contract!, perfBonus: 850_000 };
     // Right up against the cap, so any bonus goes over.
-    const room = ctx.ruleset.cap.upperLimit - teamCapTotal(state, team);
+    const room = ctx.ruleset.cap.upperLimit - teamCapTotal(ctx.ruleset, state, team);
     state.capCharges.push({
       teamId: team,
       playerId: roster[0]!.id,

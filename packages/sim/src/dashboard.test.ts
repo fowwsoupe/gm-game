@@ -19,7 +19,8 @@ describe('home dashboard', () => {
     const state = createLeague(51, ctx);
     const mine = Object.values(state.teams).find((t) => t.userControlled)!.id;
     const start = dashboard(state, ctx, mine);
-    expect(start.todo).toEqual([]);
+    // Camp: 25 signed, two to send down by opening night.
+    expect(start.todo).toEqual([{ code: 'rosterOver', params: { count: 2 }, screen: 'roster' }]);
     expect(start.nextGame).not.toBeNull();
 
     const roster = Object.values(state.players).filter((p) => p.teamId === mine);

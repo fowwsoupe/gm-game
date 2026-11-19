@@ -483,7 +483,7 @@ describe('negotiation', () => {
 
 describe('the pitch', () => {
   it('a promised role scores 100; one promise a position; not first by day PROMISE_DAYS, a dispute', () => {
-    const { state, mine } = finishedSeason(22);
+    const { state, mine } = finishedSeason(23);
     run(state, { kind: 'offseason.openFreeAgency' });
     state.teamStatus[mine] = 'contender';
     const pitch = (p: Player): Command => ({

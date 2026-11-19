@@ -57,6 +57,12 @@ export interface SportModule<Strength = unknown> {
   prospectLeague(origin: string, age: number, rules: Ruleset): string;
 
   /**
+   * Where a signed player his team sends down plays, by the league he was drafted from
+   * (`Player.origin`) and his age (hockey: back to junior under the junior age, else the minors).
+   */
+  farmLeague(origin: string | undefined, age: number, rules: Ruleset): string;
+
+  /**
    * One season's stat line in a lower league (a `prospectLeague`), drawn from his ratings: no games
    * are played there. Keys as in `playerLines` (hockey: gp, goals, assists, points; gp, save %).
    */

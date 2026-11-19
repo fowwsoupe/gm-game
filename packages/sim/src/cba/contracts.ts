@@ -7,9 +7,19 @@ import type { Ruleset } from './ruleset';
  * extensions, trades, the editor) validates through here, so rules live in one place.
  */
 
-/** Total cap hit of a group of players (a roster, or the players a playoff lineup would dress). */
-export const payroll = (players: readonly Player[]): Dollars =>
-  players.reduce((sum, p) => sum + (p.contract?.capHit ?? 0), 0);
+/** The part of a cap hit his team's cap counts: all of it, or sent down only what is over `cap.buriedRelief`. */
+export const countedHit = (rules: Ruleset, p: Player, capHit: Dollars): Dollars =>
+  p.league ? Math.max(0, capHit - rules.cap.buriedRelief) : capHit;
+
+/**
+ * Total cap hit of a group of players (a roster, or the players a playoff lineup would dress);
+ * with `rules`, as the cap counts them (`countedHit`).
+ */
+export const payroll = (players: readonly Player[], rules?: Ruleset): Dollars =>
+  players.reduce((sum, p) => {
+    const hit = p.contract?.capHit ?? 0;
+    return sum + (rules ? countedHit(rules, p, hit) : hit);
+  }, 0);
 
 /** The deal that pays `player` in `season`: his contract, else an extension that starts later. */
 export function contractIn(player: Player, season: number): Contract | undefined {

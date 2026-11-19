@@ -311,7 +311,7 @@ export function signFreeAgent(
     }),
   });
   if (issues.length) return { error: `illegal contract: ${issues[0]!.code}` };
-  const total = teamCapTotal(state, teamId) + salary - capFreed;
+  const total = teamCapTotal(ruleset, state, teamId) + salary - capFreed;
   if (capYearIssues(ruleset, state, total).length) return { error: 'no cap room' };
   if (!sheetCompensation(state, ruleset, player, teamId, salary).owned) {
     return { error: 'not enough draft picks for an offer sheet' };

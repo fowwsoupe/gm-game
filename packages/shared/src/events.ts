@@ -107,13 +107,19 @@ export type LeagueEvent =
       via?: TeamId;
       prospect?: { league: string; rightsEnd: number; line?: LowerLeagueLine };
     })
-  /** A prospect signs his entry deal: he leaves the pool and joins his team. */
+  /**
+   * A prospect signs his entry deal: he leaves the pool and joins his team. `league`: signed
+   * before he is ready, he starts there (his team's farm team, or back in junior).
+   */
   | (EventBase & {
       kind: 'prospect.signed';
       playerId: PlayerId;
       teamId: TeamId;
       contract: Contract;
+      league?: string;
     })
+  /** His team sent him down to `league` (`Player.league`), or called him up to the roster (no `league`). */
+  | (EventBase & { kind: 'player.assigned'; playerId: PlayerId; teamId: TeamId; league?: string })
   /** His team's rights ran out unsigned: he leaves the pool and is a free agent. */
   | (EventBase & { kind: 'prospect.released'; playerId: PlayerId })
   /**
@@ -210,7 +216,7 @@ export type LeagueEvent =
       season: number;
       lines: { playerId: PlayerId; teamId: TeamId | null; stats: Record<string, number> }[];
     })
-  /** End of a regular season: every prospect's line in the lower league he played in. */
+  /** End of a regular season: every prospect's and sent-down player's line in the lower league he played in. */
   | (EventBase & {
       kind: 'prospects.played';
       season: number;

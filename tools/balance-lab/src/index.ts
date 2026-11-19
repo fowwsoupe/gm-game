@@ -241,6 +241,9 @@ const goalieSvPairs: [number, number][] = [];
 /** From the fourth season on, at its start: rostered players 20 or under a league, prospects a team. */
 const youngRostered: number[] = [];
 const prospectsATeam: number[] = [];
+/** After opening night: AI teams with more healthy players on the roster than the limit, and players sent down a team. */
+let teamsOverRoster = 0;
+const sentDownATeam: number[] = [];
 /** Each season's junior lines (the pool and the new class): the best and the median points a game. */
 const juniorPpg = { best: [] as number[], median: [] as number[] };
 /** Per team-season money ($): revenue, gate (regular and playoff), operating profit. */
@@ -328,13 +331,30 @@ for (let l = 0; l < leagues; l++) {
       );
       (longRun ? spreadLongRun : spreadYear0).push(sd(nets));
     }
-    const played = handleCommand(
+    // Camp and opening night first (one day loop either way: same games, same numbers).
+    const opening = handleCommand(
+      state,
+      { kind: 'sim.advance', days: 1 - state.date.day },
+      actor,
+      ctx,
+    );
+    if (!opening.ok) throw new Error(opening.error.message);
+    const signed = Object.values(state.players).filter((p) => p.teamId !== null);
+    for (const id of Object.keys(state.teams)) {
+      const up = signed.filter(
+        (p) => p.teamId === id && !p.league && (p.injuredUntil ?? -Infinity) <= state.date.day,
+      );
+      if (up.length > ctx.ruleset.roster.maxActive) teamsOverRoster++;
+    }
+    sentDownATeam.push(signed.filter((p) => p.league).length / Object.keys(state.teams).length);
+    const rest = handleCommand(
       state,
       { kind: 'sim.advance', days: cal.regularSeasonDays + cal.playoffDays - state.date.day },
       actor,
       ctx,
     );
-    if (!played.ok) throw new Error(played.error.message);
+    if (!rest.ok) throw new Error(rest.error.message);
+    const played = { events: [...opening.events, ...rest.events] };
     const ppg = [...Object.values(state.prospects), ...state.draftClass]
       .flatMap(({ line }) =>
         line?.season === state.date.season &&
@@ -465,7 +485,7 @@ for (let l = 0; l < leagues; l++) {
     maxDrift = Math.max(maxDrift, Math.abs(meanOverall(state) - startRating));
     for (const id of Object.keys(state.teams) as TeamId[]) {
       const roster = rosterOf(state, id);
-      const total = teamCapTotal(state, id); // dead cap counts
+      const total = teamCapTotal(ctx.ruleset, state, id); // dead cap counts
       payrollShare += total / ctx.ruleset.cap.upperLimit;
       payrollSamples++;
       if (total > ctx.ruleset.cap.upperLimit) teamsOverCap++;
@@ -671,6 +691,14 @@ const checks: Check[] = [
     max: 150,
   },
   { name: 'Prospects a team (report)', value: mean(prospectsATeam), min: 0, max: 20 },
+  // The farm team (the same brief): the 23-man limit holds from opening night.
+  { name: 'AI teams over the roster limit, opening night', value: teamsOverRoster, min: 0, max: 0 },
+  {
+    name: 'Players sent down a team, opening night (report)',
+    value: mean(sentDownATeam),
+    min: 0,
+    max: 20,
+  },
   // Lower-league lines (the same brief): report only until the NHLe factors are tuned.
   { name: 'Junior points a game, best (report)', value: mean(juniorPpg.best), min: 0, max: 5 },
   { name: 'Junior points a game, median (report)', value: mean(juniorPpg.median), min: 0, max: 5 },

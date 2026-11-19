@@ -219,6 +219,10 @@ export const hockeyProspectOrigin = (rng: Rng) => (rng.chance(JUNIOR_SHARE) ? 'j
 export const hockeyProspectLeague = (origin: string, age: number, rules: Ruleset) =>
   origin === 'junior' && age > rules.draft.juniorMaxAge ? 'europe' : origin;
 
+/** A signed junior under the junior age cannot play in the minors: sent down, he goes back to junior. */
+export const hockeyFarmLeague = (origin: string | undefined, age: number, rules: Ruleset) =>
+  origin === 'junior' && age < rules.draft.juniorMaxAge ? 'junior' : 'minors';
+
 /**
  * A new, teamless 18-19 year old: the draft class and undrafted free agents.
  * Rated well below his potential; development closes the gap by his mid-twenties.
