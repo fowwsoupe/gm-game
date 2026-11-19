@@ -5,10 +5,12 @@ import {
   computeStandings,
   createLeague,
   defaultContext,
+  draftPicks,
   elcYears,
   handleCommand,
   hockeySeasonStats,
   lotteryOrder,
+  nextDraftSeason,
   playoffCapBreaches,
   Rng,
   playerRecords,
@@ -236,10 +238,16 @@ describe('offseason steps', () => {
   });
 
   it('the lottery is drawn at the crown, a lottery team drafts first, draftees get entry-level deals', () => {
-    const state = seasonOver(9);
+    const state = seasonOver(12);
     // The lottery is drawn when the champion is crowned and the draft follows it.
     expect(state.draftOrder).toHaveLength(Object.keys(state.teams).length);
     const order = [...state.draftOrder];
+    // Who makes each first-round pick: its owner, if it was traded.
+    const owner = new Map(
+      draftPicks(state, ruleset)
+        .filter((p) => p.season === nextDraftSeason(state))
+        .map((p) => [p.originalTeamId, p.ownerTeamId]),
+    );
     const standings = computeStandings(
       Object.keys(state.teams) as TeamId[],
       Object.values(state.results),
@@ -254,7 +262,7 @@ describe('offseason steps', () => {
       (e) => e.kind === 'player.drafted' && e.round > 0,
     );
     const firstRound = picks.filter((e) => e.kind === 'player.drafted' && e.round === 1);
-    expect(firstRound.map((e) => e.teamIds[0])).toEqual(order);
+    expect(firstRound.map((e) => e.teamIds[0])).toEqual(order.map((t) => owner.get(t)));
     expect(state.draftOrder).toEqual([]);
     expect(picks).toHaveLength(Object.keys(state.teams).length * ruleset.draft.rounds);
     const first = picks[0]!;

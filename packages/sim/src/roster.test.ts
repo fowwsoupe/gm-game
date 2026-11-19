@@ -148,6 +148,13 @@ describe('stats to ratings', () => {
       value: Math.round(fit.mean),
       sd: Math.round(10 * fit.priorSd) / 10,
     });
+    const goalie = ratingsFromStats(
+      STATS_TO_RATINGS,
+      'G',
+      { gp: 0, shotsAgainst: 0, saves: 0 },
+      games,
+    );
+    expect(goalie.reflexes!.value).toBe(Math.round(STATS_TO_RATINGS.groups.G.reflexes!.mean));
   });
 
   it('recovers ratings from a season it was not fitted on, with honest uncertainty', () => {

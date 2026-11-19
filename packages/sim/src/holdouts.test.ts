@@ -107,25 +107,27 @@ describe('holdouts', () => {
           }
           run(state, { kind: 'sim.advance', days: 1 });
           const h = state.holdouts.find((x) => x.teamId === ai.id);
-          if (h) return { state, playerId: h.playerId };
+          if (!h) continue;
+          if ('squeezed' in c) {
+            const { upperLimit, minSalary } = ctx.ruleset.cap;
+            // Dead cap next season: everything but the minimum for a full roster, less one dollar.
+            const amount = upperLimit - ctx.ruleset.roster.minActive * minSalary - 1;
+            state.capCharges.push({
+              teamId: ai.id,
+              playerId: h.playerId, // any id: the charge only takes cap room
+              kind: 'buyout',
+              season: state.date.season + 1,
+              amount,
+            });
+          }
+          const week = run(state, { kind: 'sim.advance', days: 6 }); // to the first weekly check
+          // One who gives up and reports that week leaves the block: try the next league.
+          if (week.some((e) => e.kind === 'player.holdoutEnded' && !e.talked)) continue;
+          return { state, playerId: h.playerId, teamId: ai.id };
         }
         throw new Error('no AI holdout in 40 seeds');
       })();
-      const { state, playerId } = found;
-      const teamId = state.players[playerId]!.teamId;
-      if ('squeezed' in c) {
-        const { upperLimit, minSalary } = ctx.ruleset.cap;
-        // Dead cap next season: everything but the minimum for a full roster, less one dollar.
-        const amount = upperLimit - ctx.ruleset.roster.minActive * minSalary - 1;
-        state.capCharges.push({
-          teamId: teamId!,
-          playerId: playerId, // any id: the charge only takes cap room
-          kind: 'buyout',
-          season: state.date.season + 1,
-          amount,
-        });
-      }
-      run(state, { kind: 'sim.advance', days: 7 - state.date.day }); // through the first weekly check
+      const { state, playerId, teamId } = found;
       expect(state.players[playerId]!.extension !== undefined).toBe(pays);
       // A shopped holdout is on the block, or already traded away (AI buyers call the block first).
       const gone = state.players[playerId]!.teamId !== teamId;

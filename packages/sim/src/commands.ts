@@ -19,7 +19,7 @@ import {
   type LeagueState,
 } from './core';
 import { buyoutCharges, capYearIssues, capYearOf, teamCapTotal } from './cba';
-import { parsePick } from './league';
+import { pickLabel } from './league';
 import {
   departmentsOf,
   moraleOf,
@@ -32,6 +32,10 @@ import {
 import {
   isExpiring,
   acceptSheet,
+  continueDraft,
+  draftPlayer,
+  onTheClock,
+  startDraft,
   marketDay,
   openFreeAgency,
   resignContract,
@@ -42,6 +46,8 @@ import {
   interimHead,
 } from './offseason';
 import { evaluateTrade, planRetention } from './trades';
+import { pressQuestion } from './owner';
+import { overall } from './players';
 import { advance } from './advance';
 import type { SimContext } from './context';
 
@@ -245,14 +251,26 @@ export function handleCommand(
         ...(offer.proposal.getPicks && { givePicks: offer.proposal.getPicks }),
         ...(offer.proposal.givePicks && { getPicks: offer.proposal.givePicks }),
       };
-      const verdict = evaluateTrade(state, ctx, mirror);
+      // A draft-day call stands while the pick is on the clock: the caller wants a player there,
+      // not the pick's value, so only the trade's legality is checked.
+      const caller = state.teams[offer.proposal.fromTeamId]!;
+      const clock = onTheClock(state, ctx)?.id;
+      const judged =
+        clock && offer.proposal.getPicks?.includes(clock)
+          ? {
+              ...state,
+              teams: { ...state.teams, [caller.id]: { ...caller, userControlled: true } },
+            }
+          : state;
+      const verdict = evaluateTrade(judged, ctx, mirror);
       if (!verdict.accepted) {
         return invalid(
           `the offer is off the table: ${verdict.reasons.map((r) => r.code).join(', ')}`,
         );
       }
-      const events = completeTrade(state, ctx, mirror);
-      return { ok: true, events: [...events, close(true)] };
+      // Closed first: a live draft that runs on closes offers for the picks it uses.
+      const closed = close(true);
+      return { ok: true, events: [closed, ...completeTrade(state, ctx, mirror)] };
     }
 
     case 'tradeRequest.talk': {
@@ -364,6 +382,31 @@ export function handleCommand(
       return { ok: true, events };
     }
 
+    case 'offseason.startDraft': {
+      if (!state.championTeamId || state.freeAgencyOpen || state.draftPicksMade !== null) {
+        return invalid('the draft opens once, after the season');
+      }
+      const events: LeagueEvent[] = [];
+      startDraft(state, ctx, emitter(state, events));
+      return { ok: true, events };
+    }
+
+    case 'draft.pick': {
+      const team = state.teams[command.teamId];
+      if (!team) return invalid('unknown team');
+      if (!controls(actor, team)) return notYours;
+      const clock = onTheClock(state, ctx);
+      if (!clock || clock.teamId !== team.id) return invalid('not on the clock');
+      if (!state.draftClass.some((d) => d.player.id === command.playerId)) {
+        return invalid('not in the draft class');
+      }
+      const events: LeagueEvent[] = [];
+      const emit = emitter(state, events);
+      draftPlayer(state, ctx, emit, clock, command.playerId);
+      continueDraft(state, ctx, emit, true);
+      return { ok: true, events };
+    }
+
     case 'freeAgency.advanceDay': {
       if (!state.freeAgencyOpen) {
         return invalid('free agency is not open');
@@ -389,6 +432,27 @@ export function handleCommand(
         kind: 'lines.set',
         teamId: team.id,
         order: [...command.order],
+      });
+      return applied(state, ev);
+    }
+
+    case 'training.set': {
+      const team = state.teams[command.teamId];
+      const player = state.players[command.playerId];
+      if (!team || !player) return invalid('unknown player or team');
+      if (!controls(actor, team)) return notYours;
+      if (player.teamId !== team.id) return invalid('only your own players');
+      if (
+        command.focus !== null &&
+        !Object.hasOwn(ctx.sport.trainingFocus(player.position), command.focus)
+      ) {
+        return invalid('unknown training focus');
+      }
+      const ev = makeEvent(state, 'minor', [team.id], {
+        kind: 'training.planSet',
+        teamId: team.id,
+        playerId: player.id,
+        focus: command.focus,
       });
       return applied(state, ev);
     }
@@ -456,7 +520,7 @@ export function handleCommand(
         effects: chosen.effects,
       });
       applyEvent(state, ev);
-      if (card.kind !== 'pressWin' && card.kind !== 'pressLoss') return { ok: true, events: [ev] };
+      if (!card.kind.startsWith('press')) return { ok: true, events: [ev] };
       // Your answer becomes a headline.
       const quote = makeEvent(state, 'notable', [card.teamId], {
         kind: 'news.posted',
@@ -691,11 +755,7 @@ function completeTrade(
     ...(proposal.protectTop && proposal.givePicks?.length && { protectTop: proposal.protectTop }),
   });
   applyEvent(state, ev);
-  const picks = (ids: readonly string[] = []) =>
-    ids.map((id) => {
-      const pick = parsePick(id)!;
-      return `${pick.season} R${pick.round} (${state.teams[pick.originalTeamId]?.abbreviation})`;
-    });
+  const picks = (ids: readonly string[] = []) => ids.map((id) => pickLabel(state, id));
   const names = (ids: readonly string[]) =>
     ids.map((id) => playerName(state.players[id]!)).join(', ');
   const news = makeEvent(state, 'notable', [proposal.fromTeamId, proposal.toTeamId], {
@@ -709,5 +769,20 @@ function completeTrade(
     },
   });
   applyEvent(state, news);
-  return [ev, news];
+  const events = [ev, news];
+  // A pick on the clock traded to an AI team: the live draft runs on to the next human pick.
+  if (state.draftPicksMade !== null) continueDraft(state, ctx, emitter(state, events), true);
+  // A human GM is asked about a blockbuster: a traded player among his team's top three.
+  const traded = new Set([...proposal.give, ...proposal.get]);
+  for (const teamId of [proposal.fromTeamId, proposal.toTeamId]) {
+    const gone = proposal.fromTeamId === teamId ? proposal.give : proposal.get;
+    const top = Object.values(state.players)
+      .filter((p) => p.teamId === teamId || gone.includes(p.id))
+      .sort((a, b) => overall(b) - overall(a))
+      .slice(0, 3);
+    if (top.some((p) => traded.has(p.id))) {
+      pressQuestion(state, emitter(state, events), teamId, 'pressTrade', 0);
+    }
+  }
+  return events;
 }

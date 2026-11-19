@@ -12,8 +12,8 @@ import {
   useTeams,
 } from '@/lib/queries';
 import { useT, type MessageKey } from '@/i18n';
-import { Button, Card, Face, PercentileBar, PlayerCard, TeamSelect, Td, Th } from '@/ui';
-import { fullName, money, statValue } from '@/lib/format';
+import { Button, Card, Cutscene, Face, PercentileBar, PlayerCard, TeamSelect, Td, Th } from '@/ui';
+import { fullName, money, statValue, teamName } from '@/lib/format';
 
 const FREE_AGENTS = 'fa';
 
@@ -146,9 +146,11 @@ export function Profile({
   standalone?: boolean;
 }) {
   const t = useT();
+  const [cut, setCut] = useState<string | null>(null);
   const strengths = [...p.percentiles].sort((a, b) => b.value - a.value).slice(0, 2);
   return (
     <div className="space-y-2">
+      {cut && <Cutscene icon="✍️" text={cut} onDone={() => setCut(null)} />}
       <PlayerCard
         name={fullName(p)}
         face={<Face seed={p.id} age={p.age} />}
@@ -215,13 +217,26 @@ export function Profile({
       <Career player={p} />
       {!standalone && <OpenProfile player={p} />}
       {p.teamId !== null && p.teamId === signFor && <BlockToggle player={p} teamId={signFor} />}
-      {p.teamId === null && signFor && <Offer key={p.id} player={p} teamId={signFor} />}
+      {p.training && p.teamId === signFor && (
+        <TrainingPlan player={p} options={p.training.options} teamId={signFor} />
+      )}
+      {p.teamId === null && signFor && (
+        <Offer key={p.id} player={p} teamId={signFor} onSigned={setCut} />
+      )}
     </div>
   );
 }
 
 /** Offer a free agent a contract; his interest meter answers before you send it. */
-function Offer({ player, teamId }: { player: PlayerProfile; teamId: TeamId }) {
+function Offer({
+  player,
+  teamId,
+  onSigned,
+}: {
+  player: PlayerProfile;
+  teamId: TeamId;
+  onSigned: (text: string) => void;
+}) {
   const t = useT();
   const { data: teams = [] } = useTeams();
   // The box keeps what you type; the offer is that many millions, rounded to whole dollars.
@@ -337,14 +352,23 @@ function Offer({ player, teamId }: { player: PlayerProfile; teamId: TeamId }) {
                 ...(bonusPct > 0 && { bonusPct }),
               },
               {
-                onSuccess: (res) =>
+                onSuccess: (res) => {
+                  if (res.ok && res.events.some((e) => e.kind === 'player.signed')) {
+                    onSigned(
+                      t('cutscene.signing', {
+                        player: fullName(player),
+                        team: teamName(teams, teamId),
+                      }),
+                    );
+                  }
                   setMessage(
                     !res.ok
                       ? res.error.message
                       : res.events[0]?.kind === 'freeAgency.offered'
                         ? t('sign.pending')
                         : t('sign.done'),
-                  ),
+                  );
+                },
               },
             )
           }
@@ -514,6 +538,48 @@ function BlockToggle({ player, teamId }: { player: PlayerProfile; teamId: TeamId
         </Button>
         <span className="text-xs text-muted">{t('block.note')}</span>
       </div>
+    </Card>
+  );
+}
+
+/** His summer training focus: reshapes his ratings at development, never past his ceiling. */
+function TrainingPlan({
+  player,
+  options,
+  teamId,
+}: {
+  player: PlayerProfile;
+  options: string[];
+  teamId: TeamId;
+}) {
+  const t = useT();
+  const dispatch = useDispatch();
+  return (
+    <Card>
+      <label className="flex items-center gap-2 text-sm">
+        {t('training.label')}
+        <select
+          value={player.training?.focus ?? ''}
+          disabled={dispatch.isPending}
+          onChange={(e) =>
+            dispatch.mutate({
+              kind: 'training.set',
+              teamId,
+              playerId: player.id as PlayerId,
+              focus: e.target.value || null,
+            })
+          }
+          className="rounded border border-line bg-panel px-2 py-1 text-sm text-ink"
+        >
+          <option value="">{t('training.balanced')}</option>
+          {options.map((o) => (
+            <option key={o} value={o}>
+              {t(`training.${o}` as MessageKey)}
+            </option>
+          ))}
+        </select>
+      </label>
+      <p className="mt-1 text-xs text-muted">{t('training.note')}</p>
     </Card>
   );
 }

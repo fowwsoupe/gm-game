@@ -32,6 +32,15 @@ export interface SportModule<Strength = unknown> {
   /** Rating keys per position group, so UI and ML know which ratings exist. */
   ratingKeys: (position: string) => readonly string[];
 
+  /** Summer training focuses for a position: each a group of its rating keys, by name. */
+  trainingFocus: (position: string) => Readonly<Record<string, readonly string[]>>;
+
+  /**
+   * Nations for the international tournament and each one's share of players (`nationOf`). The
+   * last is a mixed team of everyone else; its spare players fill a nation short at a position.
+   */
+  nations: Readonly<Record<string, number>>;
+
   /** Pythagorean exponent for win share from scoring (hockey about 2), for odds and power rankings. */
   pythagoreanExponent: number;
 

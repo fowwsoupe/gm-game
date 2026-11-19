@@ -32,6 +32,7 @@ import {
   dashboard,
   raceNight,
   draftPicks,
+  picksLeft,
   playoffOdds,
   teamRatings,
   assistantGuess,
@@ -178,6 +179,10 @@ export class LeagueService {
       const t = trophies[a.award];
       return t && a.season >= t.from ? { ...a, trophy: t.surname } : a;
     });
+  }
+
+  international() {
+    return [...this.open().state.international].reverse();
   }
 
   hallOfFame(): HallOfFamer[] {
@@ -376,6 +381,7 @@ export class LeagueService {
       phase: phaseOf(cal, state.date),
       championTeamId: state.championTeamId,
       freeAgencyOpen: state.freeAgencyOpen,
+      draftLive: state.draftPicksMade !== null,
       tradeDeadlineDay: cal.tradeDeadlineDay,
       playoffsStartDay: cal.regularSeasonDays,
       playoffsEndDay: cal.regularSeasonDays + cal.playoffDays,
@@ -472,7 +478,7 @@ export class LeagueService {
 
   picks(teamId: TeamId) {
     const { state } = this.open();
-    return draftPicks(state, defaultContext(state.rulesetId).ruleset.draft.rounds, teamId);
+    return draftPicks(state, defaultContext(state.rulesetId).ruleset, teamId);
   }
 
   lines(teamId: TeamId) {
@@ -552,8 +558,9 @@ export class LeagueService {
   }
 
   draftClass(teamId: TeamId) {
-    const { state } = this.open();
+    const { save, state } = this.open();
     const ctx = defaultContext(state.rulesetId);
+    const latest = save.latestDraft();
     return {
       prospects: state.draftClass.map((pd) => {
         // Your scouting department's read, not the public range.
@@ -572,6 +579,9 @@ export class LeagueService {
         };
       }),
       board: state.draftBoards[teamId] ?? [],
+      order: picksLeft(state, ctx),
+      made: latest.picks,
+      madeSeason: latest.season,
     };
   }
 

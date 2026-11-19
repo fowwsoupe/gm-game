@@ -37,7 +37,9 @@ Playoff turnover rises with it, which main needs (28.1-30.0%).
 its form when the season starts (`season.started` carries it, a new league draws one too) and it
 is added to every unit's attack and defence in every game, the same channel as the head coach.
 Nothing carries over: next season is a fresh draw. The form is hidden like luck: the lab's
-"favourite" and "better team" checks still judge teams by their rosters alone.
+"favourite" checks still judge teams by their rosters alone. The "better team wins a best-of-7"
+checks count it (with lines, chemistry and the coach): the benchmark judges a team by its true
+strength that season.
 
 Unverified game number, tuned in the lab: no public source measures this directly; it is fitted
 to the long-run brief's three NHL benchmarks.

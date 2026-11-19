@@ -9,6 +9,7 @@ import type {
   GameResult,
   Department,
   GmProfile,
+  InternationalTournament,
   StaffProfile,
   OwnerCard,
   OwnerStanding,
@@ -91,9 +92,16 @@ export type LeagueEvent =
   | (EventBase & { kind: 'contract.expired'; playerId: PlayerId; rightsTeamId?: TeamId })
   /**
    * A new player enters the league through the draft (the event carries the whole player).
-   * `round` and `pick` are 0 for an undrafted free agent signed to fill a roster.
+   * `round` and `pick` are 0 for an undrafted free agent signed to fill a roster. `via`: the
+   * team the pick belonged to, when another team made it (traded or protected).
    */
-  | (EventBase & { kind: 'player.drafted'; player: Player; round: number; pick: number })
+  | (EventBase & {
+      kind: 'player.drafted';
+      player: Player;
+      round: number;
+      pick: number;
+      via?: TeamId;
+    })
   /**
    * Re-signing, free agency or an undrafted free agent: player joins `teamId` on `contract`.
    * `staying`: he re-signs with the team whose contract just expired, so his time there carries on.
@@ -168,6 +176,8 @@ export type LeagueEvent =
       teamId: TeamId;
       playerId?: PlayerId;
     })
+  /** Late in the summer of a tournament season: the international tournament was played. */
+  | (EventBase & { kind: 'international.played'; tournament: InternationalTournament })
   /** The playoffs are over: next draft's class, with scouted ranges, and the lottery's round-one order. */
   | (EventBase & {
       kind: 'draft.classAnnounced';
@@ -176,6 +186,8 @@ export type LeagueEvent =
     })
   /** A team ranked the prospects it wants; its picks follow this order. */
   | (EventBase & { kind: 'draft.boardSet'; teamId: TeamId; order: PlayerId[] })
+  /** The live draft opens (contracts have run out); picks follow one at a time. */
+  | (EventBase & { kind: 'draft.started' })
   /** End of a regular season: every player's stat line, kept for career stats (sport-defined keys). */
   | (EventBase & {
       kind: 'stats.archived';
@@ -186,6 +198,13 @@ export type LeagueEvent =
   | (EventBase & { kind: 'lines.set'; teamId: TeamId; order: PlayerId[] })
   /** A team's power-play or penalty-kill unit changed (empty = auto). */
   | (EventBase & { kind: 'units.set'; teamId: TeamId; unit: SpecialUnit; playerIds: PlayerId[] })
+  /** A human team set (or cleared) a player's summer training focus. */
+  | (EventBase & {
+      kind: 'training.planSet';
+      teamId: TeamId;
+      playerId: PlayerId;
+      focus: string | null;
+    })
   /** A human team listed a player as available (or took him off the block). */
   | (EventBase & { kind: 'trade.blockSet'; teamId: TeamId; playerId: PlayerId; onBlock: boolean })
   /** A team changed how its goalies share starts. */

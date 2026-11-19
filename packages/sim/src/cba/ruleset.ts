@@ -158,6 +158,18 @@ export interface Ruleset {
     interim: number;
   };
 
+  /** Summer training plans (docs/research/2026-11-summer-training.md). */
+  training: {
+    /** Rating points a year a focus moves onto its keys from his others, before age and professionalism. */
+    points: number;
+  };
+
+  /** The international tournament (docs/research/2026-11-summer-training.md). */
+  international: {
+    /** Played late in the summer before every season divisible by this. */
+    every: number;
+  };
+
   roster: {
     maxActive: number;
     minActive: number;

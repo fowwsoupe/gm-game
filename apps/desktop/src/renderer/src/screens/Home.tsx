@@ -300,6 +300,10 @@ function FeedCard() {
         return t('event.tradeOffered', { team: team(e.offer.proposal.fromTeamId) });
       case 'freeAgency.opened':
         return t('event.freeAgencyOpened');
+      case 'international.played':
+        return t('event.internationalWon', {
+          nation: t(`nation.${e.tournament.champion}` as MessageKey),
+        });
       case 'season.phaseChanged':
         return t('event.phaseChanged', { phase: t(`phase.${e.to}`) });
       case 'news.posted':
@@ -307,6 +311,16 @@ function FeedCard() {
           return t(e.headline, {
             ...e.params,
             award: t(`award.${e.params?.award}` as MessageKey),
+          });
+        if (e.headline === 'event.summerTraining')
+          return t(e.headline, {
+            ...e.params,
+            focus: t(`training.${e.params?.focus}` as MessageKey),
+          });
+        if (e.headline === 'event.internationalGold' || e.headline === 'event.internationalSilver')
+          return t(e.headline, {
+            ...e.params,
+            nation: t(`nation.${e.params?.nation}` as MessageKey),
           });
         if (e.headline === 'event.staffLeft' || e.headline === 'event.staffPoached')
           return t(e.headline, {

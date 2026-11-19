@@ -54,6 +54,8 @@ export type Command =
   | { kind: 'lines.set'; teamId: TeamId; order: PlayerId[] }
   /** Set a power-play or penalty-kill unit (3F+2D / 2F+2D); an empty list goes back to auto. */
   | { kind: 'units.set'; teamId: TeamId; unit: SpecialUnit; playerIds: PlayerId[] }
+  /** Give one of your players a summer training focus (a key of the sport's `trainingFocus`), or none. */
+  | { kind: 'training.set'; teamId: TeamId; playerId: PlayerId; focus: string | null }
   /** Put a player on your trade block (AI GMs call about him more) or take him off. */
   | { kind: 'trade.block'; teamId: TeamId; playerId: PlayerId; onBlock: boolean }
   /** Out of work: take the job a team with a vacancy offered (see `Career`). */
@@ -77,6 +79,13 @@ export type Command =
   | { kind: 'goalies.setRotation'; teamId: TeamId; rotation: GoalieRotation }
   /** Rank the draft class for your picks (best first). Players missing from it go by the scouts' order. */
   | { kind: 'draft.setBoard'; teamId: TeamId; order: PlayerId[] }
+  /**
+   * Start the live draft: the summer's first steps run as when opening free agency (players age
+   * and develop, retire, contracts run out), then AI teams pick until a human team is on the clock.
+   */
+  | { kind: 'offseason.startDraft' }
+  /** Your team is on the clock in the live draft: take this prospect; the draft runs to the next human pick. */
+  | { kind: 'draft.pick'; teamId: TeamId; playerId: PlayerId }
   /** One day of free agency: free agents answer the offers they have, then AI teams make new ones. */
   | { kind: 'freeAgency.advanceDay' }
   /** Match the offer sheet another team gave your restricted free agent: he signs with you on its terms. */

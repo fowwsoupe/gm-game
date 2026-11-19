@@ -8,6 +8,7 @@ export {
   assistantGuess,
   cachedContext,
   evaluateTrade,
+  newTradeCache,
   planRetention,
   tradeWindowOpen,
 } from './evaluate';

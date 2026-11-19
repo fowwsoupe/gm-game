@@ -13,7 +13,7 @@ import {
 import type { StopCategory } from '@gm/shared';
 import { useUi, type Screen } from '@/stores/ui';
 import { useT, type MessageKey } from '@/i18n';
-import { Button } from '@/ui';
+import { Button, TrophyLift } from '@/ui';
 import { Standings } from '@/screens/Standings';
 import { History } from '@/screens/History';
 import { Leaders } from '@/screens/Leaders';
@@ -177,6 +177,22 @@ export function App() {
                   {d.label}
                 </Button>
               ))}
+          {status?.championTeamId && !status.freeAgencyOpen && !status.draftLive && (
+            <Button
+              disabled={dispatch.isPending}
+              onClick={() =>
+                dispatch.mutate(
+                  { kind: 'offseason.startDraft' },
+                  {
+                    onSuccess: (res) =>
+                      res.ok ? setScreen('draft') : setLastSim(res.error.message),
+                  },
+                )
+              }
+            >
+              {t('actions.startDraft')}
+            </Button>
+          )}
           {status?.championTeamId && !status.freeAgencyOpen && (
             <Button
               disabled={dispatch.isPending}
@@ -219,6 +235,7 @@ export function App() {
           </Button>
         </div>
 
+        <TrophyLift />
         {screen === 'home' && (
           <Home hasLeague={hasLeague} teamCount={teams.length} lastSim={lastSim} />
         )}

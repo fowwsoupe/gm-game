@@ -162,6 +162,8 @@ export interface PlayerProfile extends RosterPlayer {
   morale?: { value: number; factors: { key: string; score: number }[] };
   /** On your trade block: AI GMs call about him more often. */
   onBlock?: true;
+  /** Players on a human team: his summer training focus (absent = balanced) and the sport's choices. */
+  training?: { focus?: string; options: string[] };
   /** Restricted free agent: the team holding his rights (it may match another team's offer sheet). */
   rightsTeamId?: TeamId;
 }
@@ -423,7 +425,12 @@ export interface OwnerCard {
     | 'hotSeat'
     /** A press question after a win or losing streak (`params.n` games): you answer, the owner and fans react. */
     | 'pressWin'
-    | 'pressLoss';
+    | 'pressLoss'
+    /** A press question after your team wins or loses a playoff series (`params.n` is the round). */
+    | 'pressSeries'
+    | 'pressOut'
+    /** A press question after a blockbuster trade: one of your top three players moved. */
+    | 'pressTrade';
   /** Text params: `amount` in dollars, `pct` in whole percent. */
   params: Record<string, number>;
   /** `noted`: a warning, nothing to decide. */
@@ -502,6 +509,24 @@ export interface PlayoffSeries {
   higherWins: number;
   lowerWins: number;
   winnerTeamId?: TeamId;
+}
+
+/** An international tournament (nations are the sport's keys, e.g. 'canada'), as the History screen lists it. */
+export interface InternationalTournament {
+  season: number;
+  /** The two groups' tables, best first. */
+  groups: {
+    nation: string;
+    wins: number;
+    points: number;
+    goalsFor: number;
+    goalsAgainst: number;
+  }[][];
+  /** Every game in order: the group games, the two semi-finals, the final. */
+  games: { home: string; away: string; homeScore: number; awayScore: number; overtime: boolean }[];
+  champion: string;
+  /** The tournament's leader on the sport's first leaderboard (hockey: points), if any. */
+  best?: { playerId: PlayerId; name: string; nation: string; key: string; value: number };
 }
 
 /** One award a season (sport-defined keys like 'mvp', plus 'champion'), as the History screen lists it. */
@@ -622,6 +647,8 @@ export interface LeagueStatus {
   championTeamId: TeamId | null;
   /** Between opening free agency and starting the next season. */
   freeAgencyOpen: boolean;
+  /** The live draft is under way (started, free agency not open yet). */
+  draftLive: boolean;
   tradeDeadlineDay: number;
   /** First day of the playoffs, and the last day they can run (the calendar's, as day indexes). */
   playoffsStartDay: number;
@@ -674,6 +701,29 @@ export interface ScoutReport {
 }
 
 /** A prospect as the draft board shows him: no hidden ratings. */
+/** The pick on the clock in the live draft, and the team that makes it. */
+export interface DraftClock {
+  /** Overall pick number, from 1. */
+  pick: number;
+  round: number;
+  teamId: TeamId;
+  /** The pick's id (`DraftPick.id`), to trade it. */
+  id: string;
+}
+
+/** A pick made in the latest draft (from the event log), for the draft results. */
+export interface DraftResult {
+  pick: number;
+  round: number;
+  teamId: TeamId;
+  /** The team the pick belonged to, when another team made it. */
+  via?: TeamId;
+  playerId: PlayerId;
+  firstName: string;
+  lastName: string;
+  position: string;
+}
+
 export interface DraftBoardEntry {
   id: PlayerId;
   firstName: string;

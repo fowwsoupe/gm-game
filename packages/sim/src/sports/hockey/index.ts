@@ -21,6 +21,17 @@ import {
 } from './stats';
 import { hockeyRole } from './builds';
 
+const SKATER_FOCUS = {
+  skating: ['skating'],
+  shooting: ['shooting'],
+  playmaking: ['passing', 'puckHandling', 'hockeyIq'],
+  defence: ['defense', 'physical'],
+  faceoffs: ['faceoffs'],
+};
+const GOALIE_FOCUS = { reflexes: ['reflexes'], positioning: ['positioning', 'reboundControl'] };
+// The brief's shares, game numbers to check against a sourced count; 'world' is everyone else.
+const NATIONS = { canada: 0.35, usa: 0.25, sweden: 0.12, finland: 0.1, czechia: 0.09, world: 0.09 };
+
 /**
  * Hockey (NHL-style). Owns everything that only makes sense in hockey: positions and
  * ratings, the game sim and its tuning, the fictional league generator, the NHL ruleset.
@@ -31,6 +42,8 @@ export function hockeySport(goalModel: GoalModel = rulesGoalModel): SportModule<
     id: 'nhl',
     positions: HOCKEY_POSITIONS,
     ratingKeys: (position) => (isGoalie(position) ? GOALIE_RATINGS : SKATER_RATINGS),
+    trainingFocus: (position) => (isGoalie(position) ? GOALIE_FOCUS : SKATER_FOCUS),
+    nations: NATIONS,
     pythagoreanExponent: 2,
     generateLeague: generateFictionalLeague,
     generateProspect,

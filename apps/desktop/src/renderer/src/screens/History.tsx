@@ -1,4 +1,4 @@
-import { useAwards, useHallOfFame, useRecords, useTeams } from '@/lib/queries';
+import { useAwards, useHallOfFame, useInternational, useRecords, useTeams } from '@/lib/queries';
 import { statValue, teamName as nameOf } from '@/lib/format';
 import { useT, type MessageKey } from '@/i18n';
 import { Card } from '@/ui';
@@ -10,6 +10,8 @@ export function History() {
   const { data: teams = [] } = useTeams();
   const { data: records = [] } = useRecords();
   const { data: legends = [] } = useHallOfFame();
+  const { data: tournaments = [] } = useInternational();
+  const nation = (n: string) => t(`nation.${n}` as MessageKey);
   const teamName = (id: string) => nameOf(teams, id);
   if (awards.length === 0) return <p className="text-muted">{t('history.empty')}</p>;
 
@@ -37,6 +39,34 @@ export function History() {
                       retired: h.retiredSeason,
                     })}
                     {won.length > 0 && ` · ${won.join(', ')}`}
+                  </span>
+                </li>
+              );
+            })}
+          </ul>
+        </Card>
+      )}
+      {tournaments.length > 0 && (
+        <Card title={t('history.international')} className="md:col-span-2">
+          <ul className="space-y-1 text-sm">
+            {tournaments.map((x) => {
+              const final = x.games[x.games.length - 1]!;
+              const homeWon = final.home === x.champion;
+              return (
+                <li key={x.season} className="flex justify-between gap-4">
+                  <span className="text-muted">{x.season}</span>
+                  <span>
+                    {t('history.internationalFinal', {
+                      champion: nation(x.champion),
+                      runnerUp: nation(homeWon ? final.away : final.home),
+                      score: `${Math.max(final.homeScore, final.awayScore)}-${Math.min(final.homeScore, final.awayScore)}${final.overtime ? ` ${t('games.ot')}` : ''}`,
+                    })}
+                    {x.best &&
+                      ` · ${t('history.internationalBest', {
+                        player: x.best.name,
+                        nation: nation(x.best.nation),
+                        stat: `${x.best.value} ${t(`stat.${x.best.key}` as MessageKey)}`,
+                      })}`}
                   </span>
                 </li>
               );
