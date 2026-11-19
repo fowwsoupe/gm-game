@@ -65,7 +65,7 @@ the staff market. So the assistant is a department of human teams only
    free agent with the most surplus on a deal at his ask that fits, on his read); his guess at
    the other team's answer before you propose (done: the trade screen shows it, the same evaluation on his read of every player). Lines advice is done: once you set your own
    order, the bench player who beats a top-line player of his position on his read.
-3. **His return.** How often his advice was right last season (with the department returns of
-   the front office brief), so a poor one shows himself.
+3. **His return (done).** How far his read of your players' overall is off the truth, on average,
+   on the Front Office screen with the other department returns, so a poor one shows himself.
 4. **Delegation (maybe).** Let him handle chores you opt into (fill a short position with the
    cheapest legal signing, set lines after injuries), on his read.

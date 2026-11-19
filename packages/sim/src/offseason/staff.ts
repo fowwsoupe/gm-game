@@ -8,8 +8,17 @@ import type {
 } from '@gm/shared';
 import { FIRST, LAST, Rng, teamName, type Emit, type LeagueState } from '../core';
 import type { SimContext } from '../context';
-import { departmentsOf, hash, hireQuality, ownerOf, staffOf, staffSalary } from '../people';
+import {
+  assistantSees,
+  departmentsOf,
+  hash,
+  hireQuality,
+  ownerOf,
+  staffOf,
+  staffSalary,
+} from '../people';
 import { leagueStandings } from '../league';
+import { overall } from '../players';
 import { teamRange } from './draft';
 
 /** A head this good or better makes league-wide news when he moves. */
@@ -164,7 +173,9 @@ export function interimHead(
  * What a team's departments return against the league's average one, worked out from their
  * quality and the ruleset (nothing is recorded, so it is the head in the job now): development's
  * points a year for a player 24 or younger, medical's share of injury days saved, and how far
- * the scouts' read of the picks of the newest draft class still on the team was off the truth.
+ * the scouts' read of the picks of the newest draft class still on the team was off the truth,
+ * and how far the assistant's read of the roster is off (he reads players as an AI GM of his
+ * skill would, so a poor one is wrong about the same players until replaced).
  */
 export function departmentReturns(
   state: LeagueState,
@@ -190,7 +201,22 @@ export function departmentReturns(
     return { n: miss.length, error: mean(miss) };
   };
   const mineMiss = missOf(mine);
+  const assistant = departmentsOf(mine).includes('assistant')
+    ? staffOf(mine, 'assistant', fo.salary, season)
+    : null;
+  const roster = Object.values(state.players).filter((p) => p.teamId === teamId);
   return {
+    assistant:
+      assistant && roster.length
+        ? {
+            error: mean(
+              roster.map((p) =>
+                Math.abs(overall(assistantSees(assistant, teamId, p)) - overall(p)),
+              ),
+            ),
+            players: roster.length,
+          }
+        : null,
     development: (q(mine, 'development') - avg('development')) * 2 * fo.development.points,
     medical: fo.medical.days * (q(mine, 'medical') - avg('medical')) * 100,
     scouting: mineMiss.n

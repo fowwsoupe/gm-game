@@ -277,4 +277,15 @@ describe('firing a head and department returns', () => {
     expect(r.development).toBeGreaterThan(0);
     expect(r.medical).toBeGreaterThan(0);
   });
+
+  it('a poor assistant reads your roster further off than an elite one', () => {
+    const state = createLeague(3, ctx);
+    const mine = Object.values(state.teams).find((t) => t.userControlled)!.id;
+    const head = (quality: number) => ({ name: 'A B', quality, hired: 2027, salary: 1 });
+    const err = (quality: number) => {
+      state.teams[mine]!.staff = { assistant: head(quality) };
+      return departmentReturns(state, ctx, mine).assistant!.error;
+    };
+    expect(err(0)).toBeGreaterThan(err(1));
+  });
 });

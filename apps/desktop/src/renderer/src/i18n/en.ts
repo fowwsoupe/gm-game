@@ -28,6 +28,8 @@ export const en = {
     '{n} rating points a year for players 24 or younger, against an average department',
   'frontOffice.return.medical': '{n}% of injury days against an average department',
   'frontOffice.return.scouting': 'Last draft: off by {n} points on {picks} picks (league {league})',
+  'frontOffice.return.assistant':
+    'His read of your {players} players is off by {n} overall points on average',
   'frontOffice.return.none': 'No picks from the last draft to judge.',
   'owner.empty': 'Pick your team on Home to meet its owner.',
   'owner.confidence': 'Confidence in you',

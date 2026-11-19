@@ -27,6 +27,8 @@ export const fr: Record<MessageKey, string> = {
   'frontOffice.return.medical': '{n} % des jours de blessure face à un département moyen',
   'frontOffice.return.scouting':
     'Dernier repêchage : écart de {n} points sur {picks} choix (ligue {league})',
+  'frontOffice.return.assistant':
+    'Sa lecture de vos {players} joueurs est décalée de {n} points de moyenne générale en moyenne',
   'frontOffice.return.none': 'Aucun choix du dernier repêchage à évaluer.',
   'owner.empty': 'Choisissez votre équipe dans Accueil pour rencontrer son propriétaire.',
   'owner.confidence': 'Confiance en vous',

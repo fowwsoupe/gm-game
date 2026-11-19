@@ -51,17 +51,24 @@ export function FrontOffice() {
               <span className="font-semibold">{head.name}</span> · {t(qualityKey(head.quality))} ·{' '}
               {money(head.salary)} · {t('frontOffice.since', { season: head.hired })}
             </div>
-            {returns && d !== 'assistant' && d !== 'analytics' && (
+            {returns && d !== 'analytics' && (
               <p className="mb-3 text-xs text-muted">
-                {d === 'scouting'
-                  ? returns.scouting
-                    ? t('frontOffice.return.scouting', {
-                        n: returns.scouting.error.toFixed(1),
-                        picks: returns.scouting.picks,
-                        league: returns.scouting.league.toFixed(1),
+                {d === 'assistant'
+                  ? returns.assistant
+                    ? t('frontOffice.return.assistant', {
+                        n: returns.assistant.error.toFixed(1),
+                        players: returns.assistant.players,
                       })
                     : t('frontOffice.return.none')
-                  : t(`frontOffice.return.${d}`, { n: signed(returns[d]) })}
+                  : d === 'scouting'
+                    ? returns.scouting
+                      ? t('frontOffice.return.scouting', {
+                          n: returns.scouting.error.toFixed(1),
+                          picks: returns.scouting.picks,
+                          league: returns.scouting.league.toFixed(1),
+                        })
+                      : t('frontOffice.return.none')
+                    : t(`frontOffice.return.${d}`, { n: signed(returns[d]) })}
               </p>
             )}
             <table className="w-full text-sm">
