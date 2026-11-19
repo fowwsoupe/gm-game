@@ -179,6 +179,7 @@ export interface GmApi {
       years: number;
       noTrade?: true;
       bonusPct?: number;
+      promiseRole?: true;
       resign?: true;
     }): Promise<SigningInterest | null>;
   };

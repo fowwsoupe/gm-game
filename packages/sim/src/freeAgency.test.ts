@@ -5,12 +5,16 @@ import {
   counterSalary,
   createLeague,
   defaultContext,
+  disputesWeek,
+  emitter,
   handleCommand,
   lineOf,
   overall,
   personalityOf,
   playerProfiles,
+  PROMISE_DAYS,
   resignOffers,
+  Rng,
   roomFor,
   seenBy,
   signFreeAgent,
@@ -305,6 +309,7 @@ describe('AI offers in free agency', () => {
         bidders.includes(e.offer.teamId),
     );
     expect(raises.length).toBeGreaterThan(0);
+    expect(raises.every((e) => e.kind === 'freeAgency.offered' && e.raise)).toBe(true); // the room's "raises"
     for (const o of state.faOffers.filter((x) => x.playerId === star.id)) {
       expect(o.salary).toBeLessThanOrEqual(walkAway(state, ctx, o.teamId, ask(star)));
       if (bidders.includes(o.teamId)) expect(o.since).toBe(0);
@@ -473,6 +478,65 @@ describe('negotiation', () => {
     expect(reply).toMatchObject({ playerId: offer.playerId, teamId: mine });
     const [ev] = run(state, resign(reply.counter!));
     expect(ev).toMatchObject({ kind: 'contract.extended', contract: { capHit: reply.counter } });
+  });
+});
+
+describe('the pitch', () => {
+  it('a promised role scores 100; one promise a position; not first by day PROMISE_DAYS, a dispute', () => {
+    const { state, mine } = finishedSeason(22);
+    run(state, { kind: 'offseason.openFreeAgency' });
+    state.teamStatus[mine] = 'contender';
+    const pitch = (p: Player): Command => ({
+      kind: 'contract.sign',
+      playerId: p.id,
+      teamId: mine,
+      salary: ctx.models.contractDemand.ask(ctx.ruleset, p) * 2,
+      years: 2,
+      promiseRole: true,
+    });
+    const role = (p: Player, promiseRole?: true) =>
+      signingInterest(state, ctx, p, mine, {
+        salary: 1,
+        years: 1,
+        ...(promiseRole && { promiseRole }),
+      }).factors.find((f) => f.key === 'role')!.score;
+    // Unrestricted skaters nobody bids for, weakest first, who would sit behind someone without it.
+    const pool = freeAgents(state)
+      .filter((p) => !state.rfaRights[p.id] && p.position !== 'G' && role(p) < 100)
+      .sort((a, b) => overall(a) - overall(b));
+    const a = pool[0]!;
+    const b = pool.find((p) => p.position !== a.position)!;
+    const c = pool.find((p) => p.position === a.position && p !== a)!;
+    expect(role(a, true)).toBe(100);
+
+    expect(run(state, pitch(a))[0]).toMatchObject({ kind: 'player.signed', promiseRole: true });
+    expect(run(state, pitch(b))[0]).toMatchObject({ kind: 'player.signed', promiseRole: true });
+    expect(handleCommand(state, pitch(c), local, ctx)).toMatchObject({
+      ok: false,
+      error: { message: 'you have promised that role to another player' },
+    });
+
+    // The promises carry into his first season; on day PROMISE_DAYS `a` is first at his position, `b` last.
+    run(state, { kind: 'season.rollover' });
+    expect(state.rolePromises.map((r) => r.playerId).sort()).toEqual([a.id, b.id].sort());
+    const others = (p: Player) =>
+      Object.values(state.players)
+        .filter((x) => x.teamId === mine && x.position === p.position && x !== p)
+        .map((x) => x.id);
+    state.depthCharts[mine] = [a.id, ...others(a), ...others(b), b.id];
+    state.date.day = PROMISE_DAYS - 1;
+    disputesWeek(state, ctx, new Rng(1), emitter(state, [] as LeagueEvent[]));
+    expect(state.rolePromises).toHaveLength(2); // not due yet
+    state.date.day = PROMISE_DAYS;
+    const log: LeagueEvent[] = [];
+    disputesWeek(state, ctx, new Rng(1), emitter(state, log));
+    expect(state.rolePromises).toEqual([]);
+    const due = log.flatMap((e) =>
+      e.kind === 'player.rolePromiseDue' ? [[e.playerId, e.kept]] : [],
+    );
+    expect(Object.fromEntries(due)).toEqual({ [a.id]: true, [b.id]: false });
+    expect(state.disputes.some((d) => d.playerId === b.id)).toBe(true);
+    expect(state.disputes.some((d) => d.playerId === a.id)).toBe(false);
   });
 });
 

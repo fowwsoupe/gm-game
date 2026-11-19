@@ -1,5 +1,5 @@
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
-import type { Command, TeamId, TradeProposal } from '@gm/shared';
+import type { Command, GmApi, Importance, TeamId, TradeProposal } from '@gm/shared';
 import { useUi } from '@/stores/ui';
 
 /** All data hooks in one place so query keys stay consistent. */
@@ -161,17 +161,7 @@ export const useHistory = (playerId: string | undefined) =>
 export const useStatus = () =>
   useQuery({ queryKey: ['league', 'status'] as const, queryFn: () => window.gm.league.status() });
 export const useSigningInterest = (
-  input:
-    | {
-        playerId: string;
-        teamId: TeamId;
-        salary: number;
-        years: number;
-        noTrade?: true;
-        bonusPct?: number;
-        resign?: true;
-      }
-    | undefined,
+  input: Parameters<GmApi['league']['signingInterest']>[0] | undefined,
 ) =>
   useQuery({
     queryKey: ['league', 'signingInterest', input] as const,
@@ -228,10 +218,10 @@ export function useNewLeagueFromRoster() {
   });
 }
 
-export const useFeed = (limit = 20) =>
+export const useFeed = (limit = 20, minImportance: Importance = 'notable') =>
   useQuery({
-    queryKey: [...keys.feed, limit],
-    queryFn: () => window.gm.feed.list({ limit, minImportance: 'notable' }),
+    queryKey: [...keys.feed, limit, minImportance],
+    queryFn: () => window.gm.feed.list({ limit, minImportance }),
   });
 
 /**

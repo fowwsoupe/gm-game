@@ -821,6 +821,21 @@ export function handleCommand(
       }
       if (!controls(actor, team)) return notYours;
       if (talksLeft(state, ctx, player.id, team.id) === 0) return invalid(TALKS_OFF);
+      // Only one player can be first at a position: one open promise (signed or on offer) per position.
+      if (
+        command.promiseRole &&
+        [
+          ...state.rolePromises,
+          ...[...state.faOffers, ...state.rfaSheets].filter((o) => o.promiseRole),
+        ].some(
+          (x) =>
+            x.teamId === team.id &&
+            x.playerId !== player.id &&
+            state.players[x.playerId]?.position === player.position,
+        )
+      ) {
+        return invalid('you have promised that role to another player');
+      }
       const deal = signFreeAgent(state, ctx, player, team.id, command);
       if ('error' in deal && deal.error === NOT_INTERESTED) {
         return applied(
@@ -845,6 +860,7 @@ export function handleCommand(
               years: command.years,
               ...(command.noTrade && { noTrade: true as const }),
               ...(command.bonusPct && { bonusPct: command.bonusPct }),
+              ...(command.promiseRole && { promiseRole: true as const }),
             },
           })
         : makeEvent(state, 'notable', [team.id], {
@@ -852,6 +868,7 @@ export function handleCommand(
             playerId: player.id,
             teamId: team.id,
             contract: deal.contract,
+            ...(command.promiseRole && { promiseRole: true as const }),
           });
       return applied(state, ev);
     }

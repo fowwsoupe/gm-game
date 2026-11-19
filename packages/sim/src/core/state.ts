@@ -118,6 +118,11 @@ export interface LeagueState {
   /** Players unhappy with their role on a human team; `until`: the day a promised role is due. */
   disputes: { playerId: PlayerId; teamId: TeamId; until?: number; listed?: true }[];
   /**
+   * Free agents signed with the top role at their position promised (`promiseRole`): the season
+   * and day it counts from (0 for a summer signing), checked `PROMISE_DAYS` later.
+   */
+  rolePromises: { playerId: PlayerId; teamId: TeamId; season: number; day: number }[];
+  /**
    * Games each pair of teammates has played in the same unit (a line or a pair), by team and
    * `linemateKey`, capped at `LINEMATE_GAMES_CAP`. A pair goes when either player leaves the team.
    */
@@ -162,6 +167,7 @@ const endRequest = (state: LeagueState, playerId: string) => {
   state.tradeRequests = state.tradeRequests.filter((r) => r.playerId !== playerId);
   state.holdouts = state.holdouts.filter((r) => r.playerId !== playerId);
   state.disputes = state.disputes.filter((r) => r.playerId !== playerId);
+  state.rolePromises = state.rolePromises.filter((r) => r.playerId !== playerId);
 };
 
 /** His holdout is over: an AI GM stops shopping him (a human's block list is his own call). */
@@ -443,6 +449,9 @@ export function applyEvent(state: LeagueState, event: LeagueEvent): void {
     case 'player.disputeStarted':
       state.disputes.push({ playerId: event.playerId, teamId: event.teamId });
       return;
+    case 'player.rolePromiseDue':
+      state.rolePromises = state.rolePromises.filter((r) => r.playerId !== event.playerId);
+      return;
     case 'player.disputeListed': {
       const d = state.disputes.find((x) => x.playerId === event.playerId);
       if (d) d.listed = true;
@@ -504,6 +513,14 @@ export function applyEvent(state: LeagueState, event: LeagueEvent): void {
       const p = state.players[event.playerId];
       if (!p) throw new Error(`unknown player ${event.playerId}`);
       if (p.teamId !== event.teamId && !event.staying) p.joined = capYearOf(state);
+      if (event.promiseRole) {
+        state.rolePromises.push({
+          playerId: p.id,
+          teamId: event.teamId,
+          season: capYearOf(state),
+          day: state.championTeamId ? 0 : Math.max(0, state.date.day),
+        });
+      }
       p.teamId = event.teamId;
       p.contract = { ...event.contract };
       delete p.extension;

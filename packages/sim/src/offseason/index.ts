@@ -34,7 +34,7 @@ export {
   sheetCompensation,
   talksLeft,
 } from './signing';
-export { acceptSheet, marketDay, raceFor, roomFor, walkAway } from './market';
+export { acceptSheet, MARKET_DAYS, marketDay, raceFor, roomFor, walkAway } from './market';
 export { aiHoldouts, resignOffers, resignContract, isExpiring, resignWindowOpen } from './resign';
 export { stayChance, prospectDeal, prospectsOf } from './freeAgency';
 export { freeAgents, wantedYears } from './roster';

@@ -126,6 +126,8 @@ export type LeagueEvent =
       staying?: true;
       /** An offer sheet signed him away: these draft picks go to the team that held his rights. */
       compensation?: { toTeamId: TeamId; picks: string[] };
+      /** His offer promised him the top role at his position (checked in his first regular season). */
+      promiseRole?: true;
     })
   /**
    * End of the playoffs: performance bonuses earned this season, and the part of each team's
@@ -221,8 +223,8 @@ export type LeagueEvent =
   | (EventBase & { kind: 'trade.blockSet'; teamId: TeamId; playerId: PlayerId; onBlock: boolean })
   /** A team changed how its goalies share starts. */
   | (EventBase & { kind: 'goalies.rotationSet'; teamId: TeamId; rotation: GoalieRotation })
-  /** A team made a free agent an offer (replaces its earlier one, a raise); he answers on his decision day. */
-  | (EventBase & { kind: 'freeAgency.offered'; offer: FreeAgentOffer })
+  /** A team made a free agent an offer (replaces its earlier one; `raise`: an AI team trailing in the race); he answers on his decision day. */
+  | (EventBase & { kind: 'freeAgency.offered'; offer: FreeAgentOffer; raise?: true })
   /**
    * His agent's answer to an offer under his line: the lowest salary he signs for at its term,
    * clause and bonus (`counter`) or, when no salary gets him there, the factor holding him back;
@@ -275,6 +277,8 @@ export type LeagueEvent =
   | (EventBase & { kind: 'player.tradeRequestEnded'; playerId: PlayerId; withdrawn: boolean })
   /** A player unhappy with his role (he sits well down the depth order for his rating) asks for more. */
   | (EventBase & { kind: 'player.disputeStarted'; playerId: PlayerId; teamId: TeamId })
+  /** The role promised when he signed came due: `kept` if he is first at his position (else a dispute opens). */
+  | (EventBase & { kind: 'player.rolePromiseDue'; playerId: PlayerId; kept: boolean })
   /** The GM put him on the block: the dispute stays open while he is listed (unlisted: he asks out). */
   | (EventBase & { kind: 'player.disputeListed'; playerId: PlayerId })
   /** The GM promised him a bigger role by day `until` (of this season). */

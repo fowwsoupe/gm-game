@@ -171,6 +171,7 @@ export function acceptSheet(
     teamId: sheet.teamId,
     contract: deal.contract,
     ...compensationFor(state, ctx.ruleset, player, sheet.teamId, deal.contract.capHit),
+    ...(sheet.promiseRole && { promiseRole: true as const }),
   });
 }
 
@@ -245,6 +246,7 @@ export function decideOffers(
         teamId: o.teamId,
         contract: deal.contract,
         ...compensationFor(state, ctx.ruleset, player, o.teamId, deal.contract.capHit),
+        ...(o.promiseRole && { promiseRole: true as const }),
       });
       if (offers.length >= BIDDING_WAR) {
         emit('notable', [o.teamId, ...losers], {
@@ -355,7 +357,7 @@ function raiseOffers(state: LeagueState, ctx: SimContext, emit: Emit): void {
       if (!room || 'error' in signFreeAgent(state, ctx, player, o.teamId, offer, room.freed)) {
         continue;
       }
-      emit('minor', [o.teamId], { kind: 'freeAgency.offered', offer });
+      emit('minor', [o.teamId], { kind: 'freeAgency.offered', offer, raise: true });
     }
   }
 }

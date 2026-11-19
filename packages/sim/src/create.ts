@@ -73,6 +73,7 @@ export function createLeague(
     holdouts: [],
     breakouts: {},
     disputes: [],
+    rolePromises: [],
     linemates: {},
     cash: {},
     fans: {},

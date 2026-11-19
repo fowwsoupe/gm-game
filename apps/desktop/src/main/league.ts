@@ -13,6 +13,7 @@ import {
   createLeague,
   defaultContext,
   legendTrophies,
+  MARKET_DAYS,
   phaseOf,
   parseXgTable,
   playerProfiles,
@@ -394,6 +395,7 @@ export class LeagueService {
       career: state.career,
       canBeFired: state.canBeFired,
       stopOn: state.stopOn,
+      ...(state.freeAgencyOpen && { market: { day: state.marketDay, closing: MARKET_DAYS } }),
     };
   }
 
@@ -629,6 +631,7 @@ export class LeagueService {
     for (const e of events) {
       if ('playerId' in e && e.playerId) ids.add(e.playerId);
       if (e.kind === 'player.drafted') ids.add(e.player.id);
+      if (e.kind === 'freeAgency.offered') ids.add(e.offer.playerId);
     }
     const names: Record<string, string> = {};
     const ages: Record<string, number> = {};
