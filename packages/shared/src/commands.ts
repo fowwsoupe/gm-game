@@ -25,6 +25,15 @@ export type Command =
   | { kind: 'team.setUserControlled'; teamId: TeamId; userControlled: boolean }
   /** The identity editor: give a team a new city, name and abbreviation (it keeps its id, players and history). */
   | { kind: 'team.rename'; teamId: TeamId; city: string; name: string; abbreviation: string }
+  /** Move a franchise: a new identity and market size; its fans cool by the ruleset's `relocationFanLoss`. */
+  | {
+      kind: 'team.relocate';
+      teamId: TeamId;
+      city: string;
+      name: string;
+      abbreviation: string;
+      market: number;
+    }
   /** After the champion is crowned: age, retire, draft, re-sign and sign, then start next season. */
   | { kind: 'season.rollover' }
   /** Buy out a player's contract (offseason only, once the champion is crowned). */

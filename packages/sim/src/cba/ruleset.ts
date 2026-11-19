@@ -139,6 +139,8 @@ export interface Ruleset {
     operations: { yearly: Dollars; perHomeDate: Dollars };
     /** A head coach's salary a season and the length of his deals. */
     coach: { salary: Dollars; years: number };
+    /** Fan interest a relocated franchise loses (the sandbox's relocation). */
+    relocationFanLoss: number;
   };
 
   /** Front-office staff (docs/research/2026-11-front-office.md). */

@@ -82,6 +82,9 @@ export interface TeamFans {
 /** Fans of a new league, or of an old save that has none yet. */
 export const NEW_FANS: TeamFans = { interest: 50, sponsorDeal: 50, mediaDeal: 50, attendance: 0 };
 
+/** Market sizes a relocated franchise can move to: a small town to a big city (see `marketOf`). */
+export const MARKET_SIZES = [0.7, 1, 1.4, 1.75] as const;
+
 /** Ticket price policy: whole percent around the league's reference price. */
 export const TICKET_STEPS = [-20, -10, 0, 10, 20] as const;
 
@@ -237,6 +240,8 @@ export interface Team {
   city: string;
   name: string;
   abbreviation: string;
+  /** Market size after a relocation (a multiplier, see `MARKET_SIZES`). Absent: derived from the id. */
+  market?: number;
   /** Optional league structure. The schedule plays division rivals most, then the conference. */
   conference?: string;
   division?: string;

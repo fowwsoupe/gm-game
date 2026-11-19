@@ -167,7 +167,7 @@ Build order, owners and "done when" for each step: **[V0.1_PLAN.md](V0.1_PLAN.md
 - [x] Cutscenes (trophy lift, draft pick, signing): trophy lift (a skippable full-screen Cup lift when your team wins, once per title) done; draft pick (a skippable cutscene when one of your picks lands during the session) done; signing (a skippable cutscene when you sign a free agent) done
 - [~] Summer training, camp battles, international tournament: summer training plans (a focus per player on a human team reshapes his ratings at development, never past his ceiling) done; an international tournament every four years (a nation per player, six nations, two groups of three, semi-finals and a final, late in the summer on its own random stream; the champion and top scorer on History, your players' medals in your news) done
 - [~] Hall of Fame, legends return as staff, awards named after legends: Hall of Fame (rule-based induction, History screen), awards named after legends (the first inducted goalie, defenceman and forward lend their surname to the goalie, defence and MVP awards from the next season, on History) and legends as staff (a Hall of Famer is one of a human team's candidates, one a team-season) done
-- [~] League sandbox: expansion, relocation, identity editor, commissioner mode: identity editor (rename any team's city, name and abbreviation from its team page) done
+- [~] League sandbox: expansion, relocation, identity editor, commissioner mode: identity editor (rename any team's city, name and abbreviation from its team page) and relocation (a franchise moves to a new city, name and market size from its team page; its fans cool) done
 - [ ] Multiplayer step 1: shared save (hot-seat)
 - [ ] Multiplayer step 2: hosted online league over Steam
 

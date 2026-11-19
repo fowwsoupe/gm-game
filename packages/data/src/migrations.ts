@@ -176,4 +176,8 @@ export const migrations: readonly string[] = [
   `
   ALTER TABLE players ADD COLUMN debut_season INTEGER;
   `,
+  // 21: a relocated team's market size. NULL = derived from the team id.
+  `
+  ALTER TABLE teams ADD COLUMN market REAL;
+  `,
 ];

@@ -113,6 +113,7 @@ export const NHL_2026: Ruleset = {
     // on average (see frontOffice), so total costs hold.
     operations: { yearly: dollars(44.7), perHomeDate: dollars(1.9) },
     coach: { salary: dollars(2.95), years: 3 }, // ESPN 2024: about $2.5M, usually three-year deals
+    relocationFanLoss: 15, // game design: a move costs fans, a market change is a fresh start
   },
   // docs/research/2026-11-front-office.md: no public source; unverified, tuned in the lab.
   frontOffice: {
