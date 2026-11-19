@@ -1,7 +1,7 @@
 import { describe, expect, it } from 'vitest';
 import type { Actor } from '@gm/shared';
 import { applyEvent, createLeague, dashboard, defaultContext, handleCommand } from './index';
-import { cachedContext } from './trades';
+import { assistantGuess, cachedContext, evaluateTrade } from './trades';
 
 const ctx = defaultContext();
 const local: Actor = { id: 'local', controls: [] };
@@ -71,6 +71,44 @@ describe('the assistant GM', () => {
     const ai = dashboard(state, ctx, theirs.id).todo.map((i) => i.code);
     expect(ai).not.toContain('adviceTake');
     expect(ai).not.toContain('adviceDecline');
+  });
+});
+
+describe('the assistant GM on a trade you build', () => {
+  it("guesses their answer on his read: an elite one's guess is right more often than a poor one's", () => {
+    const state = createLeague(54, ctx);
+    const mine = Object.values(state.teams).find((t) => t.userControlled)!;
+    const theirs = Object.values(state.teams).find((t) => !t.userControlled)!;
+    const roster = (id: string) => Object.values(state.players).filter((p) => p.teamId === id);
+    const proposals = roster(mine.id).flatMap((out) =>
+      roster(theirs.id).map((inc) => ({
+        fromTeamId: mine.id,
+        toTeamId: theirs.id,
+        give: [out.id],
+        get: [inc.id],
+      })),
+    );
+    const truth = proposals.map((p) => evaluateTrade(state, ctx, p).accepted);
+    const rightShare = (quality: number) => {
+      mine.staff = { assistant: { name: 'A B', quality, hired: 2026, salary: 1 } };
+      return (
+        proposals.filter((p, i) => assistantGuess(state, ctx, p) === truth[i]).length /
+        proposals.length
+      );
+    };
+    const elite = rightShare(1);
+    const poor = rightShare(0);
+    expect(elite).toBeGreaterThan(poor + 0.03);
+    // AI GMs have no assistant: no guess.
+    const { fromTeamId, toTeamId, give, get } = proposals[0]!;
+    expect(
+      assistantGuess(state, ctx, {
+        fromTeamId: toTeamId,
+        toTeamId: fromTeamId,
+        give: get,
+        get: give,
+      }),
+    ).toBeUndefined();
   });
 });
 

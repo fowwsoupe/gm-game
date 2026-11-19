@@ -19,7 +19,7 @@ export interface Contract {
   capHit: number;
   /** Season the contract ends, e.g. 2029 means it expires after 2028–29. */
   expiresAfterSeason: number;
-  /** He cannot be traded without his say; trades involving him are refused (no waiver yet). */
+  /** He cannot be traded without his say: trades involving him are refused unless he waives it (`contract.askWaiveNoTrade`). */
   noTrade?: true;
   /** Whole dollars of each year's cap hit paid as a signing bonus: cash up front, never bought out. */
   bonus?: number;
@@ -504,6 +504,8 @@ export interface AwardEntry {
   /** Absent for team awards (champion). */
   playerId?: PlayerId;
   playerName?: string;
+  /** Surname of the legend this award is named after that season ("<Surname> Trophy"), if any. */
+  trophy?: string;
 }
 
 /** A stat table: the top players for one stat ('points', 'goals', 'savePct' in hockey). */
@@ -600,6 +602,8 @@ export interface TradeEvaluation {
   accepted: boolean;
   value: number;
   reasons: TradeReason[];
+  /** Your assistant GM's guess at the answer, on his read of the players (true: likely yes). */
+  assistantGuess?: boolean;
 }
 
 /** Where the league is, for the Home screen and the buttons that depend on it. */

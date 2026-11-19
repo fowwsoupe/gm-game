@@ -65,7 +65,11 @@ export function History() {
               .filter((a) => a.season === season)
               .map((a) => (
                 <li key={a.award} className="flex justify-between gap-4">
-                  <span className="text-muted">{t(`award.${a.award}` as MessageKey)}</span>
+                  <span className="text-muted">
+                    {a.trophy
+                      ? t('award.legendTrophy', { name: a.trophy })
+                      : t(`award.${a.award}` as MessageKey)}
+                  </span>
                   <span>
                     {a.playerName ? `${a.playerName} (${teamName(a.teamId)})` : teamName(a.teamId)}
                   </span>

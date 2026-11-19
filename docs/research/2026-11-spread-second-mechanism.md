@@ -91,3 +91,17 @@ Small probes (6 leagues x 16 years) were too noisy to tune with: form 2 showed S
   would need both a lasting and a season part larger than today.
 - Showing form to the human (a word on the team page, news when a team runs hot or cold). Later,
   with the league pulse.
+
+## Re-check on main after the later merges (2026-11-18)
+
+Full lab on main at 8aab2e5 (form 3.5), seeds 1, 101, 201. Points % SD years 10+: 0.087, 0.086,
+0.085 (the last prints 0.085 but sits just under the 0.085 floor, so it keeps the "known gap"
+label); r 0.484, 0.467, 0.460; new playoff teams 30.9%, 31.6%, 31.3%. Seed 1 is no longer the
+short one: the merges since the table above (AI trades, the assistant GM, extensions on Home)
+moved the three seeds by up to 0.004 each way, more than the gap form 3.5 left on seed 1.
+
+No change made. A seed-1 fix would be chasing noise that has already moved, and the only
+candidate (form 4, probed above) costs about 0.01 of r and pushes goalie SV% r nearer the
+0.30 ceiling (seed 1 is already at 0.314 on this run, out of range, a check form does not move).
+The spread is in range on the mean (0.086) and on two of three seeds; seed 201 is the one to
+watch if a later PR moves it.

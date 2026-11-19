@@ -10,7 +10,7 @@ import { simGame } from './game';
 import { rulesGoalModel, type GoalModel } from './tuning';
 import { lineupUnits, specialUnitsView, teamStrength, unitOk, type TeamStrength } from './strength';
 import { generateFictionalLeague, generateProspect } from './generate';
-import { pickAwards } from './awards';
+import { hockeyLegendAward, pickAwards } from './awards';
 import { importHockeyRoster } from './roster';
 import {
   hockeyBonusEarned,
@@ -45,6 +45,7 @@ export function hockeySport(goalModel: GoalModel = rulesGoalModel): SportModule<
     bonusEarned: hockeyBonusEarned,
     highlights: hockeyHighlights,
     hallOfFame: hockeyHallOfFame,
+    legendAward: hockeyLegendAward,
     role: hockeyRole,
     simGame: (game, rng) => simGame(game, rng, goalModel),
   };
