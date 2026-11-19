@@ -7,8 +7,8 @@ import {
   useReactTable,
   type SortingState,
 } from '@tanstack/react-table';
-import type { PulseRow, StandingsRow, Team } from '@gm/shared';
-import { usePulse, useStandings, useTeams } from '@/lib/queries';
+import { MARKET_SIZES, type PulseRow, type StandingsRow, type Team } from '@gm/shared';
+import { useDispatch, usePulse, useStandings, useStatus, useTeams } from '@/lib/queries';
 import { useT, type MessageKey } from '@/i18n';
 import { Button, Card, TeamLink, Td, Th } from '@/ui';
 import { pct, teamName } from '@/lib/format';
@@ -51,6 +51,7 @@ export function Standings() {
   const { data: rows = [] } = useStandings();
   const { data: teams = [] } = useTeams();
   const { data: pulse = [] } = usePulse();
+  const { data: status } = useStatus();
   const t = useT();
   const [view, setView] = useState<'league' | 'conference' | 'division'>('league');
 
@@ -86,6 +87,7 @@ export function Standings() {
           ))}
         </div>
       )}
+      {status?.freeAgencyOpen && <ExpansionCard />}
       {[...groups].map(([name, rowsIn]) => (
         <Card key={name || 'league'} {...(name && { title: name })}>
           <StandingsTable data={rowsIn} />
@@ -139,5 +141,54 @@ function StandingsTable({ data }: { data: Row[] }) {
         ))}
       </tbody>
     </table>
+  );
+}
+
+/** Expansion: a new team joins the league and takes players from the others. The sim validates; an error shows beside the button. */
+function ExpansionCard() {
+  const t = useT();
+  const dispatch = useDispatch();
+  const [draft, setDraft] = useState({ city: '', name: '', abbreviation: '' });
+  const [market, setMarket] = useState<number>(1);
+  const error = dispatch.data && !dispatch.data.ok ? dispatch.data.error.message : null;
+  return (
+    <Card title={t('expansion.title')}>
+      <div className="flex flex-wrap items-end gap-3 text-sm">
+        {(['city', 'name', 'abbreviation'] as const).map((f) => (
+          <label key={f} className="flex flex-col gap-1">
+            <span className="text-muted">{t(`team.identity.${f}`)}</span>
+            <input
+              value={draft[f]}
+              maxLength={f === 'abbreviation' ? 4 : 24}
+              onChange={(e) => setDraft({ ...draft, [f]: e.target.value })}
+              className="rounded-md border border-line bg-panel px-2 py-1"
+            />
+          </label>
+        ))}
+        <label className="flex flex-col gap-1">
+          <span className="text-muted">{t('team.relocate.market')}</span>
+          <select
+            value={market}
+            onChange={(e) => setMarket(Number(e.target.value))}
+            className="rounded-md border border-line bg-panel px-2 py-1"
+          >
+            {MARKET_SIZES.map((m) => (
+              <option key={m} value={m}>
+                {t(`team.relocate.market.${m}`)}
+              </option>
+            ))}
+          </select>
+        </label>
+        <Button
+          variant="primary"
+          disabled={dispatch.isPending}
+          onClick={() => dispatch.mutate({ kind: 'league.expand', ...draft, market })}
+        >
+          {t('expansion.add')}
+        </Button>
+        {error && <span className="text-xs text-red-500">{error}</span>}
+      </div>
+      <p className="mt-2 text-xs text-muted">{t('expansion.note')}</p>
+    </Card>
   );
 }

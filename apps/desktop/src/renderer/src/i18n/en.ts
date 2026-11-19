@@ -77,6 +77,12 @@ export const en = {
   'team.relocate.market.1': 'Mid-size city',
   'team.relocate.market.1.4': 'Big city',
   'team.relocate.market.1.75': 'Major market',
+  'expansion.title': 'Expansion',
+  'expansion.add': 'Add expansion team',
+  'expansion.note':
+    'The new team takes unprotected players from the others (each keeps its best), then fills out in free agency. It joins the smallest division and plays from next season.',
+  'event.expanded':
+    'Expansion: the {team} join the league and take {n} players in the expansion draft.',
   'event.relocated': 'The franchise moves: now the {team}.',
   'team.owner': 'Owner',
   'team.owner.priority': 'Cares about winning over profit',

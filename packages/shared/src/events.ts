@@ -18,6 +18,7 @@ import type {
   PlayerId,
   PlayoffSeries,
   RetainedSalary,
+  Team,
   ScheduledGame,
   TeamFans,
   TeamId,
@@ -301,6 +302,8 @@ export type LeagueEvent =
       market: number;
       fanLoss: number;
     })
+  /** An expansion team joined the league and took `taken` from the other teams. */
+  | (EventBase & { kind: 'team.expanded'; team: Team; taken: PlayerId[] })
   /** An AI team has a new GM (the old one was fired or moved on). */
   | (EventBase & { kind: 'team.gmChanged'; teamId: TeamId; gm: GmProfile; fired: boolean })
   /** A department head left (`poached`: hired away after a good season) and `head` took over. */
