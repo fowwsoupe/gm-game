@@ -258,6 +258,19 @@ export function applyEvent(state: LeagueState, event: LeagueEvent): void {
         });
       return;
     }
+    case 'team.relocated': {
+      const team = state.teams[event.teamId];
+      if (!team) return;
+      Object.assign(team, {
+        city: event.city,
+        name: event.name,
+        abbreviation: event.abbreviation,
+        market: event.market,
+      });
+      const fans = state.fans[event.teamId] ?? NEW_FANS;
+      state.fans[event.teamId] = { ...fans, interest: Math.max(0, fans.interest - event.fanLoss) };
+      return;
+    }
     case 'team.controlChanged': {
       const team = state.teams[event.teamId];
       if (team) team.userControlled = event.userControlled;

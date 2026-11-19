@@ -291,6 +291,16 @@ export type LeagueEvent =
       name: string;
       abbreviation: string;
     })
+  /** A franchise moved: new identity and market size, and its fans lost `fanLoss` interest. */
+  | (EventBase & {
+      kind: 'team.relocated';
+      teamId: TeamId;
+      city: string;
+      name: string;
+      abbreviation: string;
+      market: number;
+      fanLoss: number;
+    })
   /** An AI team has a new GM (the old one was fired or moved on). */
   | (EventBase & { kind: 'team.gmChanged'; teamId: TeamId; gm: GmProfile; fired: boolean })
   /** A department head left (`poached`: hired away after a good season) and `head` took over. */

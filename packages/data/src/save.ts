@@ -351,6 +351,7 @@ export class SaveFile {
     const setIdentity = this.db.prepare(
       'UPDATE teams SET city = ?, name = ?, abbreviation = ? WHERE id = ?',
     );
+    const setMarket = this.db.prepare('UPDATE teams SET market = ? WHERE id = ?');
     const setControl = this.db.prepare('UPDATE teams SET user_controlled = ? WHERE id = ?');
     const setGm = this.db.prepare('UPDATE teams SET gm_json = ? WHERE id = ?');
     const setPlan = this.db.prepare('UPDATE teams SET plan_json = ? WHERE id = ?');
@@ -478,7 +479,9 @@ export class SaveFile {
           case 'team.statusChanged':
             setStatus.run(e.to, e.teamId);
             break;
+          case 'team.relocated': // a new identity too; the fans are stored with the clock
           case 'team.renamed':
+            if (e.kind === 'team.relocated') setMarket.run(e.market, e.teamId);
             setIdentity.run(e.city, e.name, e.abbreviation, e.teamId);
             break;
           case 'team.controlChanged':
@@ -644,6 +647,7 @@ export class SaveFile {
       city: string;
       name: string;
       abbreviation: string;
+      market: number | null;
       user_controlled: number;
       conference: string | null;
       division: string | null;
@@ -657,6 +661,7 @@ export class SaveFile {
       city: r.city,
       name: r.name,
       abbreviation: r.abbreviation,
+      ...(r.market != null ? { market: r.market } : {}),
       ...(r.conference ? { conference: r.conference } : {}),
       ...(r.division ? { division: r.division } : {}),
       userControlled: r.user_controlled === 1,

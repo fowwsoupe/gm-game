@@ -34,6 +34,8 @@ export function usePosts(limit: number) {
     switch (e.kind) {
       case 'team.statusChanged':
         return t('event.statusChanged', { team: team(e.teamId), status: t(`status.${e.to}`) });
+      case 'team.relocated':
+        return t('event.relocated', { team: `${e.city} ${e.name}` });
       case 'draft.classAnnounced':
         return t('event.draftClass');
       case 'player.injured':

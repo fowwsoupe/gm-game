@@ -1,5 +1,5 @@
 import { useState } from 'react';
-import { TICKET_STEPS, type Team } from '@gm/shared';
+import { MARKET_SIZES, TICKET_STEPS, type Team } from '@gm/shared';
 import { useCapSheet, useDispatch, useLines, useOwner, useRoster, useTeams } from '@/lib/queries';
 import { useUi } from '@/stores/ui';
 import { useT, type MessageKey } from '@/i18n';
@@ -188,7 +188,7 @@ export function TeamPage() {
 
 const signedPct = (pct: number) => `${pct > 0 ? '+' : ''}${pct}%`;
 
-/** The identity editor: a team's city, name and abbreviation. The sim validates; an error shows beside Save. */
+/** The identity editor: a team's city, name and abbreviation, and relocating it to a new market. The sim validates; an error shows beside Save. */
 function IdentityCard({ team }: { team: Team }) {
   const t = useT();
   const dispatch = useDispatch();
@@ -197,6 +197,7 @@ function IdentityCard({ team }: { team: Team }) {
     name: team.name,
     abbreviation: team.abbreviation,
   });
+  const [size, setSize] = useState<number>(team.market ?? 1);
   const fields = ['city', 'name', 'abbreviation'] as const;
   const error = dispatch.data && !dispatch.data.ok ? dispatch.data.error.message : null;
   return (
@@ -219,6 +220,28 @@ function IdentityCard({ team }: { team: Team }) {
           onClick={() => dispatch.mutate({ kind: 'team.rename', teamId: team.id, ...draft })}
         >
           {t('team.identity.save')}
+        </Button>
+        <label className="flex flex-col gap-1">
+          <span className="text-muted">{t('team.relocate.market')}</span>
+          <select
+            value={size}
+            onChange={(e) => setSize(Number(e.target.value))}
+            className="rounded-md border border-line bg-panel px-2 py-1"
+          >
+            {MARKET_SIZES.map((m) => (
+              <option key={m} value={m}>
+                {t(`team.relocate.market.${m}`)}
+              </option>
+            ))}
+          </select>
+        </label>
+        <Button
+          disabled={dispatch.isPending}
+          onClick={() =>
+            dispatch.mutate({ kind: 'team.relocate', teamId: team.id, ...draft, market: size })
+          }
+        >
+          {t('team.relocate')}
         </Button>
         {error && <span className="text-xs text-red-500">{error}</span>}
       </div>

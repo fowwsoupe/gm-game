@@ -8,7 +8,7 @@ import type {
   Team,
   TradeProposal,
 } from '@gm/shared';
-import { GOALIE_ROTATIONS, STOP_CATEGORIES, TICKET_STEPS } from '@gm/shared';
+import { GOALIE_ROTATIONS, MARKET_SIZES, STOP_CATEGORIES, TICKET_STEPS } from '@gm/shared';
 import {
   Rng,
   applyEvent,
@@ -105,7 +105,8 @@ export function handleCommand(
       return applied(state, ev);
     }
 
-    case 'team.rename': {
+    case 'team.rename':
+    case 'team.relocate': {
       const team = state.teams[command.teamId];
       if (!team) return invalid('unknown team');
       // The local player edits any team's identity (sandbox); a remote player only his own.
@@ -120,14 +121,21 @@ export function handleCommand(
         Object.values(state.teams).some((t) => t.id !== team.id && t.abbreviation === abbreviation)
       )
         return invalid('abbreviation already taken');
+      const identity = { teamId: team.id, city, name, abbreviation };
+      if (command.kind === 'team.rename')
+        return applied(
+          state,
+          makeEvent(state, 'minor', [team.id], { kind: 'team.renamed', ...identity }),
+        );
+      if (!(MARKET_SIZES as readonly number[]).includes(command.market))
+        return invalid('unknown market size');
       return applied(
         state,
-        makeEvent(state, 'minor', [team.id], {
-          kind: 'team.renamed',
-          teamId: team.id,
-          city,
-          name,
-          abbreviation,
+        makeEvent(state, 'notable', [team.id], {
+          kind: 'team.relocated',
+          ...identity,
+          market: command.market,
+          fanLoss: ctx.ruleset.finance.relocationFanLoss,
         }),
       );
     }
