@@ -3,6 +3,7 @@ import type { Team, TeamId } from '@gm/shared';
 import { useUi } from '@/stores/ui';
 
 export { Face } from './Face';
+export { TrophyLift } from './TrophyLift';
 export { Palette, type PaletteItem } from './Palette';
 
 /**

@@ -13,7 +13,7 @@ import {
 import type { StopCategory } from '@gm/shared';
 import { useUi, type Screen } from '@/stores/ui';
 import { useT, type MessageKey } from '@/i18n';
-import { Button } from '@/ui';
+import { Button, TrophyLift } from '@/ui';
 import { Standings } from '@/screens/Standings';
 import { History } from '@/screens/History';
 import { Leaders } from '@/screens/Leaders';
@@ -234,6 +234,7 @@ export function App() {
           </Button>
         </div>
 
+        <TrophyLift />
         {screen === 'home' && (
           <Home hasLeague={hasLeague} teamCount={teams.length} lastSim={lastSim} />
         )}
