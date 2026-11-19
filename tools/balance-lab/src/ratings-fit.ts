@@ -21,7 +21,7 @@ import { fitLinear, mean, sd } from './stats';
  * hidden rating on the stat lines it produced. One league in five is held out to measure R²
  * and the error; the table is then refit on all leagues.
  *
- *   pnpm ratings:fit              # 120 leagues, about 4 minutes
+ *   pnpm ratings:fit              # 120 leagues, about 2 minutes
  *   pnpm ratings:fit --leagues 40
  *
  * Rerun after any change to the game sim or player generation, and commit the new table.
