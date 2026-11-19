@@ -18,29 +18,54 @@ export type RatingGroup = 'F' | 'D' | 'G';
 export const ratingGroup = (position: string): RatingGroup =>
   isGoalie(position) ? 'G' : position === 'D' ? 'D' : 'F';
 
-/** Feature names, in the order the coefficients use them. Rates, so season length drops out. */
+/**
+ * Feature names, in the order the coefficients use them. Rates and shares, so season length
+ * drops out. The per-game rates and the workload terms let a rate count for more when it rests
+ * on more ice time or more games (a starter's save % says more than a backup's).
+ */
 export const SKATER_FEATURES = [
   'toiPerGame',
   'goalsPer60',
   'assistsPer60',
   'shotsPer60',
   'plusMinusPer60',
+  'goalsPerGame',
+  'assistsPerGame',
+  'shotsPerGame',
+  'plusMinusPerGame',
+  'toiPerGameSquared',
+  'gamesShare',
 ] as const;
-export const GOALIE_FEATURES = ['savePct', 'gamesShare'] as const;
+export const GOALIE_FEATURES = [
+  'savePct',
+  'gamesShare',
+  'savePctTimesGamesShare',
+  'shotsAgainstPerGame',
+] as const;
 
-export function skaterFeatures(t: SkaterTotals): number[] {
+export function skaterFeatures(t: SkaterTotals, seasonGames: number): number[] {
   const per60 = (n: number) => (t.toi > 0 ? (60 * n) / t.toi : 0);
+  const perGame = (n: number) => (t.gp > 0 ? n / t.gp : 0);
+  const toi = perGame(t.toi);
   return [
-    t.gp > 0 ? t.toi / t.gp : 0,
+    toi,
     per60(t.goals),
     per60(t.assists),
     per60(t.shots),
     per60(t.plusMinus),
+    perGame(t.goals),
+    perGame(t.assists),
+    perGame(t.shots),
+    perGame(t.plusMinus),
+    toi * toi,
+    t.gp / seasonGames,
   ];
 }
 
 export function goalieFeatures(t: GoalieTotals, seasonGames: number): number[] {
-  return [t.shotsAgainst > 0 ? t.saves / t.shotsAgainst : 0, t.gp / seasonGames];
+  const savePct = t.shotsAgainst > 0 ? t.saves / t.shotsAgainst : 0;
+  const share = t.gp / seasonGames;
+  return [savePct, share, savePct * share, t.gp > 0 ? t.shotsAgainst / t.gp : 0];
 }
 
 export interface RatingFit {
@@ -57,7 +82,8 @@ export interface RatingFit {
 
 export interface StatsToRatingsTable {
   format: 'gm-stats-to-ratings';
-  version: 1;
+  /** 2: the per-game and workload features above (1 had rates only). */
+  version: 2;
   source: string;
   groups: Record<RatingGroup, Record<string, RatingFit>>;
 }
@@ -84,7 +110,7 @@ export function statFeatures(
   return {
     features: goalie
       ? goalieFeatures(totals as GoalieTotals, seasonGames)
-      : skaterFeatures(totals as SkaterTotals),
+      : skaterFeatures(totals as SkaterTotals, seasonGames),
     share: Math.min(1, totals.gp / full),
   };
 }
