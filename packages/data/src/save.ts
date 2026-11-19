@@ -78,6 +78,7 @@ const JSON_META = {
   goalieRotation: '{}',
   tradeBlock: '[]',
   rfaSheets: '[]',
+  lastSeason: '{}',
 } satisfies Partial<Record<keyof LeagueState, string>>;
 
 const IMPORTANCE_RANK: Record<Importance, number> = { minor: 0, notable: 1, major: 2 };

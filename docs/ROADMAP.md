@@ -64,7 +64,7 @@ Build order, owners and "done when" for each step: **[V0.1_PLAN.md](V0.1_PLAN.md
 - [~] Players (`sim/players`): percentiles, builds and role tags (rules), injuries and injury history (shown on the player card) done; re-injury risk done; traits, clustered builds to do
 - [x] Value (`sim/value`): per-team surplus value (can be negative), market value, pick value curve (rules-based; calibrated curve is Azmi's)
 - [x] People (`sim/people`): personalities (from the player id), free-agent priorities by age and personality, AI GM styles and skill, team plans, morale (shown on the player card; no effects yet) done
-- [~] League & events (`sim/league`): calendar, team status (league pulse, crisis when a losing team's owner loses faith), event engine (trade requests, holdouts, disputes, breakouts, AI owners' frustration, AI fire sales), news, a stop filter done; the pulse reading playoff odds, roster age and cap space, and the in-season breakout trigger, to do
+- [~] League & events (`sim/league`): calendar, team status (league pulse, crisis when a losing team's owner loses faith), event engine (trade requests, holdouts, disputes, breakouts, AI owners' frustration, AI fire sales), news, a stop filter done; the pulse reading playoff odds, roster age and cap space, and in-season breakouts (news) done; the "talk extension" To do for them to do
 - [ ] Minor / junior / European leagues: light stats-only sim for prospects
 
 **Features**
