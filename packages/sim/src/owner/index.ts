@@ -185,7 +185,10 @@ function closeOpen(state: LeagueState, emit: Emit, teamId: TeamId) {
 }
 
 /** What each answer to a press question does: fans like swagger, the owner likes candour. */
-const PRESS_OPTIONS: Record<`press${'Win' | 'Loss' | 'Series' | 'Out'}`, OwnerCard['options']> = {
+const PRESS_OPTIONS: Record<
+  `press${'Win' | 'Loss' | 'Series' | 'Out' | 'Trade'}`,
+  OwnerCard['options']
+> = {
   pressWin: [
     { key: 'deflect', effects: {} },
     { key: 'confident', effects: { fanInterest: 2 } },
@@ -200,6 +203,11 @@ const PRESS_OPTIONS: Record<`press${'Win' | 'Loss' | 'Series' | 'Out'}`, OwnerCa
     { key: 'deflect', effects: {} },
     { key: 'confident', effects: { fanInterest: 2 } },
     { key: 'honest', effects: { confidence: 2 } },
+  ],
+  pressTrade: [
+    { key: 'deflect', effects: {} },
+    { key: 'confident', effects: { fanInterest: 2 } },
+    { key: 'honest', effects: { confidence: 1 } },
   ],
   pressOut: [
     { key: 'deflect', effects: {} },

@@ -426,7 +426,9 @@ export interface OwnerCard {
     | 'pressLoss'
     /** A press question after your team wins or loses a playoff series (`params.n` is the round). */
     | 'pressSeries'
-    | 'pressOut';
+    | 'pressOut'
+    /** A press question after a blockbuster trade: one of your top three players moved. */
+    | 'pressTrade';
   /** Text params: `amount` in dollars, `pct` in whole percent. */
   params: Record<string, number>;
   /** `noted`: a warning, nothing to decide. */
