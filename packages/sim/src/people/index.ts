@@ -29,6 +29,7 @@ export {
   coachOf,
   coachSeasonsLeft,
   DEPARTMENTS,
+  departmentsOf,
   marketOf,
   newCoach,
   ownerOf,
@@ -36,4 +37,13 @@ export {
   staffSalary,
   ticketPctOf,
 } from './owner';
-export { GM_LEAN, choosePlan, gmOf, misread, planStatus, randomGm, seenBy } from './gm';
+export {
+  GM_LEAN,
+  assistantSees,
+  choosePlan,
+  gmOf,
+  misread,
+  planStatus,
+  randomGm,
+  seenBy,
+} from './gm';

@@ -4,5 +4,5 @@
  * surplus) and the CBA engine (cap checks). The same rules judge human and AI offers.
  * AI GMs trade with each other once a week at most (`aiTrades`).
  */
-export { evaluateTrade, planRetention, tradeWindowOpen } from './evaluate';
+export { cachedContext, evaluateTrade, planRetention, tradeWindowOpen } from './evaluate';
 export { aiOffers, aiTrades } from './ai';

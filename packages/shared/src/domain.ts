@@ -230,8 +230,11 @@ export interface Team {
   staff?: Partial<Record<Department, StaffProfile>>;
 }
 
-/** Front-office departments besides the head coach (docs/research/2026-11-front-office.md). */
-export type Department = 'scouting' | 'development' | 'medical';
+/**
+ * Front-office departments besides the head coach (docs/research/2026-11-front-office.md). The
+ * assistant GM only works for a human GM (docs/research/2026-11-assistant-gm.md).
+ */
+export type Department = 'scouting' | 'development' | 'medical' | 'assistant';
 
 /** What a team's departments returned against an average one (see `GmApi.departmentReturns`). */
 export interface DepartmentReturns {
@@ -691,7 +694,11 @@ export interface TodoItem {
     | 'tradeOffers'
     | 'tradeRequest'
     | 'holdout'
-    | 'dispute';
+    | 'dispute'
+    // The assistant GM's advice: who to extend first, and take or turn down an offer.
+    | 'adviceResign'
+    | 'adviceTake'
+    | 'adviceDecline';
   params?: Record<string, string | number>;
   screen: 'roster' | 'cap' | 'draft' | 'trades' | 'lines';
 }

@@ -111,7 +111,8 @@ export interface GmApi {
     owner(input: { teamId: TeamId }): Promise<{
       owner: OwnerProfile;
       coach: CoachProfile;
-      staff: Record<Department, StaffProfile>;
+      /** The assistant GM only on a human team. */
+      staff: Record<Exclude<Department, 'assistant'>, StaffProfile> & { assistant?: StaffProfile };
       market: number;
       capacity: number;
       fans: TeamFans;
@@ -123,7 +124,7 @@ export interface GmApi {
      */
     staffCandidates(input: {
       teamId: TeamId;
-    }): Promise<Record<Department, { candidates: StaffProfile[]; locked: boolean }>>;
+    }): Promise<Partial<Record<Department, { candidates: StaffProfile[]; locked: boolean }>>>;
     /**
      * What each department returned last season against an average one: rating points a year
      * added to players 24 or younger, the share of injury time saved (negative: lost), and how

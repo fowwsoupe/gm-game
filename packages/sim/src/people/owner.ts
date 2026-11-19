@@ -28,6 +28,13 @@ const qualityOf = (c: CoachProfile) =>
 
 export const DEPARTMENTS: readonly Department[] = ['scouting', 'development', 'medical'];
 
+/**
+ * A team's departments. The assistant GM advises a human GM (docs/research/2026-11-assistant-gm.md);
+ * an AI GM decides on his own read, so AI teams neither pay nor change one.
+ */
+export const departmentsOf = (team: Team): readonly Department[] =>
+  team.userControlled ? [...DEPARTMENTS, 'assistant'] : DEPARTMENTS;
+
 /** A department head's salary: rises with quality squared, to the nearest $10K. */
 export const staffSalary = (quality: number, range: { min: number; max: number }) =>
   Math.round((range.min + quality ** 2 * (range.max - range.min)) / 10_000) * 10_000;

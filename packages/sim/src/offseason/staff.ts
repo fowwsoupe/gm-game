@@ -1,7 +1,7 @@
 import type { Department, DepartmentReturns, StaffProfile, Team, TeamId } from '@gm/shared';
 import { FIRST, LAST, Rng, teamName, type Emit, type LeagueState } from '../core';
 import type { SimContext } from '../context';
-import { DEPARTMENTS, hash, ownerOf, staffOf, staffSalary } from '../people';
+import { departmentsOf, hash, ownerOf, staffOf, staffSalary } from '../people';
 import { leagueStandings } from '../league';
 import { teamRange } from './draft';
 
@@ -36,7 +36,7 @@ export function changeStaff(
   for (const teamId of (Object.keys(state.teams) as TeamId[]).sort()) {
     const team = state.teams[teamId]!;
     const z = sd > 0 ? ((pct.get(teamId) ?? mean) - mean) / sd : 0;
-    for (const department of DEPARTMENTS) {
+    for (const department of departmentsOf(team)) {
       const r = rng.fork(`${teamId}:${department}`);
       const gone = staffOf(team, department, fo.salary, season);
       const poachChance = fo.poach * gone.quality * Math.max(0, z);
