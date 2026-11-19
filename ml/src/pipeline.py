@@ -42,6 +42,10 @@ TABLES = {
 }
 
 
+LEAGUES = ("nhl", "junior", "europe")
+POSITIONS = ("C", "LW", "RW", "D", "G")
+
+
 class DataError(ValueError):
     """An input file does not meet the M1 data contract."""
 
@@ -135,9 +139,9 @@ def _validate(tables: dict[str, list[dict[str, str]]]) -> None:
             "player_seasons")
     for row in tables["player_seasons"]:
         _integer(row["season"], "player_seasons.season", 1900)
-        if row["league"] not in ("nhl", "junior", "europe"):
+        if row["league"] not in LEAGUES:
             raise DataError("player_seasons.league: expected nhl, junior, or europe")
-        if row["position"] not in ("C", "LW", "RW", "D", "G"):
+        if row["position"] not in POSITIONS:
             raise DataError("player_seasons.position: invalid hockey position")
         for field in ("games", "goals", "assists", "shots"):
             _integer(row[field], f"player_seasons.{field}")
@@ -147,9 +151,9 @@ def _validate(tables: dict[str, list[dict[str, str]]]) -> None:
     _unique(tables["player_features"], ("season", "player_id", "league"),
             "player_features")
     for row in tables["player_features"]:
-        if row["league"] not in ("nhl", "junior", "europe"):
+        if row["league"] not in LEAGUES:
             raise DataError("player_features.league: invalid league")
-        if row["position"] not in ("C", "LW", "RW", "D", "G"):
+        if row["position"] not in POSITIONS:
             raise DataError("player_features.position: invalid position")
         _integer(row["season"], "player_features.season", 1900)
         for field in TABLES["player_features"][4:]:
@@ -242,7 +246,7 @@ def build(raw: Path, processed: Path) -> dict:
                         "team_seasons": len(teams)},
                "leagues": dict(sorted({league: sum(row["league"] == league for row in
                                                tables["player_seasons"])
-                                       for league in ("nhl", "junior", "europe")}.items()))}
+                                       for league in LEAGUES}.items()))}
     (processed / "summary.json").write_text(json.dumps(summary, indent=2) + "\n",
                                             encoding="utf-8")
     return summary

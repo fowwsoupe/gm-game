@@ -14,12 +14,12 @@ from collections import defaultdict
 from pathlib import Path
 
 
-def _rows(path: Path) -> list[dict[str, str]]:
+def read_rows(path: Path) -> list[dict[str, str]]:
     with path.open(newline="", encoding="utf-8") as stream:
         return list(csv.DictReader(stream))
 
 
-def _solve(matrix: list[list[float]], values: list[float]) -> list[float]:
+def solve(matrix: list[list[float]], values: list[float]) -> list[float]:
     """Small linear system with pivoting for ridge regression."""
     size = len(values)
     augmented = [row[:] + [value] for row, value in zip(matrix, values)]
@@ -39,6 +39,16 @@ def _solve(matrix: list[list[float]], values: list[float]) -> list[float]:
     return [row[-1] for row in augmented]
 
 
+def pearson(pairs: list[tuple[float, float]]) -> float:
+    n = len(pairs)
+    mx = sum(a for a, _ in pairs) / n
+    my = sum(b for _, b in pairs) / n
+    sxy = sum((a - mx) * (b - my) for a, b in pairs)
+    sxx = sum((a - mx) ** 2 for a, _ in pairs)
+    syy = sum((b - my) ** 2 for _, b in pairs)
+    return sxy / math.sqrt(sxx * syy)
+
+
 def _fit_ridge(train: list[dict], features: tuple[str, ...], alpha: float = 10):
     """Standardize on training rows only, then fit an intercept and fixed ridge penalty."""
     means = {key: sum(row[key] for row in train) / len(train) for key in features}
@@ -55,7 +65,7 @@ def _fit_ridge(train: list[dict], features: tuple[str, ...], alpha: float = 10):
                 matrix[i][j] += first * second
     for index in range(len(features)):
         matrix[index][index] += alpha
-    weights = _solve(matrix, values)
+    weights = solve(matrix, values)
 
     def predict(row: dict) -> float:
         return target_mean + sum(weight * (row[key] - means[key]) / scales[key]
@@ -94,7 +104,7 @@ def _evaluate(rows: list[dict], holdout: int, models: dict[str, tuple[str, ...]]
 
 
 def _team_pairs(path: Path) -> list[dict]:
-    teams = {(int(row["season"]), row["team_id"]): row for row in _rows(path)}
+    teams = {(int(row["season"]), row["team_id"]): row for row in read_rows(path)}
     pairs = []
     for (season, team), row in teams.items():
         later = teams.get((season + 1, team))
@@ -119,7 +129,7 @@ def _team_pairs(path: Path) -> list[dict]:
 
 
 def _player_pairs(path: Path) -> tuple[list[dict], list[dict]]:
-    players = {(int(row["season"]), row["player_id"]): row for row in _rows(path)}
+    players = {(int(row["season"]), row["player_id"]): row for row in read_rows(path)}
     skaters, goalies = [], []
     for (season, player_id), row in players.items():
         later = players.get((season + 1, player_id))
