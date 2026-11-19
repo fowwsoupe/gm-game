@@ -48,6 +48,24 @@ describe('roster files', () => {
     if (out.ok) expect(out.events.some((e) => e.kind === 'game.final')).toBe(true);
   });
 
+  it('rates a player from one season of stats when the file has no ratings', () => {
+    const file = exportHockeyRoster(fictional(), { season: 2027, name: 'Test' });
+    const skater = file.players.find((p) => p.skater)!;
+    const goalie = file.players.find((p) => p.goalie)!;
+    const keep = { skater: skater.skater, goalie: goalie.goalie };
+    delete skater.skater;
+    delete goalie.goalie;
+    skater.stats = { gp: 80, goals: 40, assists: 40, shots: 250, plusMinus: 10, toi: 1500 };
+    goalie.stats = { gp: 60, shotsAgainst: 1800, saves: 1650 };
+    const res = importHockeyRoster(file, ctx.ruleset);
+    if (!res.ok) throw new Error(res.errors.join('\n'));
+    const rated = (id: string) => res.players.find((p) => p.id === `p_${id}`)!.ratings;
+    expect(Object.keys(rated(skater.id)).sort()).toEqual(Object.keys(keep.skater!).sort());
+    expect(Object.keys(rated(goalie.id)).sort()).toEqual(Object.keys(keep.goalie!).sort());
+    delete skater.stats; // neither ratings nor stats: rejected
+    expect(importHockeyRoster(file, ctx.ruleset).ok).toBe(false);
+  });
+
   it('rejects bad files with readable errors', () => {
     expect(importHockeyRoster({ hello: 'world' }, ctx.ruleset).ok).toBe(false);
     const file = exportHockeyRoster(fictional(), { season: 2027, name: 'Test' });
