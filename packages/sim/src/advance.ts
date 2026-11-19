@@ -42,6 +42,7 @@ import {
   coachWeek,
   deadlineCheckIn,
   ownerMonth,
+  pressQuestion,
   preseasonMeeting,
   seasonReview,
 } from './owner';
@@ -239,6 +240,7 @@ export function advance(
               params: { team: teamName(state.teams[id]!), n: Math.abs(next) },
             }),
           );
+          pressQuestion(state, emitter(state, events), id, next);
         }
       }
     }

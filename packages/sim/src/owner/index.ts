@@ -184,6 +184,32 @@ function closeOpen(state: LeagueState, emit: Emit, teamId: TeamId) {
   }
 }
 
+/** What each answer to a press question does: fans like swagger, the owner likes candour. */
+const PRESS_OPTIONS: Record<'pressWin' | 'pressLoss', OwnerCard['options']> = {
+  pressWin: [
+    { key: 'deflect', effects: {} },
+    { key: 'confident', effects: { fanInterest: 2 } },
+    { key: 'honest', effects: { confidence: 2 } },
+  ],
+  pressLoss: [
+    { key: 'deflect', effects: {} },
+    { key: 'confident', effects: { fanInterest: 1, confidence: -2 } },
+    { key: 'honest', effects: { fanInterest: -1, confidence: 2 } },
+  ],
+};
+
+/** After a streak milestone, the press asks a human GM about it (an AI GM is never asked). */
+export function pressQuestion(state: LeagueState, emit: Emit, teamId: TeamId, streak: number) {
+  if (!state.teams[teamId]!.userControlled) return;
+  const kind = streak > 0 ? 'pressWin' : 'pressLoss';
+  offer(
+    state,
+    emit,
+    { teamId, kind, params: { n: Math.abs(streak) }, options: PRESS_OPTIONS[kind] },
+    'deflect',
+  );
+}
+
 /** The owner warns a human GM his job is on the line: once a season, while "can be fired" is on. */
 function warnIfHot(state: LeagueState, emit: Emit, teamId: TeamId, confidence: number) {
   const standing = state.owners[teamId];
