@@ -1,7 +1,10 @@
 import { describe, expect, it } from 'vitest';
-import type { Actor, Player, PlayerId, TeamId } from '@gm/shared';
+import type { Actor, LeagueEvent, Player, PlayerId, TeamId } from '@gm/shared';
 import {
+  aiTrades,
   applyEvent,
+  emitter,
+  Rng,
   createLeague,
   defaultContext,
   evaluateTrade,
@@ -269,6 +272,34 @@ describe('AI-to-AI trades', () => {
         expect(e.date.day).toBeLessThanOrEqual(base.ruleset.season.calendar.tradeDeadlineDay);
       }
     }
+  }, 60_000);
+
+  it('a player on an AI seller’s block goes to an AI buyer more often than when unlisted', () => {
+    const league = createLeague(5, base);
+    const ai = Object.values(league.teams).filter((t) => !t.userControlled);
+    const seller = ai[0]!.id;
+    league.teamStatus[seller] = 'seller';
+    for (const t of ai.slice(1, 6)) league.teamStatus[t.id] = 'contender';
+    const player = Object.values(league.players)
+      .filter((p) => p.teamId === seller && p.contract?.expiresAfterSeason === league.date.season)
+      .sort((a, b) => a.id.localeCompare(b.id))[0]!;
+    const traded = (listed: boolean) => {
+      let n = 0;
+      for (let seed = 0; seed < 20; seed++) {
+        const state = structuredClone(league);
+        if (listed) state.tradeBlock.push(player.id);
+        const events: LeagueEvent[] = [];
+        aiTrades(state, base, new Rng(seed), emitter(state, events));
+        if (state.players[player.id]!.teamId !== seller) n++;
+        for (const e of events) {
+          if (e.kind !== 'trade.completed') continue;
+          expect(state.teams[e.fromTeamId]!.userControlled).toBe(false);
+          expect(state.teams[e.toTeamId]!.userControlled).toBe(false);
+        }
+      }
+      return n;
+    };
+    expect(traded(true)).toBeGreaterThan(traded(false));
   }, 60_000);
 });
 

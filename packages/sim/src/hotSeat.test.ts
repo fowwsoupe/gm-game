@@ -25,6 +25,10 @@ function tanking(canBeFired: boolean) {
   }
   const teamId = Object.keys(state.teams).sort()[0] as TeamId;
   run(state, { kind: 'team.setUserControlled', teamId, userControlled: true });
+  // A team that really loses, whatever the rest of the league does.
+  for (const p of Object.values(state.players).filter((x) => x.teamId === teamId)) {
+    for (const k of Object.keys(p.ratings)) p.ratings[k] = Math.max(1, p.ratings[k]! - 20);
+  }
   if (!canBeFired) run(state, { kind: 'league.setCanBeFired', on: false });
   run(state, { kind: 'sim.advance', days: 1 }); // the preseason meeting
   const owner = state.owners[teamId]!;

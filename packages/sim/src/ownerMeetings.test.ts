@@ -168,7 +168,8 @@ describe('owner meetings', () => {
             cash: before.cash + (fx.cash ?? 0),
             interest: before.interest + (fx.fanInterest ?? 0),
             ticketPct: fx.ticketPct ?? before.ticketPct,
-            confidence: before.confidence + (fx.confidence ?? 0),
+            // Confidence stays within 0-100.
+            confidence: Math.min(100, Math.max(0, before.confidence + (fx.confidence ?? 0))),
             payrollBudget: before.payrollBudget + (fx.payrollBudget ?? 0),
           });
           expect(copy.ownerCards.some((c) => c.id === card.id)).toBe(false);

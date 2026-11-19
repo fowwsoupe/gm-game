@@ -15,6 +15,8 @@ import { GM_LEAN, gmOf, planStatus, seenBy } from '../people';
 const WEEKLY_TRADE_CHANCE = 0.8;
 /** Pairs of teams tried per week. */
 const PAIRS_TRIED = 12;
+/** Of those, the first ones a buyer spends on teams with players on the trade block. */
+const BLOCK_PAIRS = 6;
 /** The buyer's own players it considers sending back, cheapest-to-it first. */
 const OFFERS_TRIED = 8;
 
@@ -44,7 +46,8 @@ function valuer(state: LeagueState, ctx: SimContext, cache: TradeCache) {
  * most above what the seller does, and offers one of its own players the seller values more
  * than it does (or a draft pick when no player works). The trade happens only if both sides accept under the same rules as a human
  * offer (`evaluateTrade`), so the AI cannot make a trade a human could not.
- * One trade a week at most. Human teams are never involved.
+ * Players on an AI team's trade block (a fire sale) come first: buyers call those teams first
+ * and ask only for listed players. One trade a week at most. Human teams are never involved.
  */
 export function aiTrades(state: LeagueState, ctx: SimContext, rng: Rng, emit: Emit): void {
   if (!tradeWindowOpen(state, ctx) || !rng.chance(WEEKLY_TRADE_CHANCE)) return;
@@ -60,8 +63,10 @@ export function aiTrades(state: LeagueState, ctx: SimContext, rng: Rng, emit: Em
     BUYING.includes(status(id)) || (status(id) === 'bubble' && lean(id) > 0);
   const sells = (id: TeamId) =>
     SELLING.includes(status(id)) || (status(id) === 'bubble' && lean(id) < 0);
+  // A team with players on the trade block is a willing seller of them, whatever its status.
+  const blocks = ai.filter((id) => state.tradeBlock.some((p) => state.players[p]?.teamId === id));
   const buyers = ai.filter(buys);
-  const sellers = ai.filter(sells);
+  const sellers = ai.filter((id) => sells(id) || blocks.includes(id));
   if (!buyers.length || !sellers.length) return;
   const roster = (id: TeamId) =>
     Object.values(state.players)
@@ -72,9 +77,13 @@ export function aiTrades(state: LeagueState, ctx: SimContext, rng: Rng, emit: Em
 
   for (let i = 0; i < PAIRS_TRIED; i++) {
     const buyer = rng.pick(buyers);
-    const seller = rng.pick(sellers);
+    // Buyers look at the block first: the first calls go to teams with listed players.
+    const seller = i < BLOCK_PAIRS && blocks.length ? rng.pick(blocks) : rng.pick(sellers);
     const gap = (p: Player, to: TeamId, from: TeamId) => value(p, to) - value(p, from);
-    const target = roster(seller).sort((a, b) => gap(b, buyer, seller) - gap(a, buyer, seller))[0];
+    const listed = roster(seller).filter((p) => state.tradeBlock.includes(p.id));
+    const target = (listed.length ? listed : roster(seller)).sort(
+      (a, b) => gap(b, buyer, seller) - gap(a, buyer, seller),
+    )[0];
     if (!target) continue;
     // What the buyer can pay with: players the seller values more than it does, then its picks.
     const offers: { give: string[]; givePicks: string[]; label: string }[] = [
