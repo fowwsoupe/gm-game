@@ -122,7 +122,16 @@ export const NHL_2026: Ruleset = {
     interim: 0.3, // the brief's interim quality
   },
   // docs/research/2026-11-free-agency-bidding.md: the brief's numbers, unverified game numbers.
-  freeAgency: { days: 2, raiseStep: 0.05, maxPremium: 1.2 },
+  freeAgency: {
+    days: 2,
+    raiseStep: 0.05,
+    maxPremium: 1.2,
+    line: 70,
+    lineSwing: 5,
+    markup: 6,
+    patience: 4,
+    lowball: 15,
+  },
   training: { points: 2 }, // the brief's start, a game number for the lab
   international: { every: 4 },
   roster: {

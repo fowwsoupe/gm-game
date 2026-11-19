@@ -27,8 +27,19 @@ export type Command =
   | { kind: 'season.rollover' }
   /** Buy out a player's contract (offseason only, once the champion is crowned). */
   | { kind: 'contract.buyout'; playerId: PlayerId }
-  /** Re-sign a player whose contract ends this season, for `years` seasons from next season (same window as buyouts). */
-  | { kind: 'contract.resign'; playerId: PlayerId; years: number }
+  /**
+   * Re-sign a player whose contract ends this season, for `years` seasons from next season (same
+   * window as buyouts), on the same kind of offer as `contract.sign`: at or over his line he signs,
+   * under it his agent answers (`contract.countered`).
+   */
+  | {
+      kind: 'contract.resign';
+      playerId: PlayerId;
+      salary: number;
+      years: number;
+      noTrade?: true;
+      bonusPct?: number;
+    }
   /**
    * Ask the no-trade players you give in this trade to waive their clause for it. If they all
    * agree (who they are, and morale) the clause goes and the trade is made, if it is otherwise
@@ -93,8 +104,9 @@ export type Command =
   /** Let the offer sheet stand: he signs with the other team. */
   | { kind: 'freeAgency.declineSheet'; playerId: PlayerId; teamId: TeamId }
   /**
-   * Offer a free agent `salary` a year for `years`. He signs now if interested and no AI team has
-   * an offer to him; otherwise your offer joins theirs and he picks the best next day. `noTrade`
+   * Offer a free agent `salary` a year for `years`. At or over his line (hidden) he signs now if no
+   * AI team has an offer to him; otherwise your offer joins theirs and he picks the best when he
+   * decides. Under his line his agent answers with a counter (`contract.countered`). `noTrade`
    * adds a no-trade clause: the player likes it, the CBA caps how many a team may hold.
    * `bonusPct`: share of the salary paid as a signing bonus (CBA-capped): the player likes the cash,
    * and a buyout never owes it.

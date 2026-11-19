@@ -155,6 +155,7 @@ export const useSigningInterest = (
         years: number;
         noTrade?: true;
         bonusPct?: number;
+        resign?: true;
       }
     | undefined,
 ) =>

@@ -166,6 +166,15 @@ export interface Ruleset {
     raiseStep: number;
     /** An AI team pays at most his ask times this, plus its GM's lean and a contender's premium. */
     maxPremium: number;
+    /** The interest an average player signs at (his line); greed moves it up to `lineSwing` either way. */
+    line: number;
+    lineSwing: number;
+    /** His agent's counter asks up to this much interest over his line (the greediest player most). */
+    markup: number;
+    /** Offers under his line a team may make before he breaks off talks: 1 plus this x temperament. */
+    patience: number;
+    /** An offer more than this far under his line is a lowball and spends two of them. */
+    lowball: number;
   };
 
   /** Summer training plans (docs/research/2026-11-summer-training.md). */

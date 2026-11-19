@@ -81,6 +81,7 @@ const JSON_META = {
   stopOn: '["league","yours","offers","injuries"]',
   faOffers: '[]',
   marketDay: '0',
+  talks: '{}',
   rfaRights: '{}',
   formerTeams: '{}',
   goalieRotation: '{}',
@@ -510,6 +511,7 @@ export class SaveFile {
           case 'trade.offered':
           case 'freeAgency.offered':
           case 'freeAgency.dayPassed':
+          case 'contract.countered':
           case 'freeAgency.sheetReceived':
           case 'freeAgency.sheetDropped':
           case 'player.tradeRequested':

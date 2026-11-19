@@ -211,6 +211,20 @@ export type LeagueEvent =
   | (EventBase & { kind: 'goalies.rotationSet'; teamId: TeamId; rotation: GoalieRotation })
   /** A team made a free agent an offer (replaces its earlier one, a raise); he answers on his decision day. */
   | (EventBase & { kind: 'freeAgency.offered'; offer: FreeAgentOffer })
+  /**
+   * His agent's answer to an offer under his line: the lowest salary he signs for at its term,
+   * clause and bonus (`counter`) or, when no salary gets him there, the factor holding him back;
+   * and the rounds of talks `teamId` has left (0: broken off until free agency opens or the season
+   * starts, so no counter).
+   */
+  | (EventBase & {
+      kind: 'contract.countered';
+      playerId: PlayerId;
+      teamId: TeamId;
+      rounds: number;
+      counter?: number;
+      holdsBack?: 'winning' | 'role' | 'term';
+    })
   /** A new market day in the summer's free agency (1 on the first after it opens). */
   | (EventBase & { kind: 'freeAgency.dayPassed'; day: number })
   /** An offer sheet to a restricted free agent: the team holding his rights may match it or not. */

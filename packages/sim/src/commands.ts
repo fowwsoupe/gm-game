@@ -33,6 +33,11 @@ import {
   isExpiring,
   acceptSheet,
   continueDraft,
+  counterOffer,
+  lineOf,
+  NOT_INTERESTED,
+  signingInterest,
+  talksLeft,
   draftPlayer,
   onTheClock,
   startDraft,
@@ -62,6 +67,7 @@ const invalid = (message: string): CommandResult => ({
   ok: false,
   error: { code: 'invalid', message },
 });
+const TALKS_OFF = 'he has broken off talks with you';
 /** Applies one event and returns it as the command's result. */
 const applied = (state: LeagueState, ev: LeagueEvent): CommandResult => {
   applyEvent(state, ev);
@@ -145,9 +151,17 @@ export function handleCommand(
       if (!resignWindowOpen(state, ctx) || !isExpiring(state, player)) {
         return invalid('only expiring contracts, outside the playoffs');
       }
-      const deal = resignContract(state, ctx, player, command.years);
+      if (talksLeft(state, ctx, player.id, team.id) === 0) return invalid(TALKS_OFF);
+      const deal = resignContract(state, ctx, player, command);
       if ('issues' in deal) {
         return invalid(`illegal contract: ${deal.issues[0]!.code}`);
+      }
+      const offer = { ...command, resign: true as const };
+      if (signingInterest(state, ctx, player, team.id, offer).interest < lineOf(ctx, player.id)) {
+        return applied(
+          state,
+          makeEvent(state, 'minor', [team.id], counterOffer(state, ctx, player, team.id, offer)),
+        );
       }
       // In season it is an extension: the current deal still runs to the end of the year.
       const ev = makeEvent(state, 'notable', [team.id], {
@@ -690,7 +704,14 @@ export function handleCommand(
         return invalid('unknown player or team');
       }
       if (!controls(actor, team)) return notYours;
+      if (talksLeft(state, ctx, player.id, team.id) === 0) return invalid(TALKS_OFF);
       const deal = signFreeAgent(state, ctx, player, team.id, command);
+      if ('error' in deal && deal.error === NOT_INTERESTED) {
+        return applied(
+          state,
+          makeEvent(state, 'minor', [team.id], counterOffer(state, ctx, player, team.id, command)),
+        );
+      }
       if ('error' in deal) return invalid(deal.error);
       // With AI offers on the table he weighs them all tomorrow; otherwise he decides now.
       // A restricted free agent's own team gets to match first: an offer sheet is never instant.

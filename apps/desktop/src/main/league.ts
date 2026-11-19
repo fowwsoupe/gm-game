@@ -594,7 +594,9 @@ export class LeagueService {
   ) {
     const { state } = this.open();
     const player = state.players[playerId];
-    if (!player || player.teamId !== null || !state.teams[teamId]) return null;
+    if (!player || player.teamId !== (offer.resign ? teamId : null) || !state.teams[teamId]) {
+      return null;
+    }
     return signingInterest(state, defaultContext(state.rulesetId), player, teamId, offer);
   }
 
