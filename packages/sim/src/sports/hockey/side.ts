@@ -7,6 +7,7 @@ import type {
   Player,
 } from '@gm/shared';
 import { attack, autoKillers, defence, faceoffs, rating, type TeamStrength } from './strength';
+import { traitLevers } from './builds';
 
 export interface Side {
   players: Player[];
@@ -29,6 +30,8 @@ export interface Side {
   shoot: number[];
   pass: number[];
   phys: number[];
+  /** Play-trait levers (shot distance spread, penalty weight), by index. */
+  traits: { shotSpread: number; penaltyWeight: number }[];
   /** The goalie who started and the one who can come in, and who is in now (-1 = nobody). */
   goalies: Player[];
   current: number;
@@ -95,6 +98,7 @@ export function makeSide(strength: TeamStrength, backup: boolean): Side {
     shoot: players.map((p) => rating(p, 'shooting')),
     pass: players.map((p) => rating(p, 'passing')),
     phys: players.map((p) => rating(p, 'physical')),
+    traits: players.map(traitLevers),
     goalies: order.slice(0, 2),
     current: starter ? 0 : -1,
     goalieLines: starter ? [{ id: starter.id, toi: 0, shotsAgainst: 0, saves: 0 }] : [],

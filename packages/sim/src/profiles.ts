@@ -96,7 +96,7 @@ export function playerProfiles(
         ...(p.injuryHistory && { injuryHistory: { ...p.injuryHistory } }),
         ...(state.holdouts.some((h) => h.playerId === p.id) && { holdout: true as const }),
         percentiles,
-        ...sport.role(p.position, percentiles),
+        ...sport.role(p.position, percentiles, p.id),
         traits: notableTraits(personalityOf(p.id)),
         stats: lines.get(p.id) ?? {},
         ask: ctx.models.contractDemand.ask(ctx.ruleset, p),

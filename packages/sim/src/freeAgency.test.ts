@@ -267,7 +267,7 @@ describe('AI offers in free agency', () => {
   });
 
   it('a bidding war: he waits, the trailing team raises within its walk-away, the best interest wins', () => {
-    const { state } = finishedSeason(27);
+    const { state } = finishedSeason(28);
     run(state, { kind: 'offseason.openFreeAgency' });
     const ask = (p: Player) => ctx.models.contractDemand.ask(ctx.ruleset, p);
     const legal = (p: Player, teamId: TeamId, salary: number) => {

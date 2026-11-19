@@ -12,6 +12,7 @@ import {
   percentileRank,
   playerProfiles,
   Rng,
+  PLAY_TRAITS,
   SKATER_BUILD_CLUSTERS,
   seedPlayoffs,
   validateContract,
@@ -329,10 +330,20 @@ describe('builds and role tags', () => {
     expect(avgPct('grinder', 'physical')).toBeGreaterThan(avgPct('grinder', 'shooting') + 10);
     expect(avgPct('offensiveD', 'passing')).toBeGreaterThan(avgPct('offensiveD', 'physical') + 10);
     for (const c of cards) {
-      expect(c.tags.length).toBeLessThanOrEqual(2);
-      if (c.tags.length)
+      const skills = c.tags.filter((tag) => !(tag in PLAY_TRAITS));
+      expect(skills.length).toBeLessThanOrEqual(2);
+      if (skills.length)
         expect(Math.max(...c.percentiles.map((x) => x.value))).toBeGreaterThanOrEqual(90);
     }
+    // Play traits: about one skater in five, each about as common as its opposite; no goalie.
+    const skaters = cards.filter((c) => c.position !== 'G');
+    const share = (trait: string) =>
+      skaters.filter((c) => c.tags.includes(trait)).length / skaters.length;
+    for (const trait of Object.keys(PLAY_TRAITS))
+      expect(Math.abs(share(trait) - 0.05)).toBeLessThan(0.01);
+    expect(cards.some((c) => c.position === 'G' && c.tags.some((tag) => tag in PLAY_TRAITS))).toBe(
+      false,
+    );
   });
 });
 
