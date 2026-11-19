@@ -84,6 +84,11 @@ export const fr: Record<MessageKey, string> = {
     'La nouvelle équipe prend des joueurs non protégés chez les autres (chacune garde ses meilleurs), puis se complète en autonomie. Elle rejoint la plus petite division et joue dès la saison prochaine.',
   'event.expanded':
     "Expansion : les {team} rejoignent la ligue et choisissent {n} joueurs lors du repêchage d'expansion.",
+  'commissioner.title': 'Commissaire',
+  'commissioner.move': 'Transférer',
+  'commissioner.note':
+    "Place-le dans n'importe quelle équipe, ou libère-le, sans égard au plafond ni aux règles d'échange.",
+  'event.moved': 'Le commissaire transfère {player} : désormais avec {team}.',
   'event.relocated': 'La franchise déménage : désormais les {team}.',
   'team.owner': 'Propriétaire',
   'team.owner.priority': 'Préfère gagner plutôt que faire du profit',

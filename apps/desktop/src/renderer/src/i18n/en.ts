@@ -83,6 +83,11 @@ export const en = {
     'The new team takes unprotected players from the others (each keeps its best), then fills out in free agency. It joins the smallest division and plays from next season.',
   'event.expanded':
     'Expansion: the {team} join the league and take {n} players in the expansion draft.',
+  'commissioner.title': 'Commissioner',
+  'commissioner.move': 'Move',
+  'commissioner.note':
+    'Put him on any team, or release him to free agency, whatever the cap and trade rules say.',
+  'event.moved': 'The commissioner moves {player}: now with {team}.',
   'event.relocated': 'The franchise moves: now the {team}.',
   'team.owner': 'Owner',
   'team.owner.priority': 'Cares about winning over profit',

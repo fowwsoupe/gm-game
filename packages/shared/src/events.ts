@@ -304,6 +304,8 @@ export type LeagueEvent =
     })
   /** An expansion team joined the league and took `taken` from the other teams. */
   | (EventBase & { kind: 'team.expanded'; team: Team; taken: PlayerId[] })
+  /** The commissioner moved a player to `toTeamId` (null: free agency, his contract voided). */
+  | (EventBase & { kind: 'player.moved'; playerId: PlayerId; toTeamId: TeamId | null })
   /** An AI team has a new GM (the old one was fired or moved on). */
   | (EventBase & { kind: 'team.gmChanged'; teamId: TeamId; gm: GmProfile; fired: boolean })
   /** A department head left (`poached`: hired away after a good season) and `head` took over. */

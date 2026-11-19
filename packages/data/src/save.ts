@@ -472,6 +472,11 @@ export class SaveFile {
             if (p) insertPlayer(p);
             break;
           }
+          case 'player.moved':
+            moved.add(e.playerId);
+            if (e.toTeamId) setTeam.run(e.toTeamId, e.playerId);
+            else setContract.run(null, null, e.playerId);
+            break;
           case 'player.signed':
             moved.add(e.playerId);
             setContract.run(e.teamId, JSON.stringify(e.contract), e.playerId);

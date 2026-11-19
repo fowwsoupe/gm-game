@@ -155,6 +155,22 @@ export function handleCommand(
       );
     }
 
+    case 'commissioner.move': {
+      if (actor.id !== 'local') return notYours;
+      const player = state.players[command.playerId];
+      if (!player?.teamId || !player.contract) return invalid('not a rostered player');
+      if (command.teamId === player.teamId) return invalid('already there');
+      if (command.teamId && !state.teams[command.teamId]) return invalid('unknown team');
+      return applied(
+        state,
+        makeEvent(state, 'notable', [player.teamId, ...(command.teamId ? [command.teamId] : [])], {
+          kind: 'player.moved',
+          playerId: player.id,
+          toTeamId: command.teamId,
+        }),
+      );
+    }
+
     case 'team.rename':
     case 'team.relocate': {
       const team = state.teams[command.teamId];
