@@ -61,8 +61,9 @@ the staff market. So the assistant is a department of human teams only
    on each trade offer, as accurate as his quality.
    _Done when:_ a test shows an elite assistant right more often than a poor one; the lab is
    unchanged (no AI team has one).
-2. **Free agency and your own trades.** The best value signing for your cap room; his guess at
-   the other team's answer before you propose.
+2. **Free agency and your own trades.** The best value signing for your cap room (done: the
+   free agent with the most surplus on a deal at his ask that fits, on his read); his guess at
+   the other team's answer before you propose (to do).
 3. **His return.** How often his advice was right last season (with the department returns of
    the front office brief), so a poor one shows himself.
 4. **Delegation (maybe).** Let him handle chores you opt into (fill a short position with the
