@@ -12,6 +12,8 @@ export interface Post {
   text: string;
   player: string | null;
   by: NonNullable<Extract<LeagueEvent, { kind: 'news.posted' }>['by']> | null;
+  /** The story it belongs to (`storyOf`), if any. */
+  story: string | null;
 }
 
 /**
@@ -157,6 +159,7 @@ export function usePosts(limit: number) {
       text,
       player,
       by: event.kind === 'news.posted' ? (event.by ?? null) : null,
+      story: data?.stories[event.id] ?? null,
     });
   }
   return { posts, names, ages };

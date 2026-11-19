@@ -163,6 +163,7 @@ export const fr: Record<MessageKey, string> = {
   'news.insider': 'Initié de la ligue',
   'news.insiderHandle': '@initie',
   'news.date': 'jour {day}, {season}',
+  'news.more': '{n} de plus dans cette histoire',
   'roster.loadFailed': 'Impossible de charger l’alignement :',
   'steam.on': 'Steam : {name}',
   'steam.off': 'Steam : désactivé',
@@ -505,6 +506,10 @@ export const fr: Record<MessageKey, string> = {
   'event.holdoutStarted': '{player} fait la grève pour un nouveau contrat avec les {team}',
   'event.holdoutEnded': '{player} a mis fin à la grève et s’est présenté',
   'event.holdoutStands': '{player} fait toujours la grève après sa rencontre avec le DG',
+  'event.holdoutShopped':
+    'Nous ne paierons pas à {player} ce qu’il demande : il est disponible et nous écoutons les offres',
+  'event.rivalry':
+    'Une rivalité ravivée : {a} et {b} se retrouvent en séries, un an après leur dernière série',
   'todo.injured': '{count} joueur(s) blessé(s)',
   'todo.rosterShort': 'Il manque {count} joueur(s) à {position}',
   'todo.overCap': 'Au-dessus du plafond de {amount}',

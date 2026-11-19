@@ -162,6 +162,7 @@ export const en = {
   'news.insider': 'League Insider',
   'news.insiderHandle': '@insider',
   'news.date': 'day {day}, {season}',
+  'news.more': '{n} more in this story',
   'roster.loadFailed': 'Could not load roster:',
   'steam.on': 'Steam: {name}',
   'steam.off': 'Steam: off',
@@ -493,6 +494,10 @@ export const en = {
   'event.holdoutStarted': '{player} is holding out for a new deal with the {team}',
   'event.holdoutEnded': '{player} ended the holdout and reported',
   'event.holdoutStands': '{player} is still holding out after meeting the GM',
+  'event.holdoutShopped':
+    "We won't pay {player} what he asks: he is available, and we are listening to offers",
+  'event.rivalry':
+    'A rivalry renewed: {a} and {b} meet in the playoffs again, a year after their last series',
   'todo.injured': '{count} player(s) injured',
   'todo.rosterShort': 'Short {count} at {position}',
   'todo.overCap': 'Over the cap by {amount}',

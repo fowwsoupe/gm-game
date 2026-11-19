@@ -84,6 +84,8 @@ export interface LeagueState {
     give: PlayerId[];
     get: PlayerId[];
   }[];
+  /** Pairs of teams that met in the playoffs this season or last (`pairKey`): the season they last met. */
+  playoffPairs: Record<string, number>;
   /** Open offers to free agents (AI teams' and yours); a free agent picks one on his decision day. */
   faOffers: FreeAgentOffer[];
   /** Market days played since free agency last opened (0 when it opens). */
@@ -146,6 +148,9 @@ export interface LeagueState {
  * once the champion is crowned (expiring deals are then off the books), else the current one.
  */
 export const capYearOf = (state: LeagueState) => state.date.season + (state.championTeamId ? 1 : 0);
+
+/** Two teams as one key, the same whichever is named first. */
+export const pairKey = (a: TeamId, b: TeamId) => [a, b].sort().join(':');
 
 /** His trade request is settled: withdrawn, or he left the team (it would block new ones). */
 const endRequest = (state: LeagueState, playerId: string) => {
@@ -268,9 +273,15 @@ export function applyEvent(state: LeagueState, event: LeagueEvent): void {
       }
       return;
     }
-    case 'series.started':
+    case 'series.started': {
       state.playoffSeries[event.series.id] = { ...event.series };
+      const season = event.date.season;
+      for (const [k, last] of Object.entries(state.playoffPairs)) {
+        if (last < season - 1) delete state.playoffPairs[k];
+      }
+      state.playoffPairs[pairKey(event.series.higherTeamId, event.series.lowerTeamId)] = season;
       return;
+    }
     case 'series.won':
       state.playoffSeries[event.seriesId]!.winnerTeamId = event.winnerTeamId;
       return;

@@ -18,3 +18,4 @@ export {
 } from './picks';
 export { bracketSeeds, seedPlayoffs, nextRound, playoffCapBreaches } from './playoffs';
 export { playerRecords, teamRecords } from './records';
+export { storyOf } from './stories';
