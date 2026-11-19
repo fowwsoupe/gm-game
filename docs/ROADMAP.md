@@ -18,7 +18,7 @@ Ready jobs, each one PR. Pick from the top. Update this list in the PR that fini
 Ready now (code can start):
 
 1. Draft-room trades: the lottery is now drawn when the champion is crowned and round-one picks trade at their real slot (done); trading during the live draft stays with the Phase 2 draft room.
-2. Contract bonuses and trade protection: done. Signing bonuses (CBA-capped share of the cap hit, liked by the player, never bought out) and no-trade clauses (ruleset age and per-team limit, trades refuse them). Performance bonuses done (first-round entry deals, paid at season end, overage on next season's cap). A waiver flow for no-trade stays open.
+2. Contract bonuses and trade protection: done. Signing bonuses (CBA-capped share of the cap hit, liked by the player, never bought out) and no-trade clauses (ruleset age and per-team limit, trades refuse them). Performance bonuses done (first-round entry deals, paid at season end, overage on next season's cap). No-trade waivers done (ask a player to waive his clause for a trade; he answers by morale and personality).
 3. Holdouts: done (opening day, greed and pay decide; a talk or the weeks end it). AI teams' core players hold out at half the human-team chance (about 4 a league-season); a win-now GM, or a good balanced one, extends him once his deal is in its last year and the raise fits next season's cap; a builder waits him out. AI GMs trading a holdout stays open.
 4. Chemistry: personalities and leaders done (two settled leaders make the room whole; hot-headed, unprofessional players wear on it; lab flat). Builds fit done (a finisher with a creator on a line, an offensive with a home defenceman on a pair; mean-neutral, lab flat). Linemates done (games together by pair in the save; a line and pair that have played 20 games together gain up to a point, strangers lose one).
 5. Re-injury risk: done (hurt earlier this season +30%, +3% per past injury, capped at 2x; injuries per team-season 7.9-8.1 to 8.2-8.5).
@@ -27,7 +27,7 @@ Ready now (code can start):
 Front office (also the lasting-team-edge fix): all jobs in
 [research/2026-11-front-office.md](research/2026-11-front-office.md) done; the points % spread
 gap narrowed (0.077-0.080 to 0.079-0.082); season form, a fresh team edge each season, takes it
-to 0.083-0.087 (in range on the mean of three seeds, seed 1 still short) with r 0.43-0.46 and
+to 0.085-0.087 on seeds 1, 101 and 201 (re-checked 2026-11-18; 201 is borderline) with r 0.46-0.48 and
 playoff turnover 31-32% ([research/2026-11-spread-second-mechanism.md](research/2026-11-spread-second-mechanism.md)). League & events:
 all five jobs of [research/2026-11-league-events.md](research/2026-11-league-events.md) done (the pulse ranks by playoff odds; a young team out of it rebuilds, an old bubble team with cap space buys; crisis on top).
 
@@ -103,14 +103,14 @@ Build order, owners and "done when" for each step: **[V0.1_PLAN.md](V0.1_PLAN.md
 ## Phase 2 — Part of the first release (one headline each)
 
 - [x] Owner & finance: decision cards, pricing policy, fans, projects, owner meetings; owners and markets, the money ledger, fans and ticket pricing, confidence, meetings and cards, the Owner screen, projects and more cards, the head coach (salary, heat, AI firings in-season and at the review, the fire-or-keep card), and your job on the line (hot-seat warning, fired at a review, job offers, a "can be fired" option, AI GMs fired on confidence) (all 8 jobs in [the brief](research/2026-11-owner-finance.md))
-- [~] Front office: scouting, analytics, medical, coaching, development staff. Department heads with a quality and a salary, coach quality in games, development staff (replacing GM skill), per-team draft reads, medical injury days, the staff market (leave, poaching, owner budgets), the Front Office screen with three candidates a season, tuned against the long-run benchmarks (all jobs of [the brief](research/2026-11-front-office.md); the price curve was tried and dropped), an assistant GM for human teams whose advice on Home (extend first, take or turn down an offer) is as accurate as his quality (and the best-value free agent for your cap room, and who would help on the top line), done; department returns (what each department added against an average one, on the Front Office screen) and firing a head without a replacement (an interim, severance) done; hired head coaches drawn from the owner-tilted market (coaching measured around the league's average coach) and medical scaling re-injury risk done; an analytics department (a fourth head; a weak one blurs what you see of other teams' players, a fixed amount per player, view only) done; the assistant's other jobs to do
+- [~] Front office: scouting, analytics, medical, coaching, development staff. Department heads with a quality and a salary, coach quality in games, development staff (replacing GM skill), per-team draft reads, medical injury days, the staff market (leave, poaching, owner budgets), the Front Office screen with three candidates a season, tuned against the long-run benchmarks (all jobs of [the brief](research/2026-11-front-office.md); the price curve was tried and dropped), an assistant GM for human teams whose advice on Home (extend first, take or turn down an offer) is as accurate as his quality (the best-value free agent for your cap room, who would help on the top line, and a guess at a trade's answer), done; department returns (what each department added against an average one, on the Front Office screen) and firing a head without a replacement (an interim, severance) done; hired head coaches drawn from the owner-tilted market (coaching measured around the league's average coach) and medical scaling re-injury risk done; an analytics department (a fourth head; a weak one blurs what you see of other teams' players, a fixed amount per player, view only) done; the assistant's other jobs to do
 - [ ] Live draft trade room
 - [ ] Free-agency live bidding war + full contract negotiation
 - [ ] Media & press conferences (text)
 - [ ] Match viewer (2D) + coach from the bench
 - [ ] Cutscenes (trophy lift, draft pick, signing)
 - [ ] Summer training, camp battles, international tournament
-- [~] Hall of Fame, legends return as staff, awards named after legends: Hall of Fame (rule-based induction, History screen) done; the rest to do
+- [~] Hall of Fame, legends return as staff, awards named after legends: Hall of Fame (rule-based induction, History screen) and awards named after legends (the first inducted goalie, defenceman and forward lend their surname to the goalie, defence and MVP awards from the next season, on History) done; the rest to do
 - [ ] League sandbox: expansion, relocation, identity editor, commissioner mode
 - [ ] Multiplayer step 1: shared save (hot-seat)
 - [ ] Multiplayer step 2: hosted online league over Steam

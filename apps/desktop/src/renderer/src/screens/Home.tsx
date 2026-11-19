@@ -288,6 +288,8 @@ function FeedCard() {
         return e.outcome === 'kept' || e.outcome === 'settled'
           ? t('event.disputeSettled', { player: names[e.playerId] ?? '' })
           : null;
+      case 'player.noTradeWaived':
+        return t('event.noTradeWaived', { player: names[e.playerId] ?? '' });
       case 'player.holdoutEnded':
         return t('event.holdoutEnded', { player: names[e.playerId] ?? '' });
       case 'player.tradeRequestEnded':

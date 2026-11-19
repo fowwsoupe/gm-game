@@ -83,6 +83,11 @@ export function Trades() {
             <p className={`font-semibold ${verdict.accepted ? 'text-good' : 'text-bad'}`}>
               {verdict.accepted ? t('trade.yes') : t('trade.no')}
             </p>
+            {verdict.assistantGuess !== undefined && (
+              <p className="mt-1 text-sm text-muted">
+                {verdict.assistantGuess ? t('trade.guessYes') : t('trade.guessNo')}
+              </p>
+            )}
             <ul className="mt-2 space-y-1 text-sm">
               {verdict.reasons.map((r, i) => (
                 <li key={i}>{reasonText(r)}</li>
@@ -115,6 +120,33 @@ export function Trades() {
           >
             {t('trade.propose')}
           </Button>
+          {proposal && myPlayers.some((p) => give.includes(p.id) && p.contract?.noTrade) && (
+            <Button
+              disabled={dispatch.isPending}
+              onClick={() =>
+                dispatch.mutate(
+                  { kind: 'contract.askWaiveNoTrade', proposal },
+                  {
+                    onSuccess: (res) => {
+                      const done = res.ok && res.events.some((e) => e.kind === 'trade.completed');
+                      setMessage(
+                        !res.ok ? res.error.message : done ? t('trade.done') : t('trade.waiveNo'),
+                      );
+                      if (done) {
+                        setGive([]);
+                        setGet([]);
+                        setRetain({});
+                        setGivePicks([]);
+                        setGetPicks([]);
+                      }
+                    },
+                  },
+                )
+              }
+            >
+              {t('trade.askWaive')}
+            </Button>
+          )}
           {message && <span className="text-sm text-muted">{message}</span>}
         </div>
       </Card>

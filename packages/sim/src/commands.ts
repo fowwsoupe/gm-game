@@ -1,4 +1,12 @@
-import type { Actor, Command, CommandResult, LeagueEvent, Team, TradeProposal } from '@gm/shared';
+import type {
+  Actor,
+  Command,
+  CommandResult,
+  LeagueEvent,
+  Player,
+  Team,
+  TradeProposal,
+} from '@gm/shared';
 import { GOALIE_ROTATIONS, STOP_CATEGORIES, TICKET_STEPS } from '@gm/shared';
 import {
   Rng,
@@ -11,7 +19,15 @@ import {
 } from './core';
 import { buyoutCharges, capYearIssues, capYearOf, teamCapTotal } from './cba';
 import { parsePick } from './league';
-import { departmentsOf, PROMISE_DAYS, staffOf, talkedDown, talkedRound } from './people';
+import {
+  departmentsOf,
+  moraleOf,
+  PROMISE_DAYS,
+  staffOf,
+  talkedDown,
+  talkedRound,
+  waivesNoTrade,
+} from './people';
 import {
   isExpiring,
   acceptSheet,
@@ -132,6 +148,59 @@ export function handleCommand(
         contract: deal.contract,
       });
       return applied(state, ev);
+    }
+
+    case 'contract.askWaiveNoTrade': {
+      const { proposal } = command;
+      const from = state.teams[proposal.fromTeamId];
+      if (!from) return invalid('unknown team');
+      if (!controls(actor, from)) return notYours;
+      const to = state.teams[proposal.toTeamId];
+      if (to?.userControlled && !controls(actor, to)) return notYours;
+      const asked = proposal.give
+        .map((id) => state.players[id])
+        .filter((p) => p?.teamId === from.id && p.contract?.noTrade) as Player[];
+      if (asked.length === 0) return invalid('nobody to ask');
+      // The trade has to be legal and acceptable with the clauses lifted, or there is nothing to ask.
+      const lifted = Object.fromEntries(
+        asked.map((p) => {
+          const contract = { ...p.contract! };
+          delete contract.noTrade;
+          return [p.id, { ...p, contract }];
+        }),
+      );
+      const verdict = evaluateTrade(
+        { ...state, players: { ...state.players, ...lifted } },
+        ctx,
+        proposal,
+      );
+      if (!verdict.accepted) {
+        return invalid(`trade refused: ${verdict.reasons.map((r) => r.code).join(', ')}`);
+      }
+      const no = asked.find((p) => !waivesNoTrade(p.id, moraleOf(state, ctx, p).value));
+      if (no) {
+        return applied(
+          state,
+          makeEvent(state, 'notable', [from.id], {
+            kind: 'news.posted',
+            headline: 'event.noTradeRefused',
+            params: { player: playerName(no) },
+          }),
+        );
+      }
+      const events = asked.map((p) =>
+        applied(
+          state,
+          makeEvent(state, 'notable', [from.id], { kind: 'player.noTradeWaived', playerId: p.id }),
+        ),
+      );
+      return {
+        ok: true,
+        events: [
+          ...events.flatMap((r) => (r.ok ? r.events : [])),
+          ...completeTrade(state, ctx, proposal),
+        ],
+      };
     }
 
     case 'trade.propose': {
