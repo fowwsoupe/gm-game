@@ -1,7 +1,7 @@
 import type { Department, StaffProfile, Team, TeamId } from '@gm/shared';
 import { FIRST, LAST, Rng, teamName, type Emit, type LeagueState } from '../core';
 import type { SimContext } from '../context';
-import { DEPARTMENTS, hash, ownerOf, staffOf, staffSalary } from '../people';
+import { DEPARTMENTS, hash, hireQuality, ownerOf, staffOf, staffSalary } from '../people';
 import { leagueStandings } from '../league';
 
 /** A head this good or better makes league-wide news when he moves. */
@@ -42,8 +42,7 @@ export function changeStaff(
       const leaves = r.chance(fo.leave);
       const poached = !leaves && r.chance(poachChance);
       if (!leaves && !poached) continue;
-      const centre = 0.5 + fo.spend * (ownerOf(team).budget - 0.5);
-      const quality = Math.round(clamp01(r.normal(centre, fo.hireSd)) * 100) / 100;
+      const quality = hireQuality(r, team, fo);
       const head: StaffProfile = {
         name: `${r.pick(FIRST)} ${r.pick(LAST)}`,
         quality,

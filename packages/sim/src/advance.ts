@@ -64,13 +64,11 @@ export function advance(
     ]),
   );
   const avgMedical = [...medical.values()].reduce((a, b) => a + b, 0) / Math.max(1, medical.size);
+  /** A team's injury factor: below 1 for a better-than-average medical head. */
+  const medicalFactor = (teamId: TeamId | null | undefined) =>
+    1 + fo.medical.days * (avgMedical - (medical.get(teamId!) ?? avgMedical));
   const healed = (teamId: TeamId | null | undefined, days: number) =>
-    Math.max(
-      1,
-      Math.round(
-        days * (1 + fo.medical.days * (avgMedical - (medical.get(teamId!) ?? avgMedical))),
-      ),
-    );
+    Math.max(1, Math.round(days * medicalFactor(teamId)));
 
   // Rosters once per call; a team's strength is rebuilt only when its set of injured players changes.
   const sport = ctx.sport;
@@ -255,6 +253,8 @@ export function advance(
           awayBackToBack: awayRest.backup,
           homeTired: homeRest.tired,
           awayTired: awayRest.tired,
+          homeMedical: medicalFactor(g.homeTeamId),
+          awayMedical: medicalFactor(g.awayTeamId),
         },
         rng,
       );
@@ -279,6 +279,8 @@ export function advance(
             home: strengthOf(homeTeamId, today.day),
             away: strengthOf(awayTeamId, today.day),
             playoff: true,
+            homeMedical: medicalFactor(homeTeamId),
+            awayMedical: medicalFactor(awayTeamId),
           },
           rng,
         );

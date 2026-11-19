@@ -30,6 +30,7 @@ export {
   coachSeasonsLeft,
   DEPARTMENTS,
   marketOf,
+  hireQuality,
   newCoach,
   ownerOf,
   staffOf,
