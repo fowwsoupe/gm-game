@@ -29,6 +29,12 @@ export type Command =
   | { kind: 'contract.buyout'; playerId: PlayerId }
   /** Re-sign a player whose contract ends this season, for `years` seasons from next season (same window as buyouts). */
   | { kind: 'contract.resign'; playerId: PlayerId; years: number }
+  /**
+   * Ask the no-trade players you give in this trade to waive their clause for it. If they all
+   * agree (who they are, and morale) the clause goes and the trade is made, if it is otherwise
+   * legal; if one says no, nothing changes.
+   */
+  | { kind: 'contract.askWaiveNoTrade'; proposal: TradeProposal }
   /** Offer a trade; it goes through only if the other team accepts (see `evaluateTrade`). */
   | { kind: 'trade.propose'; proposal: TradeProposal }
   /** Accept or decline an AI GM's offer. Accepting still has to pass the trade rules today. */
