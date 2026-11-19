@@ -601,7 +601,7 @@ export class LeagueService {
     const events = save.listEvents(limit, minImportance);
     const ids = new Set<string>();
     for (const e of events) {
-      if ('playerId' in e) ids.add(e.playerId);
+      if ('playerId' in e && e.playerId) ids.add(e.playerId);
       if (e.kind === 'player.drafted') ids.add(e.player.id);
     }
     const names: Record<string, string> = {};

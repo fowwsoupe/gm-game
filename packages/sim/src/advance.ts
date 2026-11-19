@@ -178,6 +178,7 @@ export function advance(
         makeEvent(state, importance, [h.teamId], {
           kind: 'news.posted',
           headline: `event.${h.key}`,
+          playerId: p.id,
           params: { player: playerName(p), team: teamName(state.teams[h.teamId]!) },
         }),
       );
@@ -199,6 +200,7 @@ export function advance(
           makeEvent(state, team.userControlled ? 'notable' : 'minor', [team.id], {
             kind: 'news.posted',
             headline: 'event.breakoutPace',
+            playerId: p.id,
             params: { player: playerName(p), team: teamName(team), n: s.points, gp: s.gp },
           }),
         );
@@ -224,6 +226,7 @@ export function advance(
             makeEvent(state, state.teams[teamId]!.userControlled ? 'notable' : 'minor', [teamId], {
               kind: 'news.posted',
               headline: 'event.slump',
+              playerId: p.id,
               params: {
                 player: playerName(p),
                 team: teamName(state.teams[teamId]!),

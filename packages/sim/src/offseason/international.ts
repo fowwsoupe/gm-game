@@ -155,6 +155,7 @@ export function playInternational(
       emit('notable', [p.teamId], {
         kind: 'news.posted',
         headline: `event.international${medal}`,
+        playerId: p.id,
         params: { player: playerName(p), nation },
       });
     }

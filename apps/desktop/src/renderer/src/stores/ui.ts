@@ -7,6 +7,7 @@ import type { Locale } from '@/i18n';
  */
 export type Screen =
   | 'home'
+  | 'news'
   | 'standings'
   | 'roster'
   | 'freeAgency'
