@@ -696,11 +696,13 @@ export interface TodoItem {
     | 'holdout'
     | 'dispute'
     | 'breakoutExtend'
-    // The assistant GM's advice: who to extend first, take or turn down an offer, who to sign.
+    // The assistant GM's advice: who to extend first, take or turn down an offer, who to sign,
+    // who would help on the top line.
     | 'adviceResign'
     | 'adviceSign'
     | 'adviceTake'
-    | 'adviceDecline';
+    | 'adviceDecline'
+    | 'adviceLines';
   params?: Record<string, string | number>;
   screen: 'roster' | 'cap' | 'draft' | 'trades' | 'lines';
 }

@@ -1,7 +1,15 @@
 import { describe, expect, it } from 'vitest';
 import type { Actor } from '@gm/shared';
-import { applyEvent, createLeague, dashboard, defaultContext, handleCommand } from './index';
+import {
+  applyEvent,
+  createLeague,
+  dashboard,
+  defaultContext,
+  handleCommand,
+  playerName,
+} from './index';
 import { cachedContext } from './trades';
+import { overall } from './players';
 
 const ctx = defaultContext();
 const local: Actor = { id: 'local', controls: [] };
@@ -71,6 +79,27 @@ describe('the assistant GM', () => {
     const ai = dashboard(state, ctx, theirs.id).todo.map((i) => i.code);
     expect(ai).not.toContain('adviceTake');
     expect(ai).not.toContain('adviceDecline');
+  });
+});
+
+describe('the assistant GM on lines', () => {
+  it('names a better player than the top-liner you put there; AI teams get no advice', () => {
+    const state = createLeague(57, ctx);
+    const mine = Object.values(state.teams).find((t) => t.userControlled)!;
+    const theirs = Object.values(state.teams).find((t) => !t.userControlled)!;
+    const centres = Object.values(state.players)
+      .filter((p) => p.teamId === mine.id && p.position === 'C')
+      .sort((a, b) => overall(a) - overall(b));
+    const worst = centres[0]!;
+    state.depthCharts[mine.id] = [worst.id];
+    mine.staff = { assistant: { name: 'A B', quality: 1, hired: 2026, salary: 1 } };
+    const named = dashboard(state, ctx, mine.id).todo.find((i) => i.code === 'adviceLines');
+    const pick = Object.values(state.players).find((p) => playerName(p) === named?.params?.player)!;
+    expect(overall(pick)).toBeGreaterThan(overall(worst));
+    state.depthCharts[theirs.id] = [
+      Object.values(state.players).find((p) => p.teamId === theirs.id && p.position === 'C')!.id,
+    ];
+    expect(dashboard(state, ctx, theirs.id).todo.map((i) => i.code)).not.toContain('adviceLines');
   });
 });
 

@@ -31,7 +31,7 @@ item it is about, so it costs no new screen:
 | Re-signings open (the final) | "Extend {player} first"                      | the expiring player he rates best (overall)       |
 | A trade offer waits          | "Take {give} for {get}" or "Turn down ..."   | surplus value in against out, the value engine    |
 | Free agency (later)          | "Best value for your cap room: {player}"     | surplus value at the ask, within cap room         |
-| Lines (later)                | "{player} would help on the top line"        | the lines engine on his read                      |
+| Lines (done)                 | "{player} would help on the top line"        | the lines engine on his read                      |
 | A trade you build (later)    | "They will likely say no" before you propose | the other team's answer on his read of your offer |
 
 ## How his quality matters

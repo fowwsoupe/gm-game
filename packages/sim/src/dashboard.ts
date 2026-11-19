@@ -5,6 +5,7 @@ import { freeAgents, isExpiring, resignOffers, resignWindowOpen, wantedYears } f
 import { assistantSees, departmentsOf, staffOf } from './people';
 import { overall } from './players';
 import { cachedContext } from './trades';
+import { available } from './tonight';
 import type { SimContext } from './context';
 
 /** Days before the trade deadline when Home starts reminding you. */
@@ -129,6 +130,24 @@ export function dashboard(state: LeagueState, ctx: SimContext, teamId: TeamId): 
   }
   const hurt = roster.filter((p) => (p.injuredUntil ?? 0) > state.date.day).length;
   if (hurt > 0) todo.push({ code: 'injured', params: { count: hurt }, screen: 'roster' });
+  if (assistant && state.depthCharts[teamId]?.length) {
+    // Only once you set your own order (the coach's default one needs no second opinion): the
+    // healthy player who beats a top-line player of his position by the most, on his read
+    // (the first unit of the lineup the game would dress).
+    const healthy = available(state, teamId, state.date.day);
+    const top = new Set(ctx.sport.lineup(healthy, state.depthCharts[teamId])[0]?.playerIds);
+    const bench = healthy.filter((p) => !top.has(p.id));
+    let best: { p: Player; gain: number } | undefined;
+    for (const t of healthy.filter((p) => top.has(p.id))) {
+      for (const c of bench.filter((p) => p.position === t.position)) {
+        const gain = overall(seen(c)) - overall(seen(t));
+        if (gain > (best?.gain ?? 0)) best = { p: c, gain };
+      }
+    }
+    if (best) {
+      todo.push({ code: 'adviceLines', params: { player: playerName(best.p) }, screen: 'lines' });
+    }
+  }
   for (const [position, min] of Object.entries(ruleset.roster.positionMin)) {
     const have = roster.filter((p) => p.position === position).length;
     if (have < min) {
