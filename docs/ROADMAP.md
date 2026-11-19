@@ -73,7 +73,7 @@ B. Balance and calibration (Opus 5.5 unless noted)
 - [x] "Better team wins a best-of-7" back in range (high)
 - [ ] Trained stats-to-ratings and development models (xhigh, 2-3 PRs): stats to ratings v2 done (beats v1 on every key); penalty-kill time and penalty minutes in roster stats, and the development model, to do
 - [ ] Playtest analysis (Sonnet 5.5, medium)
-- [ ] Player traits and clustered builds (high; brief done: [research/2026-11-player-traits.md](research/2026-11-player-traits.md), its 3 jobs next)
+- [ ] Player traits and clustered builds (high; brief done: [research/2026-11-player-traits.md](research/2026-11-player-traits.md); job 1 done: [clusters and trait evidence](research/2026-11-player-builds-evidence.md), jobs 2-3 next)
 
 C. Design brief first, then jobs (Opus 5.5)
 

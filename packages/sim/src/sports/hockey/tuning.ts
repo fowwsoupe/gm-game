@@ -47,6 +47,53 @@ export const HOCKEY_TUNING = {
   shootoutGoal: 0.33,
 } as const;
 
+/**
+ * Real skater shapes, clustered from NHL seasons by `ml/src/builds.py`
+ * (docs/research/2026-11-player-builds-evidence.md): each build's share of skater seasons and
+ * its centre per rating key in SDs, after removing the player's own mean. A key not listed is 0.
+ */
+export const SKATER_BUILD_CLUSTERS = {
+  forwards: [
+    {
+      build: 'defensiveF',
+      share: 0.275,
+      centre: { shooting: -0.23, passing: -0.31, physical: -0.17, hockeyIq: -0.19, defense: 0.35 },
+    },
+    {
+      build: 'twoWay',
+      share: 0.212,
+      centre: { shooting: -0.19, passing: -0.06, physical: -0.23, hockeyIq: 1.16, defense: 0.24 },
+    },
+    {
+      build: 'sniper',
+      share: 0.188,
+      centre: { shooting: 1.13, passing: 0.04, physical: -0.33, hockeyIq: -0.52, defense: -0.42 },
+    },
+    {
+      build: 'playmaker',
+      share: 0.164,
+      centre: { shooting: 0.04, passing: 1.31, physical: -0.83, hockeyIq: -0.2, defense: -0.26 },
+    },
+    {
+      build: 'grinder',
+      share: 0.16,
+      centre: { shooting: -0.72, passing: -0.79, physical: 1.83, hockeyIq: -0.38, defense: -0.16 },
+    },
+  ],
+  defence: [
+    {
+      build: 'shutdownD',
+      share: 0.569,
+      centre: { shooting: -0.34, passing: -0.37, physical: 0.65, hockeyIq: -0.19, defense: 0.03 },
+    },
+    {
+      build: 'offensiveD',
+      share: 0.431,
+      centre: { shooting: 0.45, passing: 0.49, physical: -0.86, hockeyIq: 0.25, defense: -0.04 },
+    },
+  ],
+} as const;
+
 /** What a goal model sees of a shot. */
 export interface ShotInfo {
   /** Feet from the goal line toward the dots, and from the middle of the ice (net at 0, 0). */
