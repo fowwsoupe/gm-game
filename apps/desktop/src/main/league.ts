@@ -37,6 +37,7 @@ import {
   scoutReport,
   teamRange,
   staffCandidates,
+  departmentReturns,
   capYearOf,
   signingInterest,
   tradeWindowOpen,
@@ -398,6 +399,12 @@ export class LeagueService {
       fans: fansOf(state, teamId),
       ticketPct: ticketPctOf(team, state.ticketPrices),
     };
+  }
+
+  departmentReturns(teamId: TeamId) {
+    const { state } = this.open();
+    if (!state.teams[teamId]) throw new Error(`No team ${teamId}`);
+    return departmentReturns(state, defaultContext(state.rulesetId), teamId);
   }
 
   staffCandidates(teamId: TeamId) {

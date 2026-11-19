@@ -11,7 +11,7 @@ import {
 } from './core';
 import { buyoutCharges, capYearIssues, capYearOf, teamCapTotal } from './cba';
 import { parsePick } from './league';
-import { DEPARTMENTS, PROMISE_DAYS, talkedDown, talkedRound } from './people';
+import { DEPARTMENTS, PROMISE_DAYS, staffOf, talkedDown, talkedRound } from './people';
 import {
   isExpiring,
   acceptSheet,
@@ -22,6 +22,7 @@ import {
   rolloverSeason,
   signFreeAgent,
   staffCandidates,
+  interimHead,
 } from './offseason';
 import { evaluateTrade, planRetention } from './trades';
 import { advance } from './advance';
@@ -418,6 +419,27 @@ export function handleCommand(
         department: command.department,
         head,
         poached: false,
+      });
+      return applied(state, ev);
+    }
+
+    case 'staff.fire': {
+      const team = state.teams[command.teamId];
+      if (!team) return invalid('unknown team');
+      if (!controls(actor, team)) return notYours;
+      if (!DEPARTMENTS.includes(command.department)) return invalid('unknown department');
+      const season = capYearOf(state);
+      const gone = staffOf(team, command.department, ctx.ruleset.frontOffice.salary, season);
+      if (gone.hired === season) return invalid('already changed for this department this season');
+      // The rest of his salary this season; once the champion is crowned, the whole season ahead.
+      const days = ctx.ruleset.season.calendar.regularSeasonDays;
+      const left = state.championTeamId ? 1 : Math.max(0, (days - state.date.day) / days);
+      const ev = makeEvent(state, 'notable', [team.id], {
+        kind: 'staff.fired',
+        teamId: team.id,
+        department: command.department,
+        head: interimHead(team, command.department, ctx, season),
+        severance: Math.round(gone.salary * left),
       });
       return applied(state, ev);
     }

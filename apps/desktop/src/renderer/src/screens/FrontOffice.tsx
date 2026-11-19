@@ -1,9 +1,16 @@
 import type { Department } from '@gm/shared';
-import { useDispatch, useOwner, useStaffCandidates, useTeams } from '@/lib/queries';
+import {
+  useDepartmentReturns,
+  useDispatch,
+  useOwner,
+  useStaffCandidates,
+  useTeams,
+} from '@/lib/queries';
 import { money, qualityKey } from '@/lib/format';
 import { useT } from '@/i18n';
 import { Button, Card, Td, Th } from '@/ui';
 
+const signed = (n: number) => `${n > 0 ? '+' : ''}${n.toFixed(1)}`;
 const DEPARTMENTS: readonly Department[] = ['scouting', 'development', 'medical'];
 
 /** Your front office: each department's head, and who you could hire in his place this season. */
@@ -13,6 +20,7 @@ export function FrontOffice() {
   const mine = teams.find((x) => x.userControlled);
   const { data: owned } = useOwner(mine?.id);
   const { data: candidates } = useStaffCandidates(mine?.id);
+  const { data: returns } = useDepartmentReturns(mine?.id);
   const dispatch = useDispatch();
   if (!mine) return <p className="text-muted">{t('frontOffice.empty')}</p>;
   if (!owned || !candidates) return null;
@@ -35,6 +43,19 @@ export function FrontOffice() {
               <span className="font-semibold">{head.name}</span> · {t(qualityKey(head.quality))} ·{' '}
               {money(head.salary)} · {t('frontOffice.since', { season: head.hired })}
             </div>
+            {returns && (
+              <p className="mb-3 text-xs text-muted">
+                {d === 'scouting'
+                  ? returns.scouting
+                    ? t('frontOffice.return.scouting', {
+                        n: returns.scouting.error.toFixed(1),
+                        picks: returns.scouting.picks,
+                        league: returns.scouting.league.toFixed(1),
+                      })
+                    : t('frontOffice.return.none')
+                  : t(`frontOffice.return.${d}`, { n: signed(returns[d]) })}
+              </p>
+            )}
             <table className="w-full text-sm">
               <thead>
                 <tr>
@@ -69,6 +90,16 @@ export function FrontOffice() {
                 ))}
               </tbody>
             </table>
+            <div className="mt-2">
+              <Button
+                disabled={hiredNow}
+                onClick={() =>
+                  dispatch.mutate({ kind: 'staff.fire', teamId: mine.id, department: d })
+                }
+              >
+                {t('frontOffice.fire')}
+              </Button>
+            </div>
             {hiredNow && <p className="mt-2 text-xs text-muted">{t('frontOffice.hiredNow')}</p>}
           </Card>
         );

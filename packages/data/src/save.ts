@@ -459,6 +459,7 @@ export class SaveFile {
           case 'team.gmChanged':
             setGm.run(JSON.stringify(e.gm), e.teamId);
             break;
+          case 'staff.fired':
           case 'staff.hired':
             setStaff.run(JSON.stringify(state.teams[e.teamId]?.staff ?? null), e.teamId);
             break;

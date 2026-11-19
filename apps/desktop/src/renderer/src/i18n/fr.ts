@@ -20,6 +20,13 @@ export const fr: Record<MessageKey, string> = {
   'frontOffice.hire': 'Embaucher',
   'frontOffice.hiredNow':
     'Embauche faite cette saison : le prochain changement attend la saison prochaine.',
+  'frontOffice.fire': 'Congédier, un intérimaire le remplace',
+  'frontOffice.return.development':
+    '{n} points de cote par an pour les joueurs de 24 ans ou moins, face à un département moyen',
+  'frontOffice.return.medical': '{n} % des jours de blessure face à un département moyen',
+  'frontOffice.return.scouting':
+    'Dernier repêchage : écart de {n} points sur {picks} choix (ligue {league})',
+  'frontOffice.return.none': 'Aucun choix du dernier repêchage à évaluer.',
   'owner.empty': 'Choisissez votre équipe dans Accueil pour rencontrer son propriétaire.',
   'owner.confidence': 'Confiance en vous',
   'owner.cash': 'Encaisse',

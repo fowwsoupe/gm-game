@@ -233,6 +233,13 @@ export interface Team {
 /** Front-office departments besides the head coach (docs/research/2026-11-front-office.md). */
 export type Department = 'scouting' | 'development' | 'medical';
 
+/** What a team's departments returned against an average one (see `GmApi.departmentReturns`). */
+export interface DepartmentReturns {
+  development: number;
+  medical: number;
+  scouting: { error: number; league: number; picks: number } | null;
+}
+
 /** The head of a front-office department; his salary stands for the whole department's cost. */
 export interface StaffProfile {
   name: string;
