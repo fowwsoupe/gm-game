@@ -1,6 +1,7 @@
 import { NEW_FANS } from '@gm/shared';
 import type {
   StopCategory,
+  BenchOrder,
   CapCharge,
   Career,
   DraftProspect,
@@ -103,6 +104,11 @@ export interface LeagueState {
   tradeBlock: PlayerId[];
   /** Teams that changed how their goalies share starts; absent = back-to-backs only. */
   goalieRotation: Record<TeamId, GoalieRotation>;
+  /**
+   * Orders given from the bench in games still to be played today, by game id, in game-time
+   * order. The day plays the game with them, then they are dropped.
+   */
+  bench: Record<string, BenchOrder[]>;
   /** Unsigned free agents whose contract just ran out: the team he left (loyalty may bring him back). */
   formerTeams: Record<PlayerId, TeamId>;
   /** Unsigned restricted free agents: the team that holds his rights (until he signs or the season starts). */
@@ -342,6 +348,7 @@ export function applyEvent(state: LeagueState, event: LeagueEvent): void {
     case 'game.final': {
       const { units, ...result } = event.result;
       state.results[result.id] = result;
+      delete state.bench[result.id];
       if (units) {
         countLinemates(state, result.homeTeamId, units.home);
         countLinemates(state, result.awayTeamId, units.away);
@@ -547,6 +554,12 @@ export function applyEvent(state: LeagueState, event: LeagueEvent): void {
     case 'goalies.rotationSet':
       state.goalieRotation[event.teamId] = event.rotation;
       return;
+    case 'bench.ordered': {
+      const { gameId, teamId, at, order, value } = event;
+      const given = (state.bench[gameId] ??= []);
+      given.push({ teamId, at, order, ...(value !== undefined && { value }) });
+      return;
+    }
     case 'units.set': {
       const mine = (state.specialUnits[event.teamId] ??= {});
       if (event.playerIds.length) mine[event.unit] = [...event.playerIds];

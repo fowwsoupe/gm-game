@@ -1,5 +1,5 @@
 import { useEffect, useRef, useState, type RefObject } from 'react';
-import { puckAt, scene, type RinkGame } from '@/lib/rink';
+import { blend, puckAt, scene, type RinkGame, type Scene } from '@/lib/rink';
 
 // Colours come from CSS variables (the app's tokens unless a host sets its own) and the two team
 // colours from props, so any theme can host the rink.
@@ -96,6 +96,7 @@ export function Rink({
   label: string;
 }) {
   const root = useRef<SVGSVGElement>(null);
+  const shown = useRef<Scene | null>(null);
   const still = calm || matchMedia('(prefers-reduced-motion: reduce)').matches;
   useEffect(() => {
     const svg = root.current!;
@@ -104,14 +105,21 @@ export function Rink({
     const puck = svg.querySelector('[data-puck]')!;
     const trail = svg.querySelector('[data-trail]')!;
     const nets = [0, 1].map((n) => svg.querySelector(`[data-net="${n}"]`)!);
+    // A new game under the same clock (a bench order): a quarter of a second from the picture
+    // that was to the new one, whether the clock runs or not.
+    const from = still ? null : shown.current;
+    const since = performance.now();
     let drawn = NaN;
     let frame = 0;
     const draw = () => {
       frame = requestAnimationFrame(draw);
       const t = at.current;
       if (t === drawn) return;
-      drawn = t;
-      const s = scene(game, t, still);
+      const u = from ? (performance.now() - since) / 250 : 1;
+      drawn = u < 1 ? NaN : t;
+      const to = scene(game, t, still);
+      shown.current = to;
+      const s = from && u < 1 ? blend(from, to, u) : to;
       const seen = new Set<SVGGElement>();
       for (const d of s.discs) {
         const g = nodes.get(`${d.side}:${d.k < 0 ? (d.relief ? 'r' : 'g') : d.k}`);
@@ -124,13 +132,14 @@ export function Rink({
       nodes.forEach((g) => seen.has(g) || g.setAttribute('display', 'none'));
       puck.setAttribute('transform', `translate(${s.puck[0].toFixed(2)} ${s.puck[1].toFixed(2)})`);
       // The trail: where the puck was over the last two game seconds.
-      const points = still
-        ? []
-        : Array.from({ length: 9 }, (_, i) =>
-            puckAt(game, t - i * 0.25)
-              .map((v) => v.toFixed(1))
-              .join(','),
-          );
+      const points =
+        still || u < 1
+          ? []
+          : Array.from({ length: 9 }, (_, i) =>
+              puckAt(game, t - i * 0.25)
+                .map((v) => v.toFixed(1))
+                .join(','),
+            );
       trail.setAttribute('points', points.join(' '));
       nets.forEach((net, n) => net.setAttribute('fill', !still && s.goal === n ? RED : 'none'));
     };

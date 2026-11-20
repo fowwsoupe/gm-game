@@ -1,4 +1,5 @@
 import {
+  BENCH_ORDERS,
   GOALIE_RATINGS,
   HOCKEY_POSITIONS,
   isGoalie,
@@ -64,6 +65,8 @@ export function hockeySport(goalModel: GoalModel = rulesGoalModel): SportModule<
     lineup: lineupUnits,
     specialUnits: specialUnitsView,
     unitOk: (unit, players) => unitOk(unit as SpecialUnit, players),
+    benchOrderOk: (order, value) =>
+      (BENCH_ORDERS as readonly string[]).includes(order) && value === undefined,
     leaders: hockeyLeaders,
     playerLines: hockeyPlayerLines,
     bonusEarned: hockeyBonusEarned,

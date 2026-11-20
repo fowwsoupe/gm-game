@@ -386,3 +386,19 @@ export function scene(game: RinkGame, t: number, calm = false): Scene {
   }
   return { puck, discs, score, ...(goal !== undefined && { goal }) };
 }
+
+/**
+ * The picture `u` of the way (0 to 1) from one scene to another: the puck, and each disc both
+ * have. A bench order replaces the game under the clock, and with it the shot the play was
+ * heading for; the rink shows this for a moment so nothing jumps.
+ */
+export const blend = (from: Scene, to: Scene, u: number): Scene => ({
+  ...to,
+  puck: lerp(from.puck, to.puck, smooth(u)),
+  discs: to.discs.map((d) => {
+    const was = from.discs.find((q) => q.side === d.side && q.k === d.k);
+    if (!was) return d;
+    const [x, y] = lerp([was.x, was.y], [d.x, d.y], smooth(u));
+    return { ...d, x, y };
+  }),
+});

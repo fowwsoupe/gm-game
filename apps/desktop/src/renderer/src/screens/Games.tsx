@@ -1,4 +1,5 @@
 import { useEffect, useMemo, useState, type ReactNode } from 'react';
+import { BENCH_ORDERS } from '@gm/shared';
 import type { GameDetail, HockeyBoxScore, HockeyBoxSide, Team, TeamId } from '@gm/shared';
 import {
   useDispatch,
@@ -29,6 +30,12 @@ import {
 /** Game seconds a second. A box alone (a saved game) plays fast; a game with its timeline is watched on the rink at 1x to 20x. */
 const SPEEDS = [60, 180, 600] as const;
 const WATCH_SPEEDS = [1, 2, 4, 8, 20] as const;
+type Order = (typeof BENCH_ORDERS)[number];
+const ORDER_KEYS = {
+  emptyNet: 'games.benchEmptyNet',
+  goalieBack: 'games.benchGoalieBack',
+  goalieChange: 'games.benchGoalieChange',
+} as const;
 
 export function Games() {
   const t = useT();
@@ -49,14 +56,17 @@ export function Games() {
   const watch = useWatch();
   const dispatch = useDispatch();
   const [tonight, setTonight] = useState<GameDetail | null>(null);
-  useEffect(() => {
-    if (!ask) return;
+  const show = (onSettled?: () => void) =>
+    ask &&
     watch.mutate(ask.teamId as TeamId, {
       onSuccess: (game) => {
         setTonight(game);
         setDetail(game);
       },
+      ...(onSettled && { onSettled }),
     });
+  useEffect(() => {
+    show();
   }, [ask?.teamId, ask?.day]);
 
   if (teams.length === 0) return <p className="text-muted">{t('common.noLeague')}</p>;
@@ -64,6 +74,13 @@ export function Games() {
   const live = !!ask && !!detail && detail === tonight && status?.day === ask.day;
   const solo = teams.filter((x) => x.userControlled).length <= 1;
   const failed = dispatch.data?.ok === false ? dispatch.data.error.message : null;
+  // A bench order: one command, then the game replayed with it. `done` restarts the viewer's clock.
+  const order = (teamId: TeamId, name: Order, at: number, done: () => void) =>
+    detail &&
+    dispatch.mutate(
+      { kind: 'bench.order', gameId: detail.result.id, teamId, at, order: name },
+      { onSuccess: (res) => (res.ok ? show(done) : done()), onError: done },
+    );
   const lastCard = live && (
     <Card title={t('games.tonightTitle')}>
       <p className="mb-3 text-sm text-muted">
@@ -152,6 +169,7 @@ export function Games() {
           detail={detail}
           teams={teams}
           last={lastCard}
+          {...(live && { bench: { order, busy: dispatch.isPending || watch.isPending, failed } })}
         />
       ) : (
         <p className="text-muted">{t('games.noGame')}</p>
@@ -160,8 +178,25 @@ export function Games() {
   );
 }
 
-/** `last`: the card a game still to be played ends on (tonight's game). */
-function Replay({ detail, teams, last }: { detail: GameDetail; teams: Team[]; last?: ReactNode }) {
+/**
+ * `last`: the card a game still to be played ends on (tonight's game). `bench`: that game can
+ * still be coached, a bench for each human side.
+ */
+function Replay({
+  detail,
+  teams,
+  last,
+  bench,
+}: {
+  detail: GameDetail;
+  teams: Team[];
+  last?: ReactNode;
+  bench?: {
+    order: (teamId: TeamId, name: Order, at: number, done: () => void) => void;
+    busy: boolean;
+    failed: string | null;
+  };
+}) {
   const t = useT();
   const { result, names } = detail;
   const box = result.box as HockeyBoxScore | undefined;
@@ -190,6 +225,16 @@ function Replay({ detail, teams, last }: { detail: GameDetail; teams: Team[]; la
   const finished = clock >= end;
   const score = finished ? [result.homeScore, result.awayScore] : goals;
   const period = clock < 3600 ? Math.min(3, Math.floor(clock / 1200) + 1) : 0;
+  // The bench: an order goes in at the next whole second, never before one already given (after
+  // a restart the bench waits for the clock to pass the last of them).
+  const orders = detail.orders ?? [];
+  const lastOrder = orders.at(-1)?.at ?? 0;
+  const early = Math.floor(clock) + 1 < lastOrder;
+  const give = (n: 0 | 1, name: Order) => {
+    const was = playing;
+    setPlaying(false);
+    bench?.order(ids[n], name, Math.floor(at.current) + 1, () => setPlaying(was));
+  };
 
   // The feed: goals, penalties and what the timeline adds, up to the clock, newest first.
   type Line = { at: number; text: string };
@@ -232,6 +277,15 @@ function Replay({ detail, teams, last }: { detail: GameDetail; teams: Team[]; la
       .map(([at, n, k]) => ({
         at,
         text: t('games.hurt', { team: teamAbbr(teams, ids[n]), player: nameOf(n, k) }),
+      })),
+    ...orders
+      .filter((o) => o.at <= clock)
+      .map((o) => ({
+        at: o.at,
+        text: t('games.benchOrder', {
+          team: teamAbbr(teams, o.teamId),
+          order: t(ORDER_KEYS[o.order as Order]),
+        }),
       })),
   ].sort((a, b) => b.at - a.at);
   if (finished && result.stats.shootout === 1) {
@@ -294,6 +348,44 @@ function Replay({ detail, teams, last }: { detail: GameDetail; teams: Team[]; la
         </div>
       </Card>
       {finished && last}
+      {bench && !finished && ids.some((id) => teams.find((x) => x.id === id)?.userControlled) && (
+        <Card title={t('games.benchTitle')}>
+          {([1, 0] as const)
+            .filter((n) => teams.find((x) => x.id === ids[n])?.userControlled)
+            .map((n) => {
+              const mine = orders.filter((o) => o.teamId === ids[n]);
+              // What already stands: his last word on the net, and the one goalie change a game has.
+              const net = mine.filter((o) => o.order !== 'goalieChange').at(-1)?.order;
+              const changed =
+                mine.some((o) => o.order === 'goalieChange') ||
+                !!timeline?.goalies.some((r) => r[1] === n && r[2] === 2 && r[0] <= clock);
+              return (
+                <div key={n} className="mb-2 flex flex-wrap items-center gap-2">
+                  <span className="w-12 text-sm text-muted">{teamAbbr(teams, ids[n])}</span>
+                  {BENCH_ORDERS.map((name) => (
+                    <Button
+                      key={name}
+                      disabled={
+                        bench.busy || early || (name === 'goalieChange' ? changed : net === name)
+                      }
+                      onClick={() => give(n, name)}
+                    >
+                      {t(ORDER_KEYS[name])}
+                    </Button>
+                  ))}
+                </div>
+              );
+            })}
+          <p className="text-xs text-muted">
+            {early
+              ? t('games.benchEarly', {
+                  time: `${lastOrder < 3600 ? t('games.periodShort', { n: Math.floor(lastOrder / 1200) + 1 }) : t('games.ot')} ${clockText(lastOrder, detail.overtimeSeconds)}`,
+                })
+              : t('games.benchNote')}
+          </p>
+          {bench.failed && <p className="mt-2 text-sm text-bad">{bench.failed}</p>}
+        </Card>
+      )}
 
       {game && (
         <Card title={t('games.rink')}>

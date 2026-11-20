@@ -15,6 +15,13 @@ export type SpecialUnit = (typeof SPECIAL_UNITS)[number];
  */
 export const GOALIE_ROTATIONS = ['backToBack', 'always', 'split'] as const;
 export type GoalieRotation = (typeof GOALIE_ROTATIONS)[number];
+/**
+ * Orders a coach gives from the bench (`BenchOrder.order`), none with a `value`. From the first
+ * `emptyNet` or `goalieBack` the net is the coach's for the rest of the game, in place of the
+ * pull rule: empty while his team trails in regulation, or the goalie stays in. `goalieChange`:
+ * the other goalie comes in, once (nothing happens if he already has, or none is dressed).
+ */
+export const BENCH_ORDERS = ['emptyNet', 'goalieBack', 'goalieChange'] as const;
 /** A starter on the second night of a back-to-back plays at this share of his rating. */
 export const TIRED_GOALIE = 0.92;
 

@@ -3,7 +3,7 @@ import type { GameDetail, GameId, HockeyBoxScore, TeamId } from '@gm/shared';
 import { createLeague, defaultContext, HOCKEY_TUNING, Rng, simGame, teamStrength } from '@gm/sim';
 import fixture from '../preview/match.fixture.json';
 import { sideColors } from './format';
-import { puckAt, scene, type RinkGame } from './rink';
+import { blend, puckAt, scene, type RinkGame } from './rink';
 
 /**
  * The rink's picture agrees with the box score and its timeline. The games are the pinned ones of
@@ -186,6 +186,22 @@ describe('rink scene', () => {
     }
     expect(quiet).toBeGreaterThan(1000);
     expect(moving).toBeGreaterThan(quiet / 2);
+  });
+
+  it('blends two pictures: the old places at 0, halfway at a half, the new discs all along', () => {
+    // Two games of the same teams at the same second: what a bench order leaves the rink with.
+    const from = scene(games[0]!, 700);
+    const to = scene(games[1]!, 700);
+    expect(blend(from, to, 0).puck).toEqual(from.puck);
+    for (const u of [0, 0.5, 1]) {
+      const s = blend(from, to, u);
+      expect(s.discs.map((d) => [d.side, d.k])).toEqual(to.discs.map((d) => [d.side, d.k]));
+      expect(s.puck[0]).toBeCloseTo(from.puck[0] + (to.puck[0] - from.puck[0]) * u, 9);
+      s.discs.forEach((d, i) => {
+        const was = from.discs.find((q) => q.side === d.side && q.k === d.k) ?? to.discs[i]!;
+        expect(d.y).toBeCloseTo(was.y + (to.discs[i]!.y - was.y) * u, 9);
+      });
+    }
   });
 
   it('gives two sides two colours, whatever their ids', () => {
