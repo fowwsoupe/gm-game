@@ -22,8 +22,9 @@ export const NHL_2026: Ruleset = {
     points: { win: 2, overtimeLoss: 1 },
     // docs/research/2026-11-spread-second-mechanism.md: unverified, tuned in the balance lab. The
     // part of team quality a roster does not carry into next season: widens the points % spread
-    // and lowers its year-to-year r together (4.5: spread 0.088 but r on its 0.40 floor).
-    form: 3.5,
+    // and lowers its year-to-year r together. 4.5 since the fitted aging curves made rosters
+    // last longer (r 0.58 at 3.5, 0.53-0.56 at 4.5; turnover and titles back in range).
+    form: 4.5,
   },
   playoffs: {
     teamsQualifying: 16,

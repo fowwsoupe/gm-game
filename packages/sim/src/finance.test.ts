@@ -108,7 +108,8 @@ describe('fans and ticket prices', () => {
   });
 
   it("a winning season raises next season's attendance, a losing one lowers it", () => {
-    const state = createLeague(3, ctx);
+    // Seed 4: on seed 3 the last-place team's fans sit below their target and still warm up.
+    const state = createLeague(4, ctx);
     // Dear tickets everywhere, so no building sells out and every change in demand shows.
     for (const id of Object.keys(state.teams)) state.ticketPrices[id as TeamId] = 20;
     const first = run(state, { kind: 'sim.advance', days: 220 - state.date.day });
