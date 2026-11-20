@@ -102,7 +102,9 @@ it('a mirror built from rows and fed events through the codec stays equal to its
     expect(batch.seq).toBe(inside(mirror).state.eventSeq);
     expect(batch.events).toEqual(result.events);
     // A repeated or skipped batch is refused, and the mirror stays where it was.
-    await expect(mirror.applyRemote(batch.events, batch.seq + 1)).rejects.toThrow('the mirror is at');
+    await expect(mirror.applyRemote(batch.events, batch.seq + 1)).rejects.toThrow(
+      'the mirror is at',
+    );
     await mirror.applyRemote(batch.events, batch.seq);
     same();
   };
