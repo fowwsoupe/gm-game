@@ -136,7 +136,7 @@ with a fixed seed in the lab before switching.
 - "Better team wins a best-of-7" back above its floor (about half a point under since goalie form)
 - Shot quality: goal rate by distance, angle and type, to check the rules `gm-xg-table`
 - Trade and contract anchors (rental tiers, pick prices, asks in percent of cap) as spot checks
-- Playtest analysis before Early Access
+- Playtest analysis: `python3 -m ml.src.playtest <save>` is done; run it on playtesters' saves before Early Access
 
 A third model needs a lab check that shows the rules falling short in a way players
 would notice, and data we have rights to.
