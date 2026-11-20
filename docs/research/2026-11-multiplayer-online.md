@@ -43,11 +43,11 @@ own renderer.
 
 ## Measured for this brief
 
-A scratch script (not in the repo; job 2 turns its core into a test) played a generated league,
-seed 42, through a season, the playoffs, a summer and 30 days of the next season, with a second
-copy that was given only table rows and JSON events. The generator always makes 16 teams: a
-32-team league (a roster file, or expansion) was not measured, so read each size as roughly
-double for 32 teams.
+A scratch script (not in the repo; job 2 turned its core into `mirror.test.ts`) played a
+generated league, seed 42, through a season, the playoffs, a summer and 30 days of the next
+season, with a second copy that was given only table rows and JSON events. The generator always
+makes 16 teams: a 32-team league (a roster file, or expansion) was not measured, so read each
+size as roughly double for 32 teams.
 
 - **A mirror stays identical.** Built from the host's rows at day 39 and fed every later event
   through `JSON.parse(JSON.stringify())`, the copy matched the host after every command to the
@@ -104,13 +104,19 @@ the league only ever runs on the host's.) The mirror's database is in memory
 single-player save is never opened while he is a guest, and leaving swaps it back.
 `LeagueService` needs four small things for this: its save path as a parameter, an entry for a
 command from a given actor, an entry for events from the host (same queue, same apply and
-persist), and a hook that reports each persisted batch.
+persist), and a hook that reports each persisted batch. The hook hands out a copy of the batch
+made before it was applied, because the reducer keeps parts of an event in the state and changes
+them later: a mirror is given exactly what the host's reducer was given (job 2).
 
 A guest's `dispatch` resolves like a local one: with the events of its own command, after the
 mirror has applied them, because screens read `res.events` and refetch straight away. The host
 tags the batch it sends back to the sender with the sender's request id; a refusal comes back
-as the same `CommandError` a local command gives. A command is sent once: if the connection
-drops before the answer, the promise fails with a "disconnected" error and nothing is resent.
+as the same `CommandError` a local command gives. One refusal differs (job 2): a command that
+fails its schema fails the `command` message it came in, so it is a bad message like any other
+and the connection's fault, not a `rejected`. An honest guest never sends one, because his own
+`dispatch` checks the command with the same schema first. A command is sent once: if the
+connection drops before the answer, the promise fails with a "disconnected" error and nothing
+is resent.
 
 **The wire.** One message is one packet on every transport: JSON, deflated with Node's zlib, at
 most 1,000,000 bytes (Steam's reliable limit is 1 MB). There is no reassembly layer: the sender
@@ -164,10 +170,11 @@ the rules stay in the engine, which reads them from the ruleset. The same schema
 lighter: its schemas check the envelope and each event's header (`id`, `date`, `kind`,
 `importance`, `teamIds`, `playerIds`) field by field, and the rest of each event (its payload
 in the save) and every snapshot cell through one generic guard (plain JSON only, finite
-numbers, bounded depth and string length, the string rule below). What an event's values can
-reach on a mirror is bound SQL parameters, JSON text in the save, and text React escapes (the
-renderer has no raw HTML): nothing from the wire is used as a file path, as SQL text or as
-code, and the guest's own saves are not open. An event that passes the guard but makes
+numbers, at most 32 levels deep, strings of at most 10,000 characters, the string rule below;
+the longest string in a season's and a summer's events and rows is 30). What an event's values
+can reach on a mirror is bound SQL parameters, JSON text in the save, and text React escapes
+(the renderer has no raw HTML): nothing from the wire is used as a file path, as SQL text or
+as code, and the guest's own saves are not open. An event that passes the guard but makes
 `applyEvent` or `persist` throw is contained: the mirror is dropped and asks for a snapshot,
 and a second failure in a row ends the session with an error. What is left to a hostile host
 is a guest who sees a nonsense league, or a game that stalls, until he leaves. Field-by-field
@@ -181,10 +188,12 @@ The rule, in `packages/shared`: an id is 1 to 80 characters and names no such pr
 key or string anywhere in a message is such a name or contains `__proto__` (a pick id is a
 composite, `<season>-<round>-<team id>`, that the engine splits; in a command it is checked as
 that composite, its team part under the string rule). Snapshot cells that hold JSON are parsed
-and walked the same way. A season of real events holds no such string (measured). A roster
-file could carry any player id: since job 1 the import refuses one over 64 characters or
-unsafe once the importer has put `p_` in front, because the same schema guards local commands
-and nobody could have signed or traded that player. A save made before that may still hold
+and walked the same way: a cell whose text begins (after blanks) with `{`, `[` or `"` and parses
+is checked as that value, any other text as the string it is. A season of real events holds no
+such string (measured). A roster file could carry any player id: since job 1 the import refuses
+one over 64 characters or unsafe once the importer has put `p_` in front, because the same
+schema guards local commands and nobody could have signed or traded that player. A save made
+before that may still hold
 such an id, so when hosting starts the host runs its own league through the same guard and
 refuses to host if it fails, saying why.
 
@@ -248,8 +257,9 @@ bound values in one transaction (foreign keys deferred), checks the counts, then
 state. Table and column names always come from the guest's own schema: a message can only pick
 a table from that list, and a row with the wrong number of cells ends the join. Every cell is a
 string, a finite number or null. Both halves are new `SaveFile` methods, so SQL stays in
-`packages/data`. Why rows: the guest never opens a database file that came from the network.
-The alternative, the database's bytes (`db.serialize()`), was tried too: it works, the schema
+`packages/data`. Only a service made as a mirror takes a snapshot (job 2): on the player's own
+save it would leave his file behind and play on in memory. Why rows: the guest never opens a
+database file that came from the network. The alternative, the database's bytes (`db.serialize()`), was tried too: it works, the schema
 can be compared with a fresh one, and it is a little faster, but it hands SQLite a foreign
 file. A JSON state alone would leave the history tables empty, and the event log cannot rebuild
 the state. A snapshot holds everything, every past box score included: about 0.75 MB on the
@@ -373,7 +383,7 @@ job 4 are in.
    `packages/shared`, the gates in `handleCommand` with `remote.test.ts`, and
    `LeagueService.dispatch` parsing its input. Beyond the list above: the balance lab's actor
    got the grant, and roster imports check player ids (both explained in the design above).
-2. **The mirror** (Fable, data and main). `SaveFile`: dump every table's rows, restore them
+2. **The mirror: done** (Fable, data and main). `SaveFile`: dump every table's rows, restore them
    into a fresh database, and the save schema number exported. `LeagueService`: the save path
    as a parameter, a command from a given actor, events from the host, the persisted-batch
    hook, the worker started on first use. `packages/shared`: the generic guard, the messages'
@@ -384,6 +394,20 @@ job 4 are in.
    (unknown kind, extra key, prototype-named string, non-finite number, too big, a zip bomb)
    are refused at the boundary; a restore with a wrong cell count or a bad cell leaves nothing
    behind.
+   _Built:_ `SaveFile.dumpRows` and `restoreRows` with `SAVE_SCHEMA` in `packages/data`;
+   `wire.ts` (`parseMessage`, `isSafeJson`, `WIRE`) and its test in `packages/shared`;
+   `net/codec.ts` in main; in `LeagueService` the path parameter, `dispatch(input, actor)`,
+   `applyRemote`, `onPersisted`, `snapshot`, `restore` and the worker started by the first
+   command, with `mirror.test.ts`. Of the limits, `WIRE` holds the ones this job's code
+   enforces (a packet, a message after inflating by side; the name's length is in the schema):
+   each other row of the table comes with the session code that enforces it, in jobs 3 and 4.
+   The test sends each command's events as one message and cuts the snapshot by rows; cutting
+   by size is the sender's work in job 3. Every message has its schema, but nothing sends
+   `hello`, `welcome`, `session` and the rest before job 3. A batch that fails while it is
+   applied, not only while it is saved, now sends the service back to what its save holds. The
+   design above was corrected in four places while building: a malformed command is a bad
+   message, the guard's numbers and the JSON-cell rule, the hook's events are a copy, and
+   `restore` is for a mirror only.
 3. **Hosting over the loopback** (Fable, main). `apps/desktop/src/main/net/`: the transport
    interface, the loopback, the host and guest sessions: handshake and versions, the join code,
    admission, the snapshot stream, events broadcast after persist, commands forwarded with
