@@ -170,6 +170,17 @@ export const prospectsOf = (state: LeagueState, teamId: TeamId): Prospect[] =>
 /** On his team's main-league roster, not sent down to a lower league (`Player.league`). */
 export const onRoster = (p: Player) => p.league === undefined;
 
+/** Whether a player is hurt on `day` (camp days are negative, so no injury is not day 0). */
+export const hurtOn = (p: Player, day: number): boolean => (p.injuredUntil ?? -Infinity) > day;
+
+/** Whether a player sits out on `day`: sent down, hurt, or holding out. */
+export const sitsOut = (state: LeagueState, p: Player, day: number): boolean =>
+  !onRoster(p) || hurtOn(p, day) || state.holdouts.some((h) => h.playerId === p.id);
+
+/** Who can play for a team on `day` (the game engine, the lines screen and exhibitions agree). */
+export const available = (state: LeagueState, teamId: TeamId, day: number): Player[] =>
+  Object.values(state.players).filter((p) => p.teamId === teamId && !sitsOut(state, p, day));
+
 /** Two teams as one key, the same whichever is named first. */
 export const pairKey = (a: TeamId, b: TeamId) => [a, b].sort().join(':');
 

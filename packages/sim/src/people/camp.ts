@@ -1,8 +1,7 @@
 import type { Player, TeamId } from '@gm/shared';
-import { teamName, type Emit, type LeagueState, type Rng } from '../core';
+import { available, teamName, type Emit, type LeagueState, type Rng } from '../core';
 import type { SimContext } from '../context';
 import { byOverall, overall } from '../players';
-import { available } from '../tonight';
 import { coachOf } from './owner';
 
 /** The coach's word for a team's form at the end of camp. */
