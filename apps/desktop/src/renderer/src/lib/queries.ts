@@ -203,9 +203,11 @@ export const useGames = (teamId: TeamId | undefined, limit = 30) =>
     queryFn: () => window.gm.league.games({ ...(teamId ? { teamId } : {}), limit }),
   });
 
-/** One-shot reads that are not cached: open a played game, or play an exhibition. */
+/** One-shot reads that are not cached: open a played game, watch tonight's, or play an exhibition. */
 export const useOpenGame = () =>
   useMutation({ mutationFn: (id: string) => window.gm.league.game({ id }) });
+export const useWatch = () =>
+  useMutation({ mutationFn: (teamId: TeamId) => window.gm.league.watch({ teamId }) });
 export const useExhibition = () =>
   useMutation({
     mutationFn: (input: { homeTeamId: TeamId; awayTeamId: TeamId; seed: number }) =>

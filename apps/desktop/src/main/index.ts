@@ -64,6 +64,7 @@ function registerIpc() {
   ipcMain.handle(IPC.exhibition, (_e, input: In<'exhibition'>) =>
     league.exhibition(input.homeTeamId, input.awayTeamId, input.seed),
   );
+  ipcMain.handle(IPC.watch, (_e, input: In<'watch'>) => league.watch(input.teamId));
   ipcMain.handle(IPC.roster, (_e, input: In<'roster'>) => league.roster(input.teamId));
   ipcMain.handle(IPC.resignOffers, (_e, input: In<'resignOffers'>) =>
     league.resignOffers(input.teamId),

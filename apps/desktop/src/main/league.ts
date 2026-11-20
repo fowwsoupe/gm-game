@@ -54,6 +54,7 @@ import {
   teamRecords,
   type LeagueState,
   strengthFor,
+  watchGame,
 } from '@gm/sim';
 import type {
   Actor,
@@ -332,6 +333,14 @@ export class LeagueService {
     );
     delete result.injuries; // nobody is hurt in an exhibition (the timeline still shows him leave)
     return this.detail(state, result);
+  }
+
+  /** Tonight's game for the match viewer, played on a copy: the league is not touched. */
+  watch(teamId: TeamId): GameDetail | null {
+    const { state } = this.open();
+    // The sim worker's context, so the game watched is the game it will play.
+    const result = watchGame(state, contextWithXg(state.rulesetId, this.xg), teamId);
+    return result ? this.detail(state, result) : null;
   }
 
   private detail(state: LeagueState, result: GameResult): GameDetail {

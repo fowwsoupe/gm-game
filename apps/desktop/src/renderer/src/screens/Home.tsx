@@ -1,4 +1,4 @@
-import { useState } from 'react';
+import { useState, type ReactNode } from 'react';
 import { STOP_CATEGORIES, type CardEffects, type Career, type TeamId } from '@gm/shared';
 import {
   useCapSheet,
@@ -146,7 +146,9 @@ function TeamStrip({ teamId }: { teamId: TeamId }) {
   const odds = inSeason ? pulse.find((p) => p.teamId === teamId)?.playoffOdds : undefined;
   const space = sheet?.seasons[0]?.space;
   const opponent = teams.find((x) => x.id === home?.nextGame?.opponentId);
-  const stats: { label: string; value: string; note?: string }[] = [
+  const openWatch = useUi((s) => s.openWatch);
+  const tonight = !!home?.nextGame && home.nextGame.day === status?.day;
+  const stats: { label: string; value: string; note?: ReactNode }[] = [
     {
       label: t('home.record'),
       value: row ? `${row.w}-${row.l}-${row.otl}` : '–',
@@ -172,6 +174,11 @@ function TeamStrip({ teamId }: { teamId: TeamId }) {
         home?.nextGame && opponent
           ? t(home.nextGame.home ? 'home.vs' : 'home.at', { team: opponent.abbreviation })
           : '–',
+      // A game day: watch it before it is played.
+      ...(tonight &&
+        status && {
+          note: <Button onClick={() => openWatch(teamId, status.day)}>{t('home.watch')}</Button>,
+        }),
     },
   ];
   return (

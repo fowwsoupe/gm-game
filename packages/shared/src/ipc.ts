@@ -83,6 +83,11 @@ export interface GmApi {
       awayTeamId: TeamId;
       seed: number;
     }): Promise<GameDetail>;
+    /**
+     * The game `teamId` plays today, as the next sim will play it, with what the match viewer
+     * draws; null when it has no game today. Changes nothing: the game is still to be played.
+     */
+    watch(input: { teamId: TeamId }): Promise<GameDetail | null>;
     /** A team's players under contract or expiring, for names on the cap sheet. */
     roster(input: { teamId: TeamId }): Promise<RosterPlayer[]>;
     /** Expiring players a team may re-sign now (empty until the champion is crowned). */
@@ -224,6 +229,7 @@ export const IPC = {
   games: 'league:games',
   game: 'league:game',
   exhibition: 'league:exhibition',
+  watch: 'league:watch',
   resignOffers: 'league:resignOffers',
   players: 'league:players',
   career: 'league:career',

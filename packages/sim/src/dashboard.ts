@@ -185,6 +185,20 @@ export function dashboard(state: LeagueState, ctx: SimContext, teamId: TeamId): 
         (g.homeTeamId === teamId || g.awayTeamId === teamId),
     )
     .sort((a, b) => a.date.day - b.date.day)[0];
+  // The playoffs have no schedule: a series still open in the round being played has a game
+  // today, at home as the day loop decides it (`watch.test.ts` holds the two together).
+  const round = Math.max(0, ...Object.values(state.playoffSeries).map((s) => s.round));
+  const series =
+    !next && phaseOf(cal, state.date) === 'playoffs' && !state.championTeamId
+      ? Object.values(state.playoffSeries).find(
+          (s) =>
+            s.round === round &&
+            !s.winnerTeamId &&
+            (s.higherTeamId === teamId || s.lowerTeamId === teamId),
+        )
+      : undefined;
+  const lowerHome =
+    !!series && ruleset.playoffs.homeIcePattern[series.higherWins + series.lowerWins] === 1;
   return {
     todo,
     ownerCards: state.ownerCards.filter((c) => c.teamId === teamId),
@@ -195,6 +209,12 @@ export function dashboard(state: LeagueState, ctx: SimContext, teamId: TeamId): 
           home: next.homeTeamId === teamId,
           day: next.date.day,
         }
-      : null,
+      : series
+        ? {
+            opponentId: series.higherTeamId === teamId ? series.lowerTeamId : series.higherTeamId,
+            home: (series.lowerTeamId === teamId) === lowerHome,
+            day: state.date.day,
+          }
+        : null,
   };
 }

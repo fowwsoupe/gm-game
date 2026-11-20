@@ -170,6 +170,12 @@ export const en = {
   'games.shotsAgainst': 'Shots against',
   'games.relief': '(in relief)',
   'games.noGame': 'Open a played game or play a matchup to see it here.',
+  'games.tonightTitle': "Tonight's game",
+  'games.tonightDone':
+    "Not played yet: this is the game the day's sim will play. Sim the day to make it count.",
+  'games.tonightShared':
+    "Not played yet: this is the game the day's sim will play. Another GM may still want to watch his own, so the day is simmed from Home.",
+  'games.backHome': 'Back to Home',
   'actions.newLeague': 'New league',
   'actions.confirmReplace': 'Replace your current league? Your saved league will be deleted.',
   'actions.loadRoster': 'Load roster file…',
@@ -485,6 +491,7 @@ export const en = {
   'home.nextGame': 'Next game',
   'home.vs': 'vs {team}',
   'home.at': 'at {team}',
+  'home.watch': 'Watch',
   'home.todoTitle': 'To do',
   'owner.card.ticketPrice':
     'The owner wants ticket prices back up to {pct}% above the league reference.',

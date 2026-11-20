@@ -102,12 +102,14 @@ What job 1 found in the code, for the jobs that draw:
 **Replay, do not store** ("replay instead of store", FEATURE_SPEC).
 
 - An exhibition replays from its seed, as today.
-- Tonight's game replays from the league. `watchGame` (in `tonight.ts`) runs the day's own code,
-  `advance`, on a copy of the state with a tap: the watched team's game is played with
-  `timeline` on and `advance` returns right after it. The copy and its events are thrown away.
-  Nothing shorter is right: the game's random numbers start where the day's earlier games left
-  the league stream, and its lineups are final only after the day's opening moves. Running the
-  same code is right by construction, and it costs less than one day (budget 250 ms).
+- Tonight's game replays from the league. `watchGame` (in `advance.ts`, beside the loop it taps;
+  this brief first put it in `tonight.ts`, which `advance.ts` imports, so that would have been a
+  cycle) runs the day's own code, `advance`, on a copy of the state with a tap: the watched
+  team's game is played with `timeline` on and `advance` returns right after it. The copy and
+  its events are thrown away. Nothing shorter is right: the game's random numbers start where
+  the day's earlier games left the league stream, and its lineups are final only after the
+  day's opening moves. Running the same code is right by construction, and it costs less than
+  one day (budget 250 ms; measured in job 3, see default 2).
 - A played league game cannot be replayed: the state it was played from (that day's lineups,
   injuries, linemates, form) is gone. It keeps today's box replay, which already shows every
   shot and penalty on a clock.
@@ -247,7 +249,10 @@ What job 2 found, for the jobs that draw more:
 
 **Where it lives.** In the Games screen, not a new one: `Replay` shows the rink above the feed
 when the box has a timeline (exhibitions, tonight's game) and is unchanged when it has none.
-Home's next-game tile gets Watch on a game day. The preview gets a match view fed by one seeded
+Home's next-game tile gets Watch on a game day. (Job 3 found the tile empty in the playoffs:
+`dashboard` read the next game from the schedule, which holds the regular season only. It now
+reads a playoff game from the team's open series, at home as the day loop has it.) The preview
+gets a match view fed by one seeded
 game saved as a fixture (the preview never talks to the sim), so the look can be judged without
 a save; the rink takes its colours from CSS variables and props only, so either theme can host
 it.
@@ -273,7 +278,13 @@ Each of these was open; the owner can overrule any of them before its job starts
    estimate, one new migration).
 2. **Watching replays the day on a copy, in the main process** like `exhibition`. If job 3
    measures more than 50 ms, it moves to the sim worker, or keeps the game's inputs and stream
-   position between orders.
+   position between orders. Job 3 measured it on the 16-team league (672 games): with a full
+   copy, 45 to 60 ms late in a season, most of it copying the played games' boxes (4 MB). The
+   copy now shares the played games, which a day only ever adds to, and a watch is 10 to 15 ms
+   from mid-season to the final (the slowest single calls 30 to 110 ms on a busy machine), so
+   it stays in the main process. Not measured: a 32-team roster file. The main process uses the
+   sim worker's context (the user's shot model), or the game watched would not be the game
+   played.
 3. **Three orders**: empty the net (and put the goalie back), change the goalie, match a line.
    No timeout and no short bench until the engine has fatigue.
 4. **Line matching is the home side's only** (the last change).
@@ -322,9 +333,10 @@ Each stands alone and leaves main shippable. A job that adds text adds it to `i1
    second, everyone on the ice has one disc, the score at any whole second is the box's); an
    exhibition plays at every speed and pause and speed answer while it runs (Electron smoke
    test).
-3. **Watch tonight's game.** The tap in `advance`, `watchGame` in `tonight.ts`,
-   `GmApi.league.watch({ teamId })`, Watch on Home on a game day (season and playoffs), the
-   last card (sim the day with one human GM, back to Home with several).
+3. **Watch tonight's game** (done; `watch.test.ts` holds the checks). The tap in `advance`,
+   `watchGame` beside it in `advance.ts`, `GmApi.league.watch({ teamId })`, Watch on Home on a
+   game day (season and playoffs; `dashboard` gives the playoff game), the last card (sim the
+   day with one human GM, back to Home with several).
    _Done when:_ the pinned check holds for a regular-season and a playoff game; the query's
    time is in the PR; lab identical on one seed; smoke test.
 4. **Bench: the goalie.** The `bench.order` contract, state, save, the checks in

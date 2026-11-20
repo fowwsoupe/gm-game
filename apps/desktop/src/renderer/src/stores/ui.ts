@@ -39,6 +39,9 @@ interface UiState {
   /** Set by the draft room: the Trades screen opens with this team and its pick asked for. */
   tradeAsk: { teamId: string; pickId: string } | null;
   openTrade: (teamId: string, pickId: string) => void;
+  /** Set by Home's Watch: the Games screen opens on this team's game of that league day. */
+  watch: { teamId: string; day: number } | null;
+  openWatch: (teamId: string, day: number) => void;
   /** Hot-seat: the human team whose GM has the seat (absent or no longer human = the first one). */
   seat: string | undefined;
   setSeat: (teamId: string | undefined) => void;
@@ -60,11 +63,13 @@ export const useUi = create<UiState>((set) => ({
     set({ screen: 'player', focus: { teamId: teamId ?? 'fa', playerId } }),
   tradeAsk: null,
   openTrade: (teamId, pickId) => set({ screen: 'trades', tradeAsk: { teamId, pickId } }),
-  setScreen: (screen) => set({ screen, tradeAsk: null }),
+  watch: null,
+  openWatch: (teamId, day) => set({ screen: 'games', watch: { teamId, day } }),
+  setScreen: (screen) => set({ screen, tradeAsk: null, watch: null }),
   setLocale: (locale) => set({ locale }),
   seat: undefined,
   setSeat: (seat) => set({ seat }),
   curtain: false,
-  handOver: (seat) => set({ seat, curtain: true, screen: 'home', tradeAsk: null }),
+  handOver: (seat) => set({ seat, curtain: true, screen: 'home', tradeAsk: null, watch: null }),
   liftCurtain: () => set({ curtain: false }),
 }));

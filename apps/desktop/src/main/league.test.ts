@@ -4,6 +4,8 @@ import { tmpdir } from 'node:os';
 import { join } from 'node:path';
 import { afterAll, beforeEach, describe, expect, it, vi } from 'vitest';
 import type { HockeyBoxScore } from '@gm/shared';
+import { defaultContext, handleCommand } from '@gm/sim';
+import type { WorkerRequest } from './sim.worker';
 
 const dir = mkdtempSync(join(tmpdir(), 'gm-svc-'));
 afterAll(() => rmSync(dir, { recursive: true, force: true }));
@@ -12,14 +14,19 @@ vi.mock('electron', () => ({ app: { getPath: () => dir } }));
 /** A stand-in for the sim worker: tests decide what each command gets back. */
 class FakeWorker extends EventEmitter {
   static all: FakeWorker[] = [];
-  reply: 'ok' | 'die' | 'bad-event' = 'ok';
+  reply: 'ok' | 'die' | 'bad-event' | 'sim' = 'ok';
   constructor() {
     super();
     FakeWorker.all.push(this);
   }
-  postMessage() {
+  postMessage(req: WorkerRequest) {
     if (this.reply === 'die') queueMicrotask(() => this.emit('error', new Error('boom')));
-    else if (this.reply === 'bad-event')
+    else if (this.reply === 'sim') {
+      // What the real worker does, on a copy of the state as a thread would get.
+      const state = structuredClone(req.state);
+      const result = handleCommand(state, req.command, req.actor, defaultContext(state.rulesetId));
+      queueMicrotask(() => this.emit('message', result));
+    } else if (this.reply === 'bad-event')
       // The sim state accepts this event, but the save refuses it (unknown teams break a foreign
       // key), so the write fails and rolls back.
       queueMicrotask(() =>
@@ -86,6 +93,22 @@ describe('LeagueService', () => {
     const box = game.result.box as HockeyBoxScore;
     expect(box.timeline!.shifts.length).toBeGreaterThan(50);
     expect(svc.exhibition(home!.id, away!.id, 7)).toEqual(game);
+    svc.dispose();
+  });
+
+  it("shows tonight's game without playing it, and the sim then plays that game", async () => {
+    const svc = new LeagueService();
+    const { teams } = svc.newLeague(1);
+    expect(svc.watch(teams[0]!.id)).toBeNull(); // camp: nobody plays
+    FakeWorker.all[0]!.reply = 'sim';
+    await svc.dispatch({ kind: 'sim.advance', days: -svc.status().day }); // to opening night
+    const game = teams.map((t) => svc.watch(t.id)).find((g) => g)!;
+    const { timeline, ...box } = game.result.box as HockeyBoxScore;
+    expect(timeline!.shifts.length).toBeGreaterThan(50);
+    expect(Object.keys(game.names).length).toBeGreaterThan(30);
+    expect(svc.game(game.result.id)).toBeNull(); // still to be played
+    await svc.dispatch(cmd);
+    expect(svc.game(game.result.id)).toEqual({ ...game, result: { ...game.result, box } });
     svc.dispose();
   });
 
