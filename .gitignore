@@ -33,3 +33,10 @@ graphify-out/
 # Stray clones of other repos (never commit)
 *-clean/
 fantasy-clean/
+
+# Preview-only placeholder art, never committed
+design-refs/
+apps/desktop/src/renderer/public/graphics/placeholder-art/
+
+# Local agent worktrees
+.claude/worktrees/
