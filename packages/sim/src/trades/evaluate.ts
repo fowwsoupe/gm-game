@@ -32,6 +32,32 @@ import type { SimContext } from '../context';
 /** The other team wants to win a trade by at least this share of the cap. */
 const MARGIN_PCT_OF_CAP = 0.5;
 /**
+ * Whether the assistant GM of the team a human offer is addressed to would take it, on his read
+ * (surplus of what comes in against what goes out). Undefined without an assistant.
+ */
+export function assistantTakes(
+  state: LeagueState,
+  ctx: SimContext,
+  proposal: TradeProposal,
+): boolean | undefined {
+  const team = state.teams[proposal.toTeamId];
+  if (!team || !departmentsOf(team).includes('assistant')) return undefined;
+  const head = staffOf(team, 'assistant', ctx.ruleset.frontOffice.salary, state.date.season);
+  const context = cachedContext(state, ctx, team.id);
+  // ponytail: players only; AI offers carry no picks yet (add pickValue when they do).
+  const worth = (ids: readonly string[]) =>
+    ids.reduce((sum, id) => {
+      const p = state.players[id];
+      return p
+        ? sum +
+            ctx.models.valuation.value(assistantSees(head, team.id, p), context, ctx.ruleset)
+              .surplus
+        : sum;
+    }, 0);
+  return worth(proposal.give) > worth(proposal.get);
+}
+
+/**
  * Each extra player coming in is worth less than the one before: weight 1 / (1 + k·i) for the
  * i-th best. Stops three average players buying a star. Players with negative value are never
  * discounted, so dumping a bad contract always costs full price.

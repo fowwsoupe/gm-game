@@ -30,7 +30,7 @@ import {
 } from './league';
 import { giveSeasonAwards } from './awards';
 import { aiHoldouts, announceDraftClass, prospectSeason } from './offseason';
-import { aiOffers, aiTrades, deadlineRecap, inDeadlineWeek } from './trades';
+import { aiOffers, aiTrades, deadlineRecap, delegatedOffers, inDeadlineWeek } from './trades';
 import {
   campReport,
   disputesWeek,
@@ -446,6 +446,7 @@ export function advance(
       const before = events.length;
       aiTrades(state, ctx, rng.fork(`trades${today.day}`), emit);
       aiOffers(state, ctx, rng.fork(`offers${today.day}`), emit);
+      delegatedOffers(state, ctx, emit);
       tradeRequests(state, rng.fork(`requests${today.day}`), emit);
       aiHoldouts(state, ctx, rng.fork(`aiHoldouts${today.day}`), emit);
       holdoutsWeek(state, rng.fork(`holdouts${today.day}`), emit);
@@ -457,6 +458,7 @@ export function advance(
       const before = events.length;
       aiTrades(state, ctx, rng.fork(`trades${today.day}`), emit);
       aiOffers(state, ctx, rng.fork(`offers${today.day}`), emit);
+      delegatedOffers(state, ctx, emit);
       if (events.length > before) loadRosters();
     }
     if (today.day === cal.tradeDeadlineDay) deadlineRecap(state, ctx, emit);

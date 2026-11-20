@@ -8,7 +8,7 @@ import {
   handleCommand,
   playerName,
 } from './index';
-import { assistantGuess, cachedContext, evaluateTrade } from './trades';
+import { assistantGuess, cachedContext, delegatedOffers, evaluateTrade } from './trades';
 import { overall } from './players';
 
 const ctx = defaultContext();
@@ -80,6 +80,47 @@ describe('the assistant GM', () => {
     const ai = dashboard(state, ctx, theirs.id).todo.map((i) => i.code);
     expect(ai).not.toContain('adviceTake');
     expect(ai).not.toContain('adviceDecline');
+  });
+});
+
+describe('delegating offers to the assistant GM', () => {
+  it('turns down what he advises against, once the toggle is on', () => {
+    const state = createLeague(54, ctx);
+    const mine = Object.values(state.teams).find((t) => t.userControlled)!;
+    const theirs = Object.values(state.teams).find((t) => !t.userControlled)!;
+    const on = { kind: 'delegate.set', teamId: mine.id, offers: true } as const;
+    mine.staff = { assistant: { name: 'A B', quality: 1, hired: 2026, salary: 1 } };
+    const give = Object.values(state.players)
+      .filter((p) => p.teamId === theirs.id)
+      .map((p) => p.id);
+    const get = Object.values(state.players)
+      .filter((p) => p.teamId === mine.id)
+      .map((p) => p.id);
+    state.tradeOffers = give.flatMap((g) =>
+      get.map((m) => ({
+        id: `${g}-${m}`,
+        proposal: { fromTeamId: theirs.id, toTeamId: mine.id, give: [g], get: [m] },
+        expiresDay: 999,
+      })),
+    );
+    const total = state.tradeOffers.length;
+    const advised = (code: string) =>
+      dashboard(state, ctx, mine.id).todo.filter((i) => i.code === code).length;
+    const against = advised('adviceDecline');
+    expect(against).toBeGreaterThan(0);
+    expect(against).toBeLessThan(total);
+    const r = handleCommand(state, on, local, ctx);
+    expect(r.ok).toBe(true);
+    if (r.ok) for (const e of r.events) applyEvent(state, e);
+    expect(dashboard(state, ctx, mine.id).delegated).toBe(true);
+    const events: Parameters<typeof applyEvent>[1][] = [];
+    delegatedOffers(state, ctx, (_l, _t, e) => {
+      const ev = { ...e, id: 0 } as never;
+      events.push(ev);
+      applyEvent(state, ev);
+    });
+    expect(state.tradeOffers).toHaveLength(total - against);
+    expect(advised('adviceDecline')).toBe(0);
   });
 });
 

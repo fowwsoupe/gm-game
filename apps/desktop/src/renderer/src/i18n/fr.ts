@@ -536,6 +536,7 @@ export const fr: Record<MessageKey, string> = {
   'owner.effect.fanInterest': 'partisans {n}',
   'owner.effect.ticketPct': 'billets {pct} %',
   'home.todoTitle': 'À faire',
+  'home.delegateOffers': 'Laisser mon DG adjoint refuser les offres qu’il déconseille',
   'home.todoClear': 'Rien ne vous attend pour l’instant.',
   'todo.resign': '{count} joueur(s) à re-signer avant le marché',
   'todo.draftList': 'Classez la cuvée du repêchage pour vos choix',

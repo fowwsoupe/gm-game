@@ -58,6 +58,7 @@ const JSON_META = {
   draftBoards: '{}',
   draftPicksMade: 'null',
   depthCharts: '{}',
+  delegated: '{}',
   trainingPlans: '{}',
   international: '[]',
   specialUnits: '{}',
@@ -563,6 +564,7 @@ export class SaveFile {
           case 'draft.boardSet':
           case 'draft.started':
           case 'lines.set':
+          case 'delegate.set':
           case 'training.planSet':
           case 'international.played':
           case 'units.set':

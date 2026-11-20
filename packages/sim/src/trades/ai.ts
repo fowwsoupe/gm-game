@@ -11,6 +11,7 @@ import {
 } from '../core';
 import type { SimContext } from '../context';
 import {
+  assistantTakes,
   cachedContext,
   evaluateTrade,
   newTradeCache,
@@ -262,6 +263,22 @@ export function aiOffers(state: LeagueState, ctx: SimContext, rng: Rng, emit: Em
         proposal: { fromTeamId: caller, toTeamId: human, give: [offer.id], get: [target.id] },
         expiresDay,
       },
+    });
+  }
+}
+
+/**
+ * Delegated chore: a human team that handed its offers over has its assistant GM turn down the
+ * ones he advises against, on his read (so a poor one lets bad offers through and refuses good
+ * ones). Taking an offer stays yours.
+ */
+export function delegatedOffers(state: LeagueState, ctx: SimContext, emit: Emit): void {
+  for (const o of state.tradeOffers.filter((x) => state.delegated[x.proposal.toTeamId])) {
+    if (assistantTakes(state, ctx, o.proposal) !== false) continue;
+    emit('minor', [o.proposal.toTeamId, o.proposal.fromTeamId], {
+      kind: 'trade.offerClosed',
+      offerId: o.id,
+      accepted: false,
     });
   }
 }

@@ -521,6 +521,7 @@ export const en = {
   'owner.effect.cash': 'cash {amount}',
   'owner.effect.fanInterest': 'fans {n}',
   'owner.effect.ticketPct': 'tickets {pct}%',
+  'home.delegateOffers': 'Let my assistant GM turn down the offers he advises against',
   'home.todoClear': 'Nothing needs you right now.',
   'todo.resign': '{count} player(s) can be re-signed before free agency',
   'todo.draftList': 'Rank the draft class for your picks',

@@ -4,7 +4,7 @@ import { capYearIssues, teamCapTotal } from './cba';
 import { freeAgents, isExpiring, resignOffers, resignWindowOpen, wantedYears } from './offseason';
 import { assistantSees, departmentsOf, staffOf } from './people';
 import { overall } from './players';
-import { cachedContext } from './trades';
+import { assistantTakes, cachedContext } from './trades';
 import { available, hurtOn } from './tonight';
 import type { SimContext } from './context';
 
@@ -118,18 +118,11 @@ export function dashboard(state: LeagueState, ctx: SimContext, teamId: TeamId): 
     todo.push({ code: 'tradeOffers', params: { count: offers.length }, screen: 'trades' });
   }
   if (assistant && offers.length > 0) {
-    const context = cachedContext(state, ctx, teamId);
     const players = (ids: readonly string[]) => ids.flatMap((id) => state.players[id] ?? []);
-    // ponytail: players only; AI offers carry no picks yet (add pickValue when they do).
-    const worth = (ids: readonly string[]) =>
-      players(ids).reduce(
-        (sum, p) => sum + ctx.models.valuation.value(seen(p), context, ruleset).surplus,
-        0,
-      );
     const names = (ids: readonly string[]) => players(ids).map(playerName).join(', ');
     for (const { proposal } of offers) {
       todo.push({
-        code: worth(proposal.give) > worth(proposal.get) ? 'adviceTake' : 'adviceDecline',
+        code: assistantTakes(state, ctx, proposal) ? 'adviceTake' : 'adviceDecline',
         params: { give: names(proposal.give), get: names(proposal.get) },
         screen: 'trades',
       });
@@ -195,6 +188,7 @@ export function dashboard(state: LeagueState, ctx: SimContext, teamId: TeamId): 
   return {
     todo,
     ownerCards: state.ownerCards.filter((c) => c.teamId === teamId),
+    ...(assistant && { delegated: !!state.delegated[teamId] }),
     nextGame: next
       ? {
           opponentId: next.homeTeamId === teamId ? next.awayTeamId : next.homeTeamId,
