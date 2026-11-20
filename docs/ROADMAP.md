@@ -27,8 +27,8 @@ Ready now (code can start):
 Front office (also the lasting-team-edge fix): all jobs in
 [research/2026-11-front-office.md](research/2026-11-front-office.md) done; the points % spread
 gap narrowed (0.077-0.080 to 0.079-0.082); season form, a fresh team edge each season, takes it
-to 0.085-0.087 on seeds 1, 101 and 201 (re-checked 2026-11-18; 201 is borderline) with r 0.46-0.48 and
-playoff turnover 31-32% ([research/2026-11-spread-second-mechanism.md](research/2026-11-spread-second-mechanism.md)). League & events:
+to 0.096-0.100 on seeds 1, 101 and 201 (re-checked 2026-11-20 after the lasting-edges tune) with r 0.53-0.56 and
+playoff turnover 30-32% ([research/2026-11-spread-second-mechanism.md](research/2026-11-spread-second-mechanism.md)). League & events:
 all five jobs of [research/2026-11-league-events.md](research/2026-11-league-events.md) done (the pulse ranks by playoff odds; a young team out of it rebuilds, an old bubble team with cap space buys; crisis on top).
 
 Camp and a trade deadline that matters: both jobs of
@@ -66,7 +66,7 @@ calibration or a new engine, Fable = the largest, least bounded jobs. Tick a lin
 
 A. Leftovers (Sonnet 5.5, medium)
 
-- [x] Assistant GM's return (delegation stays maybe)
+- [x] Assistant GM's return; delegation of trade offers done too (filling positions and lines stay maybe)
 - [ ] Steam Workshop for roster import (blocked: needs the real Steam App ID to test and publish)
 
 B. Balance and calibration (Opus 5.5 unless noted)
