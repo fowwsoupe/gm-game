@@ -84,7 +84,8 @@ describe('restricted free agents', () => {
     const b = withSheet(5);
     run(b.state, { kind: 'freeAgency.advanceDay' });
     expect(b.state.players[b.player.id]!.teamId).toBe(b.from);
-    expect(b.state.rfaSheets).toEqual([]);
+    // His sheet is gone (that day can bring other players' sheets).
+    expect(b.state.rfaSheets.filter((s) => s.playerId === b.player.id)).toEqual([]);
   });
 
   it('only the rights holder answers a sheet', () => {

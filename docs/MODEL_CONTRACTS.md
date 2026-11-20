@@ -81,9 +81,9 @@ starter's save % says more than a backup's) and shots against per game. A sample
 `FULL_SAMPLE` (half a season for skaters, a quarter for goalies) is pulled toward the position
 average and its `sd` widens toward the position spread.
 
-What a stat line shows today (held-out R², 120 leagues): `shooting` about 0.78, `passing`
-0.57-0.66, other skater keys 0.47-0.51, goalie keys 0.24-0.32 (one season's save % is mostly
-noise, as in the NHL). On 30 fresh leagues neither table saw, version 2 beats version 1 on every
+What a stat line shows today (held-out R², 120 leagues): `shooting` 0.76-0.79, `passing`
+0.59-0.63, other skater keys 0.36-0.48, goalie keys 0.20-0.29 (one season's save % is mostly
+noise, as in the NHL; refit with season form 4.5 and goalie sensitivity 0.0044). On 30 fresh leagues neither table saw, version 2 beats version 1 on every
 key (skaters +0.005-0.018, goalies +0.034-0.040). Those keys mostly ride a player's overall
 level, since generation draws a player's ratings together, so their estimates are close to "how
 good is he" with a wide `sd`; the stat line has no number that tells `faceoffs` or `skating`

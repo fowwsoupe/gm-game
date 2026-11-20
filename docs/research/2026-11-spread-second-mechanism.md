@@ -107,3 +107,44 @@ candidate (form 4, probed above) costs about 0.01 of r and pushes goalie SV% r n
 0.30 ceiling (seed 1 is already at 0.314 on this run, out of range, a check form does not move).
 The spread is in range on the mean (0.086) and on two of three seeds; seed 201 is the one to
 watch if a later PR moves it.
+
+## Lasting edges after the prospect pool (2026-11-20)
+
+The fitted aging curves (PR #224) kept a good core together longer. On main at 38ddd4f (form
+3.5) the points % spread was in range, but r sat at 0.57-0.59 against the NHL's 0.51, playoff
+turnover had dropped to 28-30%, the top team's titles and "better team wins best-of-7, years
+10+" were just over their ceilings, and goalie SV% r was over its 0.30 ceiling on every seed.
+Each target's source: SV% r 0.12-0.30 (JFresh, Neil Paine), best-of-7 60-65% (StatsByLopez),
+turnover 29-36% (NHL 2007-2026); titles at most 5 is the lab's own "no runaway dynasty" rule.
+
+Two levers, each run on its own and then together (20 leagues x 20 years, seeds 1/101/201):
+
+- Form 4.5 alone cut titles (mean 4.77), turnover rose to 29.9-31.1% and best-of-7 years 10+
+  fell to 63.4-65.4%, but goalie SV% r stayed at 0.294-0.325: form moves skaters, not goalies.
+- `goalieSensitivity` 0.0044 (from 0.005) alone took SV% r to 0.226-0.261. Goalies' season save
+  % is closer to noise, as in the NHL. Titles and best-of-7 moved little.
+
+Together (columns: SV% r, titles, best-of-7 years 10+, new playoff teams, points % r, SD):
+
+| Seed | Main 38ddd4f                            | Form 4.5 + sensitivity 0.0044           | Form 4.5 + 0.0046                       |
+| ---- | --------------------------------------- | --------------------------------------- | --------------------------------------- |
+| 1    | 0.315, 5.25, 66.8%, 30.0%, 0.582, 0.097 | 0.272, 4.55, 63.9%, 31.6%, 0.532, 0.096 | 0.247, 4.85, 66.0%, 29.8%, 0.568, 0.098 |
+| 101  | 0.310, 5.00, 66.0%, 30.0%, 0.572, 0.094 | 0.256, 5.05, 68.7%, 30.2%, 0.560, 0.100 | 0.306, 4.80, 60.9%, 30.2%, 0.520, 0.097 |
+| 201  | 0.324, 5.45, 67.1%, 28.6%, 0.594, 0.097 | 0.259, 5.10, 65.4%, 31.3%, 0.559, 0.099 | 0.276, 4.45, 64.9%, 30.6%, 0.549, 0.097 |
+| 301  | 0.308, 4.50, 65.6%, 28.3%, 0.583, 0.096 | 0.260, 4.70, 64.0%, 31.1%, 0.535, 0.095 | 0.262, 5.15, 66.1%, 30.6%, 0.525, 0.097 |
+| 401  | 0.316, 5.10, 68.4%, 29.4%, 0.572, 0.095 | 0.288, 4.90, 64.7%, 30.4%, 0.544, 0.099 | 0.273, 4.90, 66.1%, 30.5%, 0.539, 0.098 |
+| Mean | 0.315, 5.06, 66.8%, 29.3%, 0.581, 0.096 | 0.267, 4.86, 65.3%, 30.9%, 0.546, 0.098 | 0.273, 4.83, 64.8%, 30.3%, 0.540, 0.097 |
+
+**Shipped: form 4.5, sensitivity 0.0044.** It is the only one with SV% r and turnover in range
+on all five seeds. On means, 0.0046 does about as well on titles and best-of-7: the two columns
+differ there by about a seed's noise (one seed's best-of-7 swings 3-8 points between runs that
+should match). Titles and best-of-7 years 10+ improve on the mean but stay just over on some
+seeds. Coach changes rise with form, to 0.378-0.396 (ceiling 0.40), so form past 4.5 would push
+them out. Single seasons (100 fresh leagues, seed 1) stay in range: favourite wins a game
+57.6% (57.9% on main), goals vs expected 1.06 (1.07), best save % 0.919 (0.918).
+
+The stats-to-ratings tables were refit (`pnpm ratings:fit`); main's were already stale. Goalie
+keys' held-out R² dropped to 0.20-0.29 because a season's save % now shows less of the goalie.
+Four seed-pinned tests moved: the draft-day call seed, the attendance seed, an RFA check that
+now ignores other players' sheets made the same day, and the in-season breakout ceiling (5 to 6;
+form makes about 5 a league-season on seeds 9-12, 3.5 at form 3.5).

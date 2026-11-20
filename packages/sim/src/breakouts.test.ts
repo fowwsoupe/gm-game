@@ -49,10 +49,11 @@ describe('in-season breakouts', () => {
         run(state, { kind: 'season.rollover' });
       }
       expect(counts[0]).toBe(0); // no last season yet
-      // One league's season is noisy (6 and 1 here): judge the average.
+      // One league's season is noisy (9 and 2 here): judge the average. Season form 4.5 lifts a
+      // hot team's young scorers too (about 5 a league-season on seeds 9-12, 3.5 at form 3.5).
       const avg = (counts[1]! + counts[2]!) / 2;
       expect(avg).toBeGreaterThanOrEqual(1);
-      expect(avg).toBeLessThanOrEqual(5);
+      expect(avg).toBeLessThanOrEqual(6);
     },
   );
 });

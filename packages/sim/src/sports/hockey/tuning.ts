@@ -9,10 +9,11 @@ export const HOCKEY_TUNING = {
   /**
    * The average starting goalie's rating, and how strongly a gap moves his goal chance per shot.
    * Set so a starter's save % repeats year to year at r 0.12-0.30 as in the NHL (balance lab);
-   * at 0.011 it repeated at 0.6, so goalies were far more predictable than real ones.
+   * at 0.011 it repeated at 0.6, so goalies were far more predictable than real ones; at 0.005
+   * it crept back over 0.30 (0.31-0.32) once the fitted aging curves kept goalies in their prime.
    */
   leagueAvgGoaltending: 67,
-  goalieSensitivity: 0.005,
+  goalieSensitivity: 0.0044,
   /**
    * Goalie form: each game, a goalie's goal chance against is multiplied by exp(N(0, sd)), with
    * sd = goalieFormSd x (1.5 - consistency / 100). Calibrated so a team game's goals vary around
