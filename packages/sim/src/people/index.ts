@@ -21,7 +21,7 @@ export { chemistry } from './chemistry';
 export { talkedDown, tradeRequests, waivesNoTrade } from './requests';
 export { disputesWeek, PROMISE_DAYS, roleGap } from './disputes';
 export { startHoldouts, holdoutsWeek, talkedRound } from './holdouts';
-export { campRead, campReport } from './camp';
+export { campBattles, campRead, campReport, releaseCampOrders } from './camp';
 export {
   capacityOf,
   coachOf,

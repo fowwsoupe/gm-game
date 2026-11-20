@@ -1,18 +1,10 @@
 import type { Player, TeamId } from '@gm/shared';
-import { onRoster, type LeagueState } from './core';
+import type { LeagueState } from './core';
 import { chemistry, coachOf } from './people';
 import type { SimContext } from './context';
 
-/** Whether a player is hurt on `day` (camp days are negative, so no injury is not day 0). */
-export const hurtOn = (p: Player, day: number): boolean => (p.injuredUntil ?? -Infinity) > day;
-
-/** Whether a player sits out on `day`: sent down, hurt, or holding out. */
-export const sitsOut = (state: LeagueState, p: Player, day: number): boolean =>
-  !onRoster(p) || hurtOn(p, day) || state.holdouts.some((h) => h.playerId === p.id);
-
-/** Who can play for a team on `day` (the game engine, the lines screen and exhibitions agree). */
-export const available = (state: LeagueState, teamId: TeamId, day: number): Player[] =>
-  Object.values(state.players).filter((p) => p.teamId === teamId && !sitsOut(state, p, day));
+// They live in core so people/camp can use them without an import cycle through here.
+export { available, hurtOn, sitsOut } from './core';
 
 /**
  * A team's strength with these players, as the games play it: chemistry, the GM's lines and

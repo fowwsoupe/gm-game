@@ -101,7 +101,7 @@ playing the loser over him is the GM's call, and `roleGap` and disputes already 
    (en, fr). _Done when:_ a test plays a tournament season with 6 teams, 6 group games, 2
    semi-finals and a final and one champion, the same on a replay, and none in the seasons between;
    the lab is unchanged on seeds 1, 101 and 201 (its own fork, no league games).
-3. **Camp battles** (after the camp brief's job 1). The battles on camp's first day, the coach's
+3. **Camp battles** (done; built as one step on camp's last day, not first and last, so trades made in camp count; the human team gets the coach's pick as news, with no To do, which would need saved state; a team short at any position has no battles; an AI team's order lasts `camp.holdDays` (14) so a player it signs later is not stuck behind it). The battles on camp's first day, the coach's
    read on the last, AI depth orders, the camp report's battle lines and the To do (en, fr).
    _Done when:_ a test sets up a battle within the gap and an elite coach picks the better player
    more often than a poor one; the lab's checks are flat on seeds 1, 101 and 201, before and after

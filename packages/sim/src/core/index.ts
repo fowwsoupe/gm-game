@@ -8,11 +8,14 @@ export { dollars, pct, type Dollars } from './money';
 export { phaseOf, type CalendarConfig } from './calendar';
 export {
   applyEvent,
+  available,
   capYearOf,
+  hurtOn,
   linemateKey,
   onRoster,
   pairKey,
   prospectsOf,
+  sitsOut,
   type LeagueState,
   type ScheduledGame,
 } from './state';
