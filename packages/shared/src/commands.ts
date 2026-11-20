@@ -82,6 +82,8 @@ export type Command =
   | { kind: 'units.set'; teamId: TeamId; unit: SpecialUnit; playerIds: PlayerId[] }
   /** Give one of your players a summer training focus (a key of the sport's `trainingFocus`), or none. */
   | { kind: 'training.set'; teamId: TeamId; playerId: PlayerId; focus: string | null }
+  /** Hand the assistant GM your trade offers: he turns down the ones he advises against (needs one). */
+  | { kind: 'delegate.set'; teamId: TeamId; offers: boolean }
   /** Put a player on your trade block (AI GMs call about him more) or take him off. */
   | { kind: 'trade.block'; teamId: TeamId; playerId: PlayerId; onBlock: boolean }
   /** Out of work: take the job a team with a vacancy offered (see `Career`). */

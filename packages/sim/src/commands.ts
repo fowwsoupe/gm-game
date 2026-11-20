@@ -585,6 +585,23 @@ export function handleCommand(
       return applied(state, ev);
     }
 
+    case 'delegate.set': {
+      const team = state.teams[command.teamId];
+      if (!team) return invalid('unknown team');
+      if (!controls(actor, team)) return notYours;
+      if (command.offers && !departmentsOf(team).includes('assistant')) {
+        return invalid('hire an assistant GM first');
+      }
+      return applied(
+        state,
+        makeEvent(state, 'minor', [team.id], {
+          kind: 'delegate.set',
+          teamId: team.id,
+          offers: command.offers,
+        }),
+      );
+    }
+
     case 'training.set': {
       const team = state.teams[command.teamId];
       const player = state.players[command.playerId];

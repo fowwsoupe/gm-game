@@ -221,6 +221,8 @@ export type LeagueEvent =
       season: number;
       lines: { playerId: PlayerId; league: string; stats: Record<string, number> }[];
     })
+  /** A human team handed its trade offers to the assistant GM (or took them back). */
+  | (EventBase & { kind: 'delegate.set'; teamId: TeamId; offers: boolean })
   /** A team's depth order changed (lines). */
   | (EventBase & { kind: 'lines.set'; teamId: TeamId; order: PlayerId[] })
   /** A team's power-play or penalty-kill unit changed (empty = auto). */

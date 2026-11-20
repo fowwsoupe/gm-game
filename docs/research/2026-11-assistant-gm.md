@@ -67,5 +67,5 @@ the staff market. So the assistant is a department of human teams only
    order, the bench player who beats a top-line player of his position on his read.
 3. **His return (done).** How far his read of your players' overall is off the truth, on average,
    on the Front Office screen with the other department returns, so a poor one shows himself.
-4. **Delegation (maybe).** Let him handle chores you opt into (fill a short position with the
+4. **Delegation (done for offers: the toggle on Home turns down what he advises against; filling positions and lines still maybe).** Let him handle chores you opt into (fill a short position with the
    cheapest legal signing, set lines after injuries), on his read.

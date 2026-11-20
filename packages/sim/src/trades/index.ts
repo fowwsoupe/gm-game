@@ -6,10 +6,18 @@
  */
 export {
   assistantGuess,
+  assistantTakes,
   cachedContext,
   evaluateTrade,
   newTradeCache,
   planRetention,
   tradeWindowOpen,
 } from './evaluate';
-export { aiOffers, aiTrades, deadlineRecap, inDeadlineWeek, offerExpires } from './ai';
+export {
+  aiOffers,
+  aiTrades,
+  deadlineRecap,
+  delegatedOffers,
+  inDeadlineWeek,
+  offerExpires,
+} from './ai';

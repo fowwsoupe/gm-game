@@ -874,6 +874,8 @@ export interface Dashboard {
   /** The owner's open cards: each waits on an answer. */
   ownerCards: OwnerCard[];
   nextGame: { opponentId: TeamId; home: boolean; day: number } | null;
+  /** Offers handed to the assistant GM (absent: no assistant). */
+  delegated?: boolean;
   /** Playoff odds if the next regular-season game is won or lost (absent outside the season). */
   raceNight?: { ifWin: number; ifLose: number };
 }

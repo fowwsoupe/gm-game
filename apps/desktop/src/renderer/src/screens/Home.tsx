@@ -232,6 +232,18 @@ function TodoCard({ teamId }: { teamId: TeamId }) {
           })}
         </ul>
       )}
+      {home?.delegated !== undefined && (
+        <label className="mt-3 flex items-center gap-2 text-sm text-muted">
+          <input
+            type="checkbox"
+            checked={home.delegated}
+            onChange={(e) =>
+              dispatch.mutate({ kind: 'delegate.set', teamId, offers: e.target.checked })
+            }
+          />
+          {t('home.delegateOffers')}
+        </label>
+      )}
     </Card>
   );
 }

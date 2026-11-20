@@ -66,6 +66,8 @@ export interface LeagueState {
   draftPicksMade: number | null;
   /** Each human team's depth order for its lines, best first (absent = by rating). */
   depthCharts: Record<string, string[]>;
+  /** Human teams that handed their trade offers to the assistant GM. */
+  delegated: Record<TeamId, true>;
   /** Summer training focus by player (a key of the sport's `trainingFocus`); only human teams' count. */
   trainingPlans: Record<PlayerId, string>;
   /** International tournaments played so far, oldest first. */
@@ -515,6 +517,10 @@ export function applyEvent(state: LeagueState, event: LeagueEvent): void {
       return;
     case 'lines.set':
       state.depthCharts[event.teamId] = [...event.order];
+      return;
+    case 'delegate.set':
+      if (event.offers) state.delegated[event.teamId] = true;
+      else delete state.delegated[event.teamId];
       return;
     case 'training.planSet':
       if (event.focus === null) delete state.trainingPlans[event.playerId];
