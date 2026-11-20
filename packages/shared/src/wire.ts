@@ -21,6 +21,8 @@ export const WIRE = {
   packetBytes: 1_000_000,
   /** One message after inflating, by who sent it. */
   messageBytes: { guest: 64 * 1024, host: 8 * 1024 * 1024 },
+  /** Guests of one host: 32 humans with him. */
+  guests: 31,
 } as const;
 
 const DEPTH_MAX = 32;

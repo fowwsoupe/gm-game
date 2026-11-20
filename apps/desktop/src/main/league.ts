@@ -109,11 +109,14 @@ export class LeagueService {
   /** Commands (and a mirror's batches of events) run one at a time, in order. */
   private queue: Promise<unknown> = Promise.resolve();
   /**
-   * Called after each batch of events is saved, with the event count before it: a host sends the
-   * batch on from here. The events are a copy from before they were applied, so a mirror is
-   * given exactly what this service's reducer was given.
+   * Called after each batch of events is saved, with the event count before it and the actor its
+   * command ran as (the one `dispatch` was given): a host sends the batch on from here. The events
+   * are a copy from before they were applied, so a mirror is given exactly what this service's
+   * reducer was given. It must not throw: the batch is already saved.
    */
-  onPersisted?: (events: LeagueEvent[], seq: number) => void;
+  onPersisted?: (events: LeagueEvent[], seq: number, actor?: Actor) => void;
+  /** A mirror runs no command: its session sets this, and `dispatch` sends the command to the host. */
+  forward?: (command: Command) => Promise<CommandResult>;
 
   /**
    * `path`: the save file, the player's own by default. A guest's mirror passes ':memory:', so
@@ -188,6 +191,12 @@ export class LeagueService {
     this.save = openSave(this.savePath());
     this.state = state;
     return { teams: this.save.listTeams() };
+  }
+
+  /** The league's rules and sport, and its event count: what a hosted session checks. */
+  head() {
+    const { state } = this.open();
+    return { rulesetId: state.rulesetId, sport: state.sport, seq: state.eventSeq };
   }
 
   /** The whole save as rows and the event count they stand at: what a mirror is built from. */
@@ -703,12 +712,20 @@ export class LeagueService {
 
   /**
    * `input` is untrusted (the renderer's, or a guest's): nothing runs before it parses. `actor` is
-   * who sent it, never taken from the input: the host builds a guest's from its own seat table.
+   * who sent it, never taken from the input: the host builds a guest's from its own seat table,
+   * as a function, so it is worked out when the command's turn comes and not when it arrived.
    */
-  dispatch(input: unknown, actor: Actor = LOCAL): Promise<CommandResult> {
+  dispatch(input: unknown, actor: Actor | (() => Actor) = LOCAL): Promise<CommandResult> {
     const parsed = parseCommand(input);
     if (!parsed.ok) return Promise.resolve(parsed);
-    return this.enqueue(() => this.runCommand(parsed.command, actor));
+    // A mirror never runs the sim: the command goes to the host and comes back as events.
+    if (this.path === ':memory:')
+      return (
+        this.forward?.(parsed.command) ?? Promise.reject(new Error('A mirror runs no command.'))
+      );
+    return this.enqueue(() =>
+      this.runCommand(parsed.command, typeof actor === 'function' ? actor() : actor),
+    );
   }
 
   /**
@@ -736,11 +753,15 @@ export class LeagueService {
     const legends = command.kind === 'staff.hire' ? this.hallOfFame() : [];
     const req = { state: open.state, command, actor, xg: this.xg, legends };
     const result = await this.runInWorker(req);
-    if (result.ok) this.apply(open, result.events);
+    if (result.ok) this.apply(open, result.events, actor);
     return result;
   }
 
-  private apply({ save, state }: { save: SaveFile; state: LeagueState }, events: LeagueEvent[]) {
+  private apply(
+    { save, state }: { save: SaveFile; state: LeagueState },
+    events: LeagueEvent[],
+    actor?: Actor,
+  ) {
     const seq = state.eventSeq;
     const report = this.onPersisted;
     // The state keeps parts of an event and changes them later: copy first, only when hosting.
@@ -754,7 +775,7 @@ export class LeagueService {
       this.state = save.loadState();
       throw err;
     }
-    report?.(untouched, seq);
+    report?.(untouched, seq, actor);
   }
 
   private runInWorker(req: WorkerRequest): Promise<CommandResult> {
