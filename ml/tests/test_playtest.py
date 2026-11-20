@@ -8,6 +8,7 @@ from ml.src.playtest import analyze
 class PlaytestTest(unittest.TestCase):
     def test_counts_user_actions_and_flags_idle_seasons(self):
         db = sqlite3.connect(":memory:")
+        self.addCleanup(db.close)
         db.execute("CREATE TABLE teams (id TEXT, user_controlled INTEGER)")
         db.execute("CREATE TABLE events (seq INTEGER PRIMARY KEY, season INTEGER, kind TEXT,"
                    " team_ids TEXT, payload_json TEXT)")

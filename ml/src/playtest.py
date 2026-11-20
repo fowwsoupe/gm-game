@@ -14,13 +14,14 @@ import json
 import sqlite3
 import sys
 from collections import Counter, defaultdict
+from contextlib import closing
 
 # Commands a human issues; sim-only events (game.final, players.developed...) are left out.
 USER_KINDS = {
     "lines.set", "units.set", "training.planSet", "trade.blockSet", "goalies.rotationSet",
     "draft.boardSet", "trade.completed", "player.signed", "contract.extended",
     "contract.boughtOut", "freeAgency.offered", "contract.countered", "owner.cardAnswered",
-    "finance.ticketPriceSet", "prospect.signed", "prospect.released",
+    "finance.ticketPriceSet", "prospect.signed", "prospect.released", "delegate.set",
 }
 
 
@@ -62,8 +63,9 @@ def main() -> None:
     parser = argparse.ArgumentParser(description=__doc__)
     parser.add_argument("save", help="path to a save file")
     args = parser.parse_args()
-    db = sqlite3.connect(f"file:{args.save}?mode=ro", uri=True)
-    json.dump(analyze(db), sys.stdout, indent=2)
+    with closing(sqlite3.connect(f"file:{args.save}?mode=ro", uri=True)) as db:
+        report = analyze(db)
+    json.dump(report, sys.stdout, indent=2)
     print()
 
 
