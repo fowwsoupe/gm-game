@@ -240,7 +240,7 @@ describe('owner meetings', () => {
 
 describe('AI fire sales', () => {
   it('an AI GM told to sell lists his best players on expiring deals, and the league hears of it', () => {
-    const state = createLeague(2, ctx);
+    const state = createLeague(3, ctx);
     run(state, { kind: 'sim.advance', days: 1 }); // the preseason meeting
     // Every owner is losing money, so every selling team's owner orders a fire sale.
     for (const id of Object.keys(state.teams) as TeamId[]) state.cash[id] = -1e10;

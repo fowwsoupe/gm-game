@@ -151,6 +151,7 @@ export const NHL_2026: Ruleset = {
   },
   training: { points: 2 }, // the brief's start, a game number for the lab
   international: { every: 4 },
+  camp: { battleGap: 2, youth: 0.2, youthAge: 23, readSd: 4, holdDays: 14 }, // game numbers, tuned in the lab
   roster: {
     maxActive: 23,
     minActive: 20,

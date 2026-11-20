@@ -49,7 +49,7 @@ lines). All four jobs done.
 
 Summer training, camp battles, international tournament: brief in
 [research/2026-11-summer-training.md](research/2026-11-summer-training.md); summer training plans
-and the international tournament are done; camp battles wait for the camp job above.
+the international tournament and camp battles are done (the coach picks the last spot at each position; an AI team plays his pick for two weeks, a human team gets it as news; lab flat within seed noise on seeds 1/101/201).
 
 Free-agency bidding war and contract negotiation: all three jobs of
 [research/2026-11-free-agency-bidding.md](research/2026-11-free-agency-bidding.md) done (the
@@ -89,7 +89,7 @@ D. Phase 2 headlines
 - [x] League news tab (Opus for storylines, Sonnet for UI; high; brief done: [research/2026-11-league-news.md](research/2026-11-league-news.md); the news tab, front-office faces and storylines done)
 - [x] Free-agency bidding war and contract negotiation (Opus, xhigh; brief done: [research/2026-11-free-agency-bidding.md](research/2026-11-free-agency-bidding.md), jobs 1-3 done)
 - [x] Media and press conferences, text (Sonnet, medium, 2-3 PRs)
-- [~] Summer training, camp battles, international tournament (Opus, high, 3 PRs): brief, summer training plans and the international tournament done; camp battles wait for camp
+- [x] Summer training, camp battles, international tournament (Opus, high, 3 PRs): brief, summer training plans, the international tournament and camp battles done
 - [x] Cutscenes (Sonnet, medium, 3 PRs)
 - [ ] Match viewer (2D) with coach from the bench (Fable 5.2, xhigh, 6+ PRs)
 - [x] League sandbox (Sonnet, high, 4 PRs)

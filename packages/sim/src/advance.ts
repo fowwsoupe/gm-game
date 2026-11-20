@@ -33,6 +33,7 @@ import { aiHoldouts, announceDraftClass, prospectSeason } from './offseason';
 import { aiOffers, aiTrades, deadlineRecap, delegatedOffers, inDeadlineWeek } from './trades';
 import {
   campReport,
+  releaseCampOrders,
   disputesWeek,
   holdoutsWeek,
   staffOf,
@@ -294,6 +295,7 @@ export function advance(
     }
     // Camp's last day: the head coach's read of the team.
     if (today.day === -1) campReport(state, ctx, rng.fork('camp'), emit);
+    if (today.day === ctx.ruleset.camp.holdDays) releaseCampOrders(state, emit);
     if (settlesOn(today.day, cal.regularSeasonDays)) {
       settleMonth(state, ctx, emit, today.day);
       if (today.day > 0) ownerMonth(state, ctx, emit);

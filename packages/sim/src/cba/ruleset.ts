@@ -212,6 +212,19 @@ export interface Ruleset {
     every: number;
   };
 
+  /** Camp battles (docs/research/2026-11-summer-training.md). */
+  camp: {
+    /** A battle: a position's last dressed player and its best one left out, within this many overall points. */
+    battleGap: number;
+    /** Share of the gap to his potential a coach credits a player of `youthAge` or less (the benefit of the doubt). */
+    youth: number;
+    youthAge: number;
+    /** SD of a coach's read of a player at quality 0 (x (1 - quality), as the camp report's form read). */
+    readSd: number;
+    /** An AI team keeps the coach's pick ahead for this many days of the season, then ratings decide again. */
+    holdDays: number;
+  };
+
   roster: {
     maxActive: number;
     minActive: number;
