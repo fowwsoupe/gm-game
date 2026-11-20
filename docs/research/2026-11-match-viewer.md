@@ -77,11 +77,27 @@ export interface HockeyTimeline {
 }
 ```
 
-Recording draws nothing and takes no branch the game does not already take. By the look of the
-loop it is about 200 short rows a game (80 shifts plus a change at each goal and penalty, two
-sides), a few kilobytes; job 1 reports the measured size. Only the exhibition and the watch
-below ask for it. `advance` never does, so league sims, saves and the event log stay as they
-are.
+Recording draws nothing and takes no branch the game does not already take. Measured in job 1
+over the 1,500 pinned games of `game.test.ts`: 165 shift rows and 3.8 kB of JSON a game (4.6 kB
+at most; a long playoff overtime reached 6.5 kB), beside a box of 5.8 kB. Only the exhibition
+and the watch below ask for it. `advance` never does, so league sims, saves and the event log
+stay as they are.
+
+What job 1 found in the code, for the jobs that draw:
+
+- **Seconds are whole**, rounded as a shot's is, and each list is in the order it happened. So
+  a shift row and a shot in the same second can be either way round: a goal and the change
+  after it share a second. At a shot's second the viewer shows the unit that has the shooter
+  (the one out before that second, or one sent out during it).
+- **The extra attacker is a body only at even strength.** With the net empty on a power play or
+  a penalty kill, `buildUnit` sends the usual five or four and only the shot rate counts the
+  extra man, so the rink shows six skaters at even strength and no more than five otherwise.
+- **A unit can list a skater twice.** When two skaters of a unit are hurt, `buildUnit` sends the
+  same spare for both and the engine counts him twice (his ice time too); one of the 1,500
+  games has it. The timeline shows what the engine did and the viewer draws him once. Fixing it
+  changes uncoached games, so it is a balance change of its own, not part of this job.
+- **Ice time summed from `shifts`** was never more than 0.1 minute off the box for any skater in
+  those games (the box rounds to a tenth of a minute, the timeline to a second).
 
 **Replay, do not store** ("replay instead of store", FEATURE_SPEC).
 
@@ -263,19 +279,19 @@ Each of these was open; the owner can overrule any of them before its job starts
 Each stands alone and leaves main shippable. A job that adds text adds it to `i18n/en.ts` and
 `i18n/fr.ts`; a job that changes a screen runs the Electron smoke test.
 
-1. **A timeline out of the game sim.** `HockeyTimeline` in shared (`sports/hockey.ts`); the
-   `timeline` flag on the game `SportModule.simGame` plays; `playGame` and `playShootout`
-   record; `league.exhibition` asks for it. No screen changes.
+1. **A timeline out of the game sim** (done; `timeline.test.ts` holds the checks). `HockeyTimeline`
+   in shared (`sports/hockey.ts`); the `timeline` flag on the game `SportModule.simGame` plays;
+   `playGame` and `playShootout` record; `league.exhibition` asks for it. No screen changes.
    _Done when:_ a game with and without the flag has the same result and box over the pinned
    seeds; every shot's shooter and assists are on the ice at its second (within the box's
    one-second rounding), ice time summed from `shifts` matches the box, and an empty net shows
-   an extra skater; the measured size is in the PR; lab identical on one seed.
+   an extra skater at even strength; the measured size is in the PR; lab identical on one seed.
 2. **The rink.** `scene(game, t)`, the SVG rink in `Replay` for exhibitions (discs by shape,
    puck and trail, 1-20x, reduced motion), `teamColors` from the id, feed lines for the new
    events, English and French, the preview's match view on a fixture.
    _Done when:_ tests on `scene` pass (the same `t` gives the same picture, every disc is
    inside the boards, shooter and puck are at the shot's place at its second, everyone on the
-   ice has a disc, the score at any second is the box's); an exhibition plays at every speed
+   ice has one disc, the score at any second is the box's); an exhibition plays at every speed
    and pause and speed answer while it runs (Electron smoke test).
 3. **Watch tonight's game.** The tap in `advance`, `watchGame` in `tonight.ts`,
    `GmApi.league.watch({ teamId })`, Watch on Home on a game day (season and playoffs), the

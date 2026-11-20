@@ -326,10 +326,11 @@ export class LeagueService {
         awayTeamId,
         home: strength(homeTeamId),
         away: strength(awayTeamId),
+        timeline: true,
       },
       new Rng(seed),
     );
-    delete result.injuries; // nobody is hurt in an exhibition
+    delete result.injuries; // nobody is hurt in an exhibition (the timeline still shows him leave)
     return this.detail(state, result);
   }
 
