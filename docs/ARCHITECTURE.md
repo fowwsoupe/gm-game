@@ -103,8 +103,10 @@ through their `index.ts`** (`'../cba'`, never `'../cba/ruleset'`). Apps import o
 2. **State changes only in `applyEvent`.** Adding a feature that changes state = add an event
    kind in `shared/events.ts`, handle it in `applyEvent` (sim) and in `SaveFile.persist`
    (data). TypeScript's exhaustive switches flag every place you forgot.
-3. **Every action is a Command.** New action = add a kind in `shared/commands.ts` and a case
-   in `handleCommand`. Validate the actor: in multiplayer, players may only command their teams.
+3. **Every action is a Command.** New action = add a kind in `shared/commands.ts`, its schema
+   in `shared/command-schema.ts` (the typecheck fails without it) and a case in `handleCommand`.
+   Validate the actor: in multiplayer, players may only command their teams. A command is
+   untrusted data: main runs none before `parseCommand` has passed it.
 4. **Everything is data.** Cap numbers, contract limits, season length, points, award names,
    team colours: data, never hard-coded. Read rules from `ctx.ruleset`.
 5. **Models behind interfaces.** Any replacement implements the same interface as the rules-based
@@ -122,7 +124,7 @@ through their `index.ts`** (`'../cba'`, never `'../cba/ruleset'`). Apps import o
 
 ## How to add a feature (checklist)
 
-1. Shared contract: new types, event kinds and command kinds in `packages/shared`.
+1. Shared contract: new types, event kinds and command kinds (with their schema) in `packages/shared`.
 2. Engine logic in the right place: a shared engine if every sport needs it, else `sports/hockey/`. Export it from the folder's `index.ts`, with tests.
 3. `applyEvent` and `SaveFile.persist` handle the new events; add a migration if new columns/tables.
 4. A `handleCommand` case if players can trigger it.

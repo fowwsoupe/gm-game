@@ -77,6 +77,7 @@ import type {
   TeamId,
   TradeProposal,
 } from '@gm/shared';
+import { parseCommand } from '@gm/shared';
 import type { GmApi } from '@gm/shared/ipc';
 import createSimWorker from './sim.worker?nodeWorker';
 import type { WorkerRequest } from './sim.worker';
@@ -658,8 +659,11 @@ export class LeagueService {
     return { events, names, ages, stories: storyOf(events) };
   }
 
-  dispatch(command: Command): Promise<CommandResult> {
-    const run = this.queue.then(() => this.runCommand(command));
+  /** `input` is untrusted (the renderer's today, a guest's later): nothing runs before it parses. */
+  dispatch(input: unknown): Promise<CommandResult> {
+    const parsed = parseCommand(input);
+    if (!parsed.ok) return Promise.resolve(parsed);
+    const run = this.queue.then(() => this.runCommand(parsed.command));
     this.queue = run.catch(() => undefined);
     return run;
   }
