@@ -71,7 +71,7 @@ A. Leftovers (Sonnet 5.5, medium)
 
 B. Balance and calibration (Opus 5.5 unless noted)
 
-- [ ] Points % spread, seed 1 still short (high; compare seeds 1/101/201)
+- [x] Points % spread, seed 1 still short (high; compare seeds 1/101/201): in range on all three after the later merges, no tuning needed (years 10+ SD 0.097, 0.094, 0.097 on seeds 1/101/201 against 0.085-0.105, r 0.58, 0.57, 0.59; measured 2026-11-20 at 865bca1)
 - [ ] Lasting edges after the prospect pool (high; seeds 1/101/201): the points % spread is in range (0.093-0.095) but goalie SV% r is over its ceiling (0.31-0.35), and since the aging curves were fitted (likely because stars now reach their prime on entry and restricted deals) the top team's titles (4.6-5.55) and "better team wins best-of-7, years 10+" (65.3-66.6%) run just over theirs; playoff turnover is back in range on two seeds (29.0-29.1%, 27.9% on 201). Season form 4.5 raised turnover a point and cut titles in a trial, but it also moves the single-season checks and seed-pinned tests
 - [x] "Better team wins a best-of-7" back in range (high)
 - [ ] Trained stats-to-ratings and development models (xhigh, 2-3 PRs): stats to ratings v2 done (beats v1 on every key); development targets measured on NHL data (`ml/src/aging.py`, lab "Skater points/60 a year") and the aging curves fitted to them (all three age bands in range on seeds 1/101/201) done; penalty-kill time and penalty minutes in roster stats to do
