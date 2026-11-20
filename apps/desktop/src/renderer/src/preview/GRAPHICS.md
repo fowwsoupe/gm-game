@@ -1,6 +1,6 @@
 # Preview graphics
 
-Nothing is drawn in code: no SVG or CSS faces, arenas, spotlights or banners. Images load from files; a missing file falls back to a dark textured frame (jersey number for people).
+Nothing is drawn in code: no SVG or CSS faces, arenas, spotlights or banners. Images load from files; a missing file falls back to a dark textured frame (jersey number for people). The one exception is a diagram: the rink of the match view (`ui/Rink.tsx`, the app's own component), like the shot map.
 
 | Use      | Component           | Lookup order                                                                                             |
 | -------- | ------------------- | -------------------------------------------------------------------------------------------------------- |

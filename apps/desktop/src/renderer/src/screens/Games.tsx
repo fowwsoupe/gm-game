@@ -1,16 +1,24 @@
-import { useEffect, useMemo, useState } from 'react';
+import { useMemo, useState } from 'react';
 import type { GameDetail, HockeyBoxScore, HockeyBoxSide, Team, TeamId } from '@gm/shared';
 import { useExhibition, useGames, useOpenGame, useTeams, useMine } from '@/lib/queries';
-import { statValue, teamAbbr, teamName } from '@/lib/format';
+import { clockText, sideColors, statValue, teamAbbr, teamName } from '@/lib/format';
 import { useT } from '@/i18n';
-import { Button, Card, TeamLink, TeamSelect, SectionHeader, Td, Th } from '@/ui';
+import {
+  Button,
+  Card,
+  DiscMark,
+  Rink,
+  TeamLink,
+  TeamSelect,
+  SectionHeader,
+  Td,
+  Th,
+  useGameClock,
+} from '@/ui';
 
+/** Game seconds a second. A box alone (a saved game) plays fast; a game with its timeline is watched on the rink at 1x to 20x. */
 const SPEEDS = [60, 180, 600] as const;
-/** Time left in the period; overtime is one 20:00 period at a time in the playoffs, shorter otherwise. */
-const clockText = (sec: number, ot: number) => {
-  const left = Math.max(0, sec < 3600 ? 1200 - (sec % 1200) : ot - ((sec - 3600) % ot));
-  return `${String(Math.floor(left / 60)).padStart(2, '0')}:${String(Math.floor(left % 60)).padStart(2, '0')}`;
-};
+const WATCH_SPEEDS = [1, 2, 4, 8, 20] as const;
 
 export function Games() {
   const t = useT();
@@ -99,25 +107,24 @@ function Replay({ detail, teams }: { detail: GameDetail; teams: Team[] }) {
   const t = useT();
   const { result, names } = detail;
   const box = result.box as HockeyBoxScore | undefined;
-  const [clock, setClock] = useState(0);
-  const [playing, setPlaying] = useState(true);
-  const [speed, setSpeed] = useState<number>(SPEEDS[1]);
+  const timeline = box?.timeline;
   const end = useMemo(
     () => (box ? Math.max(3600, Math.ceil(((box.shots.at(-1)?.[0] ?? 0) + 5) / 60) * 60) : 3600),
     [box],
   );
-  useEffect(() => {
-    if (!playing) return;
-    const timer = setInterval(
-      () => setClock((c) => (c + speed * 0.1 >= end ? (setPlaying(false), end) : c + speed * 0.1)),
-      100,
-    );
-    return () => clearInterval(timer);
-  }, [playing, speed, end]);
+  const { at, clock, playing, speed, setPlaying, setSpeed, seek } = useGameClock(
+    end,
+    timeline ? 8 : SPEEDS[1],
+  );
+  const game = useMemo(
+    () => box && timeline && { box, timeline, overtimeSeconds: detail.overtimeSeconds },
+    [box, timeline, detail.overtimeSeconds],
+  );
   if (!box) return null;
 
   const sides = [box.home, box.away] as const;
   const ids = [result.homeTeamId, result.awayTeamId] as const;
+  const colors = sideColors(ids[0], ids[1]);
   const nameOf = (side: 0 | 1, k: number) =>
     names[sides[side].skaters[k]?.id ?? ''] ?? sides[side].skaters[k]?.id ?? '';
   const shown = box.shots.filter((s) => s[0] <= clock);
@@ -126,7 +133,7 @@ function Replay({ detail, teams }: { detail: GameDetail; teams: Team[] }) {
   const score = finished ? [result.homeScore, result.awayScore] : goals;
   const period = clock < 3600 ? Math.min(3, Math.floor(clock / 1200) + 1) : 0;
 
-  // The feed: goals and penalties up to the clock, newest first.
+  // The feed: goals, penalties and what the timeline adds, up to the clock, newest first.
   type Line = { at: number; text: string };
   const lines: Line[] = [
     ...box.shots
@@ -152,6 +159,21 @@ function Replay({ detail, teams }: { detail: GameDetail; teams: Team[] }) {
           team: teamAbbr(teams, ids[p[1]]),
           player: nameOf(p[1], p[2]),
         }),
+      })),
+    ...(timeline?.goalies ?? [])
+      .filter((r) => r[0] <= clock)
+      .map(([at, n, what]) => ({
+        at,
+        text: t(
+          what === 0 ? 'games.emptyNet' : what === 1 ? 'games.goalieBack' : 'games.goalieChange',
+          { team: teamAbbr(teams, ids[n]), player: names[sides[n].relief?.id ?? ''] ?? '' },
+        ),
+      })),
+    ...(timeline?.hurt ?? [])
+      .filter((r) => r[0] <= clock)
+      .map(([at, n, k]) => ({
+        at,
+        text: t('games.hurt', { team: teamAbbr(teams, ids[n]), player: nameOf(n, k) }),
       })),
   ].sort((a, b) => b.at - a.at);
   if (finished && result.stats.shootout === 1) {
@@ -197,25 +219,12 @@ function Replay({ detail, teams }: { detail: GameDetail; teams: Team[] }) {
           <Button onClick={() => setPlaying(!playing)} disabled={finished}>
             {playing ? t('games.pause') : t('games.resume')}
           </Button>
-          <Button
-            onClick={() => {
-              setClock(0);
-              setPlaying(true);
-            }}
-          >
-            {t('games.restart')}
-          </Button>
-          <Button
-            onClick={() => {
-              setClock(end);
-              setPlaying(false);
-            }}
-            disabled={finished}
-          >
+          <Button onClick={() => seek(0, true)}>{t('games.restart')}</Button>
+          <Button onClick={() => seek(end, false)} disabled={finished}>
             {t('games.skip')}
           </Button>
           <span className="ml-2 text-xs text-muted">{t('games.speed')}</span>
-          {SPEEDS.map((s) => (
+          {(timeline ? WATCH_SPEEDS : SPEEDS).map((s) => (
             <button
               key={s}
               onClick={() => setSpeed(s)}
@@ -226,6 +235,26 @@ function Replay({ detail, teams }: { detail: GameDetail; teams: Team[] }) {
           ))}
         </div>
       </Card>
+
+      {game && (
+        <Card title={t('games.rink')}>
+          <Rink game={game} at={at} colors={colors} names={names} label={t('games.rink')} />
+          <p className="mt-2 flex flex-wrap gap-x-4 text-xs text-muted">
+            <span>
+              <DiscMark color={colors[0]} />
+              {teamAbbr(teams, ids[0])}
+            </span>
+            <span>
+              <DiscMark away color={colors[1]} />
+              {teamAbbr(teams, ids[1])}
+            </span>
+            <span>
+              <DiscMark goalie color="currentColor" />
+              {t('games.goalies')}
+            </span>
+          </p>
+        </Card>
+      )}
 
       <div className="grid gap-4 md:grid-cols-2">
         <Card title={t('games.shotMap')}>

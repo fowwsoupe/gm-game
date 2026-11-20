@@ -9,6 +9,7 @@ import { Home } from './Home';
 import { Drawer, Intro, Menu, Palette, Peek, Result, Toast } from './Overlays';
 import { Calendar } from './Calendar';
 import { League, Market, Scout } from './Others';
+import { Match } from './Match';
 import { checkDom } from './league';
 import { F } from './parts';
 import { Roster } from './Roster';
@@ -37,6 +38,7 @@ export default function PreviewApp() {
   const root = useRef<HTMLDivElement>(null);
   // Fixed 1920x1080 canvas, scaled to fit the window; letterboxed, never scrolls.
   const [k, setK] = useState(() => Math.min(innerWidth / 1920, innerHeight / 1080));
+  const [match, setMatch] = useState(false);
   useEffect(() => {
     const fit = () => setK(Math.min(innerWidth / 1920, innerHeight / 1080));
     addEventListener('resize', fit);
@@ -57,6 +59,7 @@ export default function PreviewApp() {
       }
       if (e.key === 'Escape') {
         if (usePv.getState().intro) return usePv.getState().endIntro();
+        setMatch(false);
         return close();
       }
       if (typing || e.metaKey || e.ctrlKey || e.altKey) return;
@@ -189,6 +192,7 @@ export default function PreviewApp() {
             <Result />
             <Toast />
             <Palette />
+            {match && <Match />}
             <div className="pv-dev" role="toolbar" aria-label="Preview controls">
               <span>Phase</span>
               {PHASES.map((p) => (
@@ -213,6 +217,10 @@ export default function PreviewApp() {
               <span>Sound</span>
               <button aria-pressed={sound} onClick={s.toggleSound}>
                 {sound ? 'On' : 'Muted'}
+              </button>
+              <span style={{ marginLeft: 16 }}>Match</span>
+              <button aria-pressed={match} onClick={() => setMatch(!match)}>
+                Rink
               </button>
               <button style={{ marginLeft: 'auto' }} onClick={s.replayIntro}>
                 Replay intro

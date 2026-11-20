@@ -11,6 +11,7 @@ export { Face, PersonFace } from './Face';
 export { Cutscene } from './Cutscene';
 export { TrophyLift } from './TrophyLift';
 export { Palette, type PaletteItem } from './Palette';
+export { DiscMark, Rink, useGameClock } from './Rink';
 
 export function Card({
   title,

@@ -100,7 +100,7 @@ Identity unchanged (condensed display type, huge numbers, dark broadcast palette
 
 ### Screens
 
-Home (matchup hero, Needs you, wire, next three), Player profile (drawer, expands), Trade evaluation (verdict, cap, line impact, GM reactions), Lines board (4 lines, 3 pairs, goalies, scratches; drag to swap). Other phases moved onto the canvas.
+Home (matchup hero, Needs you, wire, next three), Player profile (drawer, expands), Trade evaluation (verdict, cap, line impact, GM reactions), Lines board (4 lines, 3 pairs, goalies, scratches; drag to swap). Other phases moved onto the canvas. Match view (dev bar "Match", Esc closes): the app's rink on one game the sim played, saved as `match.fixture.json`; the home side wears the picked team, the away side the next one; "Reduced" motion makes the discs jump from event to event.
 
 ### Fixed
 
