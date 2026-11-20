@@ -59,7 +59,7 @@ would need the same thing, it belongs in a shared engine.
 | `packages/shared`   | Contracts: domain types, events, commands, IPC (`GmApi`), roster schema | `zod`                                                   |
 | `packages/sim`      | The game engine (pure TypeScript, see below)                            | `@gm/shared`                                            |
 | `packages/data`     | SQLite saves: migrations, load/save state, persist events, queries      | `@gm/shared`, `@gm/sim` (types + API), `better-sqlite3` |
-| `apps/desktop`      | Electron: main (LeagueService, worker, Steam), preload, React UI        | everything, but `@gm/sim` only from its root            |
+| `apps/desktop`      | Electron: main (LeagueService, worker, net, Steam), preload, React UI   | everything, but `@gm/sim` only from its root            |
 | `tools/balance-lab` | Headless league-health report (`pnpm lab`)                              | `@gm/sim`, `@gm/shared`                                 |
 | `ml/`               | Python: two trained models (JSON tables), calibration studies           | n/a                                                     |
 
@@ -121,6 +121,34 @@ through their `index.ts`** (`'../cba'`, never `'../cba/ruleset'`). Apps import o
 11. **Screens are built from `ui/` components** and design tokens in `styles.css`, never
     one-off colours.
 12. **Speed is tested.** `perf.test.ts` fails the build if the sim gets slower than budget.
+
+## A hosted league: networking rules
+
+A league played from several machines has one authority, the host: his `LeagueService`, over his
+save, is the only place a command runs. A guest's game is a mirror: a `LeagueService(':memory:')`
+built from the host's table rows and fed the host's events through the same `applyEvent` and
+`SaveFile.persist`. The design and its limits are in `docs/research/2026-11-multiplayer-online.md`,
+which also says how much of it is built.
+
+1. **All networking lives in `apps/desktop/src/main/net/`**, and its contracts (the messages'
+   schemas, the limits) in `packages/shared/src/wire.ts`. The sim, the save and the renderer know
+   nothing of it: the renderer still only calls `window.gm`, and a mirror's `dispatch` sends the
+   command to the host.
+2. **Everything that arrives is untrusted.** A session acts on no packet before `decode`
+   (`net/codec.ts`: the size, a bounded inflate, then `parseMessage`) has passed it, and a
+   message that fails ends that connection and nothing else. New message kind = its schema in
+   `wire.ts` first.
+3. **The actor is the host's own.** No message says who sent it or for which team. The host
+   builds a guest's actor from the connection the command came in on and its own seat table,
+   when the command's turn comes; its id is never `local`. What only the host may do stays
+   gated in `handleCommand`.
+4. **A mirror never runs the sim** and never opens the player's own save. It changes only
+   through `restore` (a snapshot) and `applyRemote` (the host's events, in sequence).
+5. **Nothing is sent before it is saved.** The host sends events on from `onPersisted`, in
+   queue order, and takes a snapshot between two commands.
+6. **Sessions know only the transport interface** (`net/transport.ts`: packets whole and in
+   order, a `peerKey` the transport vouches for, nothing handed over after `close()`). A new
+   transport implements it and changes no session; session tests run over `loopback()`.
 
 ## How to add a feature (checklist)
 

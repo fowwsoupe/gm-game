@@ -78,8 +78,10 @@ the connection it arrived on, runs it through the same queue as its own, persist
 the events to every guest in queue order. Nothing is sent before `persist` succeeds, so a guest
 never sees an event the save does not hold. Two GMs racing for one free agent are settled by
 the queue; the loser gets the ordinary refusal. The wire has no actor field: the host builds
-`{ id: <peer key>, controls: [the team the host seated that connection on] }` itself, and
-`local` can never come from the network. Default: the person at the host machine stays `local`,
+`{ id: 'peer:<peer key>', controls: [the team the host seated that connection on] }` itself,
+when the command's turn comes in the queue (job 3: a seat changed while the command waited is
+honoured), and `local` can never come from the network, whatever a transport calls its peers.
+Default: the person at the host machine stays `local`,
 as today. He is the commissioner, plays his own team, and can act for any human team from the
 hot-seat switcher, which is also how an absent GM's pick or offer gets answered. (He owns the
 save file, so binding him to one team would stop nothing.)
@@ -106,11 +108,16 @@ single-player save is never opened while he is a guest, and leaving swaps it bac
 command from a given actor, an entry for events from the host (same queue, same apply and
 persist), and a hook that reports each persisted batch. The hook hands out a copy of the batch
 made before it was applied, because the reducer keeps parts of an event in the state and changes
-them later: a mirror is given exactly what the host's reducer was given (job 2).
+them later: a mirror is given exactly what the host's reducer was given (job 2). Job 3 added
+three smaller ones: the hook also hands back the actor the command ran as, which is how the host
+finds the guest and the request a batch answers; a mirror's `dispatch` goes out through a
+`forward` its session sets, so main calls `dispatch` on a host's service and on a mirror alike;
+and `head()` gives the ruleset, sport and event count a session checks.
 
 A guest's `dispatch` resolves like a local one: with the events of its own command, after the
 mirror has applied them, because screens read `res.events` and refetch straight away. The host
-tags the batch it sends back to the sender with the sender's request id; a refusal comes back
+tags the batch it sends back to the sender with the sender's request id (on the last piece, when
+the batch is cut in several); a refusal comes back
 as the same `CommandError` a local command gives. One refusal differs (job 2): a command that
 fails its schema fails the `command` message it came in, so it is a bad message like any other
 and the connection's fault, not a `rejected`. An honest guest never sends one, because his own
@@ -161,6 +168,9 @@ before anything is parsed, and breaking either closes the connection. Inflating 
 | Host's unsent backlog for a guest | 64 MB, then he is dropped and resyncs when he is back                    |
 | Heartbeat                         | `ping` every 5 s; 3 missed is a disconnect (the same on every transport) |
 
+Enforced so far (jobs 2 and 3): the packet and message sizes, the guest count, the name's
+length, `hello` first, and a snapshot to admitted peers only. Every other row comes with job 4.
+
 Then shape. The host side protects the save, so it is strict: a zod schema for the whole
 `Command` union, every field typed and bounded, kept equal to the `Command` type at compile
 time so a new command without a schema fails `pnpm typecheck`. The bounds keep a command sane
@@ -200,7 +210,9 @@ refuses to host if it fails, saying why.
 **Handshake and versions.** The first message must be `hello`. The host refuses unless the wire
 protocol number, the app version (`app.getVersion()`) and the save schema (the number of
 migrations, exported from `@gm/data`) all equal its own. `welcome` names the league's ruleset
-and sport, and the guest leaves unless its build knows that ruleset and the sport is `nhl`. On
+and sport, and the guest leaves unless its build has that ruleset for that sport (only `nhl`
+today; the check names no sport), and leaves again if the snapshot that follows is not that
+league (ruleset, sport, event count). On
 Steam the same values also sit in the lobby's data so the join screen can say "the host runs
 another version" early; the handshake is what counts. Every dev build says 0.0.1 today, so two
 different commits pass as equal: a real version per release fixes that, and adding the build's
@@ -246,12 +258,16 @@ offer) or hands the team to its AI GM. No pick timer: add one when a playtest as
 **Firing is off in a hosted league.** A fired GM is `state.career`, one slot, and the way back
 is local only: two fired guests could not be told apart and neither could take a job. Hosting
 therefore turns "can be fired" off (the existing `league.setCanBeFired`, as `local`, so it
-stays off in the save until the host turns it on again), keeps it off while a session is open,
-and refuses to start while a GM is out of work. A job market for several GMs is its own job.
+stays off in the save until the host turns it on again), keeps it off while a session is open
+(from job 5: until the session API carries the host's own commands, nothing stops him turning
+it back on), and refuses to start while a GM is out of work. A job market for several GMs is its own job.
 
-**Joining and resync: the snapshot.** The snapshot is the save's rows. At one point of its
-queue (a command boundary) the host dumps every table in `rowid` order; the pieces go out as
-`snapshot.rows` messages and later event batches queue behind them on that connection. The
+**Joining and resync: the snapshot.** The snapshot is the save's rows. Between two commands the
+host dumps every table in `rowid` order; the pieces go out as `snapshot.rows` messages, the
+guest joins the broadcast list in the same turn, and later event batches follow them on that
+connection. (Job 3: a batch is applied, saved and handed to the broadcast in one turn of the
+main thread, so any other turn is a command boundary and the snapshot needs no place in the
+queue.) The
 guest creates a fresh in-memory database with its own migrations and inserts the rows with
 bound values in one transaction (foreign keys deferred), checks the counts, then loads the
 state. Table and column names always come from the guest's own schema: a message can only pick
@@ -294,11 +310,13 @@ change anything he is not allowed to.
 
 **Transports.** One interface: a host side that listens and hands out connections, a guest side
 that connects, and a connection with `send(bytes)`, `close()`, message and close callbacks, and
-a `peerKey` the transport vouches for. Three implementations:
+a `peerKey` the transport vouches for, unlike any other open connection's. Packets arrive whole
+and in order, and nothing is handed to an end after its own `close()` (job 3: a refused guest
+gets one `hello`, whatever was already on its way). Three implementations:
 
 - **Loopback**, for tests. It carries bytes, not objects, so a test goes through the same
-  deflate, size check, inflate and schema as a real connection, and it can drop messages on
-  demand.
+  deflate, size check, inflate and schema as a real connection, and (from job 4, with the
+  tests that need it) it can drop messages on demand.
 - **Direct connection: worth having.** It is the only way to run two real app instances end to
   end without a Steam App ID, now and in every later regression run; it gives LAN play; and it
   is about a hundred lines on Node's `net`, with no new dependency. A 4-byte length before each
@@ -408,7 +426,7 @@ job 4 are in.
    design above was corrected in four places while building: a malformed command is a bad
    message, the guard's numbers and the JSON-cell rule, the hook's events are a copy, and
    `restore` is for a mirror only.
-3. **Hosting over the loopback** (Fable, main). `apps/desktop/src/main/net/`: the transport
+3. **Hosting over the loopback: done** (Fable, main). `apps/desktop/src/main/net/`: the transport
    interface, the loopback, the host and guest sessions: handshake and versions, the join code,
    admission, the snapshot stream, events broadcast after persist, commands forwarded with
    request ids and answered after the mirror applied them, the seat table and the actor per
@@ -420,9 +438,35 @@ job 4 are in.
    carries an actor is refused; a guest's advance is refused without the grant; a wrong app
    version, save schema or protocol is refused at the handshake; a peer with no team can do
    nothing.
+   _Built:_ `net/transport.ts` (the interface and `loopback()`), `net/host.ts` (`HostSession`:
+   `start`, `seat`, `list`, `close`) and `net/guest.ts` (`GuestSession`: `join`, `leave`,
+   `ended`), with `net/session.test.ts`; in `LeagueService`, `head()`, `forward` and the actor
+   handed to `onPersisted`; `WIRE.guests`. The test plays 65 days with a ticket price, a trade
+   block and a trade (the host offers, the guest reads the offer on his mirror and accepts) and
+   compares state, reloaded state and every row after each command; the last 60 days are one
+   command, so its events go out in several pieces, as do the rows of a later snapshot; guests
+   written by hand
+   check that the handshake's refusals name their reason, that nobody is sent another guest's
+   request id, and that a `command` with an `actor` key ends its connection and runs nothing;
+   one more joins late and gets the league as it stands. The session makes the join code
+   (the caller says whether the transport needs one) and compares it in constant time; the
+   wrong-tries throttle and the new code after a kick belong to the direct connection, job 5.
+   Left to the jobs that own them: a guest who drops is forgotten, seat and all, and the
+   `welcome`'s resume key opens nothing (job 4); the guest holds a snapshot's and a batch's
+   pieces without a total (job 4); `seat.request`, `ready`, `resync`, `pong`, `session` and
+   `ping` are messages nothing sends or answers (jobs 4 and 5); nothing can grant `advance`, so
+   a guest's clock command is always refused (job 5); the app version is a parameter of both
+   sessions, `app.getVersion()` goes in with the session API (job 5). No screen and no IPC
+   reaches a session yet. The design above was corrected in eight places while building: the
+   actor's id and when it is built, `LeagueService`'s three additions, the request id on the
+   last piece, the sport check that names no sport, "can be fired" kept off only from job 5,
+   the snapshot taken between two turns and not in the queue, the transport's rule after
+   `close()`, and the loopback's drop on demand moved to job 4.
 4. **Drops, reconnects and limits** (Fable, main). The sequence check and `resync`, the replay
-   buffer, rejoining inside a session with the seat kept, the heartbeat, the rate,
-   waiting-command and backlog limits, the handshake timeout, a failed apply contained.
+   buffer, rejoining inside a session with the seat kept (the resume key), the heartbeat, the
+   rate, waiting-command and backlog limits, the guest's totals for one command's events and
+   for a snapshot, the handshake timeout and the 4 KB `hello`, a failed apply contained, the
+   loopback's drop on demand.
    _Done when:_ a mirror that missed events (the loopback drops them) resyncs from the buffer
    and ends identical; one too far behind gets a snapshot and ends identical; a guest who
    rejoins inside the session has his seat and one in a new session does not; a flood, an
@@ -430,7 +474,8 @@ job 4 are in.
    else; a mirror fed an event it cannot apply resyncs once, then leaves with an error.
 5. **Direct connection and the session API** (Fable, main and contracts). The TCP transport.
    Lobby state in the sessions: seat requests and approval, readiness, the advance grant, kick,
-   the peer list. `GmApi.session` in `packages/shared/src/ipc.ts` first, then IPC, preload and
+   the peer list. The join code's throttle and its renewal after a kick; "can be fired" kept
+   off while a session is open. `GmApi.session` in `packages/shared/src/ipc.ts` first, then IPC, preload and
    the `changed` push; main swaps the active service on join and leave and refuses new leagues
    and roster loads while a session is open.
    _Done when:_ a test hosts and joins over real localhost sockets with two services: the join
