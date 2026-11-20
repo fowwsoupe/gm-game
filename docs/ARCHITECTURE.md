@@ -136,19 +136,22 @@ which also says how much of it is built.
    command to the host.
 2. **Everything that arrives is untrusted.** A session acts on no packet before `decode`
    (`net/codec.ts`: the size, a bounded inflate, then `parseMessage`) has passed it, and a
-   message that fails ends that connection and nothing else. New message kind = its schema in
-   `wire.ts` first.
+   message that fails ends that connection and nothing else. So does a broken limit: how many
+   messages, how often a `resync`, how much waits unsent, how long a peer stays silent. The
+   limits are `WIRE` in `wire.ts`. New message kind = its schema in `wire.ts` first.
 3. **The actor is the host's own.** No message says who sent it or for which team. The host
    builds a guest's actor from the connection the command came in on and its own seat table,
    when the command's turn comes; its id is never `local`. What only the host may do stays
    gated in `handleCommand`.
 4. **A mirror never runs the sim** and never opens the player's own save. It changes only
-   through `restore` (a snapshot) and `applyRemote` (the host's events, in sequence).
+   through `restore` (a snapshot) and `applyRemote` (the host's events, in sequence). A guest
+   whose events do not follow on asks the host again (`resync`); it never guesses.
 5. **Nothing is sent before it is saved.** The host sends events on from `onPersisted`, in
    queue order, and takes a snapshot between two commands.
 6. **Sessions know only the transport interface** (`net/transport.ts`: packets whole and in
-   order, a `peerKey` the transport vouches for, nothing handed over after `close()`). A new
-   transport implements it and changes no session; session tests run over `loopback()`.
+   order, a `peerKey` the transport vouches for, the bytes still `unsent`, nothing handed over
+   after `close()`). A new transport implements it and changes no session; session tests run
+   over `loopback()`, which loses packets when a test says so.
 
 ## How to add a feature (checklist)
 

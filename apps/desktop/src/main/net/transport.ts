@@ -15,6 +15,11 @@ export interface Connection {
    */
   send(packet: Uint8Array): void;
   /**
+   * The bytes handed to `send` that have not left this machine yet: how the host sees a guest who
+   * takes them in slower than they come. Zero where the transport cannot tell.
+   */
+  readonly unsent: number;
+  /**
    * Ends the connection. Packets already sent still reach the other end; none is handed to this
    * end after the call, so a session that closes a connection has heard the last of it.
    */
@@ -39,16 +44,22 @@ export interface GuestTransport {
 /** One end of a loopback connection. Packets are delivered later and as copies, as a socket's are. */
 class LoopbackEnd implements Connection {
   other!: LoopbackEnd;
+  unsent = 0;
   private open = true;
   onPacket: (packet: Uint8Array) => void = () => undefined;
   onClose: () => void = () => undefined;
 
-  constructor(readonly peerKey: string) {}
+  constructor(
+    readonly peerKey: string,
+    private readonly lost: (packet: Uint8Array) => boolean,
+  ) {}
 
   send(packet: Uint8Array) {
-    if (!this.open) return;
+    if (!this.open || this.lost(packet)) return;
     const copy = Buffer.from(packet);
+    this.unsent += copy.length;
     queueMicrotask(() => {
+      this.unsent -= copy.length;
       if (this.other.open) this.other.onPacket(copy);
     });
   }
@@ -63,15 +74,25 @@ class LoopbackEnd implements Connection {
   }
 }
 
+export interface Loopback {
+  host: HostTransport;
+  guest: GuestTransport;
+  /**
+   * For a test of drops: while this is set, a packet it says yes to is lost on its way `to` that
+   * side, and neither end is told.
+   */
+  lose?: (packet: Uint8Array, to: 'host' | 'guest') => boolean;
+}
+
 /**
  * The transport of the tests: a host and its guests in one process. It carries bytes, not objects,
  * so a session test goes through the same deflate, size check, inflate and schema as a real
- * connection.
+ * connection, and it loses packets on demand, which a real one only does by closing.
  */
-export function loopback(): { host: HostTransport; guest: GuestTransport } {
+export function loopback(): Loopback {
   let listener: ((connection: Connection) => void) | null = null;
   let made = 0;
-  return {
+  const net: Loopback = {
     host: {
       listen: (onConnection) => {
         listener = onConnection;
@@ -83,8 +104,8 @@ export function loopback(): { host: HostTransport; guest: GuestTransport } {
     guest: {
       connect: () => {
         if (!listener) return Promise.reject(new Error('Nobody is hosting.'));
-        const atHost = new LoopbackEnd(`loopback-${++made}`);
-        const atGuest = new LoopbackEnd('host');
+        const atHost = new LoopbackEnd(`loopback-${++made}`, (p) => !!net.lose?.(p, 'guest'));
+        const atGuest = new LoopbackEnd('host', (p) => !!net.lose?.(p, 'host'));
         atHost.other = atGuest;
         atGuest.other = atHost;
         listener(atHost);
@@ -92,4 +113,5 @@ export function loopback(): { host: HostTransport; guest: GuestTransport } {
       },
     },
   };
+  return net;
 }

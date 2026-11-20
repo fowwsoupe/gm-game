@@ -23,6 +23,27 @@ export const WIRE = {
   messageBytes: { guest: 64 * 1024, host: 8 * 1024 * 1024 },
   /** Guests of one host: 32 humans with him. */
   guests: 31,
+  /** Before `welcome`: one `hello`, this small after inflating, within this long. */
+  helloBytes: 4 * 1024,
+  helloMs: 10_000,
+  /** A guest's messages: this many a second, and at most `burst` at once. */
+  rate: { perSecond: 20, burst: 40 },
+  /** A guest's commands in the host's queue; one more is refused, not queued. */
+  waitingCommands: 8,
+  /** What a guest takes in, after inflating: one command's events, and one snapshot. */
+  batchBytes: 64 * 1024 * 1024,
+  snapshotBytes: 512 * 1024 * 1024,
+  /** A connection's `resync` is answered (the batches it missed, or the whole save) once in this long. */
+  resyncEveryMs: 10_000,
+  /** What the host holds unsent for one guest before it drops him. */
+  backlogBytes: 64 * 1024 * 1024,
+  /** The encoded `events` messages the host keeps for a guest who missed some. */
+  replayBytes: 16 * 1024 * 1024,
+  /** The host pings this often; this many unanswered, or as long with no word from the host, is a drop. */
+  pingMs: 5_000,
+  missedPings: 3,
+  /** A dropped guest tries to get back in this many times, a ping apart. */
+  rejoinTries: 12,
 } as const;
 
 const DEPTH_MAX = 32;

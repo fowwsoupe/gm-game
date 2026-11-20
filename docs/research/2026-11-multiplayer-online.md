@@ -78,9 +78,11 @@ the connection it arrived on, runs it through the same queue as its own, persist
 the events to every guest in queue order. Nothing is sent before `persist` succeeds, so a guest
 never sees an event the save does not hold. Two GMs racing for one free agent are settled by
 the queue; the loser gets the ordinary refusal. The wire has no actor field: the host builds
-`{ id: 'peer:<peer key>', controls: [the team the host seated that connection on] }` itself,
-when the command's turn comes in the queue (job 3: a seat changed while the command waited is
-honoured), and `local` can never come from the network, whatever a transport calls its peers.
+`{ id: 'peer:<its own number for that guest>', controls: [the team the host seated him on] }`
+itself, when the command's turn comes in the queue (job 3: a seat changed while the command
+waited is honoured; job 4: the number is the host's count of the guests it let in, the same
+before and after a reconnect, not the transport's name for the connection), and `local` can
+never come from the network, whatever a transport calls its peers.
 Default: the person at the host machine stays `local`,
 as today. He is the commissioner, plays his own team, and can act for any human team from the
 hot-seat switcher, which is also how an absent GM's pick or offer gets answered. (He owns the
@@ -123,7 +125,11 @@ fails its schema fails the `command` message it came in, so it is a bad message 
 and the connection's fault, not a `rejected`. An honest guest never sends one, because his own
 `dispatch` checks the command with the same schema first. A command is sent once: if the
 connection drops before the answer, the promise fails with a "disconnected" error and nothing
-is resent.
+is resent. The same error answers a command given between two connections, before the host's
+`welcome` on the new one (job 4). And one success comes without its events (job 4): when the
+batch that answers a command is passed over because the mirror is out of step, the command did
+run, so it resolves with no events, and they reach the mirror with the batches it asked for
+again.
 
 **The wire.** One message is one packet on every transport: JSON, deflated with Node's zlib, at
 most 1,000,000 bytes (Steam's reliable limit is 1 MB). There is no reassembly layer: the sender
@@ -164,12 +170,22 @@ before anything is parsed, and breaking either closes the connection. Inflating 
 | Before `welcome`                  | `hello` only, 4 KB, within 10 s                                          |
 | Guests                            | 31 (32 humans with the host)                                             |
 | Display name                      | 32 characters                                                            |
-| Snapshots                         | one per connection per 10 s, to admitted peers only                      |
+| `resync` answers                  | one per connection per 10 s, to admitted peers only                      |
+| Replay buffer                     | the last 16 MB of encoded `events` messages                              |
 | Host's unsent backlog for a guest | 64 MB, then he is dropped and resyncs when he is back                    |
 | Heartbeat                         | `ping` every 5 s; 3 missed is a disconnect (the same on every transport) |
+| A guest's own watch               | 15 s with no word from the host, and he closes his end                   |
+| A dropped guest's way back        | 12 tries, 5 s apart                                                      |
 
-Enforced so far (jobs 2 and 3): the packet and message sizes, the guest count, the name's
-length, `hello` first, and a snapshot to admitted peers only. Every other row comes with job 4.
+All of them are enforced since job 4, and the numbers are in
+`packages/shared/src/wire.ts`. Three rows changed while it was built. The 10 s rule was for
+snapshots only: it now covers every answer to a `resync` (the batches missed, or a snapshot),
+because a replay from the buffer can be 16 MB for a message of 30 bytes, and asking sooner
+closes the connection like any other limit. The guest's watch and his way back are new: his
+session reconnects by itself (see "Drops" below). The
+backlog is what the transport reports as not yet sent (`Connection.unsent`); the loopback can
+only report what one turn of the main thread piled up, and a socket's real count comes with the
+direct connection (job 5).
 
 Then shape. The host side protects the save, so it is strict: a zod schema for the whole
 `Command` union, every field typed and bounded, kept equal to the `Command` type at compile
@@ -218,10 +234,12 @@ another version" early; the handshake is what counts. Every dev build says 0.0.1
 different commits pass as equal: a real version per release fixes that, and adding the build's
 commit to the check is the named alternative. Admission is this handshake plus the transport's
 own gate (the join code on a direct connection, lobby membership on Steam). An admitted guest
-is sent the snapshot and every later event, which is what lets him see the teams and ask for
-one; he can change nothing until the host seats him.
+asks for the league with `resync` (job 4: nothing is sent unasked after `welcome`, so a guest
+back after a drop can ask for only what he missed) and is sent it, then every later event,
+which is what lets him see the teams and ask for one; he can change nothing until the host
+seats him.
 
-**Seats.** A connection is a peer, and a peer holds at most one team. Only the host binds a
+**Seats.** A guest is a peer, and a peer holds at most one team. Only the host binds a
 peer to a team: a guest sends `seat.request` (a wish) and the host approves it on the Online
 screen, or assigns one himself. Seating an AI team makes it human with the existing
 `team.setUserControlled`, sent by the host as `local`. The actor is rebuilt for every command
@@ -234,7 +252,14 @@ On Steam a peer's identity is the SteamID Steam puts on his packets, and the hos
 remembers which SteamID held which team (one `meta` key, left out of snapshots), so a returning
 friend is seated without a click. A direct connection has no identity that lasts: inside a
 session a random resume key from `welcome` gives a dropped guest his seat back, and in a new
-session the host seats him again.
+session the host seats him again. As built in job 4: the host keeps a place for each guest it
+let in, under its own number for him, and the resume key opens that place from a new connection
+(it stands in for the join code, and a connection still open on that place is closed). Only a
+seated guest's place outlives his connection: one with no team is forgotten when he drops and
+comes back as a newcomer, with the code. Taking the team from a guest who is away forgets him,
+which is how the host frees a team whose GM is not coming back; until then his place counts
+toward the 31. The transport's `peerKey` is read by no session yet: it waits for the SteamIDs
+of job 7.
 
 **Advancing the day; readiness.** The clock belongs to the host: he presses the sim buttons, and
 so may a guest he grants `advance` (a co-commissioner). Every GM has a Ready toggle; on a guest
@@ -262,7 +287,8 @@ stays off in the save until the host turns it on again), keeps it off while a se
 (from job 5: until the session API carries the host's own commands, nothing stops him turning
 it back on), and refuses to start while a GM is out of work. A job market for several GMs is its own job.
 
-**Joining and resync: the snapshot.** The snapshot is the save's rows. Between two commands the
+**Joining and resync: the snapshot.** The snapshot is the save's rows. When a guest's `resync`
+calls for one, between two commands, the
 host dumps every table in `rowid` order; the pieces go out as `snapshot.rows` messages, the
 guest joins the broadcast list in the same turn, and later event batches follow them on that
 connection. (Job 3: a batch is applied, saved and handed to the broadcast in one turn of the
@@ -284,13 +310,35 @@ proves slow, leaving finished seasons' box scores on the host is the named follo
 
 **Drops, reconnects and resync by sequence number.** `applyEvent` already counts every event
 (`state.eventSeq`), on the host and on a mirror alike, so no new field is needed. Each `events`
-message carries the host's number before its first event. A mirror whose own count (its number
-plus the pieces it holds of an unfinished command) differs stops applying, drops those pieces
-and sends `resync` with its number. The host keeps the last 16 MB of encoded event messages in
-memory: if they reach back that far it replays them, if not it sends a snapshot. A guest who
-drops keeps his seat (the team stays human; he shows as disconnected) and, inside the same
-session, rejoins with his resume key and resyncs from his number. A new session (the host
-restarted) or a restarted guest always takes a snapshot. No state checksum by default: the
+message carries the host's number before its first event. A guest's session keeps the number
+its mirror stands at once every whole batch it took in is applied (job 4: the check is made
+when a message arrives, not when it is applied, because applying waits in the mirror's queue).
+A message that does not start there (that number plus the pieces held of an unfinished command)
+is passed over: the pieces are dropped, the session sends `resync` with its number, once, and
+passes over what follows until the answer starts at that number. The host keeps the last 16 MB
+of encoded event messages in memory: if they reach back that far it sends them again (one empty
+batch when the guest missed nothing, so the answer always starts at his number), if not it
+sends a snapshot. A batch saved while the host has no guest is not kept and empties the buffer,
+so the buffer never has a gap.
+
+`resync` is also how a guest gets the league at all (job 4): his session sends it after every
+`welcome`, with its number when the mirror already holds this session's league and with none
+when it does not, and the host puts him on the broadcast list as it answers. A `resync` costs a
+few bytes to ask and megabytes to answer, so a connection is answered once in 10 s and one that
+asks sooner is closed. An honest guest can meet that (two losses inside 10 s): he is closed,
+comes back by himself and asks on the new connection. The limit is per connection, so a guest
+who holds the code can reconnect for another answer every time: a kick and a new code stop him
+(job 5), and a guest who means harm is step 3's subject.
+
+A guest who drops keeps his seat (the team stays human; he shows as disconnected). His session
+fails the commands that were waiting ("disconnected") and tries to get back in by itself, every
+5 s and up to 12 times: `hello` with the resume key, then `resync` from its number. A new
+session (the host restarted) or a restarted guest always takes a snapshot: a mirror's number
+means nothing to another session. The heartbeat finds the drops a transport does not report:
+the host pings every 5 s and closes a guest who let 3 pings go by without a word, and a guest
+closes a connection that brought nothing for 15 s. A mirror that cannot apply a batch gives its
+league up and asks for a snapshot; a second batch in a row that fails ends the session with an
+error. No state checksum by default: the
 sequence number catches every lost or repeated batch, the reducer is the same code on both
 sides, and the tests compare whole states; a checksum a day is the named add-on if a playtest
 shows mirrors that differ without a gap.
@@ -312,11 +360,14 @@ change anything he is not allowed to.
 that connects, and a connection with `send(bytes)`, `close()`, message and close callbacks, and
 a `peerKey` the transport vouches for, unlike any other open connection's. Packets arrive whole
 and in order, and nothing is handed to an end after its own `close()` (job 3: a refused guest
-gets one `hello`, whatever was already on its way). Three implementations:
+gets one `hello`, whatever was already on its way). Job 4 added `unsent`, the bytes handed to
+`send` that have not left the machine, which the host's backlog limit reads (zero where a
+transport cannot tell). Three implementations:
 
 - **Loopback**, for tests. It carries bytes, not objects, so a test goes through the same
-  deflate, size check, inflate and schema as a real connection, and (from job 4, with the
-  tests that need it) it can drop messages on demand.
+  deflate, size check, inflate and schema as a real connection, and (job 4) it loses packets
+  on demand: a test says, packet by packet and by direction, what does not arrive, and neither
+  end is told. A real connection only loses a packet by closing.
 - **Direct connection: worth having.** It is the only way to run two real app instances end to
   end without a Steam App ID, now and in every later regression run; it gives LAN play; and it
   is about a hundred lines on Node's `net`, with no new dependency. A 4-byte length before each
@@ -462,9 +513,9 @@ job 4 are in.
    last piece, the sport check that names no sport, "can be fired" kept off only from job 5,
    the snapshot taken between two turns and not in the queue, the transport's rule after
    `close()`, and the loopback's drop on demand moved to job 4.
-4. **Drops, reconnects and limits** (Fable, main). The sequence check and `resync`, the replay
-   buffer, rejoining inside a session with the seat kept (the resume key), the heartbeat, the
-   rate, waiting-command and backlog limits, the guest's totals for one command's events and
+4. **Drops, reconnects and limits: done** (Fable, main). The sequence check and `resync`, the
+   replay buffer, rejoining inside a session with the seat kept (the resume key), the heartbeat,
+   the rate, waiting-command and backlog limits, the guest's totals for one command's events and
    for a snapshot, the handshake timeout and the 4 KB `hello`, a failed apply contained, the
    loopback's drop on demand.
    _Done when:_ a mirror that missed events (the loopback drops them) resyncs from the buffer
@@ -472,9 +523,50 @@ job 4 are in.
    rejoins inside the session has his seat and one in a new session does not; a flood, an
    oversized packet, a silent peer and a late `hello` each end that connection and nothing
    else; a mirror fed an event it cannot apply resyncs once, then leaves with an error.
-5. **Direct connection and the session API** (Fable, main and contracts). The TCP transport.
+   _Built:_ in `net/host.ts`, a place per guest that outlives his connection (the resume key,
+   `connected` in `list()`), the replay buffer, `resync` answered from it or with a snapshot
+   and its 10 s rule, the heartbeat, the message rate (counted before anything is read), the
+   `hello` limits, the waiting-command and backlog limits; in `net/guest.ts`, the count kept at
+   arrival, `resync`, the two totals, the failed apply contained, the way back after a drop and
+   the 15 s watch; `Connection.unsent` and the loopback's `lose` in `net/transport.ts`; `unpack`
+   in the codec (a message with the bytes it inflated to); the new numbers in `WIRE`. No
+   message changed shape, so the protocol number stays 1. `net/session.test.ts` gained four
+   tests, each starting from a hosted league on its own save file with one seated guest: a
+   whole batch lost, then the last piece of a 60-day batch, both sent again from the buffer
+   with no snapshot, then a buffer that keeps nothing and a snapshot, the two leagues identical
+   each time; a guest whose line goes dead found by the heartbeat, shown disconnected, back by
+   himself on his seat with what he missed and no snapshot, and admitted as a seatless newcomer
+   by a new session; a resume key that opens a place without the code and closes the connection
+   that held it; an oversized packet, a padded `hello`, a flood, a second `resync` too soon, a
+   backlog, a peer who never says `hello` and one who never answers a ping, each closed alone
+   with the league untouched, and ten commands at once of which two are refused; a spoiled
+   batch answered with a snapshot, a second in a row ending the session, and a snapshot or a
+   batch over the guest's total ending it too.
+   What that does and does not show: everything runs in one process over the loopback, and the
+   waits (10, 15 and 20 s) are a test's clock moved by hand. The replay, backlog, batch and
+   snapshot limits are tested lowered (to 0, 10,000, 100 and 1,000 bytes), never at their real
+   sizes; the rate, the waiting commands, the 4 KB `hello`, the timeouts and the packet and
+   message sizes at their real values. Nothing ran over a socket or over Steam.
+   Known and left: the backlog limit needs a transport that reports `unsent` (the loopback only
+   counts within one turn; job 5's socket does), and a snapshot goes out in one turn, so a save
+   past 64 MB deflated could not be sent until it is paced by `unsent` (marked in `host.ts`).
+   The 10 s rule is per connection (see "Drops" above). A session does not count the
+   connections that have not said `hello` yet: each is closed after 10 s, and capping them is
+   the transport's work (job 5). A guest's session reconnects without telling anyone: the
+   "reconnecting" state for the screen comes with the session's status (job 5). A command
+   whose answer is lost while the connection stays up waits for good; only the loopback's
+   `lose` can do that, a real connection that loses a packet closes. `seat.request`, `ready`
+   and `session` are still messages nothing sends or answers (job 5). The design above was
+   corrected in ten places while building: the actor's id, the league asked for with `resync`
+   and not sent unasked, the count checked at arrival, the empty batch for a guest who missed
+   nothing, the 10 s rule for every `resync` answer, the guest's own way back, its 15 s watch,
+   which places outlive a connection, a command's answer when its batch is passed over or it
+   is given between two connections, and `unsent` on the transport interface.
+5. **Direct connection and the session API** (Fable, main and contracts). The TCP transport,
+   with its count of unsent bytes and a cap on the connections that have not said `hello` yet.
    Lobby state in the sessions: seat requests and approval, readiness, the advance grant, kick,
-   the peer list. The join code's throttle and its renewal after a kick; "can be fired" kept
+   the peer list, and a guest's "reconnecting" in the status. The join code's throttle and its
+   renewal after a kick; "can be fired" kept
    off while a session is open. `GmApi.session` in `packages/shared/src/ipc.ts` first, then IPC, preload and
    the `changed` push; main swaps the active service on join and leave and refuses new leagues
    and roster loads while a session is open.
