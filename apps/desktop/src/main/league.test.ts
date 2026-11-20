@@ -88,6 +88,19 @@ describe('LeagueService', () => {
     svc.dispose();
   });
 
+  it('refuses a malformed command before the sim sees it', async () => {
+    const svc = new LeagueService();
+    svc.newLeague(1);
+    FakeWorker.all[0]!.reply = 'die'; // reaching the worker would reject with "boom"
+    const forged = { ...cmd, actor: { id: 'local', controls: [] } };
+    expect(await svc.dispatch(forged)).toMatchObject({ ok: false, error: { code: 'invalid' } });
+    expect(await svc.dispatch({ kind: 'contract.buyout', playerId: '__proto__' })).toMatchObject({
+      ok: false,
+      error: { code: 'invalid' },
+    });
+    svc.dispose();
+  });
+
   it('goes back to what the disk has when saving fails', async () => {
     const svc = new LeagueService();
     svc.newLeague(1);

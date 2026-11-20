@@ -1,7 +1,6 @@
 import { join } from 'node:path';
 import { app, BrowserWindow, dialog, ipcMain } from 'electron';
 import { IPC, type GmApi } from '@gm/shared/ipc';
-import type { Command } from '@gm/shared';
 import { LeagueService } from './league';
 import { initSteam, steamStatus } from './steam';
 
@@ -110,7 +109,7 @@ function registerIpc() {
   ipcMain.handle(IPC.feedList, (_e, input: Parameters<GmApi['feed']['list']>[0]) =>
     league.feed(input.limit, input.minImportance),
   );
-  ipcMain.handle(IPC.dispatch, (_e, command: Command) => league.dispatch(command));
+  ipcMain.handle(IPC.dispatch, (_e, command: unknown) => league.dispatch(command));
   ipcMain.handle(IPC.steamStatus, () => steamStatus());
 }
 

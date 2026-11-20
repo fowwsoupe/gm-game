@@ -13,7 +13,7 @@ splits the work into seven jobs. Step 3 (our servers, accounts, anti-cheat) is n
 | Piece                         | Status                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                            |
 | ----------------------------- | --------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
 | Commands, events, one reducer | `handleCommand` validates and returns events; `applyEvent` is the only place state changes. `LeagueService.runCommand` is already a host and a mirror in one process: the handler runs in the sim worker on a copy, main applies the returned events to its own state and persists them. `sim.test.ts`: "a second copy that replays the events ends up identical"                                                                                                                                                                                                                                                                 |
-| Actors                        | `Actor { id, controls }`. Of the 38 commands, 25 check `controls(actor, team)` (the team is in the actor's list, or the actor is `local` and the team is `userControlled`); `team.rename`, `team.relocate` and `team.setUserControlled` are "local, or your own team"; 5 commissioner tools (`league.expand`, `commissioner.move`, `career.takeJob`, `league.setCanBeFired`, `league.setStopOn`) are local only; 5 clock commands (`sim.advance`, `offseason.openFreeAgency`, `offseason.startDraft`, `freeAgency.advanceDay`, `season.rollover`) check no actor at all. Outside tests nothing builds an actor other than `local` |
+| Actors                        | `Actor { id, controls }`. Of the 38 commands, 25 check `controls(actor, team)` (the team is in the actor's list, or the actor is `local` and the team is `userControlled`); `team.rename`, `team.relocate` and `team.setUserControlled` are "local, or your own team"; 5 commissioner tools (`league.expand`, `commissioner.move`, `career.takeJob`, `league.setCanBeFired`, `league.setStopOn`) are local only; 5 clock commands (`sim.advance`, `offseason.openFreeAgency`, `offseason.startDraft`, `freeAgency.advanceDay`, `season.rollover`) check no actor at all. Outside tests only the balance lab builds another, `lab` |
 | Hot-seat (step 1)             | several `userControlled` teams in one save (`save.test.ts`); a trade between two human GMs is an offer the other answers (`trade.test.ts`); each GM sees other teams through his own analytics department, view only (`frontOffice.test.ts`). The seat is renderer state (`stores/ui.ts`): every command still goes out as `local`                                                                                                                                                                                                                                                                                                |
 | Firing                        | `hotSeat.test.ts` is the owner's hot seat: a fired human GM is `state.career`, one slot for the whole league, and the way back, `career.takeJob`, is local only                                                                                                                                                                                                                                                                                                                                                                                                                                                                   |
 | `LeagueService`               | one instance in main over a fixed path (`saves/league-1.sqlite`): a queue runs commands one at a time, persists, and reloads from disk when a save fails. Queries read the state and the save's history tables                                                                                                                                                                                                                                                                                                                                                                                                                    |
@@ -89,7 +89,8 @@ save file, so binding him to one team would stop nothing.)
 nor granted. The 5 commissioner tools stay local only, with no grant. One more gate: a
 relocation picks a market size, which is money, so `team.relocate` becomes local only (a guest
 may still rename his own team). Every gate lets `local` through as before, so single-player
-and the lab do not move.
+does not move. The balance lab's actor is `lab`, not `local` (job 1 found this): it carries the
+grant, so the lab does not move either.
 
 **A guest's game is a mirror, not a second sim.** Joining swaps main's active service for a
 second `LeagueService` in mirror mode. It is built from the host's snapshot and applies the
@@ -156,7 +157,9 @@ before anything is parsed, and breaking either closes the connection. Inflating 
 
 Then shape. The host side protects the save, so it is strict: a zod schema for the whole
 `Command` union, every field typed and bounded, kept equal to the `Command` type at compile
-time so a new command without a schema fails `pnpm typecheck`. The same schema guards local
+time so a new command without a schema fails `pnpm typecheck`. The bounds keep a command sane
+(a finite number, a list of at most 1,000, a count such as years or days of at most 1,000);
+the rules stay in the engine, which reads them from the ruleset. The same schema guards local
 `commands.dispatch`. The guest side protects a mirror that can be thrown away, so its default is
 lighter: its schemas check the envelope and each event's header (`id`, `date`, `kind`,
 `importance`, `teamIds`, `playerIds`) field by field, and the rest of each event (its payload
@@ -176,10 +179,14 @@ that every later event PR must keep in step.
 (`__proto__`, `constructor` and the like) reads or writes the prototype instead of missing.
 The rule, in `packages/shared`: an id is 1 to 80 characters and names no such property; and no
 key or string anywhere in a message is such a name or contains `__proto__` (a pick id is a
-composite, `<season>-<round>-<team id>`, that the engine splits). Snapshot cells that hold JSON
-are parsed and walked the same way. A season of real events holds no such string (measured).
-When hosting starts the host runs its own league through the same guard and refuses to host if
-it fails, saying why: a roster file may carry any player id.
+composite, `<season>-<round>-<team id>`, that the engine splits; in a command it is checked as
+that composite, its team part under the string rule). Snapshot cells that hold JSON are parsed
+and walked the same way. A season of real events holds no such string (measured). A roster
+file could carry any player id: since job 1 the import refuses one over 64 characters or
+unsafe once the importer has put `p_` in front, because the same schema guards local commands
+and nobody could have signed or traded that player. A save made before that may still hold
+such an id, so when hosting starts the host runs its own league through the same guard and
+refuses to host if it fails, saying why.
 
 **Handshake and versions.** The first message must be `hello`. The host refuses unless the wire
 protocol number, the app version (`app.getVersion()`) and the save schema (the number of
@@ -353,7 +360,7 @@ that stands alone, passes `pnpm check` and leaves main shippable: jobs 1 to 4 ad
 no screen reaches yet, nothing listens on a real network before job 5, and by then the limits of
 job 4 are in.
 
-1. **Commands from a stranger** (Fable, contracts and engine). In `packages/shared`: the id
+1. **Commands from a stranger: done** (Fable, contracts and engine). In `packages/shared`: the id
    rule, a zod schema for the whole `Command` union kept equal to the type, `Actor.can`. In
    `handleCommand`: the clock gate, and relocation local only. `commands.dispatch` in main
    parses with the schema.
@@ -362,6 +369,10 @@ job 4 are in.
    cannot advance, open free agency, start the draft or roll the season over without the grant
    and can with it; he cannot use a commissioner tool, relocate, or act for another GM's team;
    `local` behaves as before (no sim number changes).
+   _Built:_ `command-schema.ts` (`parseCommand`, `isSafeText`) and its test in
+   `packages/shared`, the gates in `handleCommand` with `remote.test.ts`, and
+   `LeagueService.dispatch` parsing its input. Beyond the list above: the balance lab's actor
+   got the grant, and roster imports check player ids (both explained in the design above).
 2. **The mirror** (Fable, data and main). `SaveFile`: dump every table's rows, restore them
    into a fresh database, and the save schema number exported. `LeagueService`: the save path
    as a parameter, a command from a given actor, events from the host, the persisted-batch
