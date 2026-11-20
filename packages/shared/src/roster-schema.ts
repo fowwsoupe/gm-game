@@ -7,6 +7,8 @@ import { GOALIE_RATINGS, HOCKEY_POSITIONS, SKATER_RATINGS } from './sports/hocke
  * Bump ROSTER_FORMAT_VERSION on breaking changes and upgrade older files in upgradeRosterFile.
  * v2: skaters gained `faceoffs`.
  * A player may carry one season of `stats` instead of ratings; the sim rates him from them.
+ * A skater's stats may also carry `pkToi` and `pim` (together, optional, so older files still
+ * load): with them his `defense` and `physical` are rated more sharply.
  */
 export const ROSTER_FORMAT_VERSION = 2;
 
@@ -26,6 +28,10 @@ const skaterStats = z.object({
   plusMinus: z.number().int().min(-500).max(500),
   /** Minutes on ice. */
   toi: z.number().min(0).max(10000),
+  /** Minutes on the penalty kill (part of `toi`). */
+  pkToi: z.number().min(0).max(10000).optional(),
+  /** Penalty minutes. */
+  pim: count.optional(),
 });
 const goalieStats = z.object({ gp: count, shotsAgainst: count, saves: count });
 
@@ -54,6 +60,13 @@ const rosterPlayer = z
         ? p.goalie !== undefined || (p.stats !== undefined && 'saves' in p.stats)
         : p.skater !== undefined || (p.stats !== undefined && 'toi' in p.stats),
     { message: 'Goalies need goalie ratings (or goalie stats), skaters skater ratings (or stats)' },
+  )
+  .refine(
+    (p) =>
+      !p.stats ||
+      !('toi' in p.stats) ||
+      (p.stats.pkToi === undefined) === (p.stats.pim === undefined),
+    { message: 'Skater stats carry pkToi and pim together, or neither', path: ['stats'] },
   );
 
 const rosterTeam = z.object({

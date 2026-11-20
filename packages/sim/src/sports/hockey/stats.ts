@@ -9,6 +9,9 @@ export interface SkaterTotals {
   plusMinus: number;
   /** Minutes on ice. */
   toi: number;
+  /** Minutes on the penalty kill and penalty minutes: a season's totals have them, a roster file's line may not. */
+  pkToi?: number;
+  pim?: number;
 }
 export interface GoalieTotals {
   gp: number;
@@ -18,7 +21,7 @@ export interface GoalieTotals {
 
 /** Adds up the box scores of the given games, per player. */
 export function hockeySeasonStats(results: readonly GameResult[]) {
-  const skaters = new Map<string, SkaterTotals>();
+  const skaters = new Map<string, Required<SkaterTotals>>();
   const goalies = new Map<string, GoalieTotals>();
   for (const game of results) {
     const box = game.box as HockeyBoxScore | undefined;
@@ -32,6 +35,8 @@ export function hockeySeasonStats(results: readonly GameResult[]) {
           shots: 0,
           plusMinus: 0,
           toi: 0,
+          pkToi: 0,
+          pim: 0,
         };
         t.gp++;
         t.goals += line.goals;
@@ -39,6 +44,8 @@ export function hockeySeasonStats(results: readonly GameResult[]) {
         t.shots += line.shots;
         t.plusMinus += line.plusMinus;
         t.toi += line.toi;
+        t.pkToi += line.pkToi;
+        t.pim += line.pim;
         skaters.set(line.id, t);
       }
       for (const g of [side.goalie, side.relief]) {

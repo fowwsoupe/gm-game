@@ -75,9 +75,12 @@ table (`STATS_TO_RATINGS`) is fitted on the sim itself by `pnpm ratings:fit`: it
 seasons and fits each rating on the stat lines the sim produced (one league in five held out
 for R² and error). Rerun it after any change to the game sim or player generation.
 
-Features (table version 2): skaters TOI/game (and its square), goals, assists, shots and +/- per
+Features (table version 3): skaters TOI/game (and its square), goals, assists, shots and +/- per
 60 and per game, and share of games; goalies save %, share of games, save % times that share (a
-starter's save % says more than a backup's) and shots against per game. A sample under
+starter's save % says more than a backup's) and shots against per game. A skater line that also
+carries penalty-kill minutes and penalty minutes (`pkToi`, `pim`; optional in roster files, both
+or neither) uses the `specialTeams` fits, which add PK minutes per game and as a share of TOI,
+and penalty minutes per 60 and per game. A sample under
 `FULL_SAMPLE` (half a season for skaters, a quarter for goalies) is pulled toward the position
 average and its `sd` widens toward the position spread.
 
@@ -88,6 +91,7 @@ key (skaters +0.005-0.018, goalies +0.034-0.040). Those keys mostly ride a playe
 level, since generation draws a player's ratings together, so their estimates are close to "how
 good is he" with a wide `sd`; the stat line has no number that tells `faceoffs` or `skating`
 apart from the rest. Penalty-kill time (the auto penalty kill picks forwards by `defense`) and
-penalty minutes (taken by `physical`) would: a forward's `defense` goes from 0.51 to about 0.62
-with them, but roster files do not carry them yet. A replacement must emit the same table format
+penalty minutes (taken by `physical`) do: with them, held out, a forward's `defense` goes from
+0.475 to 0.622 and `physical` from 0.363 to 0.393, a defenceman's `physical` from 0.355 to 0.393,
+and no other key loses (+0.000-0.010). A replacement must emit the same table format
 (format `gm-stats-to-ratings`) and beat these R² values on held-out leagues.

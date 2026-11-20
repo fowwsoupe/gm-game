@@ -66,6 +66,25 @@ describe('roster files', () => {
     expect(importHockeyRoster(file, ctx.ruleset).ok).toBe(false);
   });
 
+  it('reads penalty-kill time and penalty minutes from a skater line, and wants both', () => {
+    const file = exportHockeyRoster(fictional(), { season: 2027, name: 'Test' });
+    const skater = file.players.find((p) => p.skater && p.position !== 'D')!;
+    delete skater.skater;
+    const line = { gp: 80, goals: 10, assists: 15, shots: 120, plusMinus: 0, toi: 1300 };
+    const defense = (stats: NonNullable<typeof skater.stats>) => {
+      skater.stats = stats;
+      const res = importHockeyRoster(file, ctx.ruleset);
+      if (!res.ok) throw new Error(res.errors.join('\n'));
+      return res.players.find((p) => p.id === `p_${skater.id}`)!.ratings.defense!;
+    };
+    // A forward who kills penalties is rated higher on defense than the same line without PK time.
+    expect(defense({ ...line, pkToi: 200, pim: 10 })).toBeGreaterThan(defense(line));
+    skater.stats = { ...line, pkToi: 200 };
+    const res = importHockeyRoster(file, ctx.ruleset);
+    expect(res.ok).toBe(false);
+    if (!res.ok) expect(res.errors.join(' ')).toMatch(/pkToi and pim together/);
+  });
+
   it('rejects bad files with readable errors', () => {
     expect(importHockeyRoster({ hello: 'world' }, ctx.ruleset).ok).toBe(false);
     const file = exportHockeyRoster(fictional(), { season: 2027, name: 'Test' });
@@ -167,6 +186,8 @@ describe('stats to ratings', () => {
     );
     const { skaters, goalies } = hockeySeasonStats(Object.values(state.results));
     const pairs: [number, number][] = [];
+    // A forward's defense, rated without and with penalty-kill time and penalty minutes.
+    const defense = { base: [] as [number, number][], special: [] as [number, number][] };
     let within = 0;
     let total = 0;
     for (const p of Object.values(state.players)) {
@@ -178,16 +199,26 @@ describe('stats to ratings', () => {
         if (Math.abs(e.value - p.ratings[key]!) <= 2 * e.sd) within++;
       }
       if (!isGoalie(p.position)) pairs.push([est.shooting!.value, p.ratings.shooting!]);
+      const s = skaters.get(p.id);
+      if (s && p.position !== 'D') {
+        const { gp, goals, assists, shots, plusMinus, toi } = s;
+        const base = { gp, goals, assists, shots, plusMinus, toi };
+        const without = ratingsFromStats(STATS_TO_RATINGS, p.position, base, games);
+        defense.base.push([without.defense!.value, p.ratings.defense!]);
+        defense.special.push([est.defense!.value, p.ratings.defense!]);
+      }
     }
-    const r = (() => {
-      const m = (k: 0 | 1) => pairs.reduce((s, x) => s + x[k], 0) / pairs.length;
+    const r = (xs: [number, number][]) => {
+      const m = (k: 0 | 1) => xs.reduce((s, x) => s + x[k], 0) / xs.length;
       const [ma, mb] = [m(0), m(1)];
-      const cov = pairs.reduce((s, [a, b]) => s + (a - ma) * (b - mb), 0);
-      const va = pairs.reduce((s, [a]) => s + (a - ma) ** 2, 0);
-      const vb = pairs.reduce((s, [, b]) => s + (b - mb) ** 2, 0);
+      const cov = xs.reduce((s, [a, b]) => s + (a - ma) * (b - mb), 0);
+      const va = xs.reduce((s, [a]) => s + (a - ma) ** 2, 0);
+      const vb = xs.reduce((s, [, b]) => s + (b - mb) ** 2, 0);
       return cov / Math.sqrt(va * vb);
-    })();
-    expect(r).toBeGreaterThan(0.75); // shooting: the best-measured skater rating
+    };
+    expect(r(pairs)).toBeGreaterThan(0.75); // shooting: the best-measured skater rating
     expect(within / total).toBeGreaterThan(0.9); // ±2 sd covers ~95% if the sd is honest
+    // The penalty kill picks forwards by defense, so PK time sharpens it (held-out R² 0.48 -> 0.62).
+    expect(r(defense.special)).toBeGreaterThan(r(defense.base) + 0.04);
   });
 });

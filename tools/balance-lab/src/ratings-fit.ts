@@ -39,6 +39,8 @@ interface Row {
   ratings: Record<string, number>;
 }
 const rows: Record<RatingGroup, Row[]> = { F: [], D: [], G: [] };
+/** The same skater seasons with penalty-kill time and penalty minutes added. */
+const specialRows: Record<'F' | 'D', Row[]> = { F: [], D: [] };
 /** Ratings to stats: skaters' log goals and assists a game (half a goal added), goalies' save %. */
 const rates: Record<RatingGroup, { ratings: Record<string, number>; y: Record<string, number> }[]> =
   { F: [], D: [], G: [] };
@@ -56,16 +58,19 @@ for (let l = 0; l < leagues; l++) {
   for (const p of Object.values(state.players)) {
     const totals = skaters.get(p.id) ?? goalies.get(p.id);
     if (!totals) continue;
-    const { features, share } = statFeatures(p.position, totals, seasonGames);
+    const { features, special, share } = statFeatures(p.position, totals, seasonGames);
     // Fit on full samples only; smaller ones are shrunk at estimate time.
     if (share < 1) continue;
-    rows[ratingGroup(p.position)].push({ league: l, x: features, ratings: p.ratings });
+    const g = ratingGroup(p.position);
+    rows[g].push({ league: l, x: features, ratings: p.ratings });
+    if (special && g !== 'G')
+      specialRows[g].push({ league: l, x: [...features, ...special], ratings: p.ratings });
     const s = skaters.get(p.id);
-    const g = goalies.get(p.id);
+    const gl = goalies.get(p.id);
     const y = s
       ? { goals: Math.log((s.goals + 0.5) / s.gp), assists: Math.log((s.assists + 0.5) / s.gp) }
-      : { savePct: g!.saves / g!.shotsAgainst };
-    rates[ratingGroup(p.position)].push({ ratings: p.ratings, y });
+      : { savePct: gl!.saves / gl!.shotsAgainst };
+    rates[g].push({ ratings: p.ratings, y });
   }
 }
 
@@ -124,11 +129,18 @@ const groups = Object.fromEntries(
     Object.fromEntries(keysOf(g).map((k) => [k, fitKey(rows[g], k)])),
   ]),
 ) as StatsToRatingsTable['groups'];
+const specialTeams = Object.fromEntries(
+  (['F', 'D'] as const).map((g) => [
+    g,
+    Object.fromEntries(SKATER_RATINGS.map((k) => [k, fitKey(specialRows[g], k)])),
+  ]),
+) as StatsToRatingsTable['specialTeams'];
 const table: StatsToRatingsTable = {
   format: 'gm-stats-to-ratings',
-  version: 2,
+  version: 3,
   source: `sim self-fit, ${leagues} leagues x 1 season, full samples (skaters ${FULL_SAMPLE.skater}, goalies ${FULL_SAMPLE.goalie} of ${seasonGames} games)`,
   groups,
+  specialTeams,
 };
 
 const fromStatsFile = writeTable(
@@ -177,13 +189,19 @@ console.log(
   `\nStats to ratings: ${leagues} leagues, ${((performance.now() - started) / 1000).toFixed(1)}s`,
 );
 console.log(
-  'Held-out R² (share of the rating a full season explains) and error in rating points:\n',
+  'Held-out R² (share of the rating a full season explains) and error in rating points,\n' +
+    'then with penalty-kill time and penalty minutes (skaters):\n',
 );
 for (const g of ['F', 'D', 'G'] as const) {
   console.log(`${g} (${rows[g].length} player seasons)`);
-  for (const [k, f] of Object.entries(groups[g]))
+  for (const [k, f] of Object.entries(groups[g])) {
+    const st = g === 'G' ? undefined : specialTeams[g][k]!;
     console.log(
-      `  ${k.padEnd(16)} R² ${f.r2.toFixed(3).padStart(6)}   ±${f.residualSd.toFixed(1)} (spread ${f.priorSd.toFixed(1)})`,
+      `  ${k.padEnd(16)} R² ${f.r2.toFixed(3).padStart(6)}   ±${f.residualSd.toFixed(1)} (spread ${f.priorSd.toFixed(1)})` +
+        (st
+          ? `   with PK/PIM R² ${st.r2.toFixed(3).padStart(6)}   ±${st.residualSd.toFixed(1)}`
+          : ''),
     );
+  }
 }
 console.log(`\nWrote ${fromStatsFile.pathname}\n  and ${toStatsFile.pathname}\n`);
