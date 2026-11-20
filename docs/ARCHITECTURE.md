@@ -73,6 +73,7 @@ src/
   people/    personalities, priorities, morale, chemistry, holdouts, disputes
   finance/   team finances, revenue, budgets
   owner/     owners, confidence, meetings and cards
+  awards/    end-of-season awards (the sport module picks the player winners)
   value/     PlayerValuator: per-team surplus value (can be negative)
   league/    schedule, standings, playoffs, team status (league pulse)
   offseason/ yearly rollover: development, retirements, expiries, draft, re-sign, free agency, next schedule
@@ -87,6 +88,8 @@ src/
   create.ts  createLeague(seed, ctx)
   commands.ts handleCommand(state, command, actor, ctx) → events
   advance.ts  the day loop behind sim.advance (games, playoffs, pulse, AI trades, news)
+  tonight.ts  a team's strength for tonight's game (chemistry, lines, coach, form, injuries)
+  farm.ts     AI teams' roster/farm moves (call-ups, send-downs)
   profiles.ts, dashboard.ts  read-only views for the UI (player cards, Home)
   index.ts   the public API
 ```
