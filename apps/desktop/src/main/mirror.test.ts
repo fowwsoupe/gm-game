@@ -72,6 +72,7 @@ it('a mirror built from rows and fed events through the codec stays equal to its
   expect(() => mirror.listTeams()).toThrow('No league yet');
   // And the host's own save is never swapped for a snapshot.
   expect(() => host.restore(pieces, end.counts)).toThrow('Only a mirror');
+  await expect(host.applyRemote([], 0)).rejects.toThrow('Only a mirror');
   mirror.restore(pieces, end.counts);
   expect(inside(mirror).state.eventSeq).toBe(end.seq);
 
@@ -100,7 +101,9 @@ it('a mirror built from rows and fed events through the codec stays equal to its
     if (batch.kind !== 'events') throw new Error(batch.kind);
     expect(batch.seq).toBe(inside(mirror).state.eventSeq);
     expect(batch.events).toEqual(result.events);
-    await mirror.applyRemote(batch.events);
+    // A repeated or skipped batch is refused, and the mirror stays where it was.
+    await expect(mirror.applyRemote(batch.events, batch.seq + 1)).rejects.toThrow('the mirror is at');
+    await mirror.applyRemote(batch.events, batch.seq);
     same();
   };
 

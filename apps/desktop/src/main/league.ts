@@ -711,9 +711,18 @@ export class LeagueService {
     return this.enqueue(() => this.runCommand(parsed.command, actor));
   }
 
-  /** A mirror's entry: one command's events from the host, applied and saved as the host did. */
-  applyRemote(events: LeagueEvent[]): Promise<void> {
-    return this.enqueue(() => this.apply(this.open(), events));
+  /**
+   * A mirror's entry: one command's events from the host, applied and saved as the host did.
+   * `seq` is the host's event count before them: a lost or repeated batch throws and changes nothing.
+   */
+  applyRemote(events: LeagueEvent[], seq: number): Promise<void> {
+    return this.enqueue(() => {
+      if (this.path !== ':memory:') throw new Error('Only a mirror takes events from a host.');
+      const open = this.open();
+      if (seq !== open.state.eventSeq)
+        throw new Error(`events from ${seq}, the mirror is at ${open.state.eventSeq}`);
+      this.apply(open, events);
+    });
   }
 
   private enqueue<T>(job: () => T | Promise<T>): Promise<T> {
