@@ -42,6 +42,17 @@ function skaterFeatures(t: SkaterTotals, seasonGames: number): number[] {
   ];
 }
 
+/**
+ * Penalty-kill time and penalty minutes, when the line has them: the auto penalty kill picks its
+ * forwards by `defense`, and who takes a penalty goes by `physical`.
+ */
+function specialTeamsFeatures(t: SkaterTotals): number[] | undefined {
+  if (t.pkToi === undefined || t.pim === undefined) return undefined;
+  const perToi = (n: number) => (t.toi > 0 ? n / t.toi : 0);
+  const perGame = (n: number) => (t.gp > 0 ? n / t.gp : 0);
+  return [perGame(t.pkToi), perToi(t.pkToi), 60 * perToi(t.pim), perGame(t.pim)];
+}
+
 function goalieFeatures(t: GoalieTotals, seasonGames: number): number[] {
   const savePct = t.shotsAgainst > 0 ? t.saves / t.shotsAgainst : 0;
   const share = t.gp / seasonGames;
@@ -62,10 +73,12 @@ export interface RatingFit {
 
 export interface StatsToRatingsTable {
   format: 'gm-stats-to-ratings';
-  /** 2: the per-game and workload features above (1 had rates only). */
-  version: 2;
+  /** 3: adds `specialTeams`; 2 added the per-game and workload features (1 had rates only). */
+  version: 3;
   source: string;
   groups: Record<RatingGroup, Record<string, RatingFit>>;
+  /** Skater fits for a line that also carries penalty-kill time and penalty minutes. */
+  specialTeams: Record<Exclude<RatingGroup, 'G'>, Record<string, RatingFit>>;
 }
 
 interface RatingEstimate {
@@ -83,26 +96,31 @@ export const FULL_SAMPLE = { skater: 0.5, goalie: 0.25 };
 export const linear = (coef: readonly number[], x: readonly number[]): number =>
   coef.reduce((s, c, i) => s + c * (i === 0 ? 1 : x[i - 1]!), 0);
 
-/** The stat features and how much of a full sample they rest on (0-1). */
+/**
+ * The stat features, the special-teams ones a skater's line adds (if it has them) and how much
+ * of a full sample they rest on (0-1).
+ */
 export function statFeatures(
   position: string,
   totals: SkaterTotals | GoalieTotals,
   seasonGames: number,
-): { features: number[]; share: number } {
+): { features: number[]; special: number[] | undefined; share: number } {
   const goalie = isGoalie(position);
   const full = (goalie ? FULL_SAMPLE.goalie : FULL_SAMPLE.skater) * seasonGames;
   return {
     features: goalie
       ? goalieFeatures(totals as GoalieTotals, seasonGames)
       : skaterFeatures(totals as SkaterTotals, seasonGames),
+    special: goalie ? undefined : specialTeamsFeatures(totals as SkaterTotals),
     share: Math.min(1, totals.gp / full),
   };
 }
 
 /**
  * Estimates each rating of the player's position from one season's totals (the same totals
- * `hockeySeasonStats` adds up). With no games the answer is the position average and its full
- * spread as the uncertainty.
+ * `hockeySeasonStats` adds up). A skater line with penalty-kill time and penalty minutes uses the
+ * special-teams fits. With no games the answer is the position average and its full spread as the
+ * uncertainty.
  */
 export function ratingsFromStats(
   table: StatsToRatingsTable,
@@ -110,10 +128,15 @@ export function ratingsFromStats(
   totals: SkaterTotals | GoalieTotals,
   seasonGames: number,
 ): Record<string, RatingEstimate> {
-  const { features, share: w } = statFeatures(position, totals, seasonGames);
+  const { features, special, share: w } = statFeatures(position, totals, seasonGames);
+  const group = ratingGroup(position);
+  const [fits, x] =
+    special && group !== 'G'
+      ? [table.specialTeams[group], [...features, ...special]]
+      : [table.groups[group], features];
   const out: Record<string, RatingEstimate> = {};
-  for (const [key, fit] of Object.entries(table.groups[ratingGroup(position)])) {
-    const full = linear(fit.coef, features);
+  for (const [key, fit] of Object.entries(fits)) {
+    const full = linear(fit.coef, x);
     const value = fit.mean + w * (full - fit.mean);
     out[key] = {
       value: clampRating(value),
