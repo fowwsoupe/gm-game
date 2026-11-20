@@ -2,7 +2,7 @@ import { randomBytes } from 'node:crypto';
 import { deflateSync } from 'node:zlib';
 import { describe, expect, it } from 'vitest';
 import { WIRE, type GuestMessage, type HostMessage } from '@gm/shared';
-import { decode, encode } from './codec';
+import { decode, encode, unpack } from './codec';
 
 const packet = (json: string) => deflateSync(json);
 
@@ -42,6 +42,9 @@ describe('the codec', () => {
     const toHostLimit = packet(`{"kind":"ping"${' '.repeat(WIRE.messageBytes.host)}}`);
     expect(toHostLimit.length).toBeLessThan(WIRE.packetBytes);
     expect(() => decode('host', toHostLimit)).toThrow(RangeError);
+    // A caller's own limit (the host's for a `hello`), and the count a guest's totals are made of.
+    expect(() => decode('guest', blank(100), 100)).toThrow(RangeError);
+    expect(unpack('guest', blank(100), 200)).toEqual({ message: { kind: 'pong' }, bytes: 115 });
   });
 
   it('refuses bytes that are not a deflated JSON message', () => {
