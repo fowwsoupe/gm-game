@@ -43,6 +43,35 @@ export const teamName = (teams: readonly Team[], id: string) => {
 export const teamAbbr = (teams: readonly Team[], id: string | null, fallback = '') =>
   teams.find((x) => x.id === id)?.abbreviation ?? fallback;
 
+/**
+ * A team's two colours, derived from its id until a roster file can set them (so there is no
+ * colour table here): a mid-tone that reads on the dark ice, and a pale one from across the wheel.
+ */
+export const teamColors = (id: string) => {
+  let h = 0;
+  for (const c of id) h = Math.imul(h ^ c.charCodeAt(0), 0x9e3779b1);
+  const hue = ((h ^ (h >>> 15)) >>> 0) % 360;
+  return {
+    hue,
+    primary: `hsl(${hue} 70% 55%)`,
+    secondary: `hsl(${(hue + 180) % 360} 35% 85%)`,
+  };
+};
+
+/** What two sides wear, [home, away]: the away side its secondary when the two primaries are close. */
+export const sideColors = (homeId: string, awayId: string): [string, string] => {
+  const home = teamColors(homeId);
+  const away = teamColors(awayId);
+  const gap = Math.abs(home.hue - away.hue);
+  return [home.primary, Math.min(gap, 360 - gap) < 40 ? away.secondary : away.primary];
+};
+
+/** Time left in the period; overtime is one 20:00 period at a time in the playoffs, shorter otherwise. */
+export const clockText = (sec: number, ot: number) => {
+  const left = Math.max(0, sec < 3600 ? 1200 - (sec % 1200) : ot - ((sec - 3600) % ot));
+  return `${String(Math.floor(left / 60)).padStart(2, '0')}:${String(Math.floor(left % 60)).padStart(2, '0')}`;
+};
+
 /** A pick id (`2028-1-t3`) as `trade.pick` params: draft season, round, original team. */
 export const pickParams = (teams: readonly Team[], id: string) => {
   const [season = '', round = '', ...team] = id.split('-');

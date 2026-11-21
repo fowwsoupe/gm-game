@@ -177,19 +177,20 @@ GM the last card does not sim the day (another GM may still want his game): it g
 Home, and the day is simmed from there as today.
 
 **Drawing the game.** Nothing is simulated twice. The drawing is one pure function,
-`scene(game, t)`, from the box, the timeline and a game second to disc and puck positions. It
-keeps no state between frames and rolls no dice (where it wants variety it hashes the game id
-and the event's index), so pausing, changing speed or a replay after an order cannot make it
-drift, and the score on screen is the box's goals up to `t`, as in `Replay` today.
+`scene(game, t)` (`lib/rink.ts` in the renderer), from the box, the timeline and a game second
+to disc and puck positions. It keeps no state between frames and rolls no dice (where it wants
+variety it mixes the event's index), so pausing, changing speed or a replay after an order
+cannot make it drift, and the score on screen is the box's goals up to `t`, as in `Replay`
+today.
 
-| From the sim, exact                                      | Drawn, presentation only                                                                 |
-| -------------------------------------------------------- | ---------------------------------------------------------------------------------------- |
-| who is on the ice, and each change                       | where a disc stands between shots: a set per zone, forwards and defence told by `firstD` |
-| each shot: second, place, shooter, goal or save, assists | the puck's way there: assist to assist to shooter on a goal, then to the net             |
-| each penalty: who, when, how long                        | his disc in the box until a shift row brings him back                                    |
-| the empty net, the goalie change, a player hurt          | the disc going to the bench                                                              |
-| each shootout attempt                                    | one skater in from centre ice                                                            |
-| nothing                                                  | where the puck is between two events: a smooth path from the last to the next            |
+| From the sim, exact                                      | Drawn, presentation only                                                                                                         |
+| -------------------------------------------------------- | -------------------------------------------------------------------------------------------------------------------------------- |
+| who is on the ice, and each change                       | where a disc stands between shots: a formation that follows the puck, forwards ahead of it and defence behind (told by `firstD`) |
+| each shot: second, place, shooter, goal or save, assists | the puck's way there: assist to assist to shooter on a goal, then to the net                                                     |
+| each penalty: who, when, how long                        | his disc in the box until a shift row brings him back (or a power-play goal, or overtime)                                        |
+| the empty net, the goalie change, a player hurt          | the disc going to the bench                                                                                                      |
+| each shootout attempt                                    | one skater in from centre ice                                                                                                    |
+| nothing                                                  | where the puck is between two events: a smooth path from the last to the next                                                    |
 
 The drawn layer never shows an event the timeline lacks (no extra shot, save, hit or whistle)
 and feeds no number: no possession, zone time or pass count comes from it.
@@ -198,21 +199,47 @@ and feeds no number: no possession, zone time or pass count comes from it.
   nodes, far below where canvas pays. SVG takes its colours from the tokens, scales cleanly on
   the fixed canvas and gives hover and click on a disc for free; `ShotMap` is SVG already.
 - **One `requestAnimationFrame` loop** keeps the clock in a ref and writes each node's
-  `transform`; React renders again only when an event passes (score, feed). Input never waits
-  for an animation: pause, speed and the bench buttons act on the next frame, and UI
-  transitions stay inside the stylesheet's 150 ms. framer-motion stays for chrome: its springs
-  keep their own state, so they cannot draw discs that must follow `t`.
+  `transform`; React renders ten times a second for the clock, the score and the feed, as
+  `Replay` already did, and never touches a disc. Input never waits for an animation: pause,
+  speed and the bench buttons act on the next frame, and UI transitions stay inside the
+  stylesheet's 150 ms. framer-motion stays for chrome: its springs keep their own state, so
+  they cannot draw discs that must follow `t`.
 - **Speed.** 1x is real time (one game second a second): 1, 2, 4, 8 and 20x, opening at 8x (a
   period in two and a half minutes), with today's pause and skip to end. The box replay of
   played games keeps its faster speeds.
 - **Colour-blind safe.** A side is told by shape, never by hue alone: home a solid disc, away a
   ring, goalies a double ring; a goal a filled mark, a save a hollow one. `ShotMap`'s
   hard-coded colours move to the tokens (`--color-good` blue and `--color-bad` orange).
-- **Team colours from the team.** `teamColors(team)` gives a primary and a secondary, derived
-  from its id as `market`, `gm` and `coach` are when absent; job 6 lets a roster file set them
-  (`Team.colors`). No colour table in the renderer. When two primaries are too close the away
-  side wears its secondary.
+- **Team colours from the team.** `teamColors(id)` gives a primary and a secondary, derived
+  from the team's id as `market`, `gm` and `coach` are when absent; job 6 lets a roster file
+  set them (`Team.colors`). No colour table in the renderer. When two primaries are too close
+  the away side wears its secondary (`sideColors`).
 - **Reduced motion.** Discs jump from event to event; no trail, no flash.
+
+What job 2 found, for the jobs that draw more:
+
+- **A shot's place can lie outside the boards.** The engine rolls a distance of 8 to 60 ft and
+  an angle around the net that can pass 90 degrees, so a place can be far behind the goal line
+  or wide of the side boards: 276 of the 6,725 shots of 120 pinned games (175 of them behind
+  the goal line). The box, the shot map and the shot model keep the rolled place; the rink
+  draws it at the nearest boards. Moving the roll changes uncoached games: a balance change of
+  its own.
+- **Shots can share a second** (54 of those 6,725 follow one in their own second). The rink
+  spreads them in order inside that second, the last one on it, so the score at every whole
+  second is the box's.
+- **A change and a shot in one second**: the change is drawn on the side of the shot that
+  leaves the shooter on the ice, so he always has a disc at his shot.
+- **The penalised skater is not kept off the ice by the engine.** `buildUnit` can send him out
+  to kill his own penalty: in 374 of 708 penalties of those games a unit has him again before
+  his two minutes are up (a power-play goal ends some early; 191 times it is the very next
+  unit). The rink seats him in the box only while no unit has him. His box also empties on a
+  power-play goal (the oldest minor ends) and when regular-season overtime starts (the engine
+  clears the penalties). Keeping him off the ice changes uncoached games: not this job.
+- **Ends are fixed.** The home side defends the left net all game; changing ends by period is
+  one sign in `scene`.
+- **The stylesheets animate `transform` and `opacity` on every node** (150 ms in the app, 200 ms
+  in the preview), which would make each disc lag its own clock: the rink's moving nodes switch
+  transitions off.
 - **The feed is the rink in text.** Everything drawn that the sim produced is also a feed line
   (new: empty net, goalie change, a player hurt, each order).
 - **Overlays** (job 6), each a toggle: the shots so far on the rink, names on discs, the
@@ -286,13 +313,15 @@ Each stands alone and leaves main shippable. A job that adds text adds it to `i1
    seeds; every shot's shooter and assists are on the ice at its second (within the box's
    one-second rounding), ice time summed from `shifts` matches the box, and an empty net shows
    an extra skater at even strength; the measured size is in the PR; lab identical on one seed.
-2. **The rink.** `scene(game, t)`, the SVG rink in `Replay` for exhibitions (discs by shape,
-   puck and trail, 1-20x, reduced motion), `teamColors` from the id, feed lines for the new
-   events, English and French, the preview's match view on a fixture.
+2. **The rink** (done; `lib/rink.test.ts` holds the checks). `scene(game, t)`, the SVG rink in
+   `Replay` for exhibitions (discs by shape, puck and trail, 1-20x, reduced motion),
+   `teamColors` from the id, feed lines for the new events, English and French, the preview's
+   match view on a fixture.
    _Done when:_ tests on `scene` pass (the same `t` gives the same picture, every disc is
-   inside the boards, shooter and puck are at the shot's place at its second, everyone on the
-   ice has one disc, the score at any second is the box's); an exhibition plays at every speed
-   and pause and speed answer while it runs (Electron smoke test).
+   inside the boards or in a penalty box, shooter and puck are at the shot's place at its
+   second, everyone on the ice has one disc, the score at any whole second is the box's); an
+   exhibition plays at every speed and pause and speed answer while it runs (Electron smoke
+   test).
 3. **Watch tonight's game.** The tap in `advance`, `watchGame` in `tonight.ts`,
    `GmApi.league.watch({ teamId })`, Watch on Home on a game day (season and playoffs), the
    last card (sim the day with one human GM, back to Home with several).
