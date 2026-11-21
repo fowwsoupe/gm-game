@@ -50,8 +50,9 @@ export type SessionPeer = Peer & { key?: string };
 
 /**
  * Where this machine stands online. `you`: this machine's row in `peers` (the host is row 0).
- * `direct`: what a friend types to join. `ended`: why the league this machine was a guest in is
- * over (the host's word, or `disconnected`).
+ * `direct`: what a friend types to join. `ended`: why the last session ended by itself: the league
+ * this machine was a guest in is over (the host's word, or `disconnected`), or the one it hosted
+ * closed on an `error`. Absent after a session its own player ended.
  */
 export type SessionStatus =
   | { role: 'none'; ended?: string }

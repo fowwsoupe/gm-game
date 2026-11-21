@@ -645,6 +645,36 @@ it('a batch the mirror cannot apply: the whole league once more, then the end', 
   small.dispose();
 }, 300_000);
 
+it('a hosted session that closes itself: the host is told why, and his league is his own again', async () => {
+  const own = new LeagueService(join(dir, 'ended-host.sqlite'));
+  own.newLeague(42);
+  let pushes = 0;
+  const game = new Online(own, APP, () => pushes++, '127.0.0.1');
+  expect(await game.host({ name: 'Minh' })).toEqual({ ok: true });
+
+  // A batch the session cannot send: the command is saved and answered, the session is over.
+  vi.spyOn(console, 'warn').mockImplementation(() => {});
+  vi.spyOn(
+    HostSession.prototype as unknown as { broadcast(): void },
+    'broadcast',
+  ).mockImplementationOnce(() => {
+    throw new Error('batch too big');
+  });
+  const day = own.status().day;
+  expect((await game.dispatch(days(1))).ok).toBe(true);
+  expect(own.status().day).toBeGreaterThan(day);
+  expect(pushes).toBeGreaterThan(0);
+  expect(game.status()).toEqual({ role: 'none', ended: 'error' });
+  expect(game.alone()).toBe(own);
+
+  // The reason lasts until the next session; a host who stops one himself is given none.
+  expect(await game.host({ name: 'Minh' })).toEqual({ ok: true });
+  expect(game.status()).toMatchObject({ role: 'host' });
+  expect(await game.leave()).toEqual({ ok: true });
+  expect(game.status()).toEqual({ role: 'none' });
+  game.dispose();
+}, 60_000);
+
 it('two games over real sockets: the lobby, the clock, a kick, and each game its own again', async () => {
   const LOCAL = '127.0.0.1';
   const own = {
