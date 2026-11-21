@@ -426,16 +426,20 @@ refetch (the host needs it too: a guest's command changes his league without his
 asking). An Online screen: host a league; join by invite or by address and code; pick a team;
 the list of who is connected, with team, ready and to-do count; for the host, approve, grant and
 kick. On a guest the seat is the session's team, the hot-seat switcher and curtain are hidden,
-the sim bar gives way to the Ready toggle (unless he is granted), and New league, Load roster
-and the commissioner tools are hidden; main refuses them anyway. On the host the switcher
+the clock buttons and the sim bar are hidden unless he is granted, and so are the commissioner
+tools, relocation, and another team's ticket price, identity and re-signings; main refuses them
+anyway. The Ready toggle is in the top row of every GM who has a team, the host's and a granted
+guest's too: whoever moves the clock is asked about the others. New league, Load roster and
+"can be fired" are hidden on both sides while a session is open. On the host the switcher
 stays: it is the commissioner's way to act for an absent GM. Text in `en.ts` and `fr.ts`.
 
 The session API as built in job 5 (`net/online.ts` behind `GmApi.session`): `host` opens the
 direct connection only, until job 7 adds Steam, and its status carries what the host reads out
 (this machine's addresses on its networks, the port, the code); `join` takes an address, a
 port, the code and a name. Every call answers done, or the reason as text for the screen.
-`status` is `none` (with why the last league joined ended: `closed`, `kicked`, `disconnected`
-or an error's text),
+`status` is `none` (with why the last session ended by itself: for a guest `closed`, `kicked`,
+`disconnected` or an error's text; for a host whose session closed itself `error`, since job 6;
+nothing after a session its own player ended),
 `host` or `guest` (with `reconnecting`); only the host's list carries the keys that `seat`,
 `grantAdvance` and `kick` take. `changed` carries nothing. It is sent when the lobby changes,
 when another GM's command changed the league, when a guest's line drops or comes back and when
@@ -661,7 +665,7 @@ job 4 are in.
    `window.gm.session` or listens to `changed` yet.
    Known and left: the screens (job 6), which also own the confirm past a GM who is not ready.
    A host session that closes itself on an error (a batch it could not send) reads as `none`
-   with no reason on the host. A guest who leaves on purpose looks like one who dropped. An
+   with no reason on the host (job 6 gave it one: `error`). A guest who leaves on purpose looks like one who dropped. An
    address being refused for its wrong codes is told `joinCode` like any wrong code, so a join
    screen cannot say "wait a minute". A guest who flips Ready or his wish makes the host send
    the list to everyone each time, at most at the message rate (20 a second); the host can kick
@@ -671,15 +675,80 @@ job 4 are in.
    building: the `session` message and the protocol number, what `peerKey` is, the cap on
    connections, the throttle's window, when Ready clears, the host's row, a kicked guest's
    team, and what `changed` and the session calls carry.
-6. **Lobby and guest screens** (Fable, UI). The Online screen and the guest's view of the app
-   as described above, the host's confirm when someone is not ready, a "reconnecting" state,
-   refetch on `changed`, why a session ended (on the host's side the status has no reason yet,
-   see job 5); strings in `en.ts` and `fr.ts`.
+6. **Lobby and guest screens: done** (Fable, UI). The Online screen and the guest's view of the
+   app as described above, the host's confirm when someone is not ready, a "reconnecting"
+   state, refetch on `changed`, why a session ended (on the host's side too: his status had no
+   reason after job 5); strings in `en.ts` and `fr.ts`.
    _Done when:_ component tests cover the Online screen's states; and two app instances on one
    machine (separate user-data folders) play a week over the direct connection: host, join,
    seat, lines and a trade from each side, an advance, a guest killed and back. That run is by
    hand or by an agent (the repo has no end-to-end runner) and the PR says exactly what was
    done.
+   _Built:_ `screens/Online.tsx`. With no session: a name, Host, Join (address, port, code),
+   and why the last session ended or the last call failed. Hosting: what a friend types, and
+   Stop hosting. As a guest: the team to ask for, and Leave. In both: the list of GMs with
+   team, status and to-do count, and on the host's list Give, a team select, Let advance and
+   Kick for each guest. In `lib/queries.ts`: `useSession`, `useOnline`, `usePush` (the lobby
+   and every league read again on `changed`; nothing of the last league kept when a window
+   becomes a guest or stops being one), `useSessionCall`, `useTodoCounts`, `notReady`, the
+   question in `useDispatch` before a clock command passes a seated GM who is not ready or is
+   away, and `useMine`, which on a guest is the team the host gave him and no other. In
+   `App.tsx`: the nav entry, the Ready box, the line shown while reconnecting, the jump to the
+   Online screen when a session ends by itself, and what is hidden. Hidden on a guest besides
+   what the design lists: the team picker and the job offers on Home, what a sim stops on, the
+   commissioner card on a player and the expansion card. In `net/online.ts`: a hosted session
+   that closed itself leaves `ended: 'error'`. `apps/desktop/vitest.config.ts` gives the
+   renderer's tests the `@/` alias and JSX.
+   `screens/Online.test.tsx` has five tests, on the screen rendered to static markup: no
+   session (Host and Join, nothing to join before an address is typed, nothing to host without
+   a league); each reason a session ended or a call failed, and one we have no words for shown
+   as it came; the host (what a friend types, the lobby's four columns, his tools on each guest
+   and none on his own row, a wish given only for a free team); a guest (only free teams to ask
+   for, no host tool, reconnecting); and `notReady`. `net/session.test.ts` gained one: a hosted
+   session that cannot send a batch closes, the host is told `error`, his league is his own
+   again, and a session he stops himself leaves no reason.
+   The run in the built app, by an agent's script that is not in the repo: two instances on one
+   machine, separate user-data folders, the address 127.0.0.1, every action a click or a typed
+   field in a window, every check the text on screen (plus read-only `window.gm.league` calls
+   to compare the two leagues). Seen: Host, and the address, port and code read off the screen;
+   a wrong code refused in words and the right one in lower case taken; the guest's window on
+   the host's league with no team, no clock button and no host tool; a team asked for, "Asked
+   for" and Give on the host's list, both lobbies and the to-do counts after it; the Identity
+   card and Relocate as the design says; a lines change from each side read in the other game;
+   a one-for-one trade offered by the guest and accepted by the host, and one the other way,
+   each showing in the other's open Trades screen with no click there; "Not ready: Guest B.
+   Advance anyway?" on the host's Sim day, canceled (the day stays) and confirmed (it plays);
+   no question once the guest ticked "I'm ready", and Ready cleared in both windows by the
+   day; the preseason simmed to opening night; Let advance, the guest's Sim day asking about
+   the host and moving both windows, Take back advance; the host's process frozen: the guest
+   reads "Connection lost. Reconnecting…" after 15 s, a lines change is refused meanwhile, and
+   he is back on his seat 20 s after the freeze; the guest's process killed: Disconnected on
+   the host's list, the host's Sim day asking about him and playing; the guest's game started
+   again on its own league, untouched, joining with the same code as a new row, the host
+   freeing the dead row's team and giving it to him, his lines change reaching the host; Sim
+   week, day 2 to day 9, the standings and the status the same text in both windows and the
+   same table on screen; Kick (the guest sent to the Online screen and told why, the old code
+   refused, the new one taken); Stop hosting (the guest told why, New league and "can be
+   fired" back on the host); Leave (no message). No error in either window's console. In
+   French the hosting screen only was looked at.
+   What that does and does not show: it is one machine talking to itself through 127.0.0.1, so
+   nothing went between two machines or across a router, as in job 5. The host's `error`
+   reason was not provoked in the app: the session test and the component test cover it. Not
+   clicked for a guest, only read in the code: the hidden commissioner card, expansion card,
+   re-sign card on another team and ticket price on another team. The draft, free agency and
+   the rollover were not played in a session.
+   Known and left: a guest whose game was restarted is a newcomer, so the host frees the dead
+   row's team ("No team", and the row goes) before it can be asked for again; job 7 remembers
+   seats by SteamID. Leave asks no question. A reason we have no words for is shown as it came,
+   in English: a command refused while reconnecting reads "disconnected", and a connection
+   that cannot be made reads as Node's error. An address throttled for its wrong codes still reads as a
+   wrong code. The join form is empty again after a session ends. A guest with no team reads
+   the other screens' ordinary "no team" text. Not tried: whether the championship animation
+   plays for a guest who joins a league whose summer has begun. Found and not touched: `Button` in `ui/` drops
+   `aria-label`, so the Lines screen's arrows have no accessible name. The design above was
+   corrected in four places while building: who gets the Ready toggle, New league, Load roster
+   and "can be fired" hidden on the host too, what a guest may change on a team page, and the
+   reason on the host's status.
 7. **Steam transport** (Fable, main). The same interface over `steamworks.js` as described
    above, seats remembered by SteamID in the host's save, "Host on Steam" and "Invite" on the
    Online screen, the roadmap brought up to date.

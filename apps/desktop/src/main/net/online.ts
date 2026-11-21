@@ -30,7 +30,10 @@ export class Online {
   private guesting: { session: GuestSession; mirror: LeagueService } | null = null;
   /** A session is being opened: nothing else may start meanwhile. */
   private opening = false;
-  /** Why the league this machine was a guest in is over, until the next session. */
+  /**
+   * Why the last session ended by itself, until the next one: the league this machine was a guest
+   * in is over, or the one it hosted closed on an error.
+   */
   private ended?: string;
 
   /**
@@ -46,7 +49,10 @@ export class Online {
 
   /** The session this machine hosts, unless it closed itself (a batch it could not send). */
   private get hosted() {
-    if (this.hosting?.session.closed) this.hosting = null;
+    if (this.hosting?.session.closed) {
+      this.hosting = null;
+      this.ended = 'error';
+    }
     return this.hosting;
   }
 

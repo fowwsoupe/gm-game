@@ -158,7 +158,9 @@ which also says how much of it is built.
    `commands.dispatch` goes through `online.dispatch`, and what only happens outside a session
    (a new league, a roster load) asks `online.alone()`. The window reaches a session only
    through `window.gm.session`; `changed` is main's one push, a signal with nothing in it,
-   for what a window did not ask for.
+   for what a window did not ask for. The renderer answers it in one place (`usePush` in
+   `lib/queries.ts`: the lobby and every league read again), and reads where it stands from
+   `useOnline`; a screen hides what a guest may not do, and main refuses it anyway.
 
 ## How to add a feature (checklist)
 

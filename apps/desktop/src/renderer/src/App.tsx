@@ -6,7 +6,10 @@ import {
   useMine,
   useNewLeague,
   useNewLeagueFromRoster,
+  useOnline,
   usePlayoffs,
+  usePush,
+  useSessionCall,
   useStatus,
   useSteam,
   useTeams,
@@ -31,6 +34,7 @@ import { TeamPage } from '@/screens/TeamPage';
 import { Owner } from '@/screens/Owner';
 import { FrontOffice } from '@/screens/FrontOffice';
 import { Player } from '@/screens/Player';
+import { Online } from '@/screens/Online';
 
 const NAV: { id: Screen; label: MessageKey }[] = [
   { id: 'home', label: 'nav.home' },
@@ -47,6 +51,7 @@ const NAV: { id: Screen; label: MessageKey }[] = [
   { id: 'frontOffice', label: 'nav.frontOffice' },
   { id: 'leaders', label: 'nav.leaders' },
   { id: 'history', label: 'nav.history' },
+  { id: 'online', label: 'nav.online' },
 ];
 
 export function App() {
@@ -64,6 +69,15 @@ export function App() {
   const { data: playoffs } = usePlayoffs();
   const { data: status } = useStatus();
   const hasLeague = !isError && teams.length > 0;
+  // A hosted league: a guest has one team and no hot seat, and the clock is the host's to give.
+  usePush();
+  const { session, me, guest, open, clock } = useOnline();
+  const call = useSessionCall();
+  // A session that ended by itself (kicked, the host gone, an error): the Online screen says why.
+  const ended = session?.role === 'none' && session.ended;
+  useEffect(() => {
+    if (ended) setScreen('online');
+  }, [ended, setScreen]);
   const [searching, setSearching] = useState(false);
   const [tour, setTour] = useState(false);
   const [tourChecked, setTourChecked] = useState(false);
@@ -99,7 +113,7 @@ export function App() {
     <div className="flex h-full">
       {tour && <Walkthrough onClose={() => setTour(false)} />}
       {searching && <CommandK screens={NAV} onClose={() => setSearching(false)} />}
-      {curtain && mine && humans.length > 1 && (
+      {curtain && mine && humans.length > 1 && !guest && (
         <div className="fixed inset-0 z-50 flex items-center justify-center bg-bg">
           <Card title={t('home.handOverTitle')}>
             <p className="mb-4 text-sm text-muted">
@@ -113,7 +127,7 @@ export function App() {
       )}
       <aside className="flex w-56 flex-col gap-1 border-r border-line bg-panel p-3">
         <div className="mb-4 px-2 text-lg font-semibold">{t('app.name')}</div>
-        {humans.length > 1 && (
+        {humans.length > 1 && !guest && (
           <label className="mb-3 flex flex-col gap-1 px-2 text-xs text-muted">
             {t('home.seat')}
             <TeamSelect
@@ -155,119 +169,141 @@ export function App() {
 
       <main className="flex-1 overflow-auto p-6">
         <div className="mb-6 flex flex-wrap gap-2">
-          <Button
-            variant="primary"
-            onClick={() => {
-              if (!hasLeague || window.confirm(t('actions.confirmReplace')))
-                newLeague.mutate(Math.floor(Math.random() * 1e9));
-            }}
-          >
-            {t('actions.newLeague')}
-          </Button>
-          <Button
-            onClick={() =>
-              (!hasLeague || window.confirm(t('actions.confirmReplace'))) &&
-              fromRoster.mutate(Math.floor(Math.random() * 1e9), {
-                onSuccess: (res) => {
-                  if (res.ok === 'canceled') return;
-                  setLastSim(
-                    res.ok
-                      ? t('home.teamsLoaded', { count: res.teams.length })
-                      : `${t('roster.loadFailed')} ${res.errors.slice(0, 3).join('; ')}`,
-                  );
-                },
-              })
-            }
-          >
-            {t('actions.loadRoster')}
-          </Button>
-          <Button disabled={!hasLeague || dispatch.isPending} onClick={() => sim(1)}>
-            {t('actions.simDay')}
-          </Button>
-          <Button disabled={!hasLeague || dispatch.isPending} onClick={() => sim(7)}>
-            {t('actions.simWeek')}
-          </Button>
-          <Button
-            disabled={!hasLeague || dispatch.isPending}
-            onClick={() => sim(400, status?.stopOn)}
-          >
-            {t('actions.simToNext')}
-          </Button>
-          {status &&
-            [
-              { to: 0, label: t('actions.simToOpeningNight') },
-              { to: status.tradeDeadlineDay, label: t('actions.simToDeadline') },
-              { to: status.playoffsStartDay, label: t('actions.simToPlayoffs') },
-              { to: status.playoffsEndDay, label: t('actions.simToSummer') },
-            ]
-              .filter((d) => d.to > status.day && !status.championTeamId)
-              .slice(0, 1)
-              .map((d) => (
+          {!open && (
+            <>
+              <Button
+                variant="primary"
+                onClick={() => {
+                  if (!hasLeague || window.confirm(t('actions.confirmReplace')))
+                    newLeague.mutate(Math.floor(Math.random() * 1e9));
+                }}
+              >
+                {t('actions.newLeague')}
+              </Button>
+              <Button
+                onClick={() =>
+                  (!hasLeague || window.confirm(t('actions.confirmReplace'))) &&
+                  fromRoster.mutate(Math.floor(Math.random() * 1e9), {
+                    onSuccess: (res) => {
+                      if (res.ok === 'canceled') return;
+                      setLastSim(
+                        res.ok
+                          ? t('home.teamsLoaded', { count: res.teams.length })
+                          : `${t('roster.loadFailed')} ${res.errors.slice(0, 3).join('; ')}`,
+                      );
+                    },
+                  })
+                }
+              >
+                {t('actions.loadRoster')}
+              </Button>
+            </>
+          )}
+          {clock && (
+            <>
+              <Button disabled={!hasLeague || dispatch.isPending} onClick={() => sim(1)}>
+                {t('actions.simDay')}
+              </Button>
+              <Button disabled={!hasLeague || dispatch.isPending} onClick={() => sim(7)}>
+                {t('actions.simWeek')}
+              </Button>
+              <Button
+                disabled={!hasLeague || dispatch.isPending}
+                onClick={() => sim(400, status?.stopOn)}
+              >
+                {t('actions.simToNext')}
+              </Button>
+              {status &&
+                [
+                  { to: 0, label: t('actions.simToOpeningNight') },
+                  { to: status.tradeDeadlineDay, label: t('actions.simToDeadline') },
+                  { to: status.playoffsStartDay, label: t('actions.simToPlayoffs') },
+                  { to: status.playoffsEndDay, label: t('actions.simToSummer') },
+                ]
+                  .filter((d) => d.to > status.day && !status.championTeamId)
+                  .slice(0, 1)
+                  .map((d) => (
+                    <Button
+                      key={d.label}
+                      disabled={dispatch.isPending}
+                      onClick={() => sim(Math.min(400, d.to - status.day))}
+                    >
+                      {d.label}
+                    </Button>
+                  ))}
+              {status?.championTeamId && !status.freeAgencyOpen && !status.draftLive && (
                 <Button
-                  key={d.label}
                   disabled={dispatch.isPending}
-                  onClick={() => sim(Math.min(400, d.to - status.day))}
+                  onClick={() =>
+                    dispatch.mutate(
+                      { kind: 'offseason.startDraft' },
+                      {
+                        onSuccess: (res) =>
+                          res.ok ? setScreen('draft') : setLastSim(res.error.message),
+                      },
+                    )
+                  }
                 >
-                  {d.label}
+                  {t('actions.startDraft')}
                 </Button>
-              ))}
-          {status?.championTeamId && !status.freeAgencyOpen && !status.draftLive && (
-            <Button
-              disabled={dispatch.isPending}
-              onClick={() =>
-                dispatch.mutate(
-                  { kind: 'offseason.startDraft' },
-                  {
-                    onSuccess: (res) =>
-                      res.ok ? setScreen('draft') : setLastSim(res.error.message),
-                  },
-                )
-              }
-            >
-              {t('actions.startDraft')}
-            </Button>
+              )}
+              {status?.championTeamId && !status.freeAgencyOpen && (
+                <Button
+                  disabled={dispatch.isPending}
+                  onClick={() =>
+                    dispatch.mutate(
+                      { kind: 'offseason.openFreeAgency' },
+                      {
+                        onSuccess: (res) =>
+                          setLastSim(res.ok ? t('home.freeAgencyOpen') : res.error.message),
+                      },
+                    )
+                  }
+                >
+                  {t('actions.openFreeAgency')}
+                </Button>
+              )}
+              {status?.freeAgencyOpen && (
+                <Button
+                  disabled={dispatch.isPending}
+                  onClick={() =>
+                    dispatch.mutate(
+                      { kind: 'freeAgency.advanceDay' },
+                      { onSuccess: (res) => !res.ok && setLastSim(res.error.message) },
+                    )
+                  }
+                >
+                  {t('actions.freeAgencyDay')}
+                </Button>
+              )}
+              <Button
+                disabled={!playoffs?.championTeamId || dispatch.isPending}
+                onClick={() =>
+                  dispatch.mutate(
+                    { kind: 'season.rollover' },
+                    { onSuccess: (res) => !res.ok && setLastSim(res.error.message) },
+                  )
+                }
+              >
+                {t('actions.nextSeason')}
+              </Button>
+            </>
           )}
-          {status?.championTeamId && !status.freeAgencyOpen && (
-            <Button
-              disabled={dispatch.isPending}
-              onClick={() =>
-                dispatch.mutate(
-                  { kind: 'offseason.openFreeAgency' },
-                  {
-                    onSuccess: (res) =>
-                      setLastSim(res.ok ? t('home.freeAgencyOpen') : res.error.message),
-                  },
-                )
-              }
-            >
-              {t('actions.openFreeAgency')}
-            </Button>
+          {me?.teamId && (
+            <label className="flex items-center gap-2 text-sm">
+              <input
+                type="checkbox"
+                checked={me.ready}
+                disabled={call.isPending}
+                onChange={() => call.mutate((s) => s.ready({ on: !me.ready }))}
+              />
+              {t('online.imReady')}
+            </label>
           )}
-          {status?.freeAgencyOpen && (
-            <Button
-              disabled={dispatch.isPending}
-              onClick={() =>
-                dispatch.mutate(
-                  { kind: 'freeAgency.advanceDay' },
-                  { onSuccess: (res) => !res.ok && setLastSim(res.error.message) },
-                )
-              }
-            >
-              {t('actions.freeAgencyDay')}
-            </Button>
-          )}
-          <Button
-            disabled={!playoffs?.championTeamId || dispatch.isPending}
-            onClick={() =>
-              dispatch.mutate(
-                { kind: 'season.rollover' },
-                { onSuccess: (res) => !res.ok && setLastSim(res.error.message) },
-              )
-            }
-          >
-            {t('actions.nextSeason')}
-          </Button>
         </div>
+        {session?.role === 'guest' && session.reconnecting && (
+          <p className="mb-4 text-sm text-bad">{t('online.reconnecting')}</p>
+        )}
 
         <TrophyLift />
         {screen === 'home' && (
@@ -288,6 +324,7 @@ export function App() {
         {screen === 'owner' && <Owner />}
         {screen === 'frontOffice' && <FrontOffice />}
         {screen === 'player' && <Player />}
+        {screen === 'online' && <Online />}
       </main>
     </div>
   );

@@ -1,6 +1,23 @@
-import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
-import type { Command, GmApi, Importance, TeamId, TradeProposal } from '@gm/shared';
+import { useEffect, useRef } from 'react';
+import {
+  useMutation,
+  useQueries,
+  useQuery,
+  useQueryClient,
+  type QueryClient,
+} from '@tanstack/react-query';
+import {
+  CLOCK_COMMANDS,
+  type Command,
+  type GmApi,
+  type Importance,
+  type SessionResult,
+  type SessionStatus,
+  type TeamId,
+  type TradeProposal,
+} from '@gm/shared';
 import { useUi } from '@/stores/ui';
+import { useT } from '@/i18n';
 
 /** All data hooks in one place so query keys stay consistent. */
 const keys = {
@@ -16,16 +33,89 @@ const keys = {
   roster: (teamId: TeamId) => ['league', 'roster', teamId] as const,
   resignOffers: (teamId: TeamId) => ['league', 'resignOffers', teamId] as const,
   steam: ['steam'] as const,
+  session: ['session'] as const,
 };
 
 export const useTeams = () =>
   useQuery({ queryKey: keys.teams, queryFn: () => window.gm.league.listTeams() });
-/** The team "you" run: the hot-seat GM's human team, else the first human team. */
+/**
+ * The team "you" run: the hot-seat GM's human team, else this window's team in a hosted league,
+ * else the first human team. A guest runs the team the host seated him on and no other.
+ */
 export function useMine() {
   const { data: teams = [] } = useTeams();
   const seat = useUi((s) => s.seat);
+  const { guest, me } = useOnline();
   const humans = teams.filter((x) => x.userControlled);
-  return humans.find((x) => x.id === seat) ?? humans[0];
+  const own = humans.find((x) => x.id === me?.teamId);
+  if (guest) return own;
+  return humans.find((x) => x.id === seat) ?? own ?? humans[0];
+}
+
+/** Where this window stands online: no session, the host of one, or a guest in one. */
+export const useSession = () =>
+  useQuery({ queryKey: keys.session, queryFn: () => window.gm.session.status() });
+/**
+ * This window in a hosted league. `me`: its row in the lobby. `guest`: it reads the host's league
+ * and runs one team. `open`: a session is open. `clock`: it may move the clock (the host, a guest
+ * he granted it, and anyone outside a session).
+ */
+export function useOnline() {
+  const { data: session } = useSession();
+  const open = !!session && session.role !== 'none';
+  const me = open ? session.peers[session.you] : undefined;
+  const guest = session?.role === 'guest';
+  return { session, me, guest, open, clock: !guest || !!me?.can.includes('advance') };
+}
+/** The seated GMs other than this window's who are not done: not ready, or away. */
+export function notReady(session: SessionStatus | undefined): string[] {
+  if (!session || session.role === 'none') return [];
+  return session.peers
+    .filter((p, i) => i !== session.you && p.teamId !== null && !(p.ready && p.connected))
+    .map((p) => p.name);
+}
+/** The lobby and every league read again: the league may be another one, or another GM's command changed it. */
+function refresh(qc: QueryClient) {
+  void qc.invalidateQueries({ queryKey: keys.session });
+  return qc.invalidateQueries({ queryKey: ['league'] });
+}
+/** Listens to main's push (what this window did not ask for) and refetches. Once, in `App`. */
+export function usePush() {
+  const qc = useQueryClient();
+  useEffect(() => window.gm.session.onChanged(() => void refresh(qc)), [qc]);
+  // Another league from here on (joined as a guest, or back from it): nothing of the last one
+  // stays on screen, even where this machine has no league of its own to show instead.
+  const guest = useSession().data?.role === 'guest';
+  const was = useRef(guest);
+  useEffect(() => {
+    if (was.current === guest) return;
+    was.current = guest;
+    void qc.resetQueries({ queryKey: ['league'] });
+  }, [guest, qc]);
+}
+/** A call on the hosted league, `call.mutate((s) => s.host({ name }))`: its answer is the mutation's data. */
+export function useSessionCall() {
+  const qc = useQueryClient();
+  return useMutation({
+    mutationFn: (call: (session: GmApi['session']) => Promise<SessionResult>) =>
+      call(window.gm.session),
+    onSuccess: () => refresh(qc),
+  });
+}
+/** How many things wait on each of these teams' GMs (the length of his Home "To do"), by team. */
+export function useTodoCounts(teamIds: readonly TeamId[]) {
+  const results = useQueries({
+    queries: teamIds.map((teamId) => ({
+      queryKey: ['league', 'dashboard', teamId] as const,
+      queryFn: () => window.gm.league.dashboard({ teamId }),
+    })),
+  });
+  return Object.fromEntries(
+    teamIds.map((id, i) => {
+      const home = results[i]?.data;
+      return [id, home && home.todo.length + home.ownerCards.length];
+    }),
+  );
 }
 export const useStandings = () =>
   useQuery({ queryKey: keys.standings, queryFn: () => window.gm.league.standings() });
@@ -239,11 +329,23 @@ export const useFeed = (limit = 20, minImportance: Importance = 'notable') =>
 /**
  * The one way the UI changes game state: send a Command. Errors come back as data, not throws.
  * After any command, everything under the 'league' key is refetched.
+ * In a hosted league, whoever moves the clock past a GM who is not ready confirms it first.
  */
 export function useDispatch() {
   const qc = useQueryClient();
+  const t = useT();
   return useMutation({
-    mutationFn: (command: Command) => window.gm.commands.dispatch(command),
+    mutationFn: (command: Command) => {
+      const waiting = CLOCK_COMMANDS.has(command.kind)
+        ? notReady(qc.getQueryData<SessionStatus>(keys.session))
+        : [];
+      if (
+        waiting.length > 0 &&
+        !window.confirm(t('online.confirmAdvance', { names: waiting.join(', ') }))
+      )
+        return Promise.reject(new Error('not advanced'));
+      return window.gm.commands.dispatch(command);
+    },
     onSuccess: () => qc.invalidateQueries({ queryKey: ['league'] }),
   });
 }
