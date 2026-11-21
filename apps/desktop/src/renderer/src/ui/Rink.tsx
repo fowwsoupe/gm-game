@@ -1,5 +1,5 @@
 import { useEffect, useRef, useState, type RefObject } from 'react';
-import { blend, puckAt, scene, type RinkGame, type Scene } from '@/lib/rink';
+import { blend, puckAt, scene, shotMarks, type RinkGame, type Scene } from '@/lib/rink';
 
 // Colours come from CSS variables (the app's tokens unless a host sets its own) and the two team
 // colours from props, so any theme can host the rink.
@@ -82,6 +82,7 @@ export function Rink({
   colors,
   names = {},
   calm = false,
+  overlay = {},
   label,
 }: {
   /** Keep the same object between renders (memo it). */
@@ -93,6 +94,8 @@ export function Rink({
   names?: Record<string, string>;
   /** Reduced motion: discs jump from event to event, no trail, no goal light. The system setting asks for it too. */
   calm?: boolean;
+  /** Overlays: every shot so far (a goal filled, a save hollow), the surname under each disc. */
+  overlay?: { shots?: boolean; names?: boolean };
   label: string;
 }) {
   const root = useRef<SVGSVGElement>(null);
@@ -105,6 +108,10 @@ export function Rink({
     const puck = svg.querySelector('[data-puck]')!;
     const trail = svg.querySelector('[data-trail]')!;
     const nets = [0, 1].map((n) => svg.querySelector(`[data-net="${n}"]`)!);
+    // The shot marks are all there from the start; this many of them show.
+    const marks = svg.querySelectorAll('[data-shots] > *');
+    marks.forEach((m) => m.setAttribute('display', 'none'));
+    let marked = 0;
     // A new game under the same clock (a bench order): a quarter of a second from the picture
     // that was to the new one, whether the clock runs or not.
     const from = still ? null : shown.current;
@@ -142,6 +149,8 @@ export function Rink({
             );
       trail.setAttribute('points', points.join(' '));
       nets.forEach((net, n) => net.setAttribute('fill', !still && s.goal === n ? RED : 'none'));
+      for (; marked < s.shots; marked++) marks[marked]?.setAttribute('display', 'inline');
+      for (; marked > s.shots; marked--) marks[marked - 1]?.setAttribute('display', 'none');
     };
     draw();
     return () => cancelAnimationFrame(frame);
@@ -196,6 +205,21 @@ export function Rink({
           strokeWidth="0.5"
         />
       ))}
+      {/* The side is told by the end (the home side shoots at the right net), a goal by the filled mark. */}
+      <g data-shots display={overlay.shots ? 'inline' : 'none'} opacity="0.85">
+        {shotMarks(game).map((m, i) => (
+          <circle
+            key={i}
+            cx={m.x}
+            cy={m.y}
+            r={m.goal ? 1.6 : 1.1}
+            fill={m.goal ? colors[m.side] : 'none'}
+            stroke={colors[m.side]}
+            strokeWidth="0.45"
+            display="none"
+          />
+        ))}
+      </g>
       <polyline
         data-trail
         fill="none"
@@ -211,6 +235,11 @@ export function Rink({
           <g key={key} data-disc={`${n}:${key}`} display="none" style={DIRECT}>
             <title>{names[id] ?? id}</title>
             <Mark away={n === 1} goalie={goalie} color={colors[n]!} />
+            {overlay.names && (
+              <text y={goalie ? 7.6 : 6} textAnchor="middle" fontSize="3" fill={PUCK}>
+                {(names[id] ?? '').replace(/^\S+ /, '')}
+              </text>
+            )}
           </g>
         );
         return [

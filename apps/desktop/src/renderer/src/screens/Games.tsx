@@ -11,8 +11,9 @@ import {
   useMine,
   useWatch,
 } from '@/lib/queries';
-import { clockText, sideColors, statValue, teamAbbr, teamName } from '@/lib/format';
-import { useUi } from '@/stores/ui';
+import { clockText, minSec, sideColors, statValue, teamAbbr, teamName } from '@/lib/format';
+import { attempts, iceTime, strengthAt } from '@/lib/rink';
+import { OVERLAYS, useUi } from '@/stores/ui';
 import { useT } from '@/i18n';
 import {
   Button,
@@ -208,23 +209,34 @@ function Replay({
   const { result, names } = detail;
   const box = result.box as HockeyBoxScore | undefined;
   const timeline = box?.timeline;
+  const game = useMemo(
+    () => box && timeline && { box, timeline, overtimeSeconds: detail.overtimeSeconds },
+    [box, timeline, detail.overtimeSeconds],
+  );
+  // The shootout's attempts, drawn on the rink after the overtime.
+  const tries = useMemo(() => (game ? attempts(game) : []), [game]);
   const end = useMemo(
-    () => (box ? Math.max(3600, Math.ceil(((box.shots.at(-1)?.[0] ?? 0) + 5) / 60) * 60) : 3600),
-    [box],
+    () =>
+      box
+        ? Math.max(
+            3600,
+            Math.ceil(((box.shots.at(-1)?.[0] ?? 0) + 5) / 60) * 60,
+            (tries.at(-1)?.t ?? 0) + 4,
+          )
+        : 3600,
+    [box, tries],
   );
   const { at, clock, playing, speed, setPlaying, setSpeed, seek } = useGameClock(
     end,
     timeline ? 8 : SPEEDS[1],
   );
-  const game = useMemo(
-    () => box && timeline && { box, timeline, overtimeSeconds: detail.overtimeSeconds },
-    [box, timeline, detail.overtimeSeconds],
-  );
+  const overlays = useUi((s) => s.overlays);
+  const toggleOverlay = useUi((s) => s.toggleOverlay);
   if (!box) return null;
 
   const sides = [box.home, box.away] as const;
   const ids = [result.homeTeamId, result.awayTeamId] as const;
-  const colors = sideColors(ids[0], ids[1]);
+  const colors = sideColors(teams, ids[0], ids[1]);
   const nameOf = (side: 0 | 1, k: number) =>
     names[sides[side].skaters[k]?.id ?? ''] ?? sides[side].skaters[k]?.id ?? '';
   const shown = box.shots.filter((s) => s[0] <= clock);
@@ -232,6 +244,32 @@ function Replay({
   const finished = clock >= end;
   const score = finished ? [result.homeScore, result.awayScore] : goals;
   const period = clock < 3600 ? Math.min(3, Math.floor(clock / 1200) + 1) : 0;
+  // The second the shootout starts (a game without its timeline only has the line that it was won).
+  const shootoutAt =
+    result.stats.shootout === 1 ? (tries[0] ? 3600 + detail.overtimeSeconds : end) : Infinity;
+  // "5 on 4 · BOS power play 1:12"; the side with more is named when it is not a power play (an
+  // empty net: "BOS 6 on 5").
+  const strength =
+    game && overlays.strength && clock < Math.min(end, shootoutAt) ? strengthAt(game, clock) : null;
+  const [homeOn, awayOn] = strength?.skaters ?? [0, 0];
+  const up = homeOn > awayOn ? 0 : 1;
+  const power = strength?.power;
+  const strengthText = [
+    t(homeOn === awayOn || power?.side === up ? 'games.strength' : 'games.strengthUp', {
+      team: teamAbbr(teams, ids[up]),
+      a: Math.max(homeOn, awayOn),
+      b: Math.min(homeOn, awayOn),
+    }),
+    ...(power
+      ? [
+          t('games.strengthPp', {
+            team: teamAbbr(teams, ids[power.side]),
+            time: minSec(power.left),
+          }),
+        ]
+      : []),
+  ].join(' · ');
+  const ice = game && overlays.iceTime ? iceTime(game, clock) : null;
   // The bench: an order goes in at the next whole second, never before one already given (after
   // a restart the bench waits for the clock to pass the last of them).
   const orders = detail.orders ?? [];
@@ -301,6 +339,15 @@ function Replay({
               : t(ORDER_KEYS[o.order as keyof typeof ORDER_KEYS]),
         }),
       })),
+    ...tries
+      .filter((a) => a.t <= clock)
+      .map((a) => ({
+        at: a.t,
+        text: t(a.goal ? 'games.shootoutGoal' : 'games.shootoutSave', {
+          team: teamAbbr(teams, ids[a.side]),
+          player: nameOf(a.side, a.k),
+        }),
+      })),
   ].sort((a, b) => b.at - a.at);
   if (finished && result.stats.shootout === 1) {
     const winner = result.homeScore > result.awayScore ? ids[0] : ids[1];
@@ -327,6 +374,8 @@ function Replay({
                     ? ` / ${t('games.ot')}`
                     : ''}
               </span>
+            ) : clock >= shootoutAt ? (
+              <span className="text-ink">{t('games.shootout')}</span>
             ) : (
               <>
                 <div className="text-lg text-ink">{clockText(clock, detail.overtimeSeconds)}</div>
@@ -362,74 +411,99 @@ function Replay({
         </div>
       </Card>
       {finished && last}
-      {bench && !finished && ids.some((id) => teams.find((x) => x.id === id)?.userControlled) && (
-        <Card title={t('games.benchTitle')}>
-          {([1, 0] as const)
-            .filter((n) => teams.find((x) => x.id === ids[n])?.userControlled)
-            .map((n) => {
-              const mine = orders.filter((o) => o.teamId === ids[n]);
-              // What already stands: his last word on the net, and the one goalie change a game has.
-              const net = mine
-                .filter((o) => o.order === 'emptyNet' || o.order === 'goalieBack')
-                .at(-1)?.order;
-              const changed =
-                mine.some((o) => o.order === 'goalieChange') ||
-                !!timeline?.goalies.some((r) => r[1] === n && r[2] === 2 && r[0] <= clock);
-              // The line he has out against their first line (0: none). The last change is the home side's.
-              const matched = mine.filter((o) => o.order === 'match').at(-1)?.value ?? 0;
-              return (
-                <div key={n} className="mb-2 flex flex-wrap items-center gap-2">
-                  <span className="w-12 text-sm text-muted">{teamAbbr(teams, ids[n])}</span>
-                  {BENCH_ORDERS.map(
-                    (name) =>
-                      name !== 'match' && (
-                        <Button
-                          key={name}
-                          disabled={
-                            bench.busy ||
-                            early ||
-                            (name === 'goalieChange' ? changed : net === name)
-                          }
-                          onClick={() => give(n, name)}
-                        >
-                          {t(ORDER_KEYS[name])}
-                        </Button>
-                      ),
-                  )}
-                  {n === 0 && (
-                    <div className="flex flex-wrap items-center gap-2">
-                      <span className="text-xs text-muted">{t('games.benchMatch')}</span>
-                      {[...Array.from({ length: MATCH_LINES }, (_, i) => i + 1), 0].map((line) => (
-                        <Button
-                          key={line}
-                          disabled={bench.busy || early || line === matched}
-                          onClick={() => give(n, 'match', line)}
-                        >
-                          {lineName(line)}
-                        </Button>
-                      ))}
-                    </div>
-                  )}
-                </div>
-              );
-            })}
-          <p className="text-xs text-muted">
-            {early
-              ? t('games.benchEarly', {
-                  time: `${lastOrder < 3600 ? t('games.periodShort', { n: Math.floor(lastOrder / 1200) + 1 }) : t('games.ot')} ${clockText(lastOrder, detail.overtimeSeconds)}`,
-                })
-              : t('games.benchNote') +
-                (teams.find((x) => x.id === ids[0])?.userControlled
-                  ? ` ${t('games.benchMatchNote')}`
-                  : '')}
-          </p>
-          {bench.failed && <p className="mt-2 text-sm text-bad">{bench.failed}</p>}
-        </Card>
-      )}
+      {bench &&
+        clock < Math.min(end, shootoutAt) &&
+        ids.some((id) => teams.find((x) => x.id === id)?.userControlled) && (
+          <Card title={t('games.benchTitle')}>
+            {([1, 0] as const)
+              .filter((n) => teams.find((x) => x.id === ids[n])?.userControlled)
+              .map((n) => {
+                const mine = orders.filter((o) => o.teamId === ids[n]);
+                // What already stands: his last word on the net, and the one goalie change a game has.
+                const net = mine
+                  .filter((o) => o.order === 'emptyNet' || o.order === 'goalieBack')
+                  .at(-1)?.order;
+                const changed =
+                  mine.some((o) => o.order === 'goalieChange') ||
+                  !!timeline?.goalies.some((r) => r[1] === n && r[2] === 2 && r[0] <= clock);
+                // The line he has out against their first line (0: none). The last change is the home side's.
+                const matched = mine.filter((o) => o.order === 'match').at(-1)?.value ?? 0;
+                return (
+                  <div key={n} className="mb-2 flex flex-wrap items-center gap-2">
+                    <span className="w-12 text-sm text-muted">{teamAbbr(teams, ids[n])}</span>
+                    {BENCH_ORDERS.map(
+                      (name) =>
+                        name !== 'match' && (
+                          <Button
+                            key={name}
+                            disabled={
+                              bench.busy ||
+                              early ||
+                              (name === 'goalieChange' ? changed : net === name)
+                            }
+                            onClick={() => give(n, name)}
+                          >
+                            {t(ORDER_KEYS[name])}
+                          </Button>
+                        ),
+                    )}
+                    {n === 0 && (
+                      <div className="flex flex-wrap items-center gap-2">
+                        <span className="text-xs text-muted">{t('games.benchMatch')}</span>
+                        {[...Array.from({ length: MATCH_LINES }, (_, i) => i + 1), 0].map(
+                          (line) => (
+                            <Button
+                              key={line}
+                              disabled={bench.busy || early || line === matched}
+                              onClick={() => give(n, 'match', line)}
+                            >
+                              {lineName(line)}
+                            </Button>
+                          ),
+                        )}
+                      </div>
+                    )}
+                  </div>
+                );
+              })}
+            <p className="text-xs text-muted">
+              {early
+                ? t('games.benchEarly', {
+                    time: `${lastOrder < 3600 ? t('games.periodShort', { n: Math.floor(lastOrder / 1200) + 1 }) : t('games.ot')} ${clockText(lastOrder, detail.overtimeSeconds)}`,
+                  })
+                : t('games.benchNote') +
+                  (teams.find((x) => x.id === ids[0])?.userControlled
+                    ? ` ${t('games.benchMatchNote')}`
+                    : '')}
+            </p>
+            {bench.failed && <p className="mt-2 text-sm text-bad">{bench.failed}</p>}
+          </Card>
+        )}
 
       {game && (
         <Card title={t('games.rink')}>
-          <Rink game={game} at={at} colors={colors} names={names} label={t('games.rink')} />
+          <div className="mb-2 flex flex-wrap items-center gap-2">
+            <span className="text-xs text-muted">{t('games.overlays')}</span>
+            {OVERLAYS.map((name) => (
+              <button
+                key={name}
+                aria-pressed={overlays[name]}
+                onClick={() => toggleOverlay(name)}
+                className={`rounded px-2 py-1 text-xs ${overlays[name] ? 'bg-line text-ink' : 'text-muted hover:text-ink'}`}
+              >
+                {t(`games.overlay.${name}`)}
+              </button>
+            ))}
+            {strength && <span className="tabular ml-auto text-sm">{strengthText}</span>}
+          </div>
+          <Rink
+            game={game}
+            at={at}
+            colors={colors}
+            names={names}
+            overlay={overlays}
+            label={t('games.rink')}
+          />
           <p className="mt-2 flex flex-wrap gap-x-4 text-xs text-muted">
             <span>
               <DiscMark color={colors[0]} />
@@ -443,13 +517,47 @@ function Replay({
               <DiscMark goalie color="currentColor" />
               {t('games.goalies')}
             </span>
+            {overlays.shots &&
+              (['games.legendGoal', 'games.legendSave'] as const).map((key, i) => (
+                <span key={key}>
+                  <svg viewBox="-2 -2 4 4" className="mr-1 inline-block h-2.5 w-2.5" aria-hidden>
+                    <circle
+                      r="1.5"
+                      fill={i ? 'none' : 'currentColor'}
+                      stroke="currentColor"
+                      strokeWidth="0.5"
+                    />
+                  </svg>
+                  {t(key)}
+                </span>
+              ))}
           </p>
+          {ice && (
+            // The home bench is on the left of the rink, so its list is too; skaters in line order.
+            <div className="mt-3 grid grid-cols-2 gap-6 text-xs">
+              {([0, 1] as const).map((n) => (
+                <div key={n}>
+                  <div className="mb-1 text-muted">
+                    {teamAbbr(teams, ids[n])} · {t('games.overlay.iceTime')}
+                  </div>
+                  <ul className="tabular columns-2 gap-6">
+                    {ice[n].map((seconds, k) => (
+                      <li key={k} className="flex justify-between gap-2">
+                        <span className="truncate">{nameOf(n, k)}</span>
+                        <span>{minSec(seconds)}</span>
+                      </li>
+                    ))}
+                  </ul>
+                </div>
+              ))}
+            </div>
+          )}
         </Card>
       )}
 
       <div className="grid gap-4 md:grid-cols-2">
         <Card title={t('games.shotMap')}>
-          <ShotMap shots={shown} />
+          <ShotMap shots={shown} colors={colors} />
           <p className="tabular mt-2 text-xs text-muted">
             {t('games.shots')}: {teamAbbr(teams, ids[1])} {shown.filter((s) => s[1] === 1).length} ·{' '}
             {teamAbbr(teams, ids[0])} {shown.filter((s) => s[1] === 0).length}
@@ -465,8 +573,10 @@ function Replay({
                   <span className="tabular w-12 shrink-0 text-muted">
                     {l.at < 3600
                       ? t('games.periodShort', { n: Math.floor(l.at / 1200) + 1 })
-                      : t('games.ot')}{' '}
-                    {l.at < 3600 || l.at < end ? clockText(l.at, detail.overtimeSeconds) : ''}
+                      : t(l.at < shootoutAt ? 'games.ot' : 'games.so')}{' '}
+                    {l.at < Math.min(end, shootoutAt)
+                      ? clockText(l.at, detail.overtimeSeconds)
+                      : ''}
                   </span>
                   <span>{l.text}</span>
                 </li>
@@ -509,8 +619,20 @@ function Side({
   );
 }
 
-/** The offensive zone: net at the left, goal line at x = 0. Home shots in accent, away in grey. */
-function ShotMap({ shots }: { shots: HockeyBoxScore['shots'] }) {
+/**
+ * The offensive zone: net at the left, goal line at x = 0. Sides as on the rink, by shape and in
+ * their colours (home a solid mark, away a ring); a goal is the larger mark.
+ */
+function ShotMap({
+  shots,
+  colors,
+}: {
+  shots: HockeyBoxScore['shots'];
+  /** [home, away] */
+  colors: readonly [string, string];
+}) {
+  const blue = 'var(--color-good)';
+  const red = 'var(--color-bad)';
   return (
     <svg viewBox="-4 -44 80 88" className="w-full rounded bg-panel-2" role="img">
       <rect
@@ -522,28 +644,32 @@ function ShotMap({ shots }: { shots: HockeyBoxScore['shots'] }) {
         stroke="currentColor"
         opacity="0.2"
       />
-      <line x1="64" y1="-42.5" x2="64" y2="42.5" stroke="#4a6fa5" strokeWidth="1" />
-      <line x1="0" y1="-42.5" x2="0" y2="42.5" stroke="#b33" strokeWidth="0.6" opacity="0.7" />
-      <rect x="-3.5" y="-3" width="3.5" height="6" fill="none" stroke="#b33" strokeWidth="0.5" />
-      <path d="M 0 -6 A 6 6 0 0 1 0 6 Z" fill="#4a6fa544" stroke="none" />
+      <line x1="64" y1="-42.5" x2="64" y2="42.5" stroke={blue} strokeWidth="1" opacity="0.8" />
+      <line x1="0" y1="-42.5" x2="0" y2="42.5" stroke={red} strokeWidth="0.6" opacity="0.7" />
+      <rect x="-3.5" y="-3" width="3.5" height="6" fill="none" stroke={red} strokeWidth="0.5" />
+      <path d="M 0 -6 A 6 6 0 0 1 0 6 Z" fill={blue} opacity="0.25" />
       {[-22, 22].map((y) => (
         <g key={y} opacity="0.3">
-          <circle cx="20" cy={y} r="15" fill="none" stroke="#b33" strokeWidth="0.5" />
-          <circle cx="20" cy={y} r="1" fill="#b33" />
+          <circle cx="20" cy={y} r="15" fill="none" stroke={red} strokeWidth="0.5" />
+          <circle cx="20" cy={y} r="1" fill={red} />
         </g>
       ))}
-      {shots.map((s, i) => (
-        <circle
-          key={i}
-          cx={s[2]}
-          cy={s[3]}
-          r={s[5] === 1 ? 2.4 : 1.3}
-          fill={s[1] === 0 ? 'var(--team-primary)' : '#8a8f98'}
-          stroke={s[5] === 1 ? 'currentColor' : 'none'}
-          strokeWidth="0.5"
-          opacity={s[5] === 1 ? 1 : 0.65}
-        />
-      ))}
+      {shots.map((s, i) => {
+        const goal = s[5] === 1;
+        const away = s[1] === 1;
+        return (
+          <circle
+            key={i}
+            cx={s[2]}
+            cy={s[3]}
+            r={(goal ? 2.4 : 1.3) - (away ? 0.3 : 0)}
+            fill={away ? 'var(--color-panel-2)' : colors[0]}
+            stroke={away ? colors[1] : goal ? 'currentColor' : 'none'}
+            strokeWidth={away ? 0.7 : 0.5}
+            opacity={goal ? 1 : 0.7}
+          />
+        );
+      })}
     </svg>
   );
 }

@@ -249,10 +249,10 @@ and feeds no number: no possession, zone time or pass count comes from it.
 - **Colour-blind safe.** A side is told by shape, never by hue alone: home a solid disc, away a
   ring, goalies a double ring; a goal a filled mark, a save a hollow one. `ShotMap`'s
   hard-coded colours move to the tokens (`--color-good` blue and `--color-bad` orange).
-- **Team colours from the team.** `teamColors(id)` gives a primary and a secondary, derived
-  from the team's id as `market`, `gm` and `coach` are when absent; job 6 lets a roster file
-  set them (`Team.colors`). No colour table in the renderer. When two primaries are too close
-  the away side wears its secondary (`sideColors`).
+- **Team colours from the team.** `teamColors(team)` gives a primary and a secondary: the
+  roster file's (`Team.colors`, job 6), else derived from the team's id as `market`, `gm` and
+  `coach` are when absent. No colour table in the renderer. When the two primaries are too
+  close the away side wears its secondary (`sideColors`).
 - **Reduced motion.** Discs jump from event to event; no trail, no flash.
 
 What job 2 found, for the jobs that draw more:
@@ -283,6 +283,51 @@ What job 2 found, for the jobs that draw more:
   (new: empty net, goalie change, a player hurt, each order).
 - **Overlays** (job 6), each a toggle: the shots so far on the rink, names on discs, the
   strength and power-play clock, each bench's ice time so far (summed from `shifts`).
+
+What job 6 found, where the brief was short or wrong:
+
+- **A file's colours cannot be drawn as given.** The ice is the dark panel, and a navy or a
+  black primary is close to it (about 2.4 to 1 against it for a dark red). `teamColors` keeps a
+  file colour's hue and saturation and lifts its lightness to 55, where the derived colours
+  are. So a team in black wears a mid grey.
+- **"Too close" could not stay a hue rule.** Job 2 compared hues (40 degrees), which means
+  nothing for a grey or a lifted black. `sideColors` now measures the distance between the two
+  colours (hue, saturation and lightness together), with the threshold that gives derived
+  colours exactly the old answer, and the away side changes only if its secondary is farther.
+  Two sides can still end up alike (two teams with the same two colours): the shape tells them
+  apart, as it always did.
+- **The colours need a column.** The brief said nothing of the save: `teams.colors_json`,
+  migration 24 (NULL: derived). The roster format version stays 2, since the field is optional
+  and older files load as they are; `exportHockeyRoster` writes it back.
+- **Names go under the discs, surnames only.** A disc is five feet across; a name on it cannot
+  be read.
+- **The strength is the engine's count, not a count of discs.** Five a side (three in
+  regular-season overtime) less the penalties running, never under three, one more for an
+  empty net: what `ppToi`, `pkToi` and the shots' power-play flag are counted by. It equals the
+  skaters on the ice at every second of the rink's test games but one case, the one job 1 found:
+  a net empty during a power play, when the special-teams unit has no room for the extra man
+  (five names on a power play, four on a penalty kill). There the line says one more than the
+  rink shows: the engine counts him in the shot rate and names nobody for him. Naming him is a
+  change to `buildUnit`, so to uncoached games: a balance change of its own.
+- **The power-play clock is rebuilt from the box**, which keeps a penalty's start rounded to
+  the second: two minutes from there, the oldest ended by a power-play goal, all of them at
+  the start of regular-season overtime. Against the engine, over the 160 pinned games of the
+  rink's tests: 4 of 9,085 shots carry a power-play flag the rebuilt strength disagrees with
+  (a shot in the second a penalty starts or ends), and every skater's power-play and
+  penalty-kill minutes are within 0.07 of the box's. The clock shown is the scoreboard's, the
+  penalty's own two minutes: the first version counted down to the goal that would end it,
+  which the smoke test caught (1:29 to go four seconds after the call; 135 of the pinned
+  games' penalties end that way).
+- **The shootout is after the clock.** It starts when the overtime ends, ten seconds an
+  attempt: everyone leaves, the shooter steps on, takes the puck at centre ice and goes in on
+  the other goalie. Order, shooter and goal or save are the timeline's; a goal lights the net
+  and is in no score (the result gives the winner one goal, on the last card). The viewer's
+  clock used to end on the minute after the last shot, which in a shootout game could be
+  before the overtime was over; with a timeline it now runs to the last attempt. The header
+  says Shootout in place of a clock, the feed has a line an attempt, and the bench is closed
+  (the game is over: an order there would never be reached).
+- **A played league game's shootout** is still one line (who won it), now labelled SO: its
+  box has no timeline, as default 1 has it.
 
 **Where it lives.** In the Games screen, not a new one: `Replay` shows the rink above the feed
 when the box has a timeline (exhibitions, tonight's game) and is unchanged when it has none.
@@ -364,8 +409,8 @@ Each of these was open; the owner can overrule any of them before its job starts
     other way: an image under the discs.
 11. **Inside Games, opened from Home**, and only your own team's game is offered. No stop on
     game days: watching is opt-in.
-12. **Colours derived from the team's id** until a roster file sets them; a side is told by
-    shape.
+12. **Colours derived from the team's id** until a roster file sets them (job 6: `colors` on
+    a team, `primary` and `secondary` as `#rrggbb`); a side is told by shape.
 13. **Two human teams in one game watch together**, with no curtain; with several human GMs the
     last card goes back to Home instead of simming the day.
 14. **A player hurt in an exhibition is shown leaving**, since that is the game that was
@@ -412,8 +457,10 @@ Each stands alone and leaves main shippable. A job that adds text adds it to `i1
    _Done when:_ the named line's ice time moves as the shares say and the box still adds up
    (ice time, plus-minus); job 4's pinned checks hold with it; the measured edge of each choice
    is in the PR; lab identical on one seed; smoke test.
-6. **Overlays and team colours.** The four overlays, shootout attempts on the rink,
-   `Team.colors` from a roster file, `ShotMap` on the tokens.
+6. **Overlays and team colours** (done; `lib/rink.test.ts` holds the overlays', the
+   shootout's and the colours' checks, `roster.test.ts` and `save.test.ts` the file's and the
+   save's). The four overlays, shootout attempts on the rink, `Team.colors` from a roster
+   file, `ShotMap` on the tokens.
    _Done when:_ each overlay agrees with the box (ice time within rounding); a roster file's
    colours show on the rink and a bad value is refused with a readable error; smoke test.
 

@@ -16,6 +16,16 @@ describe('SaveFile', () => {
     save.close();
   });
 
+  it("keeps a team's colours from a roster file", () => {
+    const save = openSave(':memory:');
+    const state = createLeague(4, ctx);
+    Object.values(state.teams)[0]!.colors = { primary: '#af1e2d', secondary: '#192168' };
+    save.saveNewLeague(state);
+    expect(save.loadState()).toEqual(state);
+    expect(save.listTeams().filter((t) => t.colors)).toHaveLength(1);
+    save.close();
+  });
+
   it('persists a renamed team', () => {
     const save = openSave(':memory:');
     const state = createLeague(4, ctx);
