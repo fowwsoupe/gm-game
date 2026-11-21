@@ -94,6 +94,24 @@ describe('roster files', () => {
     if (!res.ok) expect(res.errors.join(' ')).toMatch(/Unknown team ZZZ/);
   });
 
+  it("keeps a team's colours in and out, and refuses one that is not a hex colour", () => {
+    const file = exportHockeyRoster(fictional(), { season: 2027, name: 'Test' });
+    const colors = { primary: '#AF1E2D', secondary: '#192168' };
+    file.teams[0]!.colors = colors;
+    const res = importHockeyRoster(JSON.parse(JSON.stringify(file)), ctx.ruleset);
+    if (!res.ok) throw new Error(res.errors.join('\n'));
+    expect(res.teams[0]!.colors).toEqual(colors);
+    expect(res.teams[1]!.colors).toBeUndefined();
+    const out = exportHockeyRoster(res, { season: 2027, name: 'Test' });
+    expect(out.teams.map((t) => t.colors)).toEqual(file.teams.map((t) => t.colors));
+    file.teams[0]!.colors = { ...colors, secondary: 'navy' };
+    const bad = importHockeyRoster(file, ctx.ruleset);
+    expect(bad).toEqual({
+      ok: false,
+      errors: ['teams.0.colors.secondary: A colour is # and six hex digits, like #1a2b3c'],
+    });
+  });
+
   it('rejects a team with no goalie', () => {
     const file = exportHockeyRoster(fictional(), { season: 2027, name: 'Test' });
     const abbr = file.teams[1]!.abbreviation;

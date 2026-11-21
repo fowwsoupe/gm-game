@@ -10,6 +10,8 @@ import { GOALIE_RATINGS, HOCKEY_POSITIONS, SKATER_RATINGS } from './sports/hocke
  * A player may carry one season of `stats` instead of ratings; the sim rates him from them.
  * A skater's stats may also carry `pkToi` and `pim` (together, optional, so older files still
  * load): with them his `defense` and `physical` are rated more sharply.
+ * A team may carry `colors` (`primary` and `secondary`, each `#rrggbb`; optional, so older files
+ * still load): the match viewer draws its discs in them.
  */
 export const ROSTER_FORMAT_VERSION = 2;
 
@@ -76,12 +78,17 @@ const rosterPlayer = z
     { message: 'Skater stats carry pkToi and pim together, or neither', path: ['stats'] },
   );
 
+const colour = z
+  .string()
+  .regex(/^#[0-9a-fA-F]{6}$/, 'A colour is # and six hex digits, like #1a2b3c');
+
 const rosterTeam = z.object({
   abbreviation: z.string().min(2).max(4),
   city: z.string().min(1),
   name: z.string().min(1),
   conference: z.string().min(1).optional(),
   division: z.string().min(1).optional(),
+  colors: z.object({ primary: colour, secondary: colour }).optional(),
 });
 
 const rosterFileSchema = z

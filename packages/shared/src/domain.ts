@@ -258,6 +258,8 @@ export interface Team {
   /** Optional league structure. The schedule plays division rivals most, then the conference. */
   conference?: string;
   division?: string;
+  /** Its two colours as `#rrggbb`, from a roster file. Absent: derived from the id (the renderer's `teamColors`). */
+  colors?: { primary: string; secondary: string };
   /** Owned by the human player(s). The game supports running several teams. */
   userControlled: boolean;
   /** The AI front office running the team when no human does. Absent: derived from the id. */

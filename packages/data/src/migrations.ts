@@ -197,4 +197,8 @@ export const migrations: readonly string[] = [
   ALTER TABLE players ADD COLUMN league TEXT;
   ALTER TABLE players ADD COLUMN origin TEXT;
   `,
+  // 24: a team's two colours from a roster file (NULL = derived from the team id).
+  `
+  ALTER TABLE teams ADD COLUMN colors_json TEXT;
+  `,
 ];

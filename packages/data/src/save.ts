@@ -293,7 +293,7 @@ export class SaveFile {
 
   private insertTeam() {
     const stmt = this.db.prepare(
-      'INSERT INTO teams (id, city, name, abbreviation, user_controlled, status, conference, division, gm_json, plan_json, coach_json, staff_json, market) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)',
+      'INSERT INTO teams (id, city, name, abbreviation, user_controlled, status, conference, division, gm_json, plan_json, coach_json, staff_json, market, colors_json) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)',
     );
     return (t: Team, status: TeamStatus) =>
       stmt.run(
@@ -310,6 +310,7 @@ export class SaveFile {
         t.coach ? JSON.stringify(t.coach) : null,
         t.staff ? JSON.stringify(t.staff) : null,
         t.market ?? null,
+        t.colors ? JSON.stringify(t.colors) : null,
       );
   }
 
@@ -790,6 +791,7 @@ export class SaveFile {
       plan_json: string | null;
       coach_json: string | null;
       staff_json: string | null;
+      colors_json: string | null;
     }[];
     return rows.map((r) => ({
       id: r.id as Team['id'],
@@ -799,6 +801,9 @@ export class SaveFile {
       ...(r.market != null ? { market: r.market } : {}),
       ...(r.conference ? { conference: r.conference } : {}),
       ...(r.division ? { division: r.division } : {}),
+      ...(r.colors_json
+        ? { colors: JSON.parse(r.colors_json) as NonNullable<Team['colors']> }
+        : {}),
       userControlled: r.user_controlled === 1,
       ...(r.gm_json ? { gm: JSON.parse(r.gm_json) as NonNullable<Team['gm']> } : {}),
       ...(r.plan_json ? { plan: JSON.parse(r.plan_json) as NonNullable<Team['plan']> } : {}),

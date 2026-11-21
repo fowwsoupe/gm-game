@@ -24,6 +24,10 @@ export type Screen =
   | 'player'
   | 'online';
 
+/** What the match viewer can show on top of the rink. */
+export const OVERLAYS = ['shots', 'names', 'strength', 'iceTime'] as const;
+type Overlay = (typeof OVERLAYS)[number];
+
 interface UiState {
   screen: Screen;
   /** Team shown on the team page. */
@@ -50,6 +54,9 @@ interface UiState {
   curtain: boolean;
   handOver: (teamId: string) => void;
   liftCurtain: () => void;
+  /** The match viewer's overlays that are on; they stay as set from one game to the next. */
+  overlays: Record<Overlay, boolean>;
+  toggleOverlay: (name: Overlay) => void;
 }
 
 export const useUi = create<UiState>((set) => ({
@@ -73,4 +80,6 @@ export const useUi = create<UiState>((set) => ({
   curtain: false,
   handOver: (seat) => set({ seat, curtain: true, screen: 'home', tradeAsk: null, watch: null }),
   liftCurtain: () => set({ curtain: false }),
+  overlays: { shots: false, names: false, strength: true, iceTime: false },
+  toggleOverlay: (name) => set((s) => ({ overlays: { ...s.overlays, [name]: !s.overlays[name] } })),
 }));

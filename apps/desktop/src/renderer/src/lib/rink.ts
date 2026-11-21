@@ -6,8 +6,12 @@ import type { HockeyBoxScore, HockeyTimeline } from '@gm/shared';
  * dice, so a pause, a change of speed or a replay cannot make it drift.
  *
  * Exact, from the sim: who is on the ice, each shot's second, place and shooter, the goals, the
- * penalties, the goalie leaving or changing. Drawn, and feeding no number: where a disc stands
- * between shots (a formation around the puck) and the puck's way from one shot to the next.
+ * penalties, the goalie leaving or changing, the shootout's attempts in order (who, goal or save).
+ * Drawn, and feeding no number: where a disc stands between shots (a formation around the puck),
+ * the puck's way from one shot to the next, a shootout shooter's way in from centre ice.
+ *
+ * The overlays read the same plan: the shots so far (`shotMarks`, `Scene.shots`), the strength and
+ * the power-play clock (`strengthAt`), each bench's ice time so far (`iceTime`).
  *
  * Feet, centre ice at 0, 0: x from -100 to 100, y from -42.5 to 42.5, goal lines at x = ±89.
  * ponytail: the home side defends the left net all game; flip `dir` by period to change ends.
@@ -38,8 +42,23 @@ export interface Scene {
   discs: Disc[];
   /** Goals so far, [home, away]: at every whole second, the box's. */
   score: [number, number];
-  /** The side that scored in the last five seconds. */
+  /** The side that scored in the last five seconds (a shootout goal too: it is in no score). */
   goal?: 0 | 1;
+  /** How many of `shotMarks` are drawn so far: at every whole second, the box's shots up to it. */
+  shots: number;
+}
+
+export interface Strength {
+  /**
+   * Skaters a side, [home, away], as the engine counts them: five (three in regular-season
+   * overtime) less its penalties running, never under three, one more while its net is empty.
+   */
+  skaters: [number, number];
+  /**
+   * The side with the man advantage (the shots the box marks power play), and the seconds left
+   * on the other side's oldest penalty: the scoreboard's clock, which a goal can cut short.
+   */
+  power?: { side: 0 | 1; left: number };
 }
 
 type Point = [number, number];
@@ -109,8 +128,14 @@ interface Plan {
   keys: Key[];
   /** A skater at the puck: the shooter at his shot, the assists before a goal. */
   touches: { t: number; side: 0 | 1; k: number; x: number; y: number }[];
-  /** [draw time, side] of each goal. */
-  goals: [number, 0 | 1][];
+  /** [draw time, side, 1 if it counts in the score] of each goal: a shootout goal only lights the net. */
+  goals: [number, 0 | 1, 0 | 1][];
+  /** Every shot of the box where it is drawn, in order. */
+  shots: { t: number; x: number; y: number; side: 0 | 1; goal: boolean }[];
+  /** The shootout's attempts, `t` the moment of the shot. */
+  tries: { t: number; side: 0 | 1; k: number; goal: boolean }[];
+  /** Each penalty as the engine runs it, and `due`, the end its clock shows (`sits` is who is seen in the box). */
+  pens: { side: 0 | 1; from: number; to: number; due: number }[];
   /** Each side's units, a skater listed once, with the time the change is drawn. */
   rows: { t: number; second: number; unit: number[] }[][];
   /** Who sits in the penalty box, from when to when. */
@@ -162,6 +187,7 @@ function plan({ box, timeline, overtimeSeconds }: RinkGame): Plan {
 
   const keys: Key[] = [{ t: -1, x: 0, y: 0, hard: true }];
   const touches: Plan['touches'] = [];
+  const shots: Plan['shots'] = [];
   const add = (t: number, x: number, y: number, hard: boolean) => {
     [x, y] = inside(x, y);
     keys.push({ t, x, y, hard });
@@ -197,7 +223,9 @@ function plan({ box, timeline, overtimeSeconds }: RinkGame): Plan {
       s[6] >= 0 &&
       push(t - 1.5, x - dir * (8 + 10 * mix(4 * i + 3)), y + across * (14 + 10 * mix(4 * i + 4)));
     if (first) touches.push({ ...first, side, k: s[6] });
-    touches.push({ ...push(t, x, y, true)!, side, k: s[4] });
+    const here = push(t, x, y, true)!;
+    touches.push({ ...here, side, k: s[4] });
+    shots.push({ ...here, side, goal: s[5] === 1 });
     const fly = clamp(Math.hypot(dir * GOAL - x, y) / 110, 0.25, 0.6);
     if (s[5] === 1) {
       // In the net, then back to centre ice (an overtime goal ends the game: it stays in).
@@ -213,21 +241,43 @@ function plan({ box, timeline, overtimeSeconds }: RinkGame): Plan {
   });
   for (; next < starts.length; next++) faceoff(starts[next]!);
 
-  const sits = box.penalties.map(([from, side, k, minutes]) => ({
-    side,
-    k,
-    from,
-    to: from + minutes * 60,
-  }));
-  // A power-play goal ends the oldest minor the other side is serving.
+  // The shootout, ten seconds an attempt: everyone off, then one shooter at a time steps on, takes
+  // the puck at centre ice and goes in on the other goalie. The order, the shooter and goal or
+  // save are the sim's; the way in is drawn.
+  const begin = 3600 + overtimeSeconds;
+  if (timeline.shootout.length)
+    for (const mine of rows) mine.push({ t: begin, second: begin, unit: [] });
+  const tries = timeline.shootout.map(([side, k, scored], i) => {
+    const from = begin + 10 * i;
+    const t = from + 7;
+    const dir = side === 0 ? 1 : -1;
+    const x = dir * (GOAL - 10 - 8 * mix(7 * i + 5));
+    const y = 12 * mix(7 * i + 6) - 6;
+    const way = [push(from + 3, 0, 0, true)!, push(from + 5, x / 2, y / 2)!, push(t, x, y, true)!];
+    // No forward left to send (`k` is -1): the puck goes in alone.
+    if (k >= 0) {
+      rows[side]!.push({ t: from, second: from, unit: [k] }, { t: t + 1, second: t + 1, unit: [] });
+      for (const q of way) touches.push({ ...q, side, k });
+    }
+    push(t + 0.4, dir * (GOAL + (scored ? 1.5 : -2.5)), 0);
+    if (scored) push(t + 2, dir * (GOAL + 1.5), 0);
+    return { t, side, k, goal: scored === 1 };
+  });
+
+  // `due`: the end the scoreboard counts down to. Regular-season overtime starts with no penalty
+  // running.
+  const sits = box.penalties.map(([from, side, k, minutes]) => {
+    const due = Math.min(from + minutes * 60, overtimeSeconds < 1200 && from < 3600 ? 3600 : 1e9);
+    return { side, k, from, to: due, due };
+  });
+  // A power-play goal ends the oldest minor the other side is serving, sooner than the scoreboard said.
   box.shots.forEach((s, i) => {
     if (s[5] !== 1 || s[8] !== 1) return;
     const sit = sits.find((q) => q.side !== s[1] && q.from <= s[0] && q.to > s[0]);
     if (sit) sit.to = at[i]!;
   });
+  const pens = sits.map(({ side, from, to, due }) => ({ side, from, to, due }));
   for (const sit of sits) {
-    // Regular-season overtime starts with no penalty running.
-    if (overtimeSeconds < 1200 && sit.from < 3600) sit.to = Math.min(sit.to, 3600);
     // He is out as soon as a unit has him again. The engine can send him out to kill his own
     // penalty: then he never sits. A row in the penalty's second counts only if it is the last.
     const mine = rows[sit.side]!;
@@ -245,10 +295,14 @@ function plan({ box, timeline, overtimeSeconds }: RinkGame): Plan {
       ...rows.flat().map((r) => r.t),
       ...box.penalties.map((p) => p[0]),
       ...timeline.goalies.map((r) => r[0]),
+      ...tries.flatMap((a) => [a.t - 4, a.t]),
     ]),
   ].sort((a, b) => a - b);
-  const goals = box.shots.flatMap((s, i): Plan['goals'] => (s[5] === 1 ? [[at[i]!, s[1]]] : []));
-  const made = { keys, touches, goals, rows, sits, stops };
+  const goals: Plan['goals'] = [
+    ...shots.flatMap((s): Plan['goals'] => (s.goal ? [[s.t, s.side, 1]] : [])),
+    ...tries.flatMap((a): Plan['goals'] => (a.goal ? [[a.t, a.side, 0]] : [])),
+  ];
+  const made = { keys, touches, goals, shots, tries, pens, rows, sits, stops };
   plans.set(box, made);
   return made;
 }
@@ -278,7 +332,7 @@ export const puckAt = (game: RinkGame, t: number) => puckOn(plan(game).keys, t);
  * discs jump from event to event and nothing glides.
  */
 export function scene(game: RinkGame, t: number, calm = false): Scene {
-  const { keys, touches, goals, rows, sits, stops } = plan(game);
+  const { keys, touches, goals, shots, rows, sits, stops } = plan(game);
   if (calm) {
     let stop = 0;
     for (const s of stops) {
@@ -379,12 +433,57 @@ export function scene(game: RinkGame, t: number, calm = false): Scene {
 
   const score: [number, number] = [0, 0];
   let goal: 0 | 1 | undefined;
-  for (const [when, side] of goals) {
+  for (const [when, side, counts] of goals) {
     if (when > t) break;
-    score[side]++;
+    score[side] += counts;
     if (t < when + 5) goal = side;
   }
-  return { puck, discs, score, ...(goal !== undefined && { goal }) };
+  return { puck, discs, score, ...(goal !== undefined && { goal }), shots: lastAt(shots, t) + 1 };
+}
+
+/** Every shot of the box where the rink draws it, in order: the shots overlay shows the first `Scene.shots`. */
+export const shotMarks = (game: RinkGame) => plan(game).shots;
+
+/** The shootout's attempts in the timeline's order, `t` the moment each shot is drawn. */
+export const attempts = (game: RinkGame) => plan(game).tries;
+
+/** The strength at game second `t`, from the box's penalties and the timeline's empty nets. */
+export function strengthAt(game: RinkGame, t: number): Strength {
+  const { timeline, overtimeSeconds } = game;
+  // Three a side: regular-season overtime, once the game has gone there.
+  const three = overtimeSeconds < 1200 && t >= 3600 && (timeline.shifts.at(-1)?.[0] ?? 0) >= 3600;
+  const running = ([0, 1] as const).map((n) =>
+    plan(game).pens.filter((p) => p.side === n && p.from <= t && t < p.to),
+  );
+  const count = running.map((own) => Math.max(3, (three ? 3 : 5) - own.length));
+  const skaters = count.map(
+    (c, n) =>
+      c + (timeline.goalies.filter((r) => r[1] === n && r[0] <= t).at(-1)?.[2] === 0 ? 1 : 0),
+  ) as [number, number];
+  if (count[0] === count[1]) return { skaters };
+  const side = count[0]! > count[1]! ? 0 : 1;
+  return { skaters, power: { side, left: Math.min(...running[1 - side]!.map((p) => p.due)) - t } };
+}
+
+/**
+ * Each skater's ice time in seconds up to game second `t`, [home, away] by skater index: summed
+ * from the timeline's shift rows as the engine counts them (a skater listed twice counts twice),
+ * so at the end it is the box's `toi` within its rounding.
+ */
+export function iceTime({ box, timeline, overtimeSeconds }: RinkGame, t: number) {
+  // The last second played: a shootout follows a full overtime, an overtime goal is the last shot.
+  const end = timeline.shootout.length
+    ? 3600 + overtimeSeconds
+    : Math.max(3600, box.shots.at(-1)?.[0] ?? 0);
+  return ([box.home, box.away] as const).map((side, n) => {
+    const seconds = side.skaters.map(() => 0);
+    const rows = timeline.shifts.filter((r) => r[1] === n);
+    rows.forEach(([from, , unit], i) => {
+      const on = Math.min(t, rows[i + 1]?.[0] ?? end) - from;
+      if (on > 0) for (const k of unit) seconds[k]! += on;
+    });
+    return seconds;
+  }) as [number[], number[]];
 }
 
 /**
