@@ -77,11 +77,8 @@ function registerIpc() {
   ipcMain.handle(IPC.games, (_e, input: In<'games'>) =>
     online.league.games(input.teamId, input.limit),
   );
-  ipcMain.handle(IPC.game, (_e, input: In<'game'>) => online.league.game(input.id));
-  ipcMain.handle(IPC.exhibition, (_e, input: In<'exhibition'>) =>
-    online.league.exhibition(input.homeTeamId, input.awayTeamId, input.seed),
-  );
-  ipcMain.handle(IPC.roster, (_e, input: In<'roster'>) => online.league.roster(input.teamId));
+  ipcMain.handle(IPC.watch, (_e, input: In<'watch'>) => league.watch(input.teamId));
+  ipcMain.handle(IPC.roster, (_e, input: In<'roster'>) => league.roster(input.teamId));
   ipcMain.handle(IPC.resignOffers, (_e, input: In<'resignOffers'>) =>
     online.league.resignOffers(input.teamId),
   );

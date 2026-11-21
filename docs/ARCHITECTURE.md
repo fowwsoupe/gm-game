@@ -87,7 +87,8 @@ src/
   context.ts SimContext: sport + ruleset + models; SPORTS and RULESETS registries
   create.ts  createLeague(seed, ctx)
   commands.ts handleCommand(state, command, actor, ctx) → events
-  advance.ts  the day loop behind sim.advance (games, playoffs, pulse, AI trades, news)
+  advance.ts  the day loop behind sim.advance (games, playoffs, pulse, AI trades, news);
+              watchGame replays the day on a copy up to one team's game, for the match viewer
   profiles.ts, dashboard.ts  read-only views for the UI (player cards, Home)
   index.ts   the public API
 ```

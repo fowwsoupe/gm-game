@@ -18,6 +18,7 @@ const api: GmApi = {
     games: (input) => ipcRenderer.invoke(IPC.games, input),
     game: (input) => ipcRenderer.invoke(IPC.game, input),
     exhibition: (input) => ipcRenderer.invoke(IPC.exhibition, input),
+    watch: (input) => ipcRenderer.invoke(IPC.watch, input),
     roster: (input) => ipcRenderer.invoke(IPC.roster, input),
     resignOffers: (input) => ipcRenderer.invoke(IPC.resignOffers, input),
     players: (input) => ipcRenderer.invoke(IPC.players, input),

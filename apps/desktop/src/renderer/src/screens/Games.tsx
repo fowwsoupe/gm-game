@@ -1,7 +1,17 @@
-import { useMemo, useState } from 'react';
+import { useEffect, useMemo, useState, type ReactNode } from 'react';
 import type { GameDetail, HockeyBoxScore, HockeyBoxSide, Team, TeamId } from '@gm/shared';
-import { useExhibition, useGames, useOpenGame, useTeams, useMine } from '@/lib/queries';
+import {
+  useDispatch,
+  useExhibition,
+  useGames,
+  useOpenGame,
+  useStatus,
+  useTeams,
+  useMine,
+  useWatch,
+} from '@/lib/queries';
 import { clockText, sideColors, statValue, teamAbbr, teamName } from '@/lib/format';
+import { useUi } from '@/stores/ui';
 import { useT } from '@/i18n';
 import {
   Button,
@@ -32,8 +42,49 @@ export function Games() {
   const { data: games = [] } = useGames(filter ?? mine);
   const open = useOpenGame();
   const exhibition = useExhibition();
+  // Home's Watch: tonight's game, as the day's sim will play it. Nothing is played by watching.
+  const ask = useUi((s) => s.watch);
+  const setScreen = useUi((s) => s.setScreen);
+  const { data: status } = useStatus();
+  const watch = useWatch();
+  const dispatch = useDispatch();
+  const [tonight, setTonight] = useState<GameDetail | null>(null);
+  useEffect(() => {
+    if (!ask) return;
+    watch.mutate(ask.teamId as TeamId, {
+      onSuccess: (game) => {
+        setTonight(game);
+        setDetail(game);
+      },
+    });
+  }, [ask?.teamId, ask?.day]);
 
   if (teams.length === 0) return <p className="text-muted">{t('common.noLeague')}</p>;
+  // Still to be played: on screen, and the league is on the day it was asked for.
+  const live = !!ask && !!detail && detail === tonight && status?.day === ask.day;
+  const solo = teams.filter((x) => x.userControlled).length <= 1;
+  const failed = dispatch.data?.ok === false ? dispatch.data.error.message : null;
+  const lastCard = live && (
+    <Card title={t('games.tonightTitle')}>
+      <p className="mb-3 text-sm text-muted">
+        {t(solo ? 'games.tonightDone' : 'games.tonightShared')}
+      </p>
+      {solo ? (
+        <Button
+          variant="primary"
+          disabled={dispatch.isPending}
+          onClick={() => dispatch.mutate({ kind: 'sim.advance', days: 1 })}
+        >
+          {t('actions.simDay')}
+        </Button>
+      ) : (
+        <Button variant="primary" onClick={() => setScreen('home')}>
+          {t('games.backHome')}
+        </Button>
+      )}
+      {failed && <p className="mt-2 text-sm text-bad">{failed}</p>}
+    </Card>
+  );
   const play = () => {
     if (!home || !away || home === away) return setError(t('games.pickTeams'));
     setError(null);
@@ -95,7 +146,13 @@ export function Games() {
         </Card>
       </div>
       {detail ? (
-        <Replay key={detail.result.id} detail={detail} teams={teams} />
+        <Replay
+          // Tonight's game keeps its id once played: the played one opens as a new replay.
+          key={detail.result.id + (detail === tonight ? ':watch' : '')}
+          detail={detail}
+          teams={teams}
+          last={lastCard}
+        />
       ) : (
         <p className="text-muted">{t('games.noGame')}</p>
       )}
@@ -103,7 +160,8 @@ export function Games() {
   );
 }
 
-function Replay({ detail, teams }: { detail: GameDetail; teams: Team[] }) {
+/** `last`: the card a game still to be played ends on (tonight's game). */
+function Replay({ detail, teams, last }: { detail: GameDetail; teams: Team[]; last?: ReactNode }) {
   const t = useT();
   const { result, names } = detail;
   const box = result.box as HockeyBoxScore | undefined;
@@ -235,6 +293,27 @@ function Replay({ detail, teams }: { detail: GameDetail; teams: Team[] }) {
           ))}
         </div>
       </Card>
+      {finished && last}
+
+      {game && (
+        <Card title={t('games.rink')}>
+          <Rink game={game} at={at} colors={colors} names={names} label={t('games.rink')} />
+          <p className="mt-2 flex flex-wrap gap-x-4 text-xs text-muted">
+            <span>
+              <DiscMark color={colors[0]} />
+              {teamAbbr(teams, ids[0])}
+            </span>
+            <span>
+              <DiscMark away color={colors[1]} />
+              {teamAbbr(teams, ids[1])}
+            </span>
+            <span>
+              <DiscMark goalie color="currentColor" />
+              {t('games.goalies')}
+            </span>
+          </p>
+        </Card>
+      )}
 
       {game && (
         <Card title={t('games.rink')}>

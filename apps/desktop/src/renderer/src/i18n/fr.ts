@@ -171,6 +171,12 @@ export const fr: Record<MessageKey, string> = {
   'games.shotsAgainst': 'Tirs contre',
   'games.relief': '(en relève)',
   'games.noGame': 'Ouvrez un match joué ou jouez un match pour le voir ici.',
+  'games.tonightTitle': 'Le match de ce soir',
+  'games.tonightDone':
+    'Pas encore joué : c’est le match que la simulation du jour jouera. Simulez le jour pour qu’il compte.',
+  'games.tonightShared':
+    'Pas encore joué : c’est le match que la simulation du jour jouera. Un autre DG voudra peut-être regarder le sien : le jour se simule depuis l’accueil.',
+  'games.backHome': 'Retour à l’accueil',
   'actions.newLeague': 'Nouvelle ligue',
   'actions.confirmReplace': 'Remplacer votre ligue actuelle ? Votre sauvegarde sera supprimée.',
   'actions.loadRoster': 'Charger un fichier d’alignement…',
@@ -495,6 +501,7 @@ export const fr: Record<MessageKey, string> = {
   'home.nextGame': 'Prochain match',
   'home.vs': 'contre {team}',
   'home.at': 'à {team}',
+  'home.watch': 'Regarder',
   'owner.card.ticketPrice':
     'Le propriétaire veut remonter le prix des billets à {pct} % au-dessus de la référence de la ligue.',
   'owner.card.deadlineBuy':
