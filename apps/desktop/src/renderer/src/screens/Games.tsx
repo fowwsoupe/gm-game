@@ -315,6 +315,26 @@ function Replay({ detail, teams, last }: { detail: GameDetail; teams: Team[]; la
         </Card>
       )}
 
+      {game && (
+        <Card title={t('games.rink')}>
+          <Rink game={game} at={at} colors={colors} names={names} label={t('games.rink')} />
+          <p className="mt-2 flex flex-wrap gap-x-4 text-xs text-muted">
+            <span>
+              <DiscMark color={colors[0]} />
+              {teamAbbr(teams, ids[0])}
+            </span>
+            <span>
+              <DiscMark away color={colors[1]} />
+              {teamAbbr(teams, ids[1])}
+            </span>
+            <span>
+              <DiscMark goalie color="currentColor" />
+              {t('games.goalies')}
+            </span>
+          </p>
+        </Card>
+      )}
+
       <div className="grid gap-4 md:grid-cols-2">
         <Card title={t('games.shotMap')}>
           <ShotMap shots={shown} />

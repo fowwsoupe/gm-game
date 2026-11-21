@@ -67,6 +67,7 @@ const cmd = { kind: 'sim.advance', days: 1 } as const;
 describe('LeagueService', () => {
   beforeEach(() => {
     FakeWorker.all = [];
+    FakeWorker.reply = 'ok';
   });
 
   it('says there is no league on a first run, instead of failing on a missing folder', () => {
@@ -115,17 +116,35 @@ describe('LeagueService', () => {
   it('keeps working after the worker dies', async () => {
     const svc = new LeagueService();
     svc.newLeague(1);
-    FakeWorker.all[0]!.reply = 'die';
+    svc.standings();
+    expect(FakeWorker.all).toHaveLength(0); // no sim thread before the first command
+    FakeWorker.reply = 'die';
     await expect(svc.dispatch(cmd)).rejects.toThrow('boom');
+    FakeWorker.reply = 'ok';
     const res = await svc.dispatch(cmd); // goes to the replacement worker
     expect(res.ok).toBe(true);
+    expect(FakeWorker.all).toHaveLength(2);
+    svc.dispose();
+  });
+
+  it('refuses a malformed command before the sim sees it', async () => {
+    const svc = new LeagueService();
+    svc.newLeague(1);
+    FakeWorker.reply = 'die'; // reaching the worker would reject with "boom"
+    const forged = { ...cmd, actor: { id: 'local', controls: [] } };
+    expect(await svc.dispatch(forged)).toMatchObject({ ok: false, error: { code: 'invalid' } });
+    expect(await svc.dispatch({ kind: 'contract.buyout', playerId: '__proto__' })).toMatchObject({
+      ok: false,
+      error: { code: 'invalid' },
+    });
+    expect(FakeWorker.all).toHaveLength(0);
     svc.dispose();
   });
 
   it('goes back to what the disk has when saving fails', async () => {
     const svc = new LeagueService();
     svc.newLeague(1);
-    FakeWorker.all[0]!.reply = 'bad-event';
+    FakeWorker.reply = 'bad-event';
     await expect(svc.dispatch(cmd)).rejects.toThrow(/FOREIGN KEY/);
     expect(svc.playoffs().series).toHaveLength(0); // the phantom series is gone
     FakeWorker.all[0]!.reply = 'ok';
