@@ -63,6 +63,12 @@ export interface HostOptions {
   appVersion: string;
   /** Whether a guest needs a code: on a direct connection, whose transport is no gate. */
   joinCode?: boolean;
+  /**
+   * The transport's `peerKey` is one person for good (a SteamID on Steam). His place is then his
+   * by it and by nothing he sends; the team the host seats him on is noted in the host's save,
+   * and is his again in the host's next session; and a kick holds for the rest of this one.
+   */
+  identified?: boolean;
   /** The host's own name in the lobby. */
   name?: string;
   /**
@@ -77,6 +83,8 @@ interface Guest {
   readonly key: string;
   /** Opens this place again from a new connection, inside this session. */
   readonly resumeKey: string;
+  /** Who he is for good, where the transport says (`identified`): then this, not the key, opens his place. */
+  readonly who: string | null;
   /** Text for the list: his own word, never used to decide anything. */
   name: string;
   /** The team the host seated him on. */
@@ -127,12 +135,17 @@ export class HostSession {
    */
   joinCode: string | null;
   private readonly guests = new Map<string, Guest>();
-  /** The host's own row: his team as the session began (the first, when he plays several), his Ready. */
+  /**
+   * The host's own row: his team as the session began (the first, when he plays several, and never
+   * one his save notes for a friend), his Ready.
+   */
   private readonly home: TeamId | null;
   private hostReady = false;
   /** Wrong codes by address (the transport's `peerKey`), in the window that began at `wrongSince`. */
   private readonly wrong = new Map<string, number>();
   private wrongSince = 0;
+  /** Who the host put out, where a guest is someone for good: not let in again this session. */
+  private readonly kicked = new Set<string>();
   private admitted = 0;
   /** The request each guest's command answers, by the actor it ran as (`onPersisted` hands it back). */
   private readonly asked = new WeakMap<Actor, { guest: Guest; requestId: number }>();
@@ -151,7 +164,10 @@ export class HostSession {
     private readonly options: HostOptions,
   ) {
     this.joinCode = options.joinCode ? newJoinCode() : null;
-    this.home = league.listTeams().find((t) => t.userControlled)?.id ?? null;
+    // A team noted for a friend is human before he is back in: it is his, not the host's.
+    const noted = options.identified ? league.hostSeats() : {};
+    this.home =
+      league.listTeams().find((t) => t.userControlled && !Object.hasOwn(noted, t.id))?.id ?? null;
   }
 
   /**
@@ -262,8 +278,33 @@ export class HostSession {
       throw new Error('That team has a GM.');
     guest.teamId = teamId;
     guest.wish = null;
+    if (guest.who !== null) this.keep(guest.who, teamId);
     if (teamId === null && !guest.connection) this.guests.delete(key);
     this.announce();
+  }
+
+  /**
+   * Notes in the host's save which team someone holds now, or that he holds none: what seats him
+   * again in the host's next session. One team for each of them, one of them for each team.
+   */
+  private keep(who: string, teamId: TeamId | null) {
+    const others = Object.entries(this.league.hostSeats()).filter(
+      ([team, held]) => held !== who && team !== teamId,
+    );
+    this.league.setHostSeats(
+      Object.fromEntries(teamId === null ? others : [...others, [teamId, who]]),
+    );
+  }
+
+  /**
+   * The team the host's save notes for a newcomer, from a session before this one: his again
+   * while it is still a human team that no guest holds.
+   */
+  private kept(who: string): TeamId | null {
+    const noted = Object.entries(this.league.hostSeats()).find(([, held]) => held === who);
+    const teamId = noted?.[0] as TeamId | undefined;
+    if (teamId === undefined || !this.human(teamId)) return null;
+    return [...this.guests.values()].some((g) => g.teamId === teamId) ? null : teamId;
   }
 
   /** Lets a guest move the clock (a co-commissioner), or takes that back. */
@@ -283,7 +324,9 @@ export class HostSession {
   /**
    * Puts a guest out. His place is forgotten, so his resume key opens nothing and a command of
    * his still waiting runs for no team; the join code he knows is replaced; his connection is
-   * told why and closed. The others' resume keys still stand in for the code.
+   * told why and closed. The others' resume keys still stand in for the code. Where a guest is
+   * someone for good there is no code to change: he is refused until the session ends, and the
+   * save's note of his team is struck.
    */
   kick(key: string) {
     const guest = this.guests.get(key);
@@ -291,6 +334,10 @@ export class HostSession {
     this.guests.delete(key);
     guest.teamId = null;
     guest.can = [];
+    if (guest.who !== null) {
+      this.kicked.add(guest.who);
+      this.keep(guest.who, null);
+    }
     if (this.joinCode !== null) this.joinCode = newJoinCode();
     this.send(guest, encode({ kind: 'bye', reason: 'kicked' }));
     const { connection } = guest;
@@ -444,16 +491,17 @@ export class HostSession {
 
   /**
    * The handshake: the guest is let in, or told why not. A resume key of this session gives him
-   * the place he held, seat and all. He is sent the lobby, and of the league nothing until he asks
-   * with `resync`.
+   * the place he held, seat and all; where a guest is someone for good (`identified`), who he is
+   * does, and a resume key opens nothing. He is sent the lobby, and of the league nothing until he
+   * asks with `resync`.
    */
   private admit(connection: Connection, hello: Extract<GuestMessage, { kind: 'hello' }>) {
     const send = (message: HostMessage) => connection.send(encode(message));
+    const who = this.options.identified ? connection.peerKey : null;
     const key = hello.resumeKey;
-    const back =
-      key === undefined
-        ? undefined
-        : [...this.guests.values()].find((g) => sameCode(g.resumeKey, key));
+    const back = [...this.guests.values()].find((g) =>
+      who !== null ? g.who === who : key !== undefined && sameCode(g.resumeKey, key),
+    );
     const reason = this.refusal(hello, !!back, connection.peerKey);
     if (reason) {
       send({ kind: 'refused', reason });
@@ -475,7 +523,9 @@ export class HostSession {
       : {
           key: String(++this.admitted),
           resumeKey: randomBytes(16).toString('hex'),
-          teamId: null,
+          who,
+          // The host's own note of an earlier session, never the newcomer's word.
+          teamId: who === null ? null : this.kept(who),
           wish: null,
           can: [],
           waiting: 0,
@@ -489,14 +539,16 @@ export class HostSession {
   }
 
   /**
-   * Why this guest is not let in, or null: his build must be the host's, and he must hold the
-   * code, or the resume key of a place in this session (`back`), which stands in for it.
+   * Why this guest is not let in, or null: his build must be the host's, the host must not have
+   * put him out, and he must hold the code, or a place in this session (`back`), which stands in
+   * for it.
    */
   private refusal(hello: Extract<GuestMessage, { kind: 'hello' }>, back: boolean, address: string) {
     if (this.over) return 'closed';
     if (hello.protocol !== WIRE.protocol) return 'protocol';
     if (hello.appVersion !== this.options.appVersion) return 'appVersion';
     if (hello.saveSchema !== SAVE_SCHEMA) return 'saveSchema';
+    if (this.kicked.has(address)) return 'kicked';
     if (back) return null;
     const code = this.joinCode;
     if (code !== null && !this.holds(hello.joinCode ?? '', code, address)) return 'joinCode';

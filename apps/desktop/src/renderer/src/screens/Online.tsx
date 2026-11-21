@@ -8,6 +8,8 @@ import { Button, Card, StatRow, TeamSelect, Td, Th } from '@/ui';
 type Act = (call: (session: GmApi['session']) => Promise<SessionResult>) => void;
 type Lobby = Exclude<SessionStatus, { role: 'none' }>;
 type Guest = Extract<SessionStatus, { role: 'guest' }>;
+/** What a friend types to join over a direct connection: absent when the league is hosted on Steam. */
+type Direct = Extract<SessionStatus, { role: 'host' }>['direct'];
 type View = {
   teams: readonly Team[];
   /** A call is on its way: nothing else starts meanwhile. */
@@ -31,6 +33,7 @@ export function Online() {
       teams={isError ? [] : teams}
       todo={todo}
       defaultName={steam?.playerName || 'GM'}
+      steam={!!steam?.enabled}
       busy={call.isPending}
       error={call.data && !call.data.ok ? call.data.error : null}
       act={call.mutate}
@@ -43,6 +46,7 @@ export function OnlineView({
   status,
   todo,
   defaultName,
+  steam,
   error,
   ...view
 }: View & {
@@ -50,6 +54,8 @@ export function OnlineView({
   /** What waits on each seated team's GM. */
   todo: Record<string, number | undefined>;
   defaultName: string;
+  /** The game runs under Steam: a league can be hosted on it. */
+  steam: boolean;
   /** Why the last call failed, as main said it. */
   error: string | null;
 }) {
@@ -65,7 +71,7 @@ export function OnlineView({
         <p className="text-sm text-bad">{why(status.ended)}</p>
       )}
       {error && <p className="text-sm text-bad">{why(error)}</p>}
-      {status.role === 'none' && <Start defaultName={defaultName} {...view} />}
+      {status.role === 'none' && <Start defaultName={defaultName} steam={steam} {...view} />}
       {status.role === 'host' && <Hosting direct={status.direct} {...view} />}
       {status.role === 'guest' && <Guesting status={status} {...view} />}
       {status.role !== 'none' && <Peers status={status} todo={todo} {...view} />}
@@ -75,8 +81,17 @@ export function OnlineView({
 
 const field = 'rounded-md border border-line bg-panel px-2 py-1';
 
-/** No session: host the league open in this game, or join one by address, port and code. */
-function Start({ teams, busy, act, defaultName }: View & { defaultName: string }) {
+/**
+ * No session: host the league open in this game (on Steam when the game runs under it), or join
+ * one by address, port and code. A league on Steam is joined from its host's invite, in Steam.
+ */
+function Start({
+  teams,
+  busy,
+  act,
+  defaultName,
+  steam,
+}: View & { defaultName: string; steam: boolean }) {
   const t = useT();
   const [name, setName] = useState('');
   const [address, setAddress] = useState('');
@@ -100,16 +115,28 @@ function Start({ teams, busy, act, defaultName }: View & { defaultName: string }
       <div className="grid gap-4 md:grid-cols-2">
         <Card title={t('online.host.title')}>
           <p className="mb-3 text-sm text-muted">{t('online.host.body')}</p>
-          <Button
-            variant="primary"
-            disabled={busy || teams.length === 0}
-            onClick={() => act((s) => s.host({ name: as }))}
-          >
-            {t('online.host.go')}
-          </Button>
+          <div className="flex flex-wrap gap-2">
+            {steam && (
+              <Button
+                variant="primary"
+                disabled={busy || teams.length === 0}
+                onClick={() => act((s) => s.host({ name: as, steam: true }))}
+              >
+                {t('online.host.steam')}
+              </Button>
+            )}
+            <Button
+              variant={steam ? 'ghost' : 'primary'}
+              disabled={busy || teams.length === 0}
+              onClick={() => act((s) => s.host({ name: as }))}
+            >
+              {t(steam ? 'online.host.direct' : 'online.host.go')}
+            </Button>
+          </div>
           {teams.length === 0 && <p className="mt-2 text-xs text-muted">{t('home.empty')}</p>}
         </Card>
         <Card title={t('online.join.title')}>
+          {steam && <p className="mb-3 text-sm text-muted">{t('online.join.steam')}</p>}
           <p className="mb-3 text-sm text-muted">{t('online.join.body')}</p>
           <div className="mb-3 flex flex-wrap gap-3 text-sm">
             {(
@@ -143,31 +170,40 @@ function Start({ teams, busy, act, defaultName }: View & { defaultName: string }
   );
 }
 
-/** Hosting: what a friend types to join, read out by the host. */
-function Hosting({
-  direct,
-  busy,
-  act,
-}: View & { direct: { addresses: string[]; port: number; joinCode: string } }) {
+/** Hosting: what a friend types to join, read out by the host; on Steam, the invite instead. */
+function Hosting({ direct, busy, act }: View & { direct: Direct }) {
   const t = useT();
   return (
     <Card title={t('online.hosting')}>
-      {/* The page's text cannot be selected; this is the text a host copies. */}
-      <div className="grid select-text grid-cols-3 gap-4">
-        <StatRow
-          label={t('online.join.address')}
-          value={direct.addresses.join(', ') || '127.0.0.1'}
-        />
-        <StatRow label={t('online.join.port')} value={direct.port} />
-        <StatRow label={t('online.join.code')} value={direct.joinCode} />
+      {direct ? (
+        <>
+          {/* The page's text cannot be selected; this is the text a host copies. */}
+          <div className="grid select-text grid-cols-3 gap-4">
+            <StatRow
+              label={t('online.join.address')}
+              value={direct.addresses.join(', ') || '127.0.0.1'}
+            />
+            <StatRow label={t('online.join.port')} value={direct.port} />
+            <StatRow label={t('online.join.code')} value={direct.joinCode} />
+          </div>
+          <p className="my-3 text-xs text-muted">{t('online.direct.note')}</p>
+        </>
+      ) : (
+        <p className="mb-3 text-sm text-muted">{t('online.steam.body')}</p>
+      )}
+      <div className="flex flex-wrap gap-2">
+        {!direct && (
+          <Button variant="primary" disabled={busy} onClick={() => act((s) => s.invite())}>
+            {t('online.invite')}
+          </Button>
+        )}
+        <Button
+          disabled={busy}
+          onClick={() => window.confirm(t('online.confirmStop')) && act((s) => s.leave())}
+        >
+          {t('online.stop')}
+        </Button>
       </div>
-      <p className="my-3 text-xs text-muted">{t('online.direct.note')}</p>
-      <Button
-        disabled={busy}
-        onClick={() => window.confirm(t('online.confirmStop')) && act((s) => s.leave())}
-      >
-        {t('online.stop')}
-      </Button>
     </Card>
   );
 }
@@ -208,6 +244,9 @@ function Peers({
 }: View & { status: Lobby; todo: Record<string, number | undefined> }) {
   const t = useT();
   const taken = new Set(status.peers.map((p) => p.teamId));
+  // On Steam a kick has no code to change: the guest is kept out while this session lasts.
+  const confirmKick =
+    status.role === 'host' && !status.direct ? 'online.confirmKick.steam' : 'online.confirmKick';
   return (
     <Card title={t('online.lobby')}>
       <table className="tabular w-full text-sm">
@@ -270,7 +309,7 @@ function Peers({
                       <Button
                         disabled={busy}
                         onClick={() =>
-                          window.confirm(t('online.confirmKick', { name: p.name })) &&
+                          window.confirm(t(confirmKick, { name: p.name })) &&
                           act((s) => s.kick({ key }))
                         }
                       >

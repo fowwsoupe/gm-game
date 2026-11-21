@@ -50,9 +50,10 @@ export type SessionPeer = Peer & { key?: string };
 
 /**
  * Where this machine stands online. `you`: this machine's row in `peers` (the host is row 0).
- * `direct`: what a friend types to join. `ended`: why the last session ended by itself: the league
- * this machine was a guest in is over (the host's word, or `disconnected`), or the one it hosted
- * closed on an `error`. Absent after a session its own player ended.
+ * `direct`: what a friend types to join; absent when the league is hosted on Steam, where friends
+ * join from an invite. `ended`: why the last session ended by itself: the league this machine was
+ * a guest in is over (the host's word, or `disconnected`), the one it hosted closed on an `error`,
+ * or a friend's Steam invite could not be followed. Absent after a session its own player ended.
  */
 export type SessionStatus =
   | { role: 'none'; ended?: string }
@@ -60,7 +61,7 @@ export type SessionStatus =
       role: 'host';
       you: number;
       peers: SessionPeer[];
-      direct: { addresses: string[]; port: number; joinCode: string };
+      direct?: { addresses: string[]; port: number; joinCode: string };
     }
   | { role: 'guest'; you: number; peers: SessionPeer[]; reconnecting: boolean };
 
@@ -237,8 +238,13 @@ export interface GmApi {
    * open, `newLeague` and `newLeagueFromRoster` are refused.
    */
   session: {
-    /** Opens this machine's league to guests over a direct connection (not encrypted: LAN and testing). */
-    host(input: { name: string }): Promise<SessionResult>;
+    /**
+     * Opens this machine's league to guests: over a direct connection (not encrypted: LAN and
+     * testing), or with `steam` to the friends the host invites through Steam.
+     */
+    host(input: { name: string; steam?: boolean }): Promise<SessionResult>;
+    /** The host of a league on Steam opens Steam's invite dialog. A friend who accepts joins by himself. */
+    invite(): Promise<SessionResult>;
     /** Joins the league hosted at `address`: from then on the queries read its mirror. */
     join(input: {
       address: string;
@@ -256,7 +262,10 @@ export interface GmApi {
     ready(input: { on: boolean }): Promise<SessionResult>;
     /** The host lets a guest move the clock, or takes that back. */
     grantAdvance(input: { key: string; on: boolean }): Promise<SessionResult>;
-    /** The host puts a guest out: his seat opens nothing any more and the join code changes. */
+    /**
+     * The host puts a guest out: his seat opens nothing any more, and the join code changes (on
+     * Steam, where there is none, he is refused for the rest of the session).
+     */
     kick(input: { key: string }): Promise<SessionResult>;
     status(): Promise<SessionStatus>;
     /**
@@ -308,6 +317,7 @@ export const IPC = {
   dispatch: 'commands:dispatch',
   steamStatus: 'steam:status',
   sessionHost: 'session:host',
+  sessionInvite: 'session:invite',
   sessionJoin: 'session:join',
   sessionLeave: 'session:leave',
   sessionRequestSeat: 'session:requestSeat',

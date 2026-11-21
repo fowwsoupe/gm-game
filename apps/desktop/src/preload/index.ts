@@ -51,6 +51,7 @@ const api: GmApi = {
   },
   session: {
     host: (input) => ipcRenderer.invoke(IPC.sessionHost, input),
+    invite: () => ipcRenderer.invoke(IPC.sessionInvite),
     join: (input) => ipcRenderer.invoke(IPC.sessionJoin, input),
     leave: () => ipcRenderer.invoke(IPC.sessionLeave),
     requestSeat: (input) => ipcRenderer.invoke(IPC.sessionRequestSeat, input),

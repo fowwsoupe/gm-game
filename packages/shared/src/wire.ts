@@ -49,6 +49,11 @@ export const WIRE = {
   missedPings: 3,
   /** A dropped guest tries to get back in this many times, a ping apart. */
   rejoinTries: 12,
+  /**
+   * On Steam, where a connection is a number its guest picks: one SteamID opens a new one this
+   * often at most, so the limits each connection starts with are not had again for the asking.
+   */
+  reconnectMs: 1_000,
 } as const;
 
 const DEPTH_MAX = 32;

@@ -750,6 +750,8 @@ export const fr: Record<MessageKey, string> = {
   'online.host.body':
     'Vos amis rejoignent la ligue ouverte dans ce jeu. Votre jeu la fait tourner et garde la sauvegarde : ils jouent tant que vous hébergez.',
   'online.host.go': 'Héberger',
+  'online.host.steam': 'Héberger sur Steam',
+  'online.host.direct': 'Héberger en connexion directe',
   'online.join.title': 'Rejoindre une ligue',
   'online.join.body':
     'Demandez à l’hôte son adresse, son port et son code. Votre propre ligue est mise de côté, intacte, jusqu’à votre départ.',
@@ -757,6 +759,8 @@ export const fr: Record<MessageKey, string> = {
   'online.join.port': 'Port',
   'online.join.code': 'Code',
   'online.join.go': 'Rejoindre',
+  'online.join.steam':
+    'Pour une ligue hébergée sur Steam, rien à saisir : acceptez l’invitation que son hôte vous envoie dans Steam.',
   'online.direct.note':
     'Une connexion directe, non chiffrée : pour un réseau domestique ou des essais, pas pour Internet.',
   'online.reason.closed': 'L’hôte a fermé la ligue.',
@@ -771,6 +775,9 @@ export const fr: Record<MessageKey, string> = {
   'online.reason.full': 'La ligue est complète.',
   'online.failed': 'Cela n’a pas fonctionné : {reason}',
   'online.hosting': 'Vous hébergez',
+  'online.steam.body':
+    'Votre ligue est hébergée sur Steam, dans un salon réservé aux amis : invitez vos amis. Un ami qui accepte la rejoint tout seul, et retrouve l’équipe que vous lui aviez donnée la dernière fois que vous avez hébergé cette ligue.',
+  'online.invite': 'Inviter des amis',
   'online.stop': 'Arrêter d’héberger',
   'online.confirmStop': 'Arrêter d’héberger ? Tous les invités sont déconnectés.',
   'online.guest': 'Vous êtes invité',
@@ -794,6 +801,8 @@ export const fr: Record<MessageKey, string> = {
   'online.ungrant': 'Reprendre l’avance',
   'online.kick': 'Exclure',
   'online.confirmKick': 'Retirer {name} de la ligue ? Le code change.',
+  'online.confirmKick.steam':
+    'Retirer {name} de la ligue ? Il ne pourra pas revenir avant que vous l’hébergiez de nouveau.',
   'online.imReady': 'Je suis prêt',
   'online.confirmAdvance': 'Pas prêts : {names}. Avancer quand même ?',
   'online.waitSeat': 'L’hôte vous donne une équipe : demandez-en une à l’écran En ligne.',

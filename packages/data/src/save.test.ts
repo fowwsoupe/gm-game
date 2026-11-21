@@ -429,6 +429,25 @@ describe('a save as rows', () => {
     save.close();
   });
 
+  it("keeps a host's note of his friends' seats, and leaves it out of the rows", () => {
+    const save = openSave(':memory:');
+    save.saveNewLeague(createLeague(4, ctx));
+    const without = save.dumpRows();
+    expect(save.hostSeats()).toEqual({});
+    save.setHostSeats({ t1: '76561198000000002' });
+    expect(save.hostSeats()).toEqual({ t1: '76561198000000002' });
+    expect(save.getMeta('hostSeats')).toContain('76561198000000002');
+    expect(save.dumpRows()).toEqual(without);
+    // A note that cannot be read is no note: nobody is seated on what it says.
+    save.setMeta('hostSeats', '{"t1": 5, "t2": "76561198000000003"}');
+    expect(save.hostSeats()).toEqual({ t2: '76561198000000003' });
+    for (const unreadable of ['not json', 'null', '7']) {
+      save.setMeta('hostSeats', unreadable);
+      expect(save.hostSeats(), unreadable).toEqual({});
+    }
+    save.close();
+  });
+
   it('restores all of a snapshot or none of it', () => {
     const save = openSave(':memory:');
     const state = createLeague(4, ctx);

@@ -8,6 +8,7 @@ import { SAVE_SCHEMA, type SaveFile } from '@gm/data';
 import {
   WIRE,
   type Command,
+  type CommandResult,
   type GuestMessage,
   type HostMessage,
   type LeagueEvent,
@@ -17,8 +18,10 @@ import { handleCommand, type LeagueState } from '@gm/sim';
 import type { WorkerRequest } from '../sim.worker';
 import { contextWithXg } from '../simContext';
 import { decode, encode } from './codec';
+import { fakeSteam } from './fakeSteam';
 import { GuestSession } from './guest';
 import { HostSession } from './host';
+import { joinSteam } from './steam';
 import { connectTcp } from './tcp';
 import { loopback, type GuestTransport } from './transport';
 
@@ -700,6 +703,10 @@ it('two games over real sockets: the lobby, the clock, a kick, and each game its
   expect(await a.ready({ on: true })).toMatchObject({ ok: false });
   expect(await a.kick({ key: '1' })).toMatchObject({ ok: false });
   expect(await a.requestSeat({ teamId: 'nobody' as TeamId })).toMatchObject({ ok: false });
+  // A game that does not run under Steam hosts nothing on it.
+  const noSteam = { ok: false, error: 'Steam is not running.' };
+  expect(await a.host({ name: 'Minh', steam: true })).toEqual(noSteam);
+  expect(a.status()).toEqual({ role: 'none' });
   expect(pushes).toEqual({ host: 0, guest: 0 });
 
   // Hosting: a port, a code, the host alone in his lobby. No second session, no new league, and
@@ -720,8 +727,11 @@ it('two games over real sockets: the lobby, the clock, a kick, and each game its
     if (status.role !== 'guest') throw new Error(`the guest is ${status.role}`);
     return status;
   };
-  const { port, joinCode } = hosting().direct;
+  const { port, joinCode } = hosting().direct!;
   expect(joinCode).toMatch(/^[A-HJ-NP-Z2-9]{6}$/);
+  // Steam's invite dialog is for a league hosted on Steam.
+  const onSteam = { ok: false, error: 'Only the host of a league on Steam does that.' };
+  expect(await a.invite()).toEqual(onSteam);
   const minh = { name: 'Minh', teamId: hostTeam, wish: null, connected: true, ready: false };
   expect(hosting()).toMatchObject({ you: 0, peers: [{ ...minh, can: ['advance'] }] });
   const taken = { ok: false, error: 'Not while an online session is open.' };
@@ -843,7 +853,7 @@ it('two games over real sockets: the lobby, the clock, a kick, and each game its
   await hand.closed;
   expect(hand.got.at(-1)).toEqual({ kind: 'bye', reason: 'kicked' });
   await lobby({}, { teamId: guestTeam });
-  const renewed = hosting().direct.joinCode;
+  const renewed = hosting().direct!.joinCode;
   expect(renewed).not.toBe(joinCode);
   const { resumeKey } = welcome;
   for (const hello of [{ joinCode }, { resumeKey }, { joinCode, resumeKey }]) {
@@ -861,7 +871,7 @@ it('two games over real sockets: the lobby, the clock, a kick, and each game its
   expect(b.league).toBe(own.guest);
   expect(b.alone()).toBe(own.guest);
   expect(own.guest.head().seq).toBe(mine);
-  const code = hosting().direct.joinCode;
+  const code = hosting().direct!.joinCode;
   expect(code).not.toBe(renewed);
 
   // The throttle: an address that sent five wrong codes inside a minute is not read again until
@@ -905,4 +915,183 @@ it('two games over real sockets: the lobby, the clock, a kick, and each game its
   await moves(a, { kind: 'league.setCanBeFired', on: true });
   a.dispose();
   b.dispose();
+}, 300_000);
+
+it('two games on Steam: an invite, a seat kept by SteamID, a kick that holds', async () => {
+  const net = fakeSteam();
+  const minh = net.player(76561198000000001n, 'Minh');
+  const guy = net.player(76561198000000002n, 'Guy');
+  const ann = net.player(76561198000000003n, 'Ann');
+  const bob = net.player(76561198000000004n, 'Bob');
+  const own = new LeagueService(join(dir, 'steam-host.sqlite'));
+  own.newLeague(42);
+  /** A game running under a Steam account, with no league of its own open. */
+  const game = (file: string, { steam }: typeof guy, version = APP) =>
+    new Online(new LeagueService(join(dir, file)), version, () => {}, '127.0.0.1', steam);
+  const a = new Online(own, APP, () => {}, '127.0.0.1', minh.steam);
+  const b = game('steam-guest.sqlite', guy);
+  const hosting = () => {
+    const status = a.status();
+    if (status.role !== 'host') throw new Error(`the host is ${status.role}`);
+    return status;
+  };
+  // Steam's packets are read on a timer: what crosses it takes the clock, a look at a time.
+  const soon = (check: () => void) => vi.waitFor(check, { timeout: 20_000 });
+  /** The host's list has these rows. */
+  const lobby = (...rows: object[]) => soon(() => expect(hosting().peers).toMatchObject(rows));
+  const guest = (status: object) => soon(() => expect(b.status()).toMatchObject(status));
+  /** The lobby the host has open on Steam. */
+  const open = () => [...net.lobbies.values()].at(-1)!;
+  /** Guy accepts, in Steam, the host's invite to the lobby that is open. */
+  const accepts = async () => {
+    // A SteamID's next connection counts once in a while: nobody accepts an invite sooner.
+    await vi.advanceTimersByTimeAsync(WIRE.reconnectMs);
+    net.invited(guy.id, open().id, minh.id);
+  };
+  /** A command of the guest's game, to the host and back. */
+  const across = async (command: Command) => {
+    let result: CommandResult | undefined;
+    void b.dispatch(command).then((r) => (result = r));
+    await soon(() => expect(result).toBeDefined());
+    expect(result, command.kind).toMatchObject({ ok: true });
+  };
+  const seats = () => inside(own).save.hostSeats();
+  const teams = own.listTeams();
+  const hostTeam = teams.find((t) => t.userControlled)!.id;
+  const others = teams.filter((t) => !t.userControlled).map((t) => t.id);
+  const guestTeam = others[0]!;
+  const otherTeam = others[1]!;
+  // The team the friend will hold comes first in the league's list, ahead of the host's own.
+  const renamed = { city: 'Aa Harbour', name: 'Firsts', abbreviation: 'AAH' };
+  await run(own, { kind: 'team.rename', teamId: guestTeam, ...renamed });
+  expect(own.listTeams()[0]!.id).toBe(guestTeam);
+
+  // Hosting on Steam: a friends-only lobby, nothing for a friend to type, and the invite dialog.
+  expect(await a.host({ name: 'Minh', steam: true })).toEqual({ ok: true });
+  expect(hosting()).not.toHaveProperty('direct');
+  const first = open();
+  expect(first).toMatchObject({ type: 1, max: WIRE.guests + 1, owner: minh.id });
+  expect(await a.invite()).toEqual({ ok: true });
+  expect(first.invites).toBe(1);
+  expect(await b.invite()).toMatchObject({ ok: false });
+
+  // A friend accepts the invite in Steam: his game joins under his Steam name, with no code, and
+  // reads the host's league. He has no team until the host gives him one.
+  await accepts();
+  await guest({ role: 'guest', you: 1, reconnecting: false });
+  await lobby({ name: 'Minh', teamId: hostTeam }, { name: 'Guy', teamId: null, connected: true });
+  identical(own, b.league);
+  const key = hosting().peers[1]!.key!;
+
+  // The seat the host gives is noted in his save under the friend's SteamID, and the note is the
+  // host's alone: no snapshot carries it.
+  expect(seats()).toEqual({});
+  expect(await a.seat({ key, teamId: guestTeam })).toEqual({ ok: true });
+  expect(seats()).toEqual({ [guestTeam]: String(guy.id) });
+  expect(JSON.stringify(own.snapshot())).not.toContain(String(guy.id));
+  await caughtUp(own, b.league);
+  // Each side's command, on the one league.
+  expect((await a.dispatch(days(2))).ok).toBe(true);
+  await caughtUp(own, b.league);
+  await across(price(guestTeam));
+  identical(own, b.league);
+
+  // Steam loses the line. The seat waits, the guest's game comes back by itself, and who he is on
+  // Steam is his place: the same row, the same team.
+  net.cut(minh.id, guy.id);
+  await lobby({}, { key, teamId: guestTeam, connected: false });
+  expect(b.status()).toMatchObject({ role: 'guest', reconnecting: true });
+  await until(() => hosting().peers[1]?.connected === true);
+  await guest({ reconnecting: false });
+  expect(hosting().peers).toMatchObject([{}, { key, teamId: guestTeam }]);
+  expect((await a.dispatch(days(1))).ok).toBe(true);
+  await caughtUp(own, b.league);
+  await across(price(guestTeam));
+  identical(own, b.league);
+
+  // An invite accepted in a game that is in a session is not followed.
+  net.invited(guy.id, 5n, minh.id);
+  await vi.advanceTimersByTimeAsync(50);
+  // His game leaves and joins again, as one started again would: it holds no resume key, and the
+  // place and the seat are still his.
+  expect(await b.leave()).toEqual({ ok: true });
+  expect(b.status()).toEqual({ role: 'none' });
+  await lobby({}, { key, teamId: guestTeam, connected: false });
+  await accepts();
+  await lobby({}, { key, name: 'Guy', teamId: guestTeam, connected: true });
+  await guest({ role: 'guest' });
+
+  // The host stops, and hosts again another day: a new lobby, and his save's note seats the
+  // friend with no click. The host's own team is still the one he plays.
+  expect(await a.leave()).toEqual({ ok: true });
+  await soon(() => expect(b.status()).toEqual({ role: 'none', ended: 'closed' }));
+  expect(net.lobbies.size).toBe(0);
+  expect(await a.host({ name: 'Minh', steam: true })).toEqual({ ok: true });
+  expect(open().id).not.toBe(first.id);
+  expect(hosting().peers).toMatchObject([{ teamId: hostTeam }]);
+  await accepts();
+  await guest({ role: 'guest' });
+  await lobby({ teamId: hostTeam }, { name: 'Guy', teamId: guestTeam, connected: true });
+  await across(price(guestTeam));
+  identical(own, b.league);
+
+  // Another friend, by hand: nobody the save knows, so no seat until the host gives one.
+  const viaAnn = { guest: joinSteam(ann.steam, open().id) };
+  const hand = await handGuest(viaAnn);
+  await whole(hand);
+  const welcome = hand.got[0] as Extract<HostMessage, { kind: 'welcome' }>;
+  await lobby({}, {}, { name: 'Hand', teamId: null });
+  const annKey = hosting().peers[2]!.key!;
+  expect(await a.seat({ key: annKey, teamId: otherTeam })).toEqual({ ok: true });
+  expect(seats()).toEqual({ [guestTeam]: String(guy.id), [otherTeam]: String(ann.id) });
+  // On Steam a resume key opens nothing: someone else who shows hers gets a place of his own.
+  const viaBob = { guest: joinSteam(bob.steam, open().id) };
+  const thief = await handGuest(viaBob, { name: 'Thief', resumeKey: welcome.resumeKey });
+  await whole(thief);
+  const hers = { key: annKey, teamId: otherTeam, connected: true };
+  await lobby({}, {}, hers, { name: 'Thief', teamId: null });
+  thief.connection.close();
+  await lobby({}, {}, hers);
+
+  // A kick holds on Steam, where there is no code to change: her SteamID is refused for the rest
+  // of the session, whatever she shows, and the save's note of her seat is struck.
+  expect(await a.kick({ key: annKey })).toEqual({ ok: true });
+  await gone(hand);
+  expect(hand.got.at(-1)).toEqual({ kind: 'bye', reason: 'kicked' });
+  expect(seats()).toEqual({ [guestTeam]: String(guy.id) });
+  for (const hello of [{}, { resumeKey: welcome.resumeKey }]) {
+    await vi.advanceTimersByTimeAsync(WIRE.reconnectMs);
+    const back = await handGuest(viaAnn, hello);
+    await gone(back);
+    expect(back.got).toEqual([{ kind: 'refused', reason: 'kicked' }]);
+  }
+  await lobby({}, { teamId: guestTeam });
+
+  // An invite accepted by a game of another version: refused at the handshake, and since no
+  // window asked for the join, the reason is left where a session's end is read.
+  const old = game('steam-old.sqlite', bob, '0.0.1');
+  await vi.advanceTimersByTimeAsync(WIRE.reconnectMs);
+  net.invited(bob.id, open().id, minh.id);
+  const stale = { role: 'none', ended: 'refused: appVersion' };
+  await soon(() => expect(old.status()).toEqual(stale));
+
+  // The friend's game is put out in turn, and an invite does not bring it back...
+  expect(await a.kick({ key: hosting().peers[1]!.key! })).toEqual({ ok: true });
+  await soon(() => expect(b.status()).toEqual({ role: 'none', ended: 'kicked' }));
+  expect(seats()).toEqual({});
+  await accepts();
+  await soon(() => expect(b.status()).toEqual({ role: 'none', ended: 'refused: kicked' }));
+  expect(hosting().peers).toHaveLength(1);
+  // ...until the host hosts again: then he is a newcomer, with no seat.
+  expect(await a.leave()).toEqual({ ok: true });
+  expect(await a.host({ name: 'Minh', steam: true })).toEqual({ ok: true });
+  await accepts();
+  await guest({ role: 'guest' });
+  await lobby({}, { name: 'Guy', teamId: null, connected: true });
+
+  expect(await a.leave()).toEqual({ ok: true });
+  await soon(() => expect(b.status()).toEqual({ role: 'none', ended: 'closed' }));
+  a.dispose();
+  b.dispose();
+  old.dispose();
 }, 300_000);
