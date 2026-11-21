@@ -10,7 +10,13 @@ import type {
   TeamId,
   TradeProposal,
 } from '@gm/shared';
-import { GOALIE_ROTATIONS, MARKET_SIZES, STOP_CATEGORIES, TICKET_STEPS } from '@gm/shared';
+import {
+  CLOCK_COMMANDS,
+  GOALIE_ROTATIONS,
+  MARKET_SIZES,
+  STOP_CATEGORIES,
+  TICKET_STEPS,
+} from '@gm/shared';
 import {
   Rng,
   applyEvent,
@@ -119,6 +125,10 @@ export function handleCommand(
   /** Hall of Famers (the save's, not the league state's): who can come back as staff. */
   legends: readonly HallOfFamer[] = [],
 ): CommandResult {
+  // The clock is the host's: a remote player moves it only if the host granted him `advance`.
+  if (CLOCK_COMMANDS.has(command.kind) && actor.id !== 'local' && !actor.can?.includes('advance')) {
+    return { ok: false, error: { code: 'not_allowed', message: 'only the host advances' } };
+  }
   switch (command.kind) {
     case 'sim.advance':
       if (command.days < 1 || command.days > 400) {
@@ -190,8 +200,14 @@ export function handleCommand(
     case 'team.relocate': {
       const team = state.teams[command.teamId];
       if (!team) return invalid('unknown team');
-      // The local player edits any team's identity (sandbox); a remote player only his own.
-      if (actor.id !== 'local' && !actor.controls.includes(team.id)) return notYours;
+      // The local player edits any team's identity (sandbox). A remote player renames his own
+      // team and no more: a relocation picks a market size, which is money.
+      if (
+        actor.id !== 'local' &&
+        (command.kind === 'team.relocate' || !actor.controls.includes(team.id))
+      ) {
+        return notYours;
+      }
       const checked = checkIdentity(state, command, team.id);
       if (typeof checked === 'string') return invalid(checked);
       const identity = { teamId: team.id, ...checked };

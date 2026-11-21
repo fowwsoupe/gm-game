@@ -1,6 +1,13 @@
 import { useState } from 'react';
 import type { CapIssue, CapSheet, ResignOffer, RosterPlayer, TeamId } from '@gm/shared';
-import { useCapSheet, useResignOffers, useRoster, useTeams, useMine } from '@/lib/queries';
+import {
+  useCapSheet,
+  useOnline,
+  useResignOffers,
+  useRoster,
+  useTeams,
+  useMine,
+} from '@/lib/queries';
 import { useT } from '@/i18n';
 import { Button, Card, TeamSelect, Td, Th } from '@/ui';
 import { fullName, money } from '@/lib/format';
@@ -12,6 +19,7 @@ export function Cap() {
   const { data: teams = [] } = useTeams();
   const [picked, setPicked] = useState<TeamId>();
   const mine = useMine();
+  const { guest } = useOnline();
   const teamId = picked ?? (mine ?? teams[0])?.id;
   const { data: sheet } = useCapSheet(teamId);
   const { data: roster = [] } = useRoster(teamId);
@@ -27,7 +35,7 @@ export function Cap() {
       <Advisor sheet={sheet} />
       <Summary sheet={sheet} />
       <Contracts sheet={sheet} roster={roster} />
-      {teams.find((x) => x.id === teamId)?.userControlled && (
+      {(guest ? teamId === mine?.id : teams.find((x) => x.id === teamId)?.userControlled) && (
         <Resign offers={offers} roster={roster} sheet={sheet} teamId={teamId} />
       )}
     </div>

@@ -1,0 +1,1097 @@
+import { EventEmitter } from 'node:events';
+import { mkdtempSync, rmSync } from 'node:fs';
+import { tmpdir } from 'node:os';
+import { join } from 'node:path';
+import { deflateSync } from 'node:zlib';
+import { afterAll, afterEach, beforeEach, expect, it, vi } from 'vitest';
+import { SAVE_SCHEMA, type SaveFile } from '@gm/data';
+import {
+  WIRE,
+  type Command,
+  type CommandResult,
+  type GuestMessage,
+  type HostMessage,
+  type LeagueEvent,
+  type TeamId,
+} from '@gm/shared';
+import { handleCommand, type LeagueState } from '@gm/sim';
+import type { WorkerRequest } from '../sim.worker';
+import { contextWithXg } from '../simContext';
+import { decode, encode } from './codec';
+import { fakeSteam } from './fakeSteam';
+import { GuestSession } from './guest';
+import { HostSession } from './host';
+import { joinSteam } from './steam';
+import { connectTcp } from './tcp';
+import { loopback, type GuestTransport } from './transport';
+
+const dir = mkdtempSync(join(tmpdir(), 'gm-session-'));
+afterAll(() => rmSync(dir, { recursive: true, force: true }));
+vi.mock('electron', () => ({ app: { getPath: () => dir } }));
+
+/** The sim worker without its thread, as in `mirror.test.ts`: the real handler on a copy of the state. */
+class SimWorker extends EventEmitter {
+  static started = 0;
+  constructor() {
+    super();
+    SimWorker.started++;
+  }
+  postMessage(req: WorkerRequest) {
+    const state = structuredClone(req.state);
+    const ctx = contextWithXg(state.rulesetId, req.xg);
+    const result = handleCommand(state, req.command, req.actor, ctx, req.legends);
+    queueMicrotask(() => this.emit('message', result));
+  }
+  terminate() {
+    return Promise.resolve(0);
+  }
+}
+vi.mock('../sim.worker?nodeWorker', () => ({ default: () => new SimWorker() }));
+
+const { LeagueService } = await import('../league');
+const { Online } = await import('./online');
+type Service = InstanceType<typeof LeagueService>;
+const inside = (svc: Service) => svc as unknown as { state: LeagueState; save: SaveFile };
+
+// The sessions' clock (heartbeat, timeouts, rates) is the test's: it moves when a test says so,
+// and 50 ms at each look of a `vi.waitFor`.
+const undo: (() => void)[] = [];
+beforeEach(() => {
+  vi.useFakeTimers({
+    toFake: ['setTimeout', 'clearTimeout', 'setInterval', 'clearInterval', 'Date'],
+  });
+});
+afterEach(() => {
+  vi.useRealTimers();
+  vi.restoreAllMocks();
+  for (const restore of undo.splice(0)) restore();
+});
+
+type Limit = 'replayBytes' | 'backlogBytes' | 'batchBytes' | 'snapshotBytes';
+/** One of the wire's limits brought within a test's reach, until the test ends or `restore`. */
+function limit(key: Limit, value: number) {
+  const wire = WIRE as Record<Limit, number>;
+  const was = wire[key];
+  wire[key] = value;
+  const restore = () => {
+    wire[key] = was;
+  };
+  undo.push(restore);
+  return restore;
+}
+
+/** Lets the sessions' clock run, a second at a time, until `done`: two minutes of it at most. */
+async function until(done: () => boolean) {
+  for (let s = 0; s < 120 && !done(); s++) await vi.advanceTimersByTimeAsync(1000);
+  expect(done()).toBe(true);
+}
+
+const APP = '1.2.3';
+const days = (n: number): Command => ({ kind: 'sim.advance', days: n, stopOn: 'never' });
+const price = (teamId: TeamId): Command => ({ kind: 'finance.setTicketPrice', teamId, pct: 20 });
+
+/** A command that must pass, on the host's machine or through a guest's mirror. */
+async function run(svc: Service, command: Command) {
+  const result = await svc.dispatch(command);
+  if (!result.ok) throw new Error(`${command.kind}: ${result.error.message}`);
+  return result;
+}
+
+/** State, the save's own reading of itself and every row: the mirror's against the host's. */
+function identical(host: Service, mirror: Service) {
+  const h = inside(host);
+  expect(inside(mirror).state).toEqual(h.state);
+  expect(inside(mirror).save.loadState()).toEqual(h.state);
+  const rows = host.snapshot();
+  const mirrored = mirror.snapshot();
+  expect(mirrored.seq).toBe(rows.seq);
+  for (const [i, t] of rows.tables.entries())
+    expect(JSON.stringify(mirrored.tables[i]) === JSON.stringify(t), t.table).toBe(true);
+}
+const caughtUp = (host: Service, mirror: Service) =>
+  vi.waitFor(() => expect(mirror.head().seq).toBe(host.head().seq), { timeout: 20_000 });
+
+/**
+ * A connection held by hand: all the host sends on it and its end. The host's pings are answered
+ * and left out, unless `silent`.
+ */
+async function byHand(net: { guest: GuestTransport }, silent = false) {
+  const connection = await net.guest.connect();
+  const got: HostMessage[] = [];
+  const send = (message: GuestMessage) => connection.send(encode(message));
+  connection.onPacket = (packet) => {
+    const message = decode('host', packet);
+    if (message.kind === 'ping' && !silent) send({ kind: 'pong' });
+    else got.push(message);
+  };
+  let open = true;
+  const closed = new Promise<void>((resolve) => {
+    connection.onClose = () => {
+      open = false;
+      resolve();
+    };
+  });
+  return { connection, got, send, closed, isOpen: () => open };
+}
+type Hand = Awaited<ReturnType<typeof byHand>>;
+type Hello = Extract<GuestMessage, { kind: 'hello' }>;
+const HELLO: Hello = {
+  kind: 'hello',
+  protocol: WIRE.protocol,
+  appVersion: APP,
+  saveSchema: SAVE_SCHEMA,
+  name: 'Hand',
+};
+
+/** A guest by hand: his `hello`, then the league asked for whole. */
+async function handGuest(
+  net: { guest: GuestTransport },
+  hello: Partial<Hello> = {},
+  silent = false,
+) {
+  const hand = await byHand(net, silent);
+  hand.send({ ...HELLO, ...hello });
+  hand.send({ kind: 'resync' });
+  return hand;
+}
+const ends = (hand: Hand) => hand.got.filter((m) => m.kind === 'snapshot.end').length;
+/** The snapshot he asked for is in. */
+const whole = (hand: Hand) => vi.waitFor(() => expect(hand.got.at(-1)?.kind).toBe('snapshot.end'));
+/** The host closed his connection. */
+const gone = (hand: Hand) => vi.waitFor(() => expect(hand.isOpen()).toBe(false));
+
+/** A guest's row in the host's list while he has asked for nothing and been granted nothing. */
+const IDLE = { wish: null, ready: false, can: [] };
+
+/** A hosted league with one guest in, seated on a team: where each test of drops and limits starts. */
+async function hosted(file: string) {
+  const host = new LeagueService(join(dir, `${file}.sqlite`));
+  host.newLeague(42);
+  const net = loopback();
+  const session = await HostSession.start(host, net.host, { appVersion: APP, joinCode: true });
+  const joinCode = session.joinCode!;
+  const mirror = new LeagueService(':memory:');
+  const guest = await GuestSession.join(mirror, net.guest, {
+    appVersion: APP,
+    name: 'Guy',
+    joinCode,
+  });
+  const team = host.listTeams().find((t) => !t.userControlled)!.id;
+  await session.seat('1', team);
+  await caughtUp(host, mirror);
+  /** Why the guest's session ended, once it has. */
+  const over: { reason?: string } = {};
+  void guest.ended.then((reason) => (over.reason = reason));
+  const seated = { key: '1', name: 'Guy', teamId: team, ...IDLE };
+  return { host, net, session, joinCode, mirror, guest, over, team, seated };
+}
+
+it('a host and its guests over the loopback: one league, one authority', async () => {
+  const host = new LeagueService();
+  host.newLeague(42);
+  const mirror = new LeagueService(':memory:');
+  const teams = host.listTeams();
+  const hostTeam = teams.find((t) => t.userControlled)!.id;
+  const guestTeam = teams.find((t) => !t.userControlled)!.id;
+  const net = loopback();
+  const same = (m = mirror) => identical(host, m);
+
+  // The host's start checks: nobody out of work, no string the wire refuses, "can be fired" off.
+  const { state, save } = inside(host);
+  state.career = { firedFrom: hostTeam, season: state.date.season, offers: [] };
+  await expect(HostSession.start(host, net.host, { appVersion: APP })).rejects.toThrow(
+    'out of work',
+  );
+  state.career = null;
+  save.setMeta('motto', '__proto__');
+  await expect(HostSession.start(host, net.host, { appVersion: APP })).rejects.toThrow(
+    'table meta holds a name',
+  );
+  save.setMeta('motto', 'none');
+  expect(host.status().canBeFired).toBe(true);
+  await expect(net.guest.connect()).rejects.toThrow('Nobody is hosting');
+  const session = await HostSession.start(host, net.host, { appVersion: APP, joinCode: true });
+  expect(host.status().canBeFired).toBe(false);
+  const joinCode = session.joinCode!;
+  expect(joinCode).toMatch(/^[A-HJ-NP-Z2-9]{6}$/);
+
+  // The handshake: another protocol, build or save schema, or no code (a resume key that is
+  // nobody's does not stand in for it), is told why and let go.
+  const wrong = {
+    protocol: { protocol: WIRE.protocol + 1 },
+    appVersion: { appVersion: '1.2.4' },
+    saveSchema: { saveSchema: SAVE_SCHEMA + 1 },
+    joinCode: { joinCode: '000000', resumeKey: 'f'.repeat(32) },
+  };
+  for (const [reason, hello] of Object.entries(wrong)) {
+    const refused = await handGuest(net, { joinCode, ...hello });
+    await refused.closed;
+    expect(refused.got).toEqual([{ kind: 'refused', reason }]);
+  }
+  const old = { appVersion: '1.2.4', name: 'Guy', joinCode };
+  await expect(GuestSession.join(mirror, net.guest, old)).rejects.toThrow('refused: appVersion');
+  expect(session.list()).toEqual([]);
+  expect(() => mirror.listTeams()).toThrow('No league yet');
+
+  // A guest joins: his mirror is the host's league, and he holds no team.
+  const guest = await GuestSession.join(mirror, net.guest, {
+    appVersion: APP,
+    name: 'Guy',
+    joinCode,
+  });
+  same();
+  const { key } = session.list()[0]!;
+  expect(session.list()).toEqual([{ key, name: 'Guy', teamId: null, connected: true, ...IDLE }]);
+
+  /** A command of the guest's that the host refuses: the league does not move. */
+  const refused = async (command: Command) => {
+    const { seq } = host.head();
+    expect(await mirror.dispatch(command), command.kind).toMatchObject({
+      ok: false,
+      error: { code: 'not_allowed' },
+    });
+    expect(host.head().seq).toBe(seq);
+  };
+
+  // A peer with no team can do nothing.
+  await refused(price(guestTeam));
+  await refused(price(hostTeam));
+  await refused(days(1));
+
+  // The host seats him: the AI team becomes his, and the mirror hears of it like any other event.
+  const settled = () => caughtUp(host, mirror);
+  await session.seat(key, guestTeam);
+  await settled();
+  expect(session.list()).toEqual([
+    { key, name: 'Guy', teamId: guestTeam, connected: true, ...IDLE },
+  ]);
+  expect(mirror.listTeams().find((t) => t.id === guestTeam)!.userControlled).toBe(true);
+  await expect(session.seat('nobody', hostTeam)).rejects.toThrow('No such guest');
+
+  // A second guest, by hand, listens to all that follows. The seat is taken.
+  const hand = await handGuest(net, { joinCode });
+  await whole(hand);
+  const handKey = session.list().find((g) => g.name === 'Hand')!.key;
+  await expect(session.seat(handKey, guestTeam)).rejects.toThrow('That team has a GM');
+
+  /** A command on the host's own machine, then the mirror once it has caught up. */
+  const hosts = async (command: Command) => {
+    await run(host, command);
+    await settled();
+    same();
+  };
+  /** A command on the guest's machine: answered once his mirror holds what it did. */
+  const guests = async (command: Command) => {
+    const result = await run(mirror, command);
+    expect(result.events.length).toBeGreaterThan(0);
+    same();
+  };
+
+  // A stretch of days with commands from both sides.
+  await hosts(days(5));
+  await guests(price(guestTeam));
+  // The other GM's team, the clock without the grant, a host's tool: refused, nothing changes.
+  await refused(price(hostTeam));
+  await refused(days(1));
+  await refused({ kind: 'league.setCanBeFired', on: true });
+  same();
+
+  // A trade between the two GMs: the host offers, the guest reads it on his mirror and says yes.
+  const cheapest = (teamId: TeamId) =>
+    host
+      .roster(teamId)
+      .filter((p) => p.position === 'C' && p.contract)
+      .sort((a, b) => a.contract!.capHit - b.contract!.capHit)[0]!.id;
+  const proposal = {
+    fromTeamId: hostTeam,
+    toTeamId: guestTeam,
+    give: [cheapest(hostTeam)],
+    get: [cheapest(guestTeam)],
+  };
+  await refused({ kind: 'trade.propose', proposal }); // the host's offer is not the guest's to send
+  await hosts({ kind: 'trade.propose', proposal });
+  const [offer] = mirror.tradeOffers(guestTeam);
+  expect(offer?.proposal).toEqual(proposal);
+  await guests({ kind: 'trade.respond', offerId: offer!.id, accept: true });
+  expect(host.roster(guestTeam).map((p) => p.id)).toContain(proposal.give[0]);
+  expect(mirror.roster(hostTeam).map((p) => p.id)).toContain(proposal.get[0]);
+  await guests({
+    kind: 'trade.block',
+    teamId: guestTeam,
+    playerId: proposal.give[0]!,
+    onBlock: true,
+  });
+  await hosts(days(60)); // long enough that its events go out in several pieces
+
+  // The guest by hand was sent every batch, the long one in pieces, and nobody else's request id.
+  const batches = hand.got.flatMap((m) => (m.kind === 'events' ? [m] : []));
+  expect(batches.at(-1)!.seq + batches.at(-1)!.events.length).toBe(host.head().seq);
+  expect(batches.some((m) => !m.last)).toBe(true);
+  expect(batches.some((m) => 'requestId' in m)).toBe(false);
+  // A message that carries an actor is refused whole: his connection ends and nothing runs.
+  const { seq } = host.head();
+  const forged = {
+    kind: 'command',
+    requestId: 1,
+    command: days(1),
+    actor: { id: 'local', controls: [hostTeam] },
+  };
+  hand.connection.send(deflateSync(JSON.stringify(forged)));
+  await hand.closed;
+  expect(session.list().map((g) => g.name)).toEqual(['Guy']);
+  expect(host.head().seq).toBe(seq);
+
+  // Someone who joins now gets the league as it stands; when he leaves, the host's list forgets him.
+  const late = new LeagueService(':memory:');
+  const second = await GuestSession.join(late, net.guest, {
+    appVersion: APP,
+    name: 'Late',
+    joinCode,
+  });
+  same(late);
+  second.leave();
+  expect(await second.ended).toBe('left');
+  await vi.waitFor(() => expect(session.list().map((g) => g.name)).toEqual(['Guy']));
+  await expect(late.dispatch(days(1))).rejects.toThrow('disconnected');
+
+  // By now a table's rows take several messages.
+  const last = await handGuest(net, { joinCode });
+  await whole(last);
+  const tables = last.got.flatMap((m) => (m.kind === 'snapshot.rows' ? [m.table] : []));
+  expect(tables.length).toBeGreaterThan(new Set(tables).size);
+
+  // The host closes: the guests are told, their commands fail, and the mirror stays what it was.
+  session.close();
+  await last.closed;
+  expect(last.got.at(-1)).toEqual({ kind: 'bye', reason: 'closed' });
+  expect(await guest.ended).toBe('closed');
+  await expect(mirror.dispatch(price(guestTeam))).rejects.toThrow('disconnected');
+  await expect(net.guest.connect()).rejects.toThrow('Nobody is hosting');
+  same();
+
+  // Only the host ever ran the sim.
+  expect(SimWorker.started).toBe(1);
+  host.dispose();
+  mirror.dispose();
+  late.dispose();
+}, 300_000);
+
+it('a mirror that missed events catches up: from the buffer, or with the whole league again', async () => {
+  const { host, net, session, mirror, seated } = await hosted('missed');
+  const restores = vi.spyOn(mirror, 'restore');
+  /** The loopback loses what the host sends the guest, where `lost` says so. */
+  const lose = (lost: (message: HostMessage) => boolean) => {
+    net.lose = (packet, to) => to === 'guest' && lost(decode('host', packet));
+  };
+  /**
+   * The line is whole again, a `resync` may be answered again, and the next batch does not start
+   * where the mirror stands: it asks, once, for all from its count on.
+   */
+  const noticed = async () => {
+    delete net.lose;
+    expect(mirror.head().seq).toBeLessThan(host.head().seq);
+    await vi.advanceTimersByTimeAsync(WIRE.resyncEveryMs);
+    await run(host, days(1));
+    await caughtUp(host, mirror);
+    identical(host, mirror);
+  };
+
+  // A whole batch lost on the way: the host sends it again from its buffer.
+  lose(() => true);
+  await run(host, days(1));
+  await noticed();
+
+  // The last piece of a long batch lost: the pieces held are let go, and the batch comes again.
+  let pieces = 0;
+  lose((m) => {
+    if (m.kind !== 'events') return false;
+    pieces++;
+    return m.last;
+  });
+  await run(host, days(60));
+  expect(pieces).toBeGreaterThan(1);
+  await noticed();
+  expect(restores).not.toHaveBeenCalled();
+
+  // Too far behind for the buffer (it keeps nothing here): the whole league, as at the join.
+  limit('replayBytes', 0);
+  lose(() => true);
+  await run(host, days(1));
+  await noticed();
+  expect(restores).toHaveBeenCalledTimes(1);
+
+  // All of it on the connection he joined on.
+  expect(session.list()).toEqual([{ ...seated, connected: true }]);
+  session.close();
+  host.dispose();
+  mirror.dispose();
+}, 300_000);
+
+it('a guest who drops is back on his seat inside the session, and a stranger in a new one', async () => {
+  const { host, net, session, joinCode, mirror, guest, over, team, seated } = await hosted('drops');
+  const restores = vi.spyOn(mirror, 'restore');
+  await run(mirror, price(team));
+
+  // The line goes dead with no word: each side gives the other up, and the seat waits.
+  net.lose = () => true;
+  await until(() => !session.list()[0]!.connected);
+  expect(session.list()).toEqual([{ ...seated, connected: false }]);
+  await expect(mirror.dispatch(price(team))).rejects.toThrow('disconnected');
+  expect(guest.status().reconnecting).toBe(true);
+  expect(() => guest.ready(true)).toThrow('disconnected');
+  await run(host, days(1)); // the league goes on without him
+  // The line is back: his session gets in again by itself, to his place, and is sent what he missed.
+  delete net.lose;
+  await until(() => session.list()[0]!.connected);
+  await caughtUp(host, mirror);
+  expect(session.list()).toEqual([{ ...seated, connected: true }]);
+  expect(guest.status()).toMatchObject({ reconnecting: false, you: 1 });
+  expect(restores).not.toHaveBeenCalled();
+  identical(host, mirror);
+  await run(mirror, price(team));
+  identical(host, mirror);
+
+  // A place opens to its resume key alone, with no code; a key that is nobody's opens nothing.
+  const other = host.listTeams().find((t) => !t.userControlled)!.id;
+  const hand = await handGuest(net, { joinCode });
+  await whole(hand);
+  const welcome = hand.got[0] as Extract<HostMessage, { kind: 'welcome' }>;
+  await session.seat('2', other);
+  hand.connection.close();
+  const place = { key: '2', name: 'Hand', teamId: other, ...IDLE };
+  await vi.waitFor(() => expect(session.list()[1]).toEqual({ ...place, connected: false }));
+  const stranger = await handGuest(net, { resumeKey: 'f'.repeat(32) });
+  await gone(stranger);
+  expect(stranger.got).toEqual([{ kind: 'refused', reason: 'joinCode' }]);
+  const back = await handGuest(net, { resumeKey: welcome.resumeKey });
+  await whole(back);
+  expect(back.got[0]).toEqual(welcome);
+  expect(session.list()[1]).toEqual({ ...place, connected: true });
+  // He comes in again without having gone: the connection he held is closed, the place is his.
+  const twice = await handGuest(net, { resumeKey: welcome.resumeKey });
+  await gone(back);
+  await whole(twice);
+  expect(session.list()[1]).toEqual({ ...place, connected: true });
+  // Unseated while away, he is forgotten: his team is free for someone else.
+  twice.connection.close();
+  await vi.waitFor(() => expect(session.list()[1]).toEqual({ ...place, connected: false }));
+  await session.seat('2', null);
+  expect(session.list()).toEqual([{ ...seated, connected: true }]);
+  await caughtUp(host, mirror);
+
+  // The host ends the session, the word of it lost, and hosts again. The guest's session finds a
+  // league there and takes it whole, but his place was the old session's: he holds no team.
+  net.lose = () => true;
+  session.close();
+  const next = await HostSession.start(host, net.host, { appVersion: APP });
+  delete net.lose;
+  await run(host, days(1));
+  await until(() => next.list().length === 1);
+  await caughtUp(host, mirror);
+  expect(next.list()).toEqual([{ key: '1', name: 'Guy', teamId: null, connected: true, ...IDLE }]);
+  expect(restores).toHaveBeenCalledTimes(1);
+  identical(host, mirror);
+  expect(await mirror.dispatch(price(team))).toMatchObject({
+    ok: false,
+    error: { code: 'not_allowed' },
+  });
+  expect(over.reason).toBeUndefined();
+
+  next.close();
+  expect(await guest.ended).toBe('closed');
+  host.dispose();
+  mirror.dispose();
+}, 300_000);
+
+it('a flood, an oversized packet, a silent peer, a late hello: each ends that connection and nothing else', async () => {
+  const { host, net, session, joinCode, mirror, team, seated } = await hosted('limits');
+  const { seq } = host.head();
+
+  // A packet over the limit, read no further than its length.
+  const big = await byHand(net);
+  big.connection.send(Buffer.alloc(WIRE.packetBytes + 1));
+  await gone(big);
+
+  // A `hello` that inflates past its 4 KB: a good one, padded.
+  const padded = await byHand(net);
+  const hello = JSON.stringify({ ...HELLO, joinCode });
+  padded.connection.send(deflateSync(hello + ' '.repeat(WIRE.helloBytes)));
+  await gone(padded);
+  expect(padded.got).toEqual([]);
+
+  // Once in, a message past a guest's 64 KB.
+  const long = await handGuest(net, { joinCode });
+  await whole(long);
+  long.connection.send(deflateSync(`{"kind":"pong"${' '.repeat(WIRE.messageBytes.guest)}}`));
+  await gone(long);
+
+  // A flood. Up to the burst he is heard; one message more and he is gone.
+  const flood = await handGuest(net, { joinCode }, true);
+  await whole(flood);
+  await vi.advanceTimersByTimeAsync((WIRE.rate.burst / WIRE.rate.perSecond) * 1000);
+  for (let i = 0; i < WIRE.rate.burst; i++) flood.send({ kind: 'pong' });
+  await vi.advanceTimersByTimeAsync(0);
+  expect(flood.isOpen()).toBe(true);
+  flood.send({ kind: 'pong' });
+  await vi.advanceTimersByTimeAsync(0);
+  expect(flood.isOpen()).toBe(false);
+
+  // A second `resync` in a row on one connection, even the cheapest (he stands where the league
+  // does); after the wait, he may have the whole save again.
+  const greedy = await handGuest(net, { joinCode });
+  await whole(greedy);
+  greedy.send({ kind: 'resync', seq });
+  await gone(greedy);
+  expect(greedy.got.at(-1)?.kind).toBe('snapshot.end');
+  const patient = await handGuest(net, { joinCode });
+  await whole(patient);
+  await vi.advanceTimersByTimeAsync(WIRE.resyncEveryMs);
+  patient.send({ kind: 'resync' });
+  await vi.waitFor(() => expect(ends(patient)).toBe(2));
+  patient.connection.close();
+
+  // A guest who takes the host's packets slower than they come: what waits for him has a limit.
+  const backlog = limit('backlogBytes', 10_000);
+  const slow = await handGuest(net, { joinCode });
+  await gone(slow);
+  expect(slow.got.map((m) => m.kind)).toContain('snapshot.begin');
+  expect(ends(slow)).toBe(0);
+  backlog();
+
+  // No `hello` in time, and a guest who answers no ping.
+  const mute = await byHand(net);
+  const silent = await handGuest(net, { joinCode }, true);
+  await vi.advanceTimersByTimeAsync(WIRE.helloMs - 1);
+  expect(mute.isOpen()).toBe(true);
+  await vi.advanceTimersByTimeAsync(1);
+  expect(mute.isOpen()).toBe(false);
+  expect(mute.got).toEqual([]);
+  expect(silent.isOpen()).toBe(true);
+  await vi.advanceTimersByTimeAsync(WIRE.pingMs * (WIRE.missedPings + 1) - WIRE.helloMs);
+  expect(silent.isOpen()).toBe(false);
+  expect(silent.got.filter((m) => m.kind === 'ping')).toHaveLength(WIRE.missedPings);
+
+  // None of it moved the league, and the host's list holds the one guest who did nothing wrong.
+  expect(host.head().seq).toBe(seq);
+  await vi.waitFor(() => expect(session.list()).toEqual([{ ...seated, connected: true }]));
+
+  // More of his commands at once than may wait: the ones over are refused, the others run.
+  const asked = await Promise.all(
+    Array.from({ length: WIRE.waitingCommands + 2 }, () => mirror.dispatch(price(team))),
+  );
+  expect(asked.filter((r) => r.ok)).toHaveLength(WIRE.waitingCommands);
+  const over = { ok: false, error: { code: 'invalid', message: 'too many commands waiting' } };
+  expect(asked.slice(WIRE.waitingCommands)).toEqual([over, over]);
+  expect(host.head().seq).toBe(seq + WIRE.waitingCommands);
+
+  // He is still a guest like any other.
+  await run(host, days(1));
+  await caughtUp(host, mirror);
+  identical(host, mirror);
+  expect(session.list()).toEqual([{ ...seated, connected: true }]);
+  session.close();
+  host.dispose();
+  mirror.dispose();
+}, 300_000);
+
+it('a batch the mirror cannot apply: the whole league once more, then the end', async () => {
+  const { host, net, session, joinCode, mirror, over, seated } = await hosted('unapplied');
+  const restores = vi.spyOn(mirror, 'restore');
+  // What the league saved, relabelled on its way out as an event the mirror's reducer chokes on.
+  const send = host.onPersisted!;
+  let spoiled = false;
+  host.onPersisted = (events, seq, actor) => {
+    const sent = events.map((e) => ({ ...e, kind: 'finance.settled' }) as unknown as LeagueEvent);
+    send(spoiled ? sent : events, seq, actor);
+  };
+  const bad = async () => {
+    spoiled = true;
+    await run(host, days(1));
+    spoiled = false;
+  };
+
+  // One: the mirror stands where its save does, asks for the league whole, and is the host's again.
+  await vi.advanceTimersByTimeAsync(WIRE.resyncEveryMs);
+  await bad();
+  await caughtUp(host, mirror);
+  identical(host, mirror);
+  expect(restores).toHaveBeenCalledTimes(1);
+  // A good batch, and the count starts again: the next bad one is one more gap.
+  await run(host, days(1));
+  await caughtUp(host, mirror);
+  await vi.advanceTimersByTimeAsync(WIRE.resyncEveryMs);
+  await bad();
+  await caughtUp(host, mirror);
+  identical(host, mirror);
+  expect(restores).toHaveBeenCalledTimes(2);
+  expect(over.reason).toBeUndefined();
+  // Two in a row are not a gap: the session ends, saying why, and the seat waits on the host.
+  await bad();
+  await vi.waitFor(() => expect(over.reason).toMatch(/^the mirror cannot follow the host: /));
+  expect(mirror.head().seq).toBeLessThan(host.head().seq);
+  await vi.waitFor(() => expect(session.list()).toEqual([{ ...seated, connected: false }]));
+
+  // What a guest takes in has totals of its own: one snapshot, and one command's events.
+  const small = new LeagueService(':memory:');
+  const joining = { appVersion: APP, name: 'Small', joinCode };
+  const snapshots = limit('snapshotBytes', 1000);
+  await expect(GuestSession.join(small, net.guest, joining)).rejects.toThrow('snapshot too big');
+  snapshots();
+  const second = await GuestSession.join(small, net.guest, joining);
+  limit('batchBytes', 100); // less than one event: a quiet day's batch is a few hundred bytes
+  await run(host, days(1));
+  expect(await second.ended).toBe('batch too big');
+
+  session.close();
+  host.dispose();
+  mirror.dispose();
+  small.dispose();
+}, 300_000);
+
+it('a hosted session that closes itself: the host is told why, and his league is his own again', async () => {
+  const own = new LeagueService(join(dir, 'ended-host.sqlite'));
+  own.newLeague(42);
+  let pushes = 0;
+  const game = new Online(own, APP, () => pushes++, '127.0.0.1');
+  expect(await game.host({ name: 'Minh' })).toEqual({ ok: true });
+
+  // A batch the session cannot send: the command is saved and answered, the session is over.
+  vi.spyOn(console, 'warn').mockImplementation(() => {});
+  vi.spyOn(
+    HostSession.prototype as unknown as { broadcast(): void },
+    'broadcast',
+  ).mockImplementationOnce(() => {
+    throw new Error('batch too big');
+  });
+  const day = own.status().day;
+  expect((await game.dispatch(days(1))).ok).toBe(true);
+  expect(own.status().day).toBeGreaterThan(day);
+  expect(pushes).toBeGreaterThan(0);
+  expect(game.status()).toEqual({ role: 'none', ended: 'error' });
+  expect(game.alone()).toBe(own);
+
+  // The reason lasts until the next session; a host who stops one himself is given none.
+  expect(await game.host({ name: 'Minh' })).toEqual({ ok: true });
+  expect(game.status()).toMatchObject({ role: 'host' });
+  expect(await game.leave()).toEqual({ ok: true });
+  expect(game.status()).toEqual({ role: 'none' });
+  game.dispose();
+}, 60_000);
+
+it('two games over real sockets: the lobby, the clock, a kick, and each game its own again', async () => {
+  const LOCAL = '127.0.0.1';
+  const own = {
+    host: new LeagueService(join(dir, 'direct-host.sqlite')),
+    guest: new LeagueService(join(dir, 'direct-guest.sqlite')),
+  };
+  own.host.newLeague(42);
+  own.guest.newLeague(7);
+  // What main pushes to each game's window.
+  const pushes = { host: 0, guest: 0 };
+  const a = new Online(own.host, APP, () => pushes.host++, LOCAL);
+  const b = new Online(own.guest, APP, () => pushes.guest++, LOCAL);
+  const refusedAs = { ok: false, error: { code: 'not_allowed' } };
+  const moves = async (game: typeof a, command: Command) =>
+    expect((await game.dispatch(command)).ok, command.kind).toBe(true);
+
+  // With no session a game is what it always was: its own league, its own commands, no push.
+  expect(a.status()).toEqual({ role: 'none' });
+  expect(a.league).toBe(own.host);
+  expect(a.alone()).toBe(own.host);
+  await moves(a, days(1));
+  expect(await a.leave()).toEqual({ ok: false, error: 'No online session is open.' });
+  expect(await a.ready({ on: true })).toMatchObject({ ok: false });
+  expect(await a.kick({ key: '1' })).toMatchObject({ ok: false });
+  expect(await a.requestSeat({ teamId: 'nobody' as TeamId })).toMatchObject({ ok: false });
+  // A game that does not run under Steam hosts nothing on it.
+  const noSteam = { ok: false, error: 'Steam is not running.' };
+  expect(await a.host({ name: 'Minh', steam: true })).toEqual(noSteam);
+  expect(a.status()).toEqual({ role: 'none' });
+  expect(pushes).toEqual({ host: 0, guest: 0 });
+
+  // Hosting: a port, a code, the host alone in his lobby. No second session, no new league, and
+  // "can be fired" stays off.
+  const teams = own.host.listTeams();
+  const hostTeam = teams.find((t) => t.userControlled)!.id;
+  const others = teams.filter((t) => !t.userControlled).map((t) => t.id);
+  const guestTeam = others[0]!;
+  const otherTeam = others[1]!;
+  expect(await a.host({ name: '  Minh ' })).toEqual({ ok: true });
+  const hosting = () => {
+    const status = a.status();
+    if (status.role !== 'host') throw new Error(`the host is ${status.role}`);
+    return status;
+  };
+  const guesting = () => {
+    const status = b.status();
+    if (status.role !== 'guest') throw new Error(`the guest is ${status.role}`);
+    return status;
+  };
+  const { port, joinCode } = hosting().direct!;
+  expect(joinCode).toMatch(/^[A-HJ-NP-Z2-9]{6}$/);
+  // Steam's invite dialog is for a league hosted on Steam.
+  const onSteam = { ok: false, error: 'Only the host of a league on Steam does that.' };
+  expect(await a.invite()).toEqual(onSteam);
+  const minh = { name: 'Minh', teamId: hostTeam, wish: null, connected: true, ready: false };
+  expect(hosting()).toMatchObject({ you: 0, peers: [{ ...minh, can: ['advance'] }] });
+  const taken = { ok: false, error: 'Not while an online session is open.' };
+  expect(await a.host({ name: 'Again' })).toEqual(taken);
+  expect(await a.join({ address: LOCAL, port, joinCode, name: 'Myself' })).toEqual(taken);
+  expect(() => a.alone()).toThrow(taken.error);
+  expect(await a.dispatch({ kind: 'league.setCanBeFired', on: true })).toMatchObject(refusedAs);
+  expect(own.host.status().canBeFired).toBe(false);
+
+  // Joining needs the code, typed any way a person types it. From then on the guest's game reads
+  // the host's league, and his own is left alone.
+  const mine = own.guest.head().seq;
+  const at = { address: LOCAL, port, name: 'Guy' };
+  const wrongCode = { ok: false, error: 'refused: joinCode' };
+  expect(await b.join({ ...at, joinCode: '000000' })).toEqual(wrongCode);
+  expect(b.league).toBe(own.guest);
+  expect(await b.join({ ...at, joinCode: ` ${joinCode.toLowerCase()} ` })).toEqual({ ok: true });
+  let mirror = b.league;
+  expect(mirror).not.toBe(own.guest);
+  identical(own.host, mirror);
+  expect(() => b.alone()).toThrow(taken.error);
+  /** Both games show the same lobby, with this in its rows. */
+  const lobby = (...rows: object[]) =>
+    vi.waitFor(() => {
+      expect(hosting().peers).toMatchObject(rows);
+      expect(guesting().peers).toMatchObject(rows);
+      expect(hosting().peers).toMatchObject(guesting().peers);
+    });
+  await lobby(minh, { name: 'Guy', teamId: null, wish: null, connected: true, ready: false });
+  expect(guesting()).toMatchObject({ you: 1, reconnecting: false });
+  // The host's key for a guest is the host's alone.
+  const key = hosting().peers[1]!.key!;
+  expect(hosting().peers[0]).not.toHaveProperty('key');
+  expect(guesting().peers[1]).not.toHaveProperty('key');
+  expect(pushes.host).toBeGreaterThan(0);
+
+  // A seat is asked for and the host gives it: until then the guest can do nothing, and he never
+  // seats anyone himself.
+  expect(await b.dispatch(price(guestTeam))).toMatchObject(refusedAs);
+  expect(await b.requestSeat({ teamId: 'nobody' as TeamId })).toEqual({ ok: true });
+  expect(await b.requestSeat({ teamId: guestTeam })).toEqual({ ok: true });
+  await lobby({}, { teamId: null, wish: guestTeam });
+  expect(await b.seat({ key, teamId: guestTeam })).toMatchObject({ ok: false });
+  expect(await a.seat({ key: 'nobody', teamId: guestTeam })).toMatchObject({ ok: false });
+  expect(await a.seat({ key, teamId: guestTeam })).toEqual({ ok: true });
+  await lobby({ teamId: hostTeam }, { teamId: guestTeam, wish: null });
+  await caughtUp(own.host, mirror);
+
+  // Both sides command. A window is pushed what it did not ask for: the other GM's command, and
+  // not its own.
+  let pushed = { ...pushes };
+  await moves(a, days(3));
+  await caughtUp(own.host, mirror);
+  await vi.waitFor(() => expect(pushes.guest).toBeGreaterThan(pushed.guest));
+  expect(pushes.host).toBe(pushed.host);
+  pushed = { ...pushes };
+  await moves(b, price(guestTeam));
+  expect(pushes.host).toBeGreaterThan(pushed.host);
+  expect(pushes.guest).toBe(pushed.guest);
+  identical(own.host, mirror);
+
+  // Ready is each GM's own word, and it clears when the clock moves.
+  const bothReady = async () => {
+    expect(await a.ready({ on: true })).toEqual({ ok: true });
+    expect(await b.ready({ on: true })).toEqual({ ok: true });
+    await lobby({ ready: true }, { ready: true });
+  };
+  await bothReady();
+  await moves(a, price(hostTeam)); // not the clock, and nobody else's team
+  expect(hosting().peers).toMatchObject([{ ready: true }, { ready: true }]);
+  await moves(a, days(1));
+  await lobby({ ready: false }, { ready: false });
+  // An offer arrives: the GM it names is not done any more, the one who sent it still is. His
+  // answer names the other in turn.
+  const cheapest = (teamId: TeamId) =>
+    own.host
+      .roster(teamId)
+      .filter((p) => p.position === 'C' && p.contract)
+      .sort((x, y) => x.contract!.capHit - y.contract!.capHit)[0]!.id;
+  const proposal = {
+    fromTeamId: hostTeam,
+    toTeamId: guestTeam,
+    give: [cheapest(hostTeam)],
+    get: [cheapest(guestTeam)],
+  };
+  await bothReady();
+  await moves(a, { kind: 'trade.propose', proposal });
+  await lobby({ ready: true }, { ready: false });
+  await caughtUp(own.host, mirror);
+  const [offer] = mirror.tradeOffers(guestTeam);
+  await moves(b, { kind: 'trade.respond', offerId: offer!.id, accept: true });
+  await lobby({ ready: false }, { ready: false });
+
+  // The clock is the host's until he grants it; a granted guest's advance clears Ready too.
+  expect(await b.dispatch(days(1))).toMatchObject(refusedAs);
+  expect(await b.grantAdvance({ key, on: true })).toMatchObject({ ok: false });
+  expect(await a.grantAdvance({ key, on: true })).toEqual({ ok: true });
+  await lobby({ can: ['advance'] }, { can: ['advance'] });
+  await bothReady();
+  await moves(b, days(2));
+  await lobby({ ready: false }, { ready: false });
+  identical(own.host, mirror);
+  expect(await a.grantAdvance({ key, on: false })).toEqual({ ok: true });
+  await lobby({}, { can: [] });
+  expect(await b.dispatch(days(1))).toMatchObject(refusedAs);
+  expect(await b.dispatch({ kind: 'league.setCanBeFired', on: true })).toMatchObject(refusedAs);
+
+  // A kick. A second guest, by hand, is seated (his place would outlive his connection) and put
+  // out: he is told, the code changes, and neither the old one nor his resume key opens anything.
+  const direct = { guest: connectTcp(LOCAL, port) };
+  const hand = await handGuest(direct, { joinCode });
+  await whole(hand);
+  const welcome = hand.got[0] as Extract<HostMessage, { kind: 'welcome' }>;
+  await lobby({}, {}, { name: 'Hand' });
+  const handKey = hosting().peers[2]!.key!;
+  expect(await a.seat({ key: handKey, teamId: otherTeam })).toEqual({ ok: true });
+  await lobby({}, {}, { teamId: otherTeam });
+  expect(await a.kick({ key: handKey })).toEqual({ ok: true });
+  await hand.closed;
+  expect(hand.got.at(-1)).toEqual({ kind: 'bye', reason: 'kicked' });
+  await lobby({}, { teamId: guestTeam });
+  const renewed = hosting().direct!.joinCode;
+  expect(renewed).not.toBe(joinCode);
+  const { resumeKey } = welcome;
+  for (const hello of [{ joinCode }, { resumeKey }, { joinCode, resumeKey }]) {
+    const back = await handGuest(direct, hello);
+    await back.closed;
+    expect(back.got).toEqual([{ kind: 'refused', reason: 'joinCode' }]);
+  }
+  expect(hosting().peers).toHaveLength(2);
+
+  // The guest's game is put out in turn: it is told why, and is its own league again, untouched.
+  pushed = { ...pushes };
+  expect(await a.kick({ key })).toEqual({ ok: true });
+  await vi.waitFor(() => expect(b.status()).toEqual({ role: 'none', ended: 'kicked' }));
+  expect(pushes.guest).toBeGreaterThan(pushed.guest);
+  expect(b.league).toBe(own.guest);
+  expect(b.alone()).toBe(own.guest);
+  expect(own.guest.head().seq).toBe(mine);
+  const code = hosting().direct!.joinCode;
+  expect(code).not.toBe(renewed);
+
+  // The throttle: an address that sent five wrong codes inside a minute is not read again until
+  // the next, even with the right one.
+  vi.setSystemTime(Date.now() + WIRE.codeTriesMs);
+  for (let i = 0; i < WIRE.codeTries; i++)
+    expect(await b.join({ ...at, joinCode: renewed })).toEqual(wrongCode);
+  expect(await b.join({ ...at, joinCode: code })).toEqual(wrongCode);
+  vi.setSystemTime(Date.now() + WIRE.codeTriesMs);
+  expect(await b.join({ ...at, joinCode: code })).toEqual({ ok: true });
+  // Back as a newcomer: a new place, no team (the host seats him again), and the league as it stands.
+  mirror = b.league;
+  identical(own.host, mirror);
+  await lobby({ teamId: hostTeam }, { name: 'Guy', teamId: null, can: [] });
+  expect(guesting()).toEqual({
+    role: 'guest',
+    you: 1,
+    reconnecting: false,
+    peers: guesting().peers,
+  });
+  expect(hosting().peers[1]!.key).not.toBe(key);
+
+  // The guest leaves by himself: the host's list forgets him, and his game is his own again.
+  expect(await b.leave()).toEqual({ ok: true });
+  expect(b.status()).toEqual({ role: 'none' });
+  expect(b.league).toBe(own.guest);
+  await vi.waitFor(() => expect(hosting().peers).toHaveLength(1));
+  // Once more, to be there when the host closes: his game is told, and nobody listens any more.
+  expect(await b.join({ ...at, joinCode: code })).toEqual({ ok: true });
+  expect(await a.leave()).toEqual({ ok: true });
+  expect(a.status()).toEqual({ role: 'none' });
+  await vi.waitFor(() => expect(b.status()).toEqual({ role: 'none', ended: 'closed' }));
+  await expect(connectTcp(LOCAL, port).connect()).rejects.toThrow();
+
+  // Each game is its own again, as before.
+  expect(a.alone()).toBe(own.host);
+  await moves(a, days(1));
+  await moves(b, days(1));
+  expect(own.guest.head().seq).toBeGreaterThan(mine);
+  expect(own.host.status().canBeFired).toBe(false); // off in the save, until the host turns it on
+  await moves(a, { kind: 'league.setCanBeFired', on: true });
+  a.dispose();
+  b.dispose();
+}, 300_000);
+
+it('two games on Steam: an invite, a seat kept by SteamID, a kick that holds', async () => {
+  const net = fakeSteam();
+  const minh = net.player(76561198000000001n, 'Minh');
+  const guy = net.player(76561198000000002n, 'Guy');
+  const ann = net.player(76561198000000003n, 'Ann');
+  const bob = net.player(76561198000000004n, 'Bob');
+  const own = new LeagueService(join(dir, 'steam-host.sqlite'));
+  own.newLeague(42);
+  /** A game running under a Steam account, with no league of its own open. */
+  const game = (file: string, { steam }: typeof guy, version = APP) =>
+    new Online(new LeagueService(join(dir, file)), version, () => {}, '127.0.0.1', steam);
+  const a = new Online(own, APP, () => {}, '127.0.0.1', minh.steam);
+  const b = game('steam-guest.sqlite', guy);
+  const hosting = () => {
+    const status = a.status();
+    if (status.role !== 'host') throw new Error(`the host is ${status.role}`);
+    return status;
+  };
+  // Steam's packets are read on a timer: what crosses it takes the clock, a look at a time.
+  const soon = (check: () => void) => vi.waitFor(check, { timeout: 20_000 });
+  /** The host's list has these rows. */
+  const lobby = (...rows: object[]) => soon(() => expect(hosting().peers).toMatchObject(rows));
+  const guest = (status: object) => soon(() => expect(b.status()).toMatchObject(status));
+  /** The lobby the host has open on Steam. */
+  const open = () => [...net.lobbies.values()].at(-1)!;
+  /** Guy accepts, in Steam, the host's invite to the lobby that is open. */
+  const accepts = async () => {
+    // A SteamID's next connection counts once in a while: nobody accepts an invite sooner.
+    await vi.advanceTimersByTimeAsync(WIRE.reconnectMs);
+    net.invited(guy.id, open().id, minh.id);
+  };
+  /** A command of the guest's game, to the host and back. */
+  const across = async (command: Command) => {
+    let result: CommandResult | undefined;
+    void b.dispatch(command).then((r) => (result = r));
+    await soon(() => expect(result).toBeDefined());
+    expect(result, command.kind).toMatchObject({ ok: true });
+  };
+  const seats = () => inside(own).save.hostSeats();
+  const teams = own.listTeams();
+  const hostTeam = teams.find((t) => t.userControlled)!.id;
+  const others = teams.filter((t) => !t.userControlled).map((t) => t.id);
+  const guestTeam = others[0]!;
+  const otherTeam = others[1]!;
+  // The team the friend will hold comes first in the league's list, ahead of the host's own.
+  const renamed = { city: 'Aa Harbour', name: 'Firsts', abbreviation: 'AAH' };
+  await run(own, { kind: 'team.rename', teamId: guestTeam, ...renamed });
+  expect(own.listTeams()[0]!.id).toBe(guestTeam);
+
+  // Hosting on Steam: a friends-only lobby, nothing for a friend to type, and the invite dialog.
+  expect(await a.host({ name: 'Minh', steam: true })).toEqual({ ok: true });
+  expect(hosting()).not.toHaveProperty('direct');
+  const first = open();
+  expect(first).toMatchObject({ type: 1, max: WIRE.guests + 1, owner: minh.id });
+  expect(await a.invite()).toEqual({ ok: true });
+  expect(first.invites).toBe(1);
+  expect(await b.invite()).toMatchObject({ ok: false });
+
+  // A friend accepts the invite in Steam: his game joins under his Steam name, with no code, and
+  // reads the host's league. He has no team until the host gives him one.
+  await accepts();
+  await guest({ role: 'guest', you: 1, reconnecting: false });
+  await lobby({ name: 'Minh', teamId: hostTeam }, { name: 'Guy', teamId: null, connected: true });
+  identical(own, b.league);
+  const key = hosting().peers[1]!.key!;
+
+  // The seat the host gives is noted in his save under the friend's SteamID, and the note is the
+  // host's alone: no snapshot carries it.
+  expect(seats()).toEqual({});
+  expect(await a.seat({ key, teamId: guestTeam })).toEqual({ ok: true });
+  expect(seats()).toEqual({ [guestTeam]: String(guy.id) });
+  expect(JSON.stringify(own.snapshot())).not.toContain(String(guy.id));
+  await caughtUp(own, b.league);
+  // Each side's command, on the one league.
+  expect((await a.dispatch(days(2))).ok).toBe(true);
+  await caughtUp(own, b.league);
+  await across(price(guestTeam));
+  identical(own, b.league);
+
+  // Steam loses the line. The seat waits, the guest's game comes back by itself, and who he is on
+  // Steam is his place: the same row, the same team.
+  net.cut(minh.id, guy.id);
+  await lobby({}, { key, teamId: guestTeam, connected: false });
+  expect(b.status()).toMatchObject({ role: 'guest', reconnecting: true });
+  await until(() => hosting().peers[1]?.connected === true);
+  await guest({ reconnecting: false });
+  expect(hosting().peers).toMatchObject([{}, { key, teamId: guestTeam }]);
+  expect((await a.dispatch(days(1))).ok).toBe(true);
+  await caughtUp(own, b.league);
+  await across(price(guestTeam));
+  identical(own, b.league);
+
+  // An invite accepted in a game that is in a session is not followed.
+  net.invited(guy.id, 5n, minh.id);
+  await vi.advanceTimersByTimeAsync(50);
+  // His game leaves and joins again, as one started again would: it holds no resume key, and the
+  // place and the seat are still his.
+  expect(await b.leave()).toEqual({ ok: true });
+  expect(b.status()).toEqual({ role: 'none' });
+  await lobby({}, { key, teamId: guestTeam, connected: false });
+  await accepts();
+  await lobby({}, { key, name: 'Guy', teamId: guestTeam, connected: true });
+  await guest({ role: 'guest' });
+
+  // The host stops, and hosts again another day: a new lobby, and his save's note seats the
+  // friend with no click. The host's own team is still the one he plays.
+  expect(await a.leave()).toEqual({ ok: true });
+  await soon(() => expect(b.status()).toEqual({ role: 'none', ended: 'closed' }));
+  expect(net.lobbies.size).toBe(0);
+  expect(await a.host({ name: 'Minh', steam: true })).toEqual({ ok: true });
+  expect(open().id).not.toBe(first.id);
+  expect(hosting().peers).toMatchObject([{ teamId: hostTeam }]);
+  await accepts();
+  await guest({ role: 'guest' });
+  await lobby({ teamId: hostTeam }, { name: 'Guy', teamId: guestTeam, connected: true });
+  await across(price(guestTeam));
+  identical(own, b.league);
+
+  // Another friend, by hand: nobody the save knows, so no seat until the host gives one.
+  const viaAnn = { guest: joinSteam(ann.steam, open().id) };
+  const hand = await handGuest(viaAnn);
+  await whole(hand);
+  const welcome = hand.got[0] as Extract<HostMessage, { kind: 'welcome' }>;
+  await lobby({}, {}, { name: 'Hand', teamId: null });
+  const annKey = hosting().peers[2]!.key!;
+  expect(await a.seat({ key: annKey, teamId: otherTeam })).toEqual({ ok: true });
+  expect(seats()).toEqual({ [guestTeam]: String(guy.id), [otherTeam]: String(ann.id) });
+  // On Steam a resume key opens nothing: someone else who shows hers gets a place of his own.
+  const viaBob = { guest: joinSteam(bob.steam, open().id) };
+  const thief = await handGuest(viaBob, { name: 'Thief', resumeKey: welcome.resumeKey });
+  await whole(thief);
+  const hers = { key: annKey, teamId: otherTeam, connected: true };
+  await lobby({}, {}, hers, { name: 'Thief', teamId: null });
+  thief.connection.close();
+  await lobby({}, {}, hers);
+
+  // A kick holds on Steam, where there is no code to change: her SteamID is refused for the rest
+  // of the session, whatever she shows, and the save's note of her seat is struck.
+  expect(await a.kick({ key: annKey })).toEqual({ ok: true });
+  await gone(hand);
+  expect(hand.got.at(-1)).toEqual({ kind: 'bye', reason: 'kicked' });
+  expect(seats()).toEqual({ [guestTeam]: String(guy.id) });
+  for (const hello of [{}, { resumeKey: welcome.resumeKey }]) {
+    await vi.advanceTimersByTimeAsync(WIRE.reconnectMs);
+    const back = await handGuest(viaAnn, hello);
+    await gone(back);
+    expect(back.got).toEqual([{ kind: 'refused', reason: 'kicked' }]);
+  }
+  await lobby({}, { teamId: guestTeam });
+
+  // An invite accepted by a game of another version: refused at the handshake, and since no
+  // window asked for the join, the reason is left where a session's end is read.
+  const old = game('steam-old.sqlite', bob, '0.0.1');
+  await vi.advanceTimersByTimeAsync(WIRE.reconnectMs);
+  net.invited(bob.id, open().id, minh.id);
+  const stale = { role: 'none', ended: 'refused: appVersion' };
+  await soon(() => expect(old.status()).toEqual(stale));
+
+  // The friend's game is put out in turn, and an invite does not bring it back...
+  expect(await a.kick({ key: hosting().peers[1]!.key! })).toEqual({ ok: true });
+  await soon(() => expect(b.status()).toEqual({ role: 'none', ended: 'kicked' }));
+  expect(seats()).toEqual({});
+  await accepts();
+  await soon(() => expect(b.status()).toEqual({ role: 'none', ended: 'refused: kicked' }));
+  expect(hosting().peers).toHaveLength(1);
+  // ...until the host hosts again: then he is a newcomer, with no seat.
+  expect(await a.leave()).toEqual({ ok: true });
+  expect(await a.host({ name: 'Minh', steam: true })).toEqual({ ok: true });
+  await accepts();
+  await guest({ role: 'guest' });
+  await lobby({}, { name: 'Guy', teamId: null, connected: true });
+
+  expect(await a.leave()).toEqual({ ok: true });
+  await soon(() => expect(b.status()).toEqual({ role: 'none', ended: 'closed' }));
+  a.dispose();
+  b.dispose();
+  old.dispose();
+}, 300_000);
