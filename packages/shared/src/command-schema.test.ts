@@ -103,7 +103,7 @@ describe('the command schema', () => {
   });
 
   it('covers every command kind', () => {
-    expect(Object.keys(examples)).toHaveLength(38);
+    expect(Object.keys(examples)).toHaveLength(39);
     expect(Object.entries(examples).every(([k, c]) => c.kind === k)).toBe(true);
   });
 
