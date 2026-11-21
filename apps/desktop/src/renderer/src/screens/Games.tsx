@@ -1,5 +1,5 @@
 import { useEffect, useMemo, useState, type ReactNode } from 'react';
-import { BENCH_ORDERS } from '@gm/shared';
+import { BENCH_ORDERS, MATCH_LINES } from '@gm/shared';
 import type { GameDetail, HockeyBoxScore, HockeyBoxSide, Team, TeamId } from '@gm/shared';
 import {
   useDispatch,
@@ -75,10 +75,17 @@ export function Games() {
   const solo = teams.filter((x) => x.userControlled).length <= 1;
   const failed = dispatch.data?.ok === false ? dispatch.data.error.message : null;
   // A bench order: one command, then the game replayed with it. `done` restarts the viewer's clock.
-  const order = (teamId: TeamId, name: Order, at: number, done: () => void) =>
+  const order = (teamId: TeamId, name: Order, at: number, done: () => void, value?: number) =>
     detail &&
     dispatch.mutate(
-      { kind: 'bench.order', gameId: detail.result.id, teamId, at, order: name },
+      {
+        kind: 'bench.order',
+        gameId: detail.result.id,
+        teamId,
+        at,
+        order: name,
+        ...(value !== undefined && { value }),
+      },
       { onSuccess: (res) => (res.ok ? show(done) : done()), onError: done },
     );
   const lastCard = live && (
@@ -192,7 +199,7 @@ function Replay({
   teams: Team[];
   last?: ReactNode;
   bench?: {
-    order: (teamId: TeamId, name: Order, at: number, done: () => void) => void;
+    order: (teamId: TeamId, name: Order, at: number, done: () => void, value?: number) => void;
     busy: boolean;
     failed: string | null;
   };
@@ -230,11 +237,13 @@ function Replay({
   const orders = detail.orders ?? [];
   const lastOrder = orders.at(-1)?.at ?? 0;
   const early = Math.floor(clock) + 1 < lastOrder;
-  const give = (n: 0 | 1, name: Order) => {
+  const give = (n: 0 | 1, name: Order, value?: number) => {
     const was = playing;
     setPlaying(false);
-    bench?.order(ids[n], name, Math.floor(at.current) + 1, () => setPlaying(was));
+    bench?.order(ids[n], name, Math.floor(at.current) + 1, () => setPlaying(was), value);
   };
+  const lineName = (line: number) =>
+    line ? t('lines.unit.F', { n: line }) : t('games.benchMatchOff');
 
   // The feed: goals, penalties and what the timeline adds, up to the clock, newest first.
   type Line = { at: number; text: string };
@@ -284,7 +293,12 @@ function Replay({
         at: o.at,
         text: t('games.benchOrder', {
           team: teamAbbr(teams, o.teamId),
-          order: t(ORDER_KEYS[o.order as Order]),
+          order:
+            o.order === 'match'
+              ? o.value
+                ? t('games.benchMatchLine', { line: lineName(o.value) })
+                : lineName(0)
+              : t(ORDER_KEYS[o.order as keyof typeof ORDER_KEYS]),
         }),
       })),
   ].sort((a, b) => b.at - a.at);
@@ -355,24 +369,47 @@ function Replay({
             .map((n) => {
               const mine = orders.filter((o) => o.teamId === ids[n]);
               // What already stands: his last word on the net, and the one goalie change a game has.
-              const net = mine.filter((o) => o.order !== 'goalieChange').at(-1)?.order;
+              const net = mine
+                .filter((o) => o.order === 'emptyNet' || o.order === 'goalieBack')
+                .at(-1)?.order;
               const changed =
                 mine.some((o) => o.order === 'goalieChange') ||
                 !!timeline?.goalies.some((r) => r[1] === n && r[2] === 2 && r[0] <= clock);
+              // The line he has out against their first line (0: none). The last change is the home side's.
+              const matched = mine.filter((o) => o.order === 'match').at(-1)?.value ?? 0;
               return (
                 <div key={n} className="mb-2 flex flex-wrap items-center gap-2">
                   <span className="w-12 text-sm text-muted">{teamAbbr(teams, ids[n])}</span>
-                  {BENCH_ORDERS.map((name) => (
-                    <Button
-                      key={name}
-                      disabled={
-                        bench.busy || early || (name === 'goalieChange' ? changed : net === name)
-                      }
-                      onClick={() => give(n, name)}
-                    >
-                      {t(ORDER_KEYS[name])}
-                    </Button>
-                  ))}
+                  {BENCH_ORDERS.map(
+                    (name) =>
+                      name !== 'match' && (
+                        <Button
+                          key={name}
+                          disabled={
+                            bench.busy ||
+                            early ||
+                            (name === 'goalieChange' ? changed : net === name)
+                          }
+                          onClick={() => give(n, name)}
+                        >
+                          {t(ORDER_KEYS[name])}
+                        </Button>
+                      ),
+                  )}
+                  {n === 0 && (
+                    <div className="flex flex-wrap items-center gap-2">
+                      <span className="text-xs text-muted">{t('games.benchMatch')}</span>
+                      {[...Array.from({ length: MATCH_LINES }, (_, i) => i + 1), 0].map((line) => (
+                        <Button
+                          key={line}
+                          disabled={bench.busy || early || line === matched}
+                          onClick={() => give(n, 'match', line)}
+                        >
+                          {lineName(line)}
+                        </Button>
+                      ))}
+                    </div>
+                  )}
                 </div>
               );
             })}
@@ -381,7 +418,10 @@ function Replay({
               ? t('games.benchEarly', {
                   time: `${lastOrder < 3600 ? t('games.periodShort', { n: Math.floor(lastOrder / 1200) + 1 }) : t('games.ot')} ${clockText(lastOrder, detail.overtimeSeconds)}`,
                 })
-              : t('games.benchNote')}
+              : t('games.benchNote') +
+                (teams.find((x) => x.id === ids[0])?.userControlled
+                  ? ` ${t('games.benchMatchNote')}`
+                  : '')}
           </p>
           {bench.failed && <p className="mt-2 text-sm text-bad">{bench.failed}</p>}
         </Card>

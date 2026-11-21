@@ -183,6 +183,11 @@ export const en = {
   'games.benchOrder': 'From the {team} bench: {order}',
   'games.benchNote':
     'An order takes effect at once and the rest of the game is played with it. Empty the net: the goalie is off for an extra skater whenever your team trails in regulation. After either order on the net, the coach no longer pulls the goalie on his own.',
+  'games.benchMatch': 'Against their first line:',
+  'games.benchMatchOff': 'No line match',
+  'games.benchMatchLine': '{line} against their first line',
+  'games.benchMatchNote':
+    'The home bench has the last change: at five-on-five the line you name goes out whenever their first line does, so it plays as much as that line; its other shifts go to your other lines.',
   'games.benchEarly': 'Orders are already given up to {time}. The bench opens again from there.',
   'actions.newLeague': 'New league',
   'actions.confirmReplace': 'Replace your current league? Your saved league will be deleted.',

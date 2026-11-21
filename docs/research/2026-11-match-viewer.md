@@ -132,10 +132,11 @@ not coaching: the result is the one a plain sim gives.
   `game.final` is applied; saved as JSON in `meta` like the depth charts (no migration).
 - `handleCommand` refuses an order unless the actor controls the team (`controls`), the team
   plays that game today and it is not played yet, the sport accepts the order
-  (`SportModule.benchOrderOk`: the name and its value; the side joins it with `match`), and
-  `at` is not before the last order already given in that game. Which game a team plays today
-  is asked of `watchGame` (job 4), the day's own code, so the check and the day cannot
-  disagree, in the playoffs either; it costs one watch an order.
+  (`SportModule.benchOrderOk`: the name, its value and the side, since `match` is the home
+  side's), and `at` is not before the last order already given in that game. Which game a team
+  plays today is asked of `watchGame` (job 4), the day's own code, so the check and the day
+  cannot disagree, in the playoffs either; it costs one watch an order. That game also says
+  which side the team is on, so it is asked before the sport's check (job 5).
 - `advance` hands each game its orders (`orders`, next to `timeline` on the game the sport
   plays). `playGame` treats an order's second as one more boundary in its clock loop, like a
   shift end or a penalty expiring: it applies the order there and calls `refresh`.
@@ -161,6 +162,23 @@ not coaching: the result is the one a plain sim gives.
   to 139 ft for the puck in the built app, the clock standing still). The rink now goes from
   the picture that was to the new one over a quarter of a second (`blend` in `lib/rink.ts`);
   with reduced motion it jumps, like everything else there.
+- Found in job 5: **the engine has no stoppage and no order of changes.** `refresh` sends both
+  sides out at once, at every shift end, goal and penalty. So the last change is an order of
+  drawing: while a match is on, the visitors' unit is drawn first and the home coach's line is
+  drawn knowing it (`matchShares` in `units.ts`). Their first line is out when any of its
+  forwards is on the ice, read from who is on the ice, so nothing new is kept. With no match
+  the home side is drawn first as always, which keeps a game nobody matches draw for draw.
+- Found in job 5: what a match is not. Four-on-four, overtime, a net empty at either end and
+  the power-play and penalty-kill units are not matched. A shift with no line to send (a short
+  roster: the named line is not dressed, or it is the only one) is played by the usual shares;
+  a hurt forward of the named line is replaced by a spare as on any shift. Naming the first
+  line moves no ice time, only who meets whom (power against power). The visitors' `match` is
+  refused by the command, and the engine ignores one handed straight to it.
+- Measured in job 5 (2,000 games, the home side's share of its even-strength forward time by
+  line; uncoached 0.380 / 0.309 / 0.200 / 0.111): naming line 2 gives 0.342 / 0.377 / 0.180 /
+  0.101, line 3 gives 0.297 / 0.241 / 0.373 / 0.088, line 4 gives 0.269 / 0.219 / 0.141 /
+  0.372, line 1 leaves them as they were. The named line falls a little short of 0.38 because
+  even strength is also four-on-four, overtime and the extra attacker.
 
 **Which orders.** One rule picks them: an order acts through something the engine already
 models, so it adds no tuning number and its cost is real. Three pass.
@@ -182,7 +200,9 @@ Left out, and why:
 
 AI teams give no orders: their bench is today's rules, so no game without a human coach
 changes. That makes every order an edge only humans have, so each bench job measures it (the
-obvious use against never, over at least 2,000 seeded games, in the PR). If one is worth more
+obvious use against never, in the PR, over enough seeded games to see 0.05 goals: this brief
+first said at least 2,000, where job 5 measured a standard error of 0.04 goals, since an order
+re-rolls the rest of the game; job 4 took 45,000 team-games and job 5 140,000). If one is worth more
 than 0.05 goals a game (for the net, the same in standings points: default 7 has what job 4
 measured), the fix is a limit on the order (for the empty net, how early it may be used), not
 a retune of the engine, which would move every uncoached game.
@@ -322,7 +342,14 @@ Each of these was open; the owner can overrule any of them before its job starts
    one down and with seven left when two down, is worth 0.009 points a game (0.003 wins),
    about half the limit; the best goalie change (after three against before 40:00) 0.004
    points and 0.004 goals a game, both within two standard errors of nothing. No order is
-   limited. The whole table is in job 4's PR.
+   limited. The whole table is in job 4's PR. The line match, measured in job 5 (140,000 home
+   games against the uncoached game of the same seed, a standard error of 0.005 goals and
+   0.002 points): naming the first or the second line all game is worth 0.007 goals and 0.003
+   to 0.004 points a game, and the best rule found (the line with the best `defense` rating)
+   0.009 goals and 0.004 points, all under two standard errors and a fifth of the limit. The
+   depth lines cost: the third line all game loses 0.024 goals a game and the fourth 0.081,
+   the price of their minutes. The third line only once ahead, or only in the third period,
+   is worth nothing either way. The match is not limited. The whole table is in job 5's PR.
 8. **Knowing what comes is not closed.** A GM who watches, leaves before the end and comes back
    has seen the game; an order cannot go before an earlier one, and that is all. It is the same
    as changing a line and re-simming a day today. Hosted multiplayer will need the host to hold
@@ -379,7 +406,9 @@ Each stands alone and leaves main shippable. A job that adds text adds it to `i1
    orders; an order for an AI team, for a game not played today or before an earlier order is
    refused; two human teams in one game can both order; the measured edge is in the PR; lab
    identical on one seed; smoke test.
-5. **Bench: match a line.** The `match` order for the home side at five-on-five.
+5. **Bench: match a line** (done; `bench.test.ts` holds the checks). The `match` order for the
+   home side at five-on-five: `MATCH_LINES` in shared, the side in `benchOrderOk`, the
+   visitors drawn first while a match is on, the line buttons on the home bench.
    _Done when:_ the named line's ice time moves as the shares say and the box still adds up
    (ice time, plus-minus); job 4's pinned checks hold with it; the measured edge of each choice
    is in the PR; lab identical on one seed; smoke test.

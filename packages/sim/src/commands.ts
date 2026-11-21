@@ -780,15 +780,16 @@ export function handleCommand(
       const team = state.teams[command.teamId];
       if (!team) return invalid('unknown team');
       if (!controls(actor, team)) return notYours;
-      if (!ctx.sport.benchOrderOk(command.order, command.value)) return invalid('unknown order');
       const last = state.bench[command.gameId]?.at(-1)?.at ?? 0;
       if (!Number.isInteger(command.at) || command.at < last) {
         return invalid('an order cannot go before an earlier one');
       }
       // The day's own code says which game the team plays today, so the two cannot disagree.
       // ponytail: one replay of the day an order (10 to 15 ms); a cheaper lookup if orders ever come in bulk.
-      if (watchGame(state, ctx, team.id)?.id !== command.gameId) {
-        return invalid('your team does not play that game today');
+      const game = watchGame(state, ctx, team.id);
+      if (game?.id !== command.gameId) return invalid('your team does not play that game today');
+      if (!ctx.sport.benchOrderOk(command.order, command.value, game.homeTeamId === team.id)) {
+        return invalid('your bench cannot give that order');
       }
       const ev = makeEvent(state, 'minor', [team.id], {
         kind: 'bench.ordered',

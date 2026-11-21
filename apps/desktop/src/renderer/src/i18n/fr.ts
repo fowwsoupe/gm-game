@@ -184,6 +184,11 @@ export const fr: Record<MessageKey, string> = {
   'games.benchOrder': 'Du banc de {team} : {order}',
   'games.benchNote':
     'Un ordre prend effet tout de suite et le reste du match se joue avec lui. Retirer le gardien : il cède sa place à un sixième patineur dès que votre équipe tire de l’arrière en temps réglementaire. Après un ordre sur le filet, l’entraîneur ne retire plus le gardien de lui-même.',
+  'games.benchMatch': 'Face à leur premier trio :',
+  'games.benchMatchOff': 'Aucun trio désigné',
+  'games.benchMatchLine': '{line} face à leur premier trio',
+  'games.benchMatchNote':
+    'Le banc local a le dernier changement : à cinq contre cinq, le trio désigné saute sur la glace chaque fois que leur premier trio y est et joue donc autant que lui ; ses autres présences vont à vos autres trios.',
   'games.benchEarly': 'Des ordres sont déjà donnés jusqu’à {time}. Le banc rouvre à partir de là.',
   'actions.newLeague': 'Nouvelle ligue',
   'actions.confirmReplace': 'Remplacer votre ligue actuelle ? Votre sauvegarde sera supprimée.',

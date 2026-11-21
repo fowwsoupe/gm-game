@@ -81,7 +81,8 @@ src/
     hockey/  NHL: team strength, generator, NHL_2026 ruleset, and the game sim:
              game.ts (the clock loop: shots, penalties, overtime; asked, a timeline for the
              match viewer, which changes nothing in the game; a human coach's bench orders,
-             each one more stop on the clock), units.ts (who is on the ice),
+             each one more stop on the clock), units.ts (who is on the ice; the home
+             coach's line match),
              side.ts (a team's sides of the game, box score), shootout.ts,
              tuning.ts (HOCKEY_TUNING knobs, GoalModel)
   models.ts  Models: shared swappable brains + rules-based defaults

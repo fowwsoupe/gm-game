@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest';
-import { BENCH_ORDERS } from '@gm/shared';
+import { BENCH_ORDERS, MATCH_LINES } from '@gm/shared';
 import type {
   Actor,
   BenchOrder,
@@ -14,6 +14,8 @@ import {
   createLeague,
   defaultContext,
   handleCommand,
+  HOCKEY_TUNING,
+  ICE_TIME,
   Rng,
   simGame,
   teamStrength,
@@ -61,11 +63,15 @@ describe('bench orders in the game sim', () => {
     const dice = new Rng(4);
     let changed = 0;
     for (let seed = 1; seed <= 600; seed++) {
-      const orders: BenchOrder[] = Array.from({ length: dice.int(1, 3) }, () => ({
-        teamId: dice.chance(0.5) ? a! : b!,
-        at: dice.int(0, 3700),
-        order: dice.pick(BENCH_ORDERS),
-      })).sort((x, y) => x.at - y.at);
+      const orders: BenchOrder[] = Array.from({ length: dice.int(1, 3) }, () => {
+        const order = dice.pick(BENCH_ORDERS);
+        return {
+          teamId: dice.chance(0.5) ? a! : b!,
+          at: dice.int(0, 3700),
+          order,
+          ...(order === 'match' && { value: dice.int(0, MATCH_LINES) }),
+        };
+      }).sort((x, y) => x.at - y.at);
       const first = orders[0]!.at;
       // Every row the game wrote before that second: shots, penalties and the timeline's.
       const before = (g: GameResult) => {
@@ -125,6 +131,121 @@ describe('bench orders in the game sim', () => {
       expect(boxOf(coached).home.relief).toBeDefined();
     }
   });
+
+  it('"match": the line the home coach names answers the visitors\' first line at five-on-five, and plays its minutes', () => {
+    expect(ICE_TIME.forwardLines).toHaveLength(MATCH_LINES);
+    const named = 3;
+    const match = (teamId: TeamId, value: number): BenchOrder => ({
+      teamId,
+      at: 0,
+      order: 'match',
+      value,
+    });
+    const seeds = Array.from({ length: 300 }, (_, i) => i + 1);
+    const plain = seeds.map((seed) => game(seed));
+    const coached = seeds.map((seed) => game(seed, [match(a!, named)]));
+    /** Each skater's forward line, by his index in the box (forwards come first). */
+    const lineOf = (n: 0 | 1) =>
+      (n === 0 ? input.home : input.away).lineup.forwards.flatMap((line, i) => line.map(() => i));
+    /** Each forward line's share of its side's even-strength ice time over the games. */
+    const shares = (games: GameResult[], n: 0 | 1) => {
+      const by = ICE_TIME.forwardLines.map(() => 0);
+      for (const g of games) {
+        const side = n === 0 ? boxOf(g).home : boxOf(g).away;
+        lineOf(n).forEach((line, k) => {
+          const s = side.skaters[k]!;
+          by[line]! += s.toi - s.ppToi - s.pkToi;
+        });
+      }
+      const all = by.reduce((x, y) => x + y, 0);
+      return by.map((m) => m / all);
+    };
+    // As the shares say: the named line plays the first line's share, and the rest of the time
+    // goes to the other lines by theirs. Within 0.015: the match is five-on-five's only, and
+    // even strength is also four-on-four, overtime and the extra attacker.
+    const [first, second, third, fourth] = ICE_TIME.forwardLines;
+    const rest = (1 - first) / (1 - third);
+    const want = [first * rest, second * rest, first, fourth * rest];
+    shares(coached, 0).forEach((share, i) =>
+      expect(Math.abs(share - want[i]!)).toBeLessThan(0.015),
+    );
+    const visitors = seeds.map((seed) => game(seed, [match(b!, named)]));
+    for (const [games, n] of [
+      [plain, 0],
+      [coached, 1],
+      // Called off, and the visitors' coach (he has no last change): the usual shares, both sides.
+      [seeds.map((seed) => game(seed, [match(a!, named), match(a!, 0)])), 0],
+      [visitors, 0],
+      [visitors, 1],
+    ] as const) {
+      shares(games, n).forEach((share, i) =>
+        expect(Math.abs(share - ICE_TIME.forwardLines[i]!)).toBeLessThan(0.015),
+      );
+    }
+
+    let answered = 0;
+    let unmatched = 0;
+    let counted = 0;
+    for (const g of coached) {
+      const box = boxOf(g);
+      const tl = box.timeline!;
+      const end = !g.overtime
+        ? 3600
+        : g.stats.shootout
+          ? 3600 + HOCKEY_TUNING.overtimeSeconds
+          : box.shots.at(-1)![0];
+      // The box still adds up, from the units the timeline has.
+      for (const n of [0, 1] as const) {
+        const rows = tl.shifts.filter((r) => r[1] === n);
+        const skaters = (n === 0 ? box.home : box.away).skaters;
+        // Ice time: summed from the shifts it is the box's (a tenth of a minute against a second).
+        const seconds = new Map<number, number>();
+        rows.forEach(([from, , unit], i) => {
+          const to = rows[i + 1]?.[0] ?? end;
+          for (const k of unit) seconds.set(k, (seconds.get(k) ?? 0) + to - from);
+        });
+        skaters.forEach((line, k) =>
+          expect(Math.abs((seconds.get(k) ?? 0) / 60 - line.toi)).toBeLessThan(0.15),
+        );
+        // Plus-minus: a goal not on the power play is one for or against everyone on the ice. A
+        // change in the goal's own second can be before or after it: a game where that leaves
+        // the number on the ice in doubt is not counted.
+        const sizes = box.shots
+          .filter((shot) => shot[5] === 1 && shot[8] === 0)
+          .map(([at, side]) => {
+            // The unit out before that second, and any sent out during it.
+            const out = rows.filter(
+              (r, i) => r[0] === at || (r[0] < at && (rows[i + 1]?.[0] ?? at) >= at),
+            );
+            return out.every((r) => r[2].length === out[0]![2].length)
+              ? (side === n ? 1 : -1) * out[0]![2].length
+              : NaN;
+          });
+        const want = sizes.reduce((x, y) => x + y, 0);
+        if (Number.isNaN(want)) continue;
+        expect(skaters.reduce((x, line) => x + line.plusMinus, 0)).toBe(want);
+        counted += sizes.length;
+      }
+      // Second by second, once every change of that second is made, in a game nobody leaves hurt
+      // (a spare is from another line): with five skaters a side, the named line is out exactly
+      // when their first line is. Four-on-four is not matched: there it also meets his other lines.
+      if (tl.hurt.length) continue;
+      const on: [number[], number[]] = [[], []];
+      tl.shifts.forEach(([at, n, unit], i) => {
+        on[n] = unit;
+        if (tl.shifts[i + 1]?.[0] === at) return;
+        const top = on[1].some((k) => lineOf(1)[k] === 0);
+        const out = on[0].some((k) => lineOf(0)[k] === named - 1);
+        if (on.every((u) => u.length === 4) && top && !out) unmatched++;
+        if (on.some((u) => u.length !== 5)) return;
+        expect(out).toBe(top);
+        if (top) answered++;
+      });
+    }
+    expect(answered).toBeGreaterThan(5000);
+    expect(unmatched).toBeGreaterThan(50);
+    expect(counted).toBeGreaterThan(2000);
+  });
 });
 
 /** A hot-seat league: both teams of opening night's first game are human, every other team is not. */
@@ -140,8 +261,20 @@ for (const teamId of [h, v, ...(Object.keys(league.teams) as TeamId[])]) {
   const userControlled = teamId === h || teamId === v;
   handleCommand(league, { kind: 'team.setUserControlled', teamId, userControlled }, local, ctx);
 }
-const order = (teamId: TeamId, at: number, name: string, gameId = id, actor = local) =>
-  handleCommand(league, { kind: 'bench.order', gameId, teamId, at, order: name }, actor, ctx);
+const order = (
+  teamId: TeamId,
+  at: number,
+  name: string,
+  gameId = id,
+  actor = local,
+  value?: number,
+) =>
+  handleCommand(
+    league,
+    { kind: 'bench.order', gameId, teamId, at, order: name, ...(value !== undefined && { value }) },
+    actor,
+    ctx,
+  );
 const code = (r: CommandResult) => (r.ok ? 'ok' : r.error.code);
 
 describe('bench orders in a league', () => {
@@ -169,6 +302,11 @@ describe('bench orders in a league', () => {
     expect(code(handleCommand(league, { ...valued, value: 1 } as never, local, ctx))).toBe(
       'invalid',
     );
+    // Matching a line is the home side's, and names a line (0 calls it off).
+    expect(code(order(v, 600, 'match', id, local, 2))).toBe('invalid');
+    for (const value of [undefined, -1, 1.5, MATCH_LINES + 1]) {
+      expect(code(order(h, 600, 'match', id, local, value))).toBe('invalid');
+    }
     expect(league.bench).toEqual({});
   });
 
@@ -180,8 +318,9 @@ describe('bench orders in a league', () => {
       order(h, 900, 'goalieChange'),
       order(v, 1500, 'emptyNet'),
       order(h, 1500, 'goalieBack'),
+      order(h, 1500, 'match', id, local, 3),
     ].flatMap((r) => (r.ok ? r.events : []));
-    expect(given).toHaveLength(3);
+    expect(given).toHaveLength(4);
     // Not before an earlier order, whoever gave it.
     expect(code(order(v, 1499, 'goalieBack'))).toBe('invalid');
     expect(league.bench).toEqual({
@@ -189,6 +328,7 @@ describe('bench orders in a league', () => {
         { teamId: h, at: 900, order: 'goalieChange' },
         { teamId: v, at: 1500, order: 'emptyNet' },
         { teamId: h, at: 1500, order: 'goalieBack' },
+        { teamId: h, at: 1500, order: 'match', value: 3 },
       ],
     });
 
