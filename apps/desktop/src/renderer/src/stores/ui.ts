@@ -21,7 +21,8 @@ export type Screen =
   | 'team'
   | 'owner'
   | 'frontOffice'
-  | 'player';
+  | 'player'
+  | 'online';
 
 interface UiState {
   screen: Screen;
