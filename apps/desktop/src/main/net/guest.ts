@@ -6,7 +6,9 @@ import {
   type GuestMessage,
   type HostMessage,
   type LeagueEvent,
+  type Peer,
   type TableRows,
+  type TeamId,
 } from '@gm/shared';
 import { defaultContext } from '@gm/sim';
 import type { LeagueService } from '../league';
@@ -20,6 +22,18 @@ function knows(rulesetId: string, sport: string) {
   } catch {
     return false;
   }
+}
+
+export interface GuestOptions {
+  appVersion: string;
+  /** This guest's name in the lobby. */
+  name: string;
+  joinCode?: string;
+  /**
+   * The mirror or the lobby changed without this machine asking (another GM's command, the host's
+   * list, the line dropping or coming back): what its window refetches on.
+   */
+  onChange?: () => void;
 }
 
 function deferred<T>() {
@@ -63,6 +77,8 @@ export class GuestSession {
   /** Tries to get back in since the host last let this guest in. */
   private tries = 0;
   private again?: ReturnType<typeof setTimeout>;
+  /** The lobby as the host last sent it: `you` is this guest's row. */
+  private lobby: { you: number; peers: Peer[] } = { you: 0, peers: [] };
   /** The pieces of the snapshot coming in, and the bytes they inflated to. */
   private rows: { tables: TableRows[]; bytes: number } | null = null;
   /** The pieces so far of a batch whose last has not come. */
@@ -76,7 +92,7 @@ export class GuestSession {
   private constructor(
     private readonly mirror: LeagueService,
     private readonly transport: GuestTransport,
-    private readonly options: { appVersion: string; name: string; joinCode?: string },
+    private readonly options: GuestOptions,
   ) {
     mirror.forward = (command) => this.ask(command);
   }
@@ -89,7 +105,7 @@ export class GuestSession {
   static async join(
     mirror: LeagueService,
     transport: GuestTransport,
-    options: { appVersion: string; name: string; joinCode?: string },
+    options: GuestOptions,
   ): Promise<GuestSession> {
     const session = new GuestSession(mirror, transport, options);
     await session.connect();
@@ -100,6 +116,27 @@ export class GuestSession {
 
   leave() {
     this.stop('left');
+  }
+
+  /** For the screen: the lobby, and whether the line to the host is down (commands fail until it is back). */
+  status() {
+    return { ...this.lobby, reconnecting: !this.greeted };
+  }
+
+  /** A wish for a team: the host decides, and the lobby he sends back says what he did. */
+  requestSeat(teamId: TeamId) {
+    this.tell({ kind: 'seat.request', teamId });
+  }
+
+  /** Done for now, or not: advisory. The host clears it when the clock moves or an offer arrives. */
+  ready(on: boolean) {
+    this.tell({ kind: 'ready', on });
+  }
+
+  /** A word about this guest himself, which waits for no answer. */
+  private tell(message: GuestMessage) {
+    if (this.over || !this.greeted) throw new Error('disconnected');
+    this.send(message);
   }
 
   /** A connection to the host and this guest's `hello` on it: the first, and each one after a drop. */
@@ -162,6 +199,7 @@ export class GuestSession {
     this.forget();
     if (!this.up || this.tries++ >= WIRE.rejoinTries) return this.stop('disconnected');
     this.again = setTimeout(() => void this.connect().catch(() => this.dropped()), WIRE.pingMs);
+    this.options.onChange?.();
   }
 
   /** A command is sent once: its answer will not come on another connection. */
@@ -217,7 +255,8 @@ export class GuestSession {
         this.welcome = message;
         this.greeted = true;
         this.tries = 0;
-        return this.resync();
+        this.resync();
+        return this.options.onChange?.();
       case 'snapshot.begin':
         this.epoch++; // a batch still on its way into the mirror is from before these rows
         this.batch = null;
@@ -244,7 +283,7 @@ export class GuestSession {
         this.syncing = false;
         this.up = true;
         this.joined.resolve();
-        return;
+        return this.options.onChange?.();
       }
       case 'events': {
         const { requestId } = message;
@@ -281,7 +320,9 @@ export class GuestSession {
             },
           )
           .then(() => {
+            // His own command's answer is what his window waits for; anyone else's it did not ask for.
             if (requestId !== undefined) this.answer(requestId, { ok: true, events: batch.events });
+            else this.options.onChange?.();
           });
         return;
       }
@@ -291,8 +332,10 @@ export class GuestSession {
         return this.send({ kind: 'pong' });
       case 'bye':
         return this.stop(message.reason);
-      default:
-      // The peer list: a good message nothing reads yet.
+      case 'session':
+        if (message.you >= message.peers.length) throw new Error('a lobby without this guest');
+        this.lobby = { you: message.you, peers: message.peers };
+        return this.options.onChange?.();
     }
   }
 }

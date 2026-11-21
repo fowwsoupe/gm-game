@@ -5,8 +5,9 @@
  */
 export interface Connection {
   /**
-   * Who is at the other end, as the transport vouches for it, and unlike any other open
-   * connection's. Never taken from a message.
+   * Who is at the other end, as far as the transport can vouch for it: an address on a direct
+   * connection (two games on one machine share theirs), a SteamID on Steam. Never taken from a
+   * message. The host counts wrong join codes by it.
    */
   readonly peerKey: string;
   /**

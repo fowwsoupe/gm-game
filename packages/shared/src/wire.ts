@@ -16,13 +16,18 @@ import type { LeagueEvent } from './events';
  */
 export const WIRE = {
   /** Goes up whenever a message changes shape; the handshake refuses another number. */
-  protocol: 1,
+  protocol: 2,
   /** One packet, either way (a reliable Steam packet cannot be larger than 1 MB). */
   packetBytes: 1_000_000,
   /** One message after inflating, by who sent it. */
   messageBytes: { guest: 64 * 1024, host: 8 * 1024 * 1024 },
   /** Guests of one host: 32 humans with him. */
   guests: 31,
+  /** Connections a direct host holds open beyond that: the ones that have not said `hello` yet. */
+  strangers: 8,
+  /** Wrong join codes one address may send in one window of this long; then it is refused unread. */
+  codeTries: 5,
+  codeTriesMs: 60_000,
   /** Before `welcome`: one `hello`, this small after inflating, within this long. */
   helloBytes: 4 * 1024,
   helloMs: 10_000,
@@ -158,13 +163,17 @@ export const hostMessageSchema = z.discriminatedUnion('kind', [
     resumeKey: id,
   }),
   z.strictObject({ kind: kind('refused'), reason: id }),
+  /** The lobby: the host first, then his guests. `you`: where the one this is sent to stands in it. */
   z.strictObject({
     kind: kind('session'),
+    you: count,
     peers: z
       .array(
         z.strictObject({
           name,
+          /** The team the host seated him on, and the one he asked for. */
           teamId: teamId.nullable(),
+          wish: teamId.nullable(),
           connected: z.boolean(),
           ready: z.boolean(),
           can: z.array(z.literal('advance')).max(1),
@@ -199,6 +208,8 @@ export const hostMessageSchema = z.discriminatedUnion('kind', [
   z.strictObject({ kind: kind('bye'), reason: id }),
 ]);
 export type HostMessage = z.infer<typeof hostMessageSchema>;
+/** One row of the lobby, as the host sends it. */
+export type Peer = Extract<HostMessage, { kind: 'session' }>['peers'][number];
 
 /** A message, by the side that sent it. */
 export interface WireMessages {

@@ -1,14 +1,20 @@
 import { createHash, randomBytes, timingSafeEqual } from 'node:crypto';
 import { SAVE_SCHEMA } from '@gm/data';
 import {
+  CLOCK_COMMANDS,
+  parseCommand,
   parseMessage,
   WIRE,
   type Actor,
   type Command,
   type CommandError,
+  type CommandResult,
+  type Grant,
   type GuestMessage,
   type HostMessage,
   type LeagueEvent,
+  type Peer,
+  type SessionPeer,
   type TeamId,
 } from '@gm/shared';
 import type { LeagueService } from '../league';
@@ -44,7 +50,27 @@ const digest = (text: string) => createHash('sha256').update(text).digest();
 /** In constant time, whatever the two lengths. */
 const sameCode = (a: string, b: string) => timingSafeEqual(digest(a), digest(b));
 
+/**
+ * Addresses whose wrong codes are counted in one window. Past that nobody new is read until the
+ * next: a guesser with many addresses is held to the same few tries a minute, and the count to a
+ * size.
+ */
+const CODE_ADDRESSES = 1024;
+
 const PING = encode({ kind: 'ping' });
+
+export interface HostOptions {
+  appVersion: string;
+  /** Whether a guest needs a code: on a direct connection, whose transport is no gate. */
+  joinCode?: boolean;
+  /** The host's own name in the lobby. */
+  name?: string;
+  /**
+   * The lobby changed, a guest's command changed the league, or the session closed: what the
+   * host's window did not ask for itself, and refetches on.
+   */
+  onChange?: () => void;
+}
 
 interface Guest {
   /** His place in the host's list for the whole session: the host's own number, whatever his connection. */
@@ -55,6 +81,12 @@ interface Guest {
   name: string;
   /** The team the host seated him on. */
   teamId: TeamId | null;
+  /** The team he asked for: a wish, which only the host's `seat` answers. */
+  wish: TeamId | null;
+  /** Done for now, by his own word: advisory, and never while he is away. */
+  ready: boolean;
+  /** What the host granted him. */
+  can: Grant[];
   /** His commands in the league's queue. */
   waiting: number;
   /** Null while he is away: a seat waits for its GM. */
@@ -66,6 +98,16 @@ interface Guest {
   /** When a `resync` of this connection was last answered. */
   syncedAt: number;
 }
+
+/** A guest as the lobby shows him to everyone: without the host's key for him. */
+const row = ({ name, teamId, wish, connection, ready, can }: Guest): Peer => ({
+  name,
+  teamId,
+  wish,
+  connected: connection !== null,
+  ready,
+  can,
+});
 
 /**
  * The host's side of a hosted league. The league stays what it was: one `LeagueService` over the
@@ -79,9 +121,18 @@ interface Guest {
  */
 export class HostSession {
   readonly id = randomBytes(8).toString('hex');
-  /** What a guest types to get in where the transport itself is no gate; null where it is one. */
-  readonly joinCode: string | null;
+  /**
+   * What a guest types to get in where the transport itself is no gate; null where it is one.
+   * A kick makes a new one.
+   */
+  joinCode: string | null;
   private readonly guests = new Map<string, Guest>();
+  /** The host's own row: his team as the session began (the first, when he plays several), his Ready. */
+  private readonly home: TeamId | null;
+  private hostReady = false;
+  /** Wrong codes by address (the transport's `peerKey`), in the window that began at `wrongSince`. */
+  private readonly wrong = new Map<string, number>();
+  private wrongSince = 0;
   private admitted = 0;
   /** The request each guest's command answers, by the actor it ran as (`onPersisted` hands it back). */
   private readonly asked = new WeakMap<Actor, { guest: Guest; requestId: number }>();
@@ -97,23 +148,24 @@ export class HostSession {
   private constructor(
     private readonly league: LeagueService,
     private readonly transport: HostTransport,
-    private readonly appVersion: string,
-    joinCode: boolean,
+    private readonly options: HostOptions,
   ) {
-    this.joinCode = joinCode ? newJoinCode() : null;
+    this.joinCode = options.joinCode ? newJoinCode() : null;
+    this.home = league.listTeams().find((t) => t.userControlled)?.id ?? null;
   }
 
   /**
    * Opens `league` to guests. Refused, saying why, while a GM is out of work (a fired GM is one
    * slot for the whole league: two guests could not be told apart) and when the save holds a
-   * string the wire refuses. "Can be fired" is turned off, and stays off in the save.
+   * string the wire refuses. "Can be fired" is turned off, and stays off in the save (and off
+   * while the session is open, for the commands that come through `dispatch`).
    */
   static async start(
     league: LeagueService,
     transport: HostTransport,
-    options: { appVersion: string; joinCode?: boolean },
+    options: HostOptions,
   ): Promise<HostSession> {
-    const session = new HostSession(league, transport, options.appVersion, !!options.joinCode);
+    const session = new HostSession(league, transport, options);
     const { career, canBeFired } = league.status();
     if (career) throw new Error('Cannot host while a GM is out of work.');
     // The guard every guest will run on these rows: better refused here than at each join.
@@ -132,6 +184,7 @@ export class HostSession {
     league.onPersisted = (events, seq, actor) => {
       try {
         session.broadcast(events, seq, actor);
+        session.noted(events, actor);
       } catch (err) {
         // The batch is saved; what could not be sent (an event that outgrew a packet) ends the
         // session, not the host's own command.
@@ -146,12 +199,42 @@ export class HostSession {
 
   /** The guests, for the host's list: the connected ones, and the seated ones who dropped. */
   list() {
-    return [...this.guests.values()].map(({ key, name, teamId, connection }) => ({
-      key,
-      name,
-      teamId,
-      connected: connection !== null,
-    }));
+    return [...this.guests.values()].map((guest) => ({ key: guest.key, ...row(guest) }));
+  }
+
+  /** The lobby: the host, then his guests, each with the key the host's tools take. */
+  peers(): SessionPeer[] {
+    return [this.me(), ...this.list()];
+  }
+
+  /**
+   * The host's own row. His team is his while it is a human one that he seated no guest on, and
+   * the clock is always his.
+   */
+  private me(): Peer {
+    const { home } = this;
+    const mine =
+      home !== null &&
+      this.human(home) &&
+      ![...this.guests.values()].some((g) => g.teamId === home);
+    return {
+      name: this.options.name ?? 'Host',
+      teamId: mine ? home : null,
+      wish: null,
+      connected: true,
+      ready: this.hostReady,
+      can: ['advance'],
+    };
+  }
+
+  /** The lobby changed: every guest is sent it, with his own row's number, and the host's window is told. */
+  private announce() {
+    if (this.over) return;
+    const guests = [...this.guests.values()];
+    const peers = [this.me(), ...guests.map(row)];
+    for (const [i, guest] of guests.entries())
+      this.send(guest, encode({ kind: 'session', you: i + 1, peers }));
+    this.options.onChange?.();
   }
 
   /**
@@ -178,11 +261,107 @@ export class HostSession {
     )
       throw new Error('That team has a GM.');
     guest.teamId = teamId;
+    guest.wish = null;
     if (teamId === null && !guest.connection) this.guests.delete(key);
+    this.announce();
+  }
+
+  /** Lets a guest move the clock (a co-commissioner), or takes that back. */
+  grant(key: string, on: boolean) {
+    const guest = this.guests.get(key);
+    if (!guest) throw new Error('No such guest.');
+    guest.can = on ? ['advance'] : [];
+    this.announce();
+  }
+
+  /** The host's own Ready. */
+  ready(on: boolean) {
+    this.hostReady = on;
+    this.announce();
+  }
+
+  /**
+   * Puts a guest out. His place is forgotten, so his resume key opens nothing and a command of
+   * his still waiting runs for no team; the join code he knows is replaced; his connection is
+   * told why and closed. The others' resume keys still stand in for the code.
+   */
+  kick(key: string) {
+    const guest = this.guests.get(key);
+    if (!guest) throw new Error('No such guest.');
+    this.guests.delete(key);
+    guest.teamId = null;
+    guest.can = [];
+    if (this.joinCode !== null) this.joinCode = newJoinCode();
+    this.send(guest, encode({ kind: 'bye', reason: 'kicked' }));
+    const { connection } = guest;
+    guest.connection = null;
+    guest.live = false;
+    connection?.close();
+    this.announce();
+  }
+
+  /**
+   * The host's own command, from his window. "Can be fired" cannot be turned on while the session
+   * is open (a fired GM is one slot for the whole league); everything else runs as it always did.
+   */
+  async dispatch(input: unknown): Promise<CommandResult> {
+    const parsed = parseCommand(input);
+    if (!parsed.ok) return parsed;
+    const { command } = parsed;
+    if (command.kind === 'league.setCanBeFired' && command.on)
+      return {
+        ok: false,
+        error: { code: 'not_allowed', message: 'not while hosting an online league' },
+      };
+    const result = await this.league.dispatch(command);
+    if (result.ok) this.ran(command);
+    return result;
+  }
+
+  /** A command ran. One that moves the clock clears every Ready: there is a new day to look at. */
+  private ran(command: Command) {
+    if (!CLOCK_COMMANDS.has(command.kind)) return;
+    const guests = [...this.guests.values()];
+    if (!this.hostReady && !guests.some((g) => g.ready)) return;
+    this.hostReady = false;
+    for (const guest of guests) guest.ready = false;
+    this.announce();
+  }
+
+  /**
+   * A saved batch, read for the lobby. An event of another GM's command that names a GM's team
+   * (an offer just arrived) clears his Ready; and a guest's command changed the league without
+   * the host's window asking.
+   */
+  private noted(events: LeagueEvent[], actor?: Actor) {
+    const author = actor && this.asked.get(actor)?.guest;
+    const named = new Set(events.flatMap((e) => e.teamIds));
+    let cleared = false;
+    for (const guest of this.guests.values()) {
+      if (guest === author || !guest.ready) continue;
+      if (guest.teamId === null || !named.has(guest.teamId)) continue;
+      guest.ready = false;
+      cleared = true;
+    }
+    if (author && this.hostReady) {
+      const mine = this.me().teamId;
+      if (mine !== null && named.has(mine)) {
+        this.hostReady = false;
+        cleared = true;
+      }
+    }
+    if (cleared) this.announce();
+    else if (author) this.options.onChange?.();
+  }
+
+  /** Whether the session is over: the host closed it, or it closed itself on an error. */
+  get closed() {
+    return this.over;
   }
 
   /** Ends the session for everyone: the league is its host's alone again. */
   close(reason = 'closed') {
+    if (this.over) return;
     this.over = true;
     clearInterval(this.heart);
     delete this.league.onPersisted;
@@ -193,6 +372,7 @@ export class HostSession {
       guest.connection?.close();
     }
     this.guests.clear();
+    this.options.onChange?.();
   }
 
   /**
@@ -254,15 +434,18 @@ export class HostSession {
       if (guest?.connection !== connection) return;
       guest.connection = null;
       guest.live = false;
+      guest.ready = false;
       // A seat waits for its GM (a command of his still in the queue runs for his team). Without
       // one there is nothing to come back to.
       if (guest.teamId === null) this.guests.delete(guest.key);
+      this.announce();
     };
   }
 
   /**
    * The handshake: the guest is let in, or told why not. A resume key of this session gives him
-   * the place he held, seat and all. He is sent nothing more until he asks with `resync`.
+   * the place he held, seat and all. He is sent the lobby, and of the league nothing until he asks
+   * with `resync`.
    */
   private admit(connection: Connection, hello: Extract<GuestMessage, { kind: 'hello' }>) {
     const send = (message: HostMessage) => connection.send(encode(message));
@@ -271,7 +454,7 @@ export class HostSession {
       key === undefined
         ? undefined
         : [...this.guests.values()].find((g) => sameCode(g.resumeKey, key));
-    const reason = this.refusal(hello, !!back);
+    const reason = this.refusal(hello, !!back, connection.peerKey);
     if (reason) {
       send({ kind: 'refused', reason });
       connection.close();
@@ -279,19 +462,29 @@ export class HostSession {
     }
     // The connection he held, if the host has not seen it go yet.
     back?.connection?.close();
-    const fresh = { connection, name: hello.name, live: false, missed: 0, syncedAt: -Infinity };
+    const fresh = {
+      connection,
+      name: hello.name,
+      ready: false,
+      live: false,
+      missed: 0,
+      syncedAt: -Infinity,
+    };
     const guest: Guest = back
       ? Object.assign(back, fresh)
       : {
           key: String(++this.admitted),
           resumeKey: randomBytes(16).toString('hex'),
           teamId: null,
+          wish: null,
+          can: [],
           waiting: 0,
           ...fresh,
         };
     this.guests.set(guest.key, guest);
     const { rulesetId, sport } = this.league.head();
     send({ kind: 'welcome', sessionId: this.id, rulesetId, sport, resumeKey: guest.resumeKey });
+    this.announce();
     return guest;
   }
 
@@ -299,15 +492,36 @@ export class HostSession {
    * Why this guest is not let in, or null: his build must be the host's, and he must hold the
    * code, or the resume key of a place in this session (`back`), which stands in for it.
    */
-  private refusal(hello: Extract<GuestMessage, { kind: 'hello' }>, back: boolean) {
+  private refusal(hello: Extract<GuestMessage, { kind: 'hello' }>, back: boolean, address: string) {
     if (this.over) return 'closed';
     if (hello.protocol !== WIRE.protocol) return 'protocol';
-    if (hello.appVersion !== this.appVersion) return 'appVersion';
+    if (hello.appVersion !== this.options.appVersion) return 'appVersion';
     if (hello.saveSchema !== SAVE_SCHEMA) return 'saveSchema';
     if (back) return null;
-    if (this.joinCode !== null && !sameCode(hello.joinCode ?? '', this.joinCode)) return 'joinCode';
+    const code = this.joinCode;
+    if (code !== null && !this.holds(hello.joinCode ?? '', code, address)) return 'joinCode';
     if (this.guests.size >= WIRE.guests) return 'full';
     return null;
+  }
+
+  /**
+   * Whether a newcomer's code is the session's. An address that sent `WIRE.codeTries` wrong ones
+   * in this window of `WIRE.codeTriesMs` is not read again before the next, right code or wrong.
+   *
+   * ponytail: one window for every address, begun by the first `hello` after the last one ended,
+   * so a guesser gets up to twice the tries across its edge. A window per address is the upgrade.
+   */
+  private holds(given: string, code: string, address: string) {
+    const now = Date.now();
+    if (now - this.wrongSince >= WIRE.codeTriesMs) {
+      this.wrong.clear();
+      this.wrongSince = now;
+    }
+    const tries = this.wrong.get(address) ?? 0;
+    if (tries >= WIRE.codeTries || this.wrong.size >= CODE_ADDRESSES) return false;
+    if (sameCode(given, code)) return true;
+    this.wrong.set(address, tries + 1);
+    return false;
   }
 
   /**
@@ -358,9 +572,18 @@ export class HostSession {
         return this.sync(guest, message.seq);
       case 'hello':
         throw new Error('hello twice');
+      case 'seat.request':
+        // A wish, kept if the team is one of the league's: the host decides.
+        if (guest.wish === message.teamId) return;
+        if (!this.league.listTeams().some((t) => t.id === message.teamId)) return;
+        guest.wish = message.teamId;
+        return this.announce();
+      case 'ready':
+        if (guest.ready === message.on) return;
+        guest.ready = message.on;
+        return this.announce();
       default:
-      // A `pong` has said all it says by arriving. A wish for a seat and `ready`: good messages
-      // nothing answers yet.
+      // A `pong` has said all it says by arriving.
     }
   }
 
@@ -383,11 +606,13 @@ export class HostSession {
         const actor: Actor = {
           id: `peer:${guest.key}`, // never `local`
           controls: teamId !== null && this.human(teamId) ? [teamId] : [],
+          can: [...guest.can],
         };
         this.asked.set(actor, { guest, requestId });
         return actor;
       });
-      if (!result.ok) reject(result.error);
+      if (result.ok) this.ran(command);
+      else reject(result.error);
     } catch {
       // Not the engine's refusal: the sim thread died or the save failed. Its text stays here.
       reject({ code: 'invalid', message: 'the host could not run this command' });

@@ -151,7 +151,14 @@ which also says how much of it is built.
 6. **Sessions know only the transport interface** (`net/transport.ts`: packets whole and in
    order, a `peerKey` the transport vouches for, the bytes still `unsent`, nothing handed over
    after `close()`). A new transport implements it and changes no session; session tests run
-   over `loopback()`, which loses packets when a test says so.
+   over `loopback()`, which loses packets when a test says so. `net/tcp.ts` is the direct
+   connection (not encrypted: LAN and testing).
+7. **Main holds one `Online`** (`net/online.ts`): this machine's own league and at most one
+   session. Query handlers read `online.league` (the mirror while this machine is a guest),
+   `commands.dispatch` goes through `online.dispatch`, and what only happens outside a session
+   (a new league, a roster load) asks `online.alone()`. The window reaches a session only
+   through `window.gm.session`; `changed` is main's one push, a signal with nothing in it,
+   for what a window did not ask for.
 
 ## How to add a feature (checklist)
 
