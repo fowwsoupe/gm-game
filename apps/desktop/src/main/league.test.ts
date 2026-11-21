@@ -14,7 +14,9 @@ vi.mock('electron', () => ({ app: { getPath: () => dir } }));
 /** A stand-in for the sim worker: tests decide what each command gets back. */
 class FakeWorker extends EventEmitter {
   static all: FakeWorker[] = [];
-  reply: 'ok' | 'die' | 'bad-event' | 'sim' = 'ok';
+  /** What the next worker to start replies: the service starts one at its first command. */
+  static reply: 'ok' | 'die' | 'bad-event' | 'sim' = 'ok';
+  reply = FakeWorker.reply;
   constructor() {
     super();
     FakeWorker.all.push(this);
@@ -101,7 +103,7 @@ describe('LeagueService', () => {
     const svc = new LeagueService();
     const { teams } = svc.newLeague(1);
     expect(svc.watch(teams[0]!.id)).toBeNull(); // camp: nobody plays
-    FakeWorker.all[0]!.reply = 'sim';
+    FakeWorker.reply = 'sim';
     await svc.dispatch({ kind: 'sim.advance', days: -svc.status().day }); // to opening night
     const game = teams.map((t) => svc.watch(t.id)).find((g) => g)!;
     const { timeline, ...box } = game.result.box as HockeyBoxScore;
@@ -116,7 +118,7 @@ describe('LeagueService', () => {
   it("replays tonight's game with a bench order, and the sim then plays the coached game", async () => {
     const svc = new LeagueService();
     const mine = svc.newLeague(1).teams.find((t) => t.userControlled)!.id;
-    FakeWorker.all[0]!.reply = 'sim';
+    FakeWorker.reply = 'sim';
     await svc.dispatch({ kind: 'sim.advance', days: -svc.status().day });
     while (!svc.watch(mine)) await svc.dispatch(cmd); // to the team's first game
     const plain = svc.watch(mine)!;

@@ -1,7 +1,7 @@
 import { describe, expect, expectTypeOf, it } from 'vitest';
 import type { z } from 'zod';
 import type { Command } from './commands';
-import type { PlayerId, TeamId } from './domain';
+import type { GameId, PlayerId, TeamId } from './domain';
 import { ID_MAX, commandSchema, isSafeText, parseCommand } from './command-schema';
 import { parseRosterFile } from './roster-schema';
 import { SKATER_RATINGS } from './sports/hockey';
@@ -30,6 +30,14 @@ const examples: { [K in Command['kind']]: Extract<Command, { kind: K }> } = {
   'team.relocate': { kind: 'team.relocate', teamId: t, ...identity, market: 1.75 },
   'league.expand': { kind: 'league.expand', ...identity, market: 0.7 },
   'commissioner.move': { kind: 'commissioner.move', playerId: p, teamId: null },
+  'bench.order': {
+    kind: 'bench.order',
+    gameId: 'g1' as GameId,
+    teamId: t,
+    at: 1200,
+    order: 'matchLine',
+    value: 2,
+  },
   'season.rollover': { kind: 'season.rollover' },
   'contract.buyout': { kind: 'contract.buyout', playerId: p },
   'contract.resign': {
@@ -95,7 +103,7 @@ describe('the command schema', () => {
   });
 
   it('covers every command kind', () => {
-    expect(Object.keys(examples)).toHaveLength(38);
+    expect(Object.keys(examples)).toHaveLength(39);
     expect(Object.entries(examples).every(([k, c]) => c.kind === k)).toBe(true);
   });
 
