@@ -78,7 +78,8 @@ if (xgPath) {
   xgSource = `${xgPath} (${parsed.table.source})`;
 }
 const ctx = defaultContext(undefined, goalModel ? { goalModel } : {});
-const actor: Actor = { id: 'lab', controls: [] };
+// Not `local`, so it needs the grant to move the clock.
+const actor: Actor = { id: 'lab', controls: [], can: ['advance'] };
 const all: GameResult[] = [];
 const pointSpreads: number[] = [];
 const topScorer: number[] = [];

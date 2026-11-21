@@ -66,6 +66,7 @@ import type {
   GameSummary,
   HallOfFamer,
   Importance,
+  LeagueEvent,
   LeagueStatus,
   OwnerReport,
   Player,
@@ -74,9 +75,11 @@ import type {
   PulseRow,
   RosterPlayer,
   StaffProfile,
+  TableRows,
   TeamId,
   TradeProposal,
 } from '@gm/shared';
+import { parseCommand } from '@gm/shared';
 import type { GmApi } from '@gm/shared/ipc';
 import createSimWorker from './sim.worker?nodeWorker';
 import type { WorkerRequest } from './sim.worker';
@@ -89,7 +92,7 @@ function teamIn(state: LeagueState, teamId: TeamId) {
   return team;
 }
 
-/** Single-player: the local human. Multiplayer will pass real actors from the network. */
+/** The human at this machine. A hosted league's guests get actors the host builds (`dispatch`). */
 const LOCAL: Actor = { id: 'local', controls: [] };
 
 /**
@@ -101,9 +104,25 @@ const LOCAL: Actor = { id: 'local', controls: [] };
 export class LeagueService {
   private save: SaveFile | null = null;
   private state: LeagueState | null = null;
-  private worker: Worker = createSimWorker({});
-  /** Commands run one at a time, in order. */
+  /** Started by the first command: a guest's mirror never runs the sim. */
+  private worker: Worker | null = null;
+  /** Commands (and a mirror's batches of events) run one at a time, in order. */
   private queue: Promise<unknown> = Promise.resolve();
+  /**
+   * Called after each batch of events is saved, with the event count before it and the actor its
+   * command ran as (the one `dispatch` was given): a host sends the batch on from here. The events
+   * are a copy from before they were applied, so a mirror is given exactly what this service's
+   * reducer was given. It must not throw: the batch is already saved.
+   */
+  onPersisted?: (events: LeagueEvent[], seq: number, actor?: Actor) => void;
+  /** A mirror runs no command: its session sets this, and `dispatch` sends the command to the host. */
+  forward?: (command: Command) => Promise<CommandResult>;
+
+  /**
+   * `path`: the save file, the player's own by default. A guest's mirror passes ':memory:', so
+   * his own save is never opened while he is a guest.
+   */
+  constructor(private readonly path?: string) {}
 
   /**
    * The user's shot-quality model, if `<userData>/models/xg.json` exists and is valid. An invalid
@@ -125,6 +144,7 @@ export class LeagueService {
 
   /** The save file's path; the folder is created on the way (first run: there is none yet). */
   private savePath() {
+    if (this.path) return this.path;
     const dir = join(app.getPath('userData'), 'saves');
     mkdirSync(dir, { recursive: true });
     return join(dir, 'league-1.sqlite');
@@ -171,6 +191,38 @@ export class LeagueService {
     this.save = openSave(this.savePath());
     this.state = state;
     return { teams: this.save.listTeams() };
+  }
+
+  /** The league's rules and sport, and its event count: what a hosted session checks. */
+  head() {
+    const { state } = this.open();
+    return { rulesetId: state.rulesetId, sport: state.sport, seq: state.eventSeq };
+  }
+
+  /** The whole save as rows and the event count they stand at: what a mirror is built from. */
+  snapshot(): { seq: number; tables: TableRows[] } {
+    const { save, state } = this.open();
+    return { seq: state.eventSeq, tables: save.dumpRows() };
+  }
+
+  /**
+   * A mirror's start, and its way back after a gap: a fresh in-memory save filled with a host's
+   * rows (`snapshot`, with the rows per table), then the state loaded from it. A bad snapshot
+   * throws and leaves the service as it was.
+   */
+  restore(tables: Iterable<TableRows>, counts: Readonly<Record<string, number>>) {
+    // On the player's own save this would leave his file behind and play on in memory.
+    if (this.path !== ':memory:') throw new Error('Only a mirror takes a snapshot.');
+    const next = openSave(':memory:');
+    try {
+      next.restoreRows(tables, counts);
+      this.state = next.loadState();
+    } catch (err) {
+      next.close();
+      throw err;
+    }
+    this.save?.close();
+    this.save = next;
   }
 
   listTeams() {
@@ -658,48 +710,94 @@ export class LeagueService {
     return { events, names, ages, stories: storyOf(events) };
   }
 
-  dispatch(command: Command): Promise<CommandResult> {
-    const run = this.queue.then(() => this.runCommand(command));
+  /**
+   * `input` is untrusted (the renderer's, or a guest's): nothing runs before it parses. `actor` is
+   * who sent it, never taken from the input: the host builds a guest's from its own seat table,
+   * as a function, so it is worked out when the command's turn comes and not when it arrived.
+   */
+  dispatch(input: unknown, actor: Actor | (() => Actor) = LOCAL): Promise<CommandResult> {
+    const parsed = parseCommand(input);
+    if (!parsed.ok) return Promise.resolve(parsed);
+    // A mirror never runs the sim: the command goes to the host and comes back as events.
+    if (this.path === ':memory:')
+      return (
+        this.forward?.(parsed.command) ?? Promise.reject(new Error('A mirror runs no command.'))
+      );
+    return this.enqueue(() =>
+      this.runCommand(parsed.command, typeof actor === 'function' ? actor() : actor),
+    );
+  }
+
+  /**
+   * A mirror's entry: one command's events from the host, applied and saved as the host did.
+   * `seq` is the host's event count before them: a lost or repeated batch throws and changes nothing.
+   */
+  applyRemote(events: LeagueEvent[], seq: number): Promise<void> {
+    return this.enqueue(() => {
+      if (this.path !== ':memory:') throw new Error('Only a mirror takes events from a host.');
+      const open = this.open();
+      if (seq !== open.state.eventSeq)
+        throw new Error(`events from ${seq}, the mirror is at ${open.state.eventSeq}`);
+      this.apply(open, events);
+    });
+  }
+
+  private enqueue<T>(job: () => T | Promise<T>): Promise<T> {
+    const run = this.queue.then(job);
     this.queue = run.catch(() => undefined);
     return run;
   }
 
-  private async runCommand(command: Command): Promise<CommandResult> {
-    const { save, state } = this.open();
+  private async runCommand(command: Command, actor: Actor): Promise<CommandResult> {
+    const open = this.open();
     const legends = command.kind === 'staff.hire' ? this.hallOfFame() : [];
-    const result = await this.runInWorker({ state, command, actor: LOCAL, xg: this.xg, legends });
-    if (result.ok) {
-      for (const e of result.events) applyEvent(state, e);
-      try {
-        save.persist(result.events, state);
-      } catch (err) {
-        // The write rolled back, so memory is ahead of the disk: go back to what the disk has.
-        this.state = save.loadState();
-        throw err;
-      }
-    }
+    const req = { state: open.state, command, actor, xg: this.xg, legends };
+    const result = await this.runInWorker(req);
+    if (result.ok) this.apply(open, result.events, actor);
     return result;
   }
 
+  private apply(
+    { save, state }: { save: SaveFile; state: LeagueState },
+    events: LeagueEvent[],
+    actor?: Actor,
+  ) {
+    const seq = state.eventSeq;
+    const report = this.onPersisted;
+    // The state keeps parts of an event and changes them later: copy first, only when hosting.
+    const untouched = report ? structuredClone(events) : events;
+    try {
+      for (const e of events) applyEvent(state, e);
+      save.persist(events, state);
+    } catch (err) {
+      // Memory is ahead of the disk (the write rolled back) or half applied: go back to what the
+      // disk has.
+      this.state = save.loadState();
+      throw err;
+    }
+    report?.(untouched, seq, actor);
+  }
+
   private runInWorker(req: WorkerRequest): Promise<CommandResult> {
+    const worker = (this.worker ??= createSimWorker({}));
     return new Promise((resolve, reject) => {
       const onMessage = (res: CommandResult) => {
-        this.worker.off('error', onError);
+        worker.off('error', onError);
         resolve(res);
       };
       const onError = (err: Error) => {
-        this.worker.off('message', onMessage);
-        this.worker = createSimWorker({}); // the old thread is dead; later commands need a new one
+        worker.off('message', onMessage);
+        this.worker = null; // the thread is dead: the next command starts a new one
         reject(err);
       };
-      this.worker.once('message', onMessage);
-      this.worker.once('error', onError);
-      this.worker.postMessage(req);
+      worker.once('message', onMessage);
+      worker.once('error', onError);
+      worker.postMessage(req);
     });
   }
 
   dispose() {
-    void this.worker.terminate();
+    void this.worker?.terminate();
     this.save?.close();
   }
 }
