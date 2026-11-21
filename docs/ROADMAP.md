@@ -96,6 +96,18 @@ D. Phase 2 headlines
 - [x] Multiplayer step 1, hot-seat (Opus, high, 2 PRs)
 - [x] Multiplayer step 2, hosted online (Fable 5.2, max, 8 PRs; [the brief](research/2026-11-multiplayer-online.md), all 7 jobs built; the Steam transport is built against the real typings and has only run against a fake: not verified live, it still needs a two-machine test with the real Steam App ID, which this repo does not have)
 
+E. UI and UX (brief done: [research/2026-11-ui-port.md](research/2026-11-ui-port.md); port the `#/preview` design into the app, one PR each)
+
+- [ ] 1 tokens and type (Sonnet, medium)
+- [ ] 2 the frame: top bar, six sections, Continue, phase theme (Sonnet, high)
+- [ ] 3 Home: the hero and Needs you (Opus, high)
+- [ ] 4 the player drawer, peek and menu (Sonnet, high)
+- [ ] 5 Team: Roster, Lines, Cap (Sonnet, high)
+- [ ] 6 Market: free agency, trades, the draft class (Opus, high)
+- [ ] 7 the draft room (Sonnet, high)
+- [ ] 8 League and Office screens (Sonnet, medium)
+- [ ] 9 remove the preview (Sonnet, medium)
+
 ---
 
 ## Phase 0 — Foundation (now)
