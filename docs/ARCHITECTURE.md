@@ -59,7 +59,7 @@ would need the same thing, it belongs in a shared engine.
 | `packages/shared`   | Contracts: domain types, events, commands, IPC (`GmApi`), roster schema | `zod`                                                   |
 | `packages/sim`      | The game engine (pure TypeScript, see below)                            | `@gm/shared`                                            |
 | `packages/data`     | SQLite saves: migrations, load/save state, persist events, queries      | `@gm/shared`, `@gm/sim` (types + API), `better-sqlite3` |
-| `apps/desktop`      | Electron: main (LeagueService, worker, Steam), preload, React UI        | everything, but `@gm/sim` only from its root            |
+| `apps/desktop`      | Electron: main (LeagueService, worker, net, Steam), preload, React UI   | everything, but `@gm/sim` only from its root            |
 | `tools/balance-lab` | Headless league-health report (`pnpm lab`)                              | `@gm/sim`, `@gm/shared`                                 |
 | `ml/`               | Python: two trained models (JSON tables), calibration studies           | n/a                                                     |
 
@@ -107,8 +107,10 @@ through their `index.ts`** (`'../cba'`, never `'../cba/ruleset'`). Apps import o
 2. **State changes only in `applyEvent`.** Adding a feature that changes state = add an event
    kind in `shared/events.ts`, handle it in `applyEvent` (sim) and in `SaveFile.persist`
    (data). TypeScript's exhaustive switches flag every place you forgot.
-3. **Every action is a Command.** New action = add a kind in `shared/commands.ts` and a case
-   in `handleCommand`. Validate the actor: in multiplayer, players may only command their teams.
+3. **Every action is a Command.** New action = add a kind in `shared/commands.ts`, its schema
+   in `shared/command-schema.ts` (the typecheck fails without it) and a case in `handleCommand`.
+   Validate the actor: in multiplayer, players may only command their teams. A command is
+   untrusted data: main runs none before `parseCommand` has passed it.
 4. **Everything is data.** Cap numbers, contract limits, season length, points, award names,
    team colours: data, never hard-coded. Read rules from `ctx.ruleset`.
 5. **Models behind interfaces.** Any replacement implements the same interface as the rules-based
@@ -124,9 +126,54 @@ through their `index.ts`** (`'../cba'`, never `'../cba/ruleset'`). Apps import o
     one-off colours.
 12. **Speed is tested.** `perf.test.ts` fails the build if the sim gets slower than budget.
 
+## A hosted league: networking rules
+
+A league played from several machines has one authority, the host: his `LeagueService`, over his
+save, is the only place a command runs. A guest's game is a mirror: a `LeagueService(':memory:')`
+built from the host's table rows and fed the host's events through the same `applyEvent` and
+`SaveFile.persist`. The design and its limits are in `docs/research/2026-11-multiplayer-online.md`,
+which also says how much of it is built.
+
+1. **All networking lives in `apps/desktop/src/main/net/`**, and its contracts (the messages'
+   schemas, the limits) in `packages/shared/src/wire.ts`. The sim, the save and the renderer know
+   nothing of it: the renderer still only calls `window.gm`, and a mirror's `dispatch` sends the
+   command to the host.
+2. **Everything that arrives is untrusted.** A session acts on no packet before `decode`
+   (`net/codec.ts`: the size, a bounded inflate, then `parseMessage`) has passed it, and a
+   message that fails ends that connection and nothing else. So does a broken limit: how many
+   messages, how often a `resync`, how much waits unsent, how long a peer stays silent. The
+   limits are `WIRE` in `wire.ts`. New message kind = its schema in `wire.ts` first.
+3. **The actor is the host's own.** No message says who sent it or for which team. The host
+   builds a guest's actor from the connection the command came in on and its own seat table,
+   when the command's turn comes; its id is never `local`. What only the host may do stays
+   gated in `handleCommand`.
+4. **A mirror never runs the sim** and never opens the player's own save. It changes only
+   through `restore` (a snapshot) and `applyRemote` (the host's events, in sequence). A guest
+   whose events do not follow on asks the host again (`resync`); it never guesses.
+5. **Nothing is sent before it is saved.** The host sends events on from `onPersisted`, in
+   queue order, and takes a snapshot between two commands.
+6. **Sessions know only the transport interface** (`net/transport.ts`: packets whole and in
+   order, a `peerKey` the transport vouches for, the bytes still `unsent`, nothing handed over
+   after `close()`). A new transport implements it and changes no session; session tests run
+   over `loopback()`, which loses packets when a test says so. `net/tcp.ts` is the direct
+   connection (not encrypted: LAN and testing). `net/steam.ts` is Steam (a friends-only lobby,
+   P2P packets from its members only), written against `steamworks.js`' own typings and run
+   only over `net/fakeSteam.ts` so far: not verified live. On Steam the `peerKey` is a SteamID,
+   and the host session is told so (`identified`): a guest's place and seat go by it, a kick
+   holds for the session, and the host's save notes who held which team (`hostSeats`, a `meta`
+   row no snapshot carries).
+7. **Main holds one `Online`** (`net/online.ts`): this machine's own league and at most one
+   session. Query handlers read `online.league` (the mirror while this machine is a guest),
+   `commands.dispatch` goes through `online.dispatch`, and what only happens outside a session
+   (a new league, a roster load) asks `online.alone()`. The window reaches a session only
+   through `window.gm.session`; `changed` is main's one push, a signal with nothing in it,
+   for what a window did not ask for. The renderer answers it in one place (`usePush` in
+   `lib/queries.ts`: the lobby and every league read again), and reads where it stands from
+   `useOnline`; a screen hides what a guest may not do, and main refuses it anyway.
+
 ## How to add a feature (checklist)
 
-1. Shared contract: new types, event kinds and command kinds in `packages/shared`.
+1. Shared contract: new types, event kinds and command kinds (with their schema) in `packages/shared`.
 2. Engine logic in the right place: a shared engine if every sport needs it, else `sports/hockey/`. Export it from the folder's `index.ts`, with tests.
 3. `applyEvent` and `SaveFile.persist` handle the new events; add a migration if new columns/tables.
 4. A `handleCommand` case if players can trigger it.

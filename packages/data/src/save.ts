@@ -5,6 +5,7 @@ import type {
   PlayerMove,
   CareerLine,
   CapCharge,
+  Cell,
   DraftResult,
   GameResult,
   Importance,
@@ -14,6 +15,7 @@ import type {
   PlayerId,
   PlayoffSeries,
   Sport,
+  TableRows,
   Team,
   TeamId,
   TeamStatus,
@@ -22,6 +24,9 @@ import type { LeagueState, ScheduledGame } from '@gm/sim';
 import { migrations } from './migrations';
 
 export type Db = Database.Database;
+
+/** The save schema's number. A hosted league's guests must run the same one. */
+export const SAVE_SCHEMA = migrations.length;
 
 /**
  * Opens (or creates) a save file. One league = one .sqlite file, which keeps
@@ -98,6 +103,12 @@ const JSON_META = {
 
 const IMPORTANCE_RANK: Record<Importance, number> = { minor: 0, notable: 1, major: 2 };
 
+/** The `meta` key of a host's own note (`hostSeats`): the one row no snapshot carries. */
+const HOST_SEATS = 'hostSeats';
+
+const isCell = (c: unknown) =>
+  c === null || typeof c === 'string' || (typeof c === 'number' && Number.isFinite(c));
+
 interface PlayerRow {
   id: string;
   team_id: string | null;
@@ -146,6 +157,24 @@ export class SaveFile {
         'INSERT INTO meta (key, value) VALUES (?, ?) ON CONFLICT(key) DO UPDATE SET value = excluded.value',
       )
       .run(key, value);
+  }
+
+  /**
+   * A host's own note for his next online session: team id to the lasting identity (a SteamID) of
+   * the guest he seated on it. It is this machine's alone: `dumpRows` leaves it out, so no guest
+   * is ever sent it. A note that does not read is no note.
+   */
+  hostSeats(): Record<string, string> {
+    try {
+      const seats = JSON.parse(this.getMeta(HOST_SEATS) ?? '{}') as object;
+      return Object.fromEntries(Object.entries(seats).filter(([, who]) => typeof who === 'string'));
+    } catch {
+      return {};
+    }
+  }
+
+  setHostSeats(seats: Readonly<Record<string, string>>) {
+    this.setMeta(HOST_SEATS, JSON.stringify(seats));
   }
 
   // ---------- whole league ----------
@@ -645,6 +674,65 @@ export class SaveFile {
     this.setMeta('eventSeq', String(state.eventSeq));
     for (const k of Object.keys(JSON_META) as (keyof typeof JSON_META)[])
       this.setMeta(k, JSON.stringify(state[k]));
+  }
+
+  // ---------- the whole save as rows (a hosted league's snapshot) ----------
+
+  /** This build's tables, in the order the migrations made them, each with its number of columns. */
+  private tables(): Map<string, number> {
+    const names = this.db
+      .prepare(
+        "SELECT name FROM sqlite_master WHERE type = 'table' AND name NOT LIKE 'sqlite_%' ORDER BY rowid",
+      )
+      .pluck()
+      .all() as string[];
+    return new Map(names.map((t) => [t, (this.db.pragma(`table_info(${t})`) as unknown[]).length]));
+  }
+
+  /**
+   * Every row of every table, in rowid order: the order the queries read them back in.
+   *
+   * ponytail: the whole save in memory at once, on the caller's thread: about 6 MB of rows for
+   * each season played (16 teams). Reading table by table with `iterate()` is the upgrade when a
+   * save of many seasons makes a join stutter.
+   */
+  dumpRows(): TableRows[] {
+    return [...this.tables().keys()].map((table) => {
+      const rows = this.db.prepare(`SELECT * FROM ${table} ORDER BY rowid`).raw().all() as Cell[][];
+      // What a host keeps for himself (`hostSeats`) stays on his machine.
+      return { table, rows: table === 'meta' ? rows.filter(([key]) => key !== HOST_SEATS) : rows };
+    });
+  }
+
+  /**
+   * Fills a fresh save with the rows another one dumped. They may have crossed a network: a table
+   * is picked from this build's own list, every cell is a bound string, number or null, and
+   * `counts` (rows per table) must match at the end. All or nothing: a bad row or a wrong count
+   * leaves the save as it was.
+   */
+  restoreRows(batches: Iterable<TableRows>, counts: Readonly<Record<string, number>>) {
+    const tables = this.tables();
+    this.db.transaction(() => {
+      // Rows come table by table, not parents first: foreign keys are checked at the commit.
+      this.db.pragma('defer_foreign_keys = ON');
+      for (const { table, rows } of batches) {
+        const columns = tables.get(table);
+        if (columns === undefined) throw new Error(`restore: no table ${table}`);
+        const insert = this.db.prepare(
+          `INSERT INTO ${table} VALUES (${Array(columns).fill('?').join(', ')})`,
+        );
+        for (const row of rows) {
+          if (!Array.isArray(row) || row.length !== columns || !row.every(isCell))
+            throw new Error(`restore: a bad row in ${table}`);
+          insert.run(row);
+        }
+      }
+      for (const table of tables.keys()) {
+        const n = this.db.prepare(`SELECT COUNT(*) FROM ${table}`).pluck().get() as number;
+        if (n !== (counts[table] ?? 0))
+          throw new Error(`restore: ${n} rows in ${table}, not ${counts[table] ?? 0}`);
+      }
+    })();
   }
 
   // ---------- queries ----------

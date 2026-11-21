@@ -1,4 +1,5 @@
 import { z } from 'zod';
+import { isSafeText } from './command-schema';
 import { GOALIE_RATINGS, HOCKEY_POSITIONS, SKATER_RATINGS } from './sports/hockey';
 
 /**
@@ -37,7 +38,13 @@ const goalieStats = z.object({ gp: count, shotsAgainst: count, saves: count });
 
 const rosterPlayer = z
   .object({
-    id: z.string().min(1),
+    // His id in the league is `p_` + this one, and it has to pass the id rule every command is
+    // checked with (`command-schema.ts`), or nobody could ever sign, trade or play him.
+    id: z
+      .string()
+      .min(1)
+      .max(64)
+      .refine((s) => isSafeText(`p_${s}`), 'not usable as an id'),
     firstName: z.string().min(1).max(60),
     lastName: z.string().min(1).max(60),
     birthYear: z.number().int().min(1950).max(2020),
