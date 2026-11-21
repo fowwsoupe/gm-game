@@ -6,6 +6,7 @@ import type {
   HockeyGameStats,
   HockeyPenalty,
   HockeyShot,
+  HockeyTimeline,
   Player,
   PlayerId,
   TeamId,
@@ -84,6 +85,9 @@ interface Played {
  * players, a pulled goalie and empty-net goals all come out of that, not the other way round.
  * Overtime is 3v3 sudden death (five-on-five periods in the playoffs), then a shootout.
  * `keepBox: false` (the fast mode) skips the box score and injuries but plays the same game.
+ * `timeline` also writes down, in the box, what the game decides and the box does not keep (who
+ * is on the ice, the goalie leaving or changing, a skater hurt, shootout attempts): it draws
+ * nothing from `rng`, so the game is the same with or without it.
  */
 function playGame(
   input: {
@@ -95,6 +99,7 @@ function playGame(
     medical: [number, number];
     playoff: boolean;
     keepBox: boolean;
+    timeline: boolean;
   },
   rng: Rng,
   model: GoalModel,
@@ -104,6 +109,16 @@ function playGame(
     makeSide(input.home, input.homeBackup),
     makeSide(input.away, input.awayBackup),
   ] as const;
+  const tl: HockeyTimeline | undefined =
+    input.timeline && input.keepBox
+      ? {
+          firstD: [S[0].lines.flat().length, S[1].lines.flat().length],
+          shifts: [],
+          goalies: [],
+          hurt: [],
+          shootout: [],
+        }
+      : undefined;
   const goals: [number, number] = [0, 0];
   const shotCount: [number, number] = [0, 0];
   const emptyNet: [number, number] = [0, 0];
@@ -156,13 +171,19 @@ function playGame(
     for (const n of [0, 1] as const) {
       const s = S[n];
       const window = pullWindow(n);
-      s.pulled = regulation && window > 0 && t >= REGULATION - window && s.current >= 0;
+      const pulled = regulation && window > 0 && t >= REGULATION - window && s.current >= 0;
+      if (tl && pulled !== s.pulled) tl.goalies.push([Math.round(t), n, pulled ? 0 : 1]);
+      s.pulled = pulled;
     }
     for (const n of [0, 1] as const) {
       const mine = count(n);
       const theirs = count((1 - n) as 0 | 1);
       const kind = mine > theirs ? 'pp' : mine < theirs ? 'pk' : 'ev';
-      S[n].onIce = buildUnit(S[n], kind, mine + (S[n].pulled ? 1 : 0), rng);
+      const was = S[n].onIce;
+      const now = buildUnit(S[n], kind, mine + (S[n].pulled ? 1 : 0), rng);
+      S[n].onIce = now;
+      if (tl && (now.length !== was.length || now.some((k, i) => k !== was[i])))
+        tl.shifts.push([Math.round(t), n, now]);
       const f = S[n].onIce.filter((k) => !S[n].isD[k]);
       const d = S[n].onIce.filter((k) => S[n].isD[k]);
       // The first forward takes the draws (his line's centre), as in the team strength numbers.
@@ -235,6 +256,7 @@ function playGame(
         )
           continue;
         s.out.add(k);
+        tl?.hurt.push([Math.round(t), n, k]);
         injuries.push({ playerId: s.players[k]!.id, days: pickInjuryDays() });
       }
       const hurt =
@@ -251,6 +273,7 @@ function playGame(
     if (s.current !== 0 || !s.goalies[1]) return;
     s.current = 1;
     s.against = 0;
+    tl?.goalies.push([Math.round(t), n, 2]);
     s.goalieLines.push({ id: s.goalies[1].id, toi: 0, shotsAgainst: 0, saves: 0 });
   };
 
@@ -423,7 +446,7 @@ function playGame(
         penalties: false,
         suddenDeath: true,
       });
-      if (overtimeGoal === null) shootoutWinner = playShootout(S, rng, goalFactor);
+      if (overtimeGoal === null) shootoutWinner = playShootout(S, rng, goalFactor, tl?.shootout);
     }
   }
 
@@ -433,7 +456,9 @@ function playGame(
     overtimeGoal,
     shootoutWinner,
     overtime,
-    ...(input.keepBox ? { box: finishBox(S, shots, penalties, emptyNet) } : {}),
+    ...(input.keepBox
+      ? { box: { ...finishBox(S, shots, penalties, emptyNet), ...(tl && { timeline: tl }) } }
+      : {}),
     injuries,
   };
 }
@@ -447,6 +472,8 @@ interface MatchupInput {
   playoff?: boolean;
   /** Score and totals only, no box score or injuries: faster, for odds and what-if sims. */
   resultOnly?: boolean;
+  /** Also keep `HockeyBoxScore.timeline` for a viewer; the game itself does not change. */
+  timeline?: boolean;
   /** The team played yesterday: its backup goalie starts (never in the playoffs). */
   homeBackToBack?: boolean;
   awayBackToBack?: boolean;
@@ -484,6 +511,7 @@ export function simGame(
       medical: [input.homeMedical ?? 1, input.awayMedical ?? 1],
       playoff: !!input.playoff,
       keepBox: !input.resultOnly,
+      timeline: !!input.timeline,
     },
     rng,
     model,

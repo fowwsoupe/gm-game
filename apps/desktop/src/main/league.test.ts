@@ -3,6 +3,7 @@ import { existsSync, mkdtempSync, rmSync } from 'node:fs';
 import { tmpdir } from 'node:os';
 import { join } from 'node:path';
 import { afterAll, beforeEach, describe, expect, it, vi } from 'vitest';
+import type { HockeyBoxScore } from '@gm/shared';
 
 const dir = mkdtempSync(join(tmpdir(), 'gm-svc-'));
 afterAll(() => rmSync(dir, { recursive: true, force: true }));
@@ -78,6 +79,16 @@ describe('LeagueService', () => {
     expect(a.teams.length).toBeGreaterThan(0);
     expect(b.teams.length).toBe(a.teams.length);
     expect(existsSync(join(dir, 'saves', 'league-1.sqlite.new'))).toBe(false);
+    svc.dispose();
+  });
+
+  it('plays an exhibition with its timeline, the same game for the same seed', () => {
+    const svc = new LeagueService();
+    const [home, away] = svc.newLeague(1).teams;
+    const game = svc.exhibition(home!.id, away!.id, 7);
+    const box = game.result.box as HockeyBoxScore;
+    expect(box.timeline!.shifts.length).toBeGreaterThan(50);
+    expect(svc.exhibition(home!.id, away!.id, 7)).toEqual(game);
     svc.dispose();
   });
 

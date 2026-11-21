@@ -169,6 +169,12 @@ export interface SportModule<Strength = unknown> {
       playoff?: boolean;
       /** Score only (no box score, no injuries): the fast mode for playoff odds. */
       resultOnly?: boolean;
+      /**
+       * Also keep, in the box, what a viewer needs to draw the game (hockey: who is on the ice).
+       * It must not change the game: same result, same box, same draws from `rng`. Nothing to
+       * keep it in with `resultOnly`.
+       */
+      timeline?: boolean;
       /** The team also played yesterday (hockey: its backup goalie starts). */
       homeBackToBack?: boolean;
       awayBackToBack?: boolean;

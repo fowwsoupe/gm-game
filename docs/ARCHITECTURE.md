@@ -79,7 +79,8 @@ src/
   trades/    trade window, legality and the other team's answer (built on value + cba)
   sports/    SportModule interface + one folder per sport
     hockey/  NHL: team strength, generator, NHL_2026 ruleset, and the game sim:
-             game.ts (the clock loop: shots, penalties, overtime), units.ts (who is on the ice),
+             game.ts (the clock loop: shots, penalties, overtime; asked, a timeline for the
+             match viewer, which changes nothing in the game), units.ts (who is on the ice),
              side.ts (a team's sides of the game, box score), shootout.ts,
              tuning.ts (HOCKEY_TUNING knobs, GoalModel)
   models.ts  Models: shared swappable brains + rules-based defaults

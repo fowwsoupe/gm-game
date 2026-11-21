@@ -20,7 +20,6 @@ changes a number in the game, the ruleset or balance lab links back here.
 | 2026-11 | [Player builds evidence](2026-11-player-builds-evidence.md)      | Skater shapes clustered from real NHL seasons (k by silhouette, centres and shares), and the year-to-year r that keeps both play traits                                                         |
 | 2026-11 | [League news](2026-11-league-news.md)                            | A news tab of posts from the existing feed, faces for players and the front office, storylines as threads worked out on read, no likes or follows, and the jobs                                 |
 | 2026-11 | [Match viewer](2026-11-match-viewer.md)                          | A timeline the game sim writes on request, watching by replaying the day on a copy, bench orders as commands replayed from the seed, what is exact and what is drawn, and the jobs              |
-| 2026-11 | [Multiplayer online](2026-11-multiplayer-online.md)              | A hosted online league: the host as the only authority, a guest's mirror, an untrusted wire, snapshot and resync, seats and readiness, loopback, direct and Steam transports, and the jobs      |
 
 Rules: never edit an old report (add a new dated one); copy any number you use into the
 ruleset or balance lab with a link back to the report section.
