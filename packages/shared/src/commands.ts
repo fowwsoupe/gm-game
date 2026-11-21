@@ -150,6 +150,14 @@ export type Command =
 
 /** What the host of an online league can grant a remote player. `advance`: the clock commands. */
 export type Grant = 'advance';
+/** The clock: what moves the league on for everyone. */
+export const CLOCK_COMMANDS: ReadonlySet<Command['kind']> = new Set<Command['kind']>([
+  'sim.advance',
+  'offseason.openFreeAgency',
+  'offseason.startDraft',
+  'freeAgency.advanceDay',
+  'season.rollover',
+]);
 
 /** Who issued a command. Single-player is always 'local'; multiplayer adds real ids. */
 export interface Actor {

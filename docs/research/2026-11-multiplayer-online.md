@@ -148,11 +148,15 @@ command boundary, where the host's own state sat.
 | guest | `resync`                                          | the mirror's event sequence number, or none to ask for a snapshot                                         |
 | guest | `pong`                                            | nothing                                                                                                   |
 | host  | `welcome` or `refused`                            | session id, ruleset id, sport and a resume key, or the reason                                             |
-| host  | `session`                                         | the peer list: name, team, connected, ready, grants                                                       |
+| host  | `session`                                         | the peer list (name, team, the team asked for, connected, ready, grants) and which row is the receiver's  |
 | host  | `snapshot.begin`, `snapshot.rows`, `snapshot.end` | table rows in batches; the end carries the event sequence number and the row counts                       |
 | host  | `events`                                          | the sequence number before its first event, the events, a last-piece flag, the request id (to the sender) |
 | host  | `rejected`                                        | the request id and the `CommandError`                                                                     |
 | host  | `ping`, `bye`                                     | nothing, or the reason                                                                                    |
+
+Job 5 changed one message: `session` now says which row is the receiver's own (`you`) and
+carries the team each peer asked for (`wish`). The wire protocol number is therefore 2, and a
+build from before job 5 is refused at the handshake.
 
 **Everything from the network is untrusted.** Every message, either way, passes a zod schema
 before a session acts on it. The schemas, the limits and the parse functions live in
@@ -160,32 +164,34 @@ before a session acts on it. The schemas, the limits and the parse functions liv
 before anything is parsed, and breaking either closes the connection. Inflating uses zlib's
 `maxOutputLength`, so a small packet cannot unpack into gigabytes.
 
-| Limit                             | Value                                                                    |
-| --------------------------------- | ------------------------------------------------------------------------ |
-| One packet, either way            | 1,000,000 bytes                                                          |
-| Guest to host, after inflating    | 64 KB a message                                                          |
-| Host to guest, after inflating    | 8 MB a message; 64 MB for one command's events; 512 MB for a snapshot    |
-| Guest messages                    | 20 a second, burst 40                                                    |
-| Commands waiting, per guest       | 8; one more is refused with an error, not queued                         |
-| Before `welcome`                  | `hello` only, 4 KB, within 10 s                                          |
-| Guests                            | 31 (32 humans with the host)                                             |
-| Display name                      | 32 characters                                                            |
-| `resync` answers                  | one per connection per 10 s, to admitted peers only                      |
-| Replay buffer                     | the last 16 MB of encoded `events` messages                              |
-| Host's unsent backlog for a guest | 64 MB, then he is dropped and resyncs when he is back                    |
-| Heartbeat                         | `ping` every 5 s; 3 missed is a disconnect (the same on every transport) |
-| A guest's own watch               | 15 s with no word from the host, and he closes his end                   |
-| A dropped guest's way back        | 12 tries, 5 s apart                                                      |
+| Limit                             | Value                                                                                  |
+| --------------------------------- | -------------------------------------------------------------------------------------- |
+| One packet, either way            | 1,000,000 bytes                                                                        |
+| Guest to host, after inflating    | 64 KB a message                                                                        |
+| Host to guest, after inflating    | 8 MB a message; 64 MB for one command's events; 512 MB for a snapshot                  |
+| Guest messages                    | 20 a second, burst 40                                                                  |
+| Commands waiting, per guest       | 8; one more is refused with an error, not queued                                       |
+| Before `welcome`                  | `hello` only, 4 KB, within 10 s                                                        |
+| Guests                            | 31 (32 humans with the host)                                                           |
+| Open connections, direct host     | 39: the 31 guests and 8 more, whether they have said `hello` or not                    |
+| Wrong join codes                  | 5 from one address in a minute; then it is refused, code unread, until the minute ends |
+| Display name                      | 32 characters                                                                          |
+| `resync` answers                  | one per connection per 10 s, to admitted peers only                                    |
+| Replay buffer                     | the last 16 MB of encoded `events` messages                                            |
+| Host's unsent backlog for a guest | 64 MB, then he is dropped and resyncs when he is back                                  |
+| Heartbeat                         | `ping` every 5 s; 3 missed is a disconnect (the same on every transport)               |
+| A guest's own watch               | 15 s with no word from the host, and he closes his end                                 |
+| A dropped guest's way back        | 12 tries, 5 s apart                                                                    |
 
-All of them are enforced since job 4, and the numbers are in
-`packages/shared/src/wire.ts`. Three rows changed while it was built. The 10 s rule was for
+All of them are enforced since job 4 (the two rows about the direct connection since job 5),
+and the numbers are in `packages/shared/src/wire.ts`. Three rows changed while it was built. The 10 s rule was for
 snapshots only: it now covers every answer to a `resync` (the batches missed, or a snapshot),
 because a replay from the buffer can be 16 MB for a message of 30 bytes, and asking sooner
 closes the connection like any other limit. The guest's watch and his way back are new: his
 session reconnects by itself (see "Drops" below). The
 backlog is what the transport reports as not yet sent (`Connection.unsent`); the loopback can
-only report what one turn of the main thread piled up, and a socket's real count comes with the
-direct connection (job 5).
+only report what one turn of the main thread piled up; the direct connection reports its
+socket's own count (job 5).
 
 Then shape. The host side protects the save, so it is strict: a zod schema for the whole
 `Command` union, every field typed and bounded, kept equal to the `Command` type at compile
@@ -258,8 +264,15 @@ let in, under its own number for him, and the resume key opens that place from a
 seated guest's place outlives his connection: one with no team is forgotten when he drops and
 comes back as a newcomer, with the code. Taking the team from a guest who is away forgets him,
 which is how the host frees a team whose GM is not coming back; until then his place counts
-toward the 31. The transport's `peerKey` is read by no session yet: it waits for the SteamIDs
-of job 7.
+toward the 31. As built in job 5: a wish stays on the guest's row (`wish`), for everyone to
+see, until the host seats him, and one for a team the league does not have is ignored. The
+host's own row comes first in the list; its team is the first human team the league had when
+the session started, for as long as that team is human and no guest holds it. A kick forgets
+the guest (his place, his resume key and his grant) and his team stays a human team on the
+host, who seats someone else on it or hands it to its AI GM. A guest who leaves by himself is a
+guest who dropped: if he was seated, his row stays, disconnected, until the host kicks him or
+takes the team back. The transport's `peerKey` is read for one thing, counting wrong join codes
+by address; seats by SteamID wait for job 7.
 
 **Advancing the day; readiness.** The clock belongs to the host: he presses the sim buttons, and
 so may a guest he grants `advance` (a co-commissioner). Every GM has a Ready toggle; on a guest
@@ -268,7 +281,12 @@ main process, sent with the peer list: not league state, not an event, not saved
 when the clock moves, and when another GM's command produces an event that names your team (an
 offer just arrived). A disconnected GM counts as not ready. Readiness blocks nothing in the
 engine: when a seated GM is not ready, whoever presses advance is asked to confirm, with the
-names. Nobody can hold the league up, and nothing advances by itself.
+names. Nobody can hold the league up, and nothing advances by itself. As built in job 5: a
+command that moves the clock and succeeds clears every Ready, whoever sent it (the five clock
+commands are `CLOCK_COMMANDS` in `packages/shared`, which the engine's gate reads too); a saved
+batch that names a GM's team clears his Ready unless his own command produced it. The host's
+window sends its commands through his session for this, and a guest who drops is not ready
+when he is back. The confirm is the screen's (job 6).
 
 **Pausing for a human decision.** The one place the engine itself waits for a human is the live
 draft, and it already does: it stops when a human team is on the clock and goes on when that
@@ -284,8 +302,8 @@ offer) or hands the team to its AI GM. No pick timer: add one when a playtest as
 is local only: two fired guests could not be told apart and neither could take a job. Hosting
 therefore turns "can be fired" off (the existing `league.setCanBeFired`, as `local`, so it
 stays off in the save until the host turns it on again), keeps it off while a session is open
-(from job 5: until the session API carries the host's own commands, nothing stops him turning
-it back on), and refuses to start while a GM is out of work. A job market for several GMs is its own job.
+(since job 5: the host's window sends its commands through his session, which refuses to turn
+it on), and refuses to start while a GM is out of work. A job market for several GMs is its own job.
 
 **Joining and resync: the snapshot.** The snapshot is the save's rows. When a guest's `resync`
 calls for one, between two commands, the
@@ -358,7 +376,9 @@ change anything he is not allowed to.
 
 **Transports.** One interface: a host side that listens and hands out connections, a guest side
 that connects, and a connection with `send(bytes)`, `close()`, message and close callbacks, and
-a `peerKey` the transport vouches for, unlike any other open connection's. Packets arrive whole
+a `peerKey` the transport vouches for. It is not one per connection, as this brief first said
+(job 5): on a direct connection it is the remote address, which two games on one machine or
+behind one router share; on Steam it will be a SteamID. Packets arrive whole
 and in order, and nothing is handed to an end after its own `close()` (job 3: a refused guest
 gets one `hello`, whatever was already on its way). Job 4 added `unsent`, the bytes handed to
 `send` that have not left the machine, which the host's backlog limit reads (zero where a
@@ -377,7 +397,16 @@ transport cannot tell). Three implementations:
   time; an address with 5 wrong tries is ignored for a minute. A kick also closes the socket
   and voids that guest's resume key, and a valid resume key stands in for the code, so the
   others can still rejoin. It is not encrypted and proves nothing about who is on the other
-  end: LAN and testing only, and the screen says so.
+  end: LAN and testing only, and the screen says so. As built in job 5 (`net/tcp.ts`, 125
+  lines): the minute is one window for every address, begun by the first `hello` after the
+  last one ended, so a guesser gets up to 10 tries across its edge; an address at 5 is refused
+  with its code unread, the right one included, and so is everyone once 1,024 addresses are
+  being counted, until the window ends. The cap on connections that have not said `hello` is a
+  cap on them all: the server holds 39 sockets (the 31 guests and 8 more) and takes no 40th,
+  and the session closes a silent one after 10 s. Whoever keeps the spare 8 filled keeps
+  newcomers out for as long as he keeps at it, which a LAN accepts. `unsent` is the socket's
+  own count, and a close still sends what was written, then cuts a peer who has not closed
+  5 s later. The port listens on every interface from `host` to `leave`.
 - **Steam**, for play over the internet. The host creates a friends-only lobby of 32 and
   invites through `openInviteDialog()`. A friend's game gets `GameLobbyJoinRequested`, joins the
   lobby, reads the owner with `getOwner()` and sends `hello` to him with `sendP2PPacket`. The
@@ -400,6 +429,19 @@ kick. On a guest the seat is the session's team, the hot-seat switcher and curta
 the sim bar gives way to the Ready toggle (unless he is granted), and New league, Load roster
 and the commissioner tools are hidden; main refuses them anyway. On the host the switcher
 stays: it is the commissioner's way to act for an absent GM. Text in `en.ts` and `fr.ts`.
+
+The session API as built in job 5 (`net/online.ts` behind `GmApi.session`): `host` opens the
+direct connection only, until job 7 adds Steam, and its status carries what the host reads out
+(this machine's addresses on its networks, the port, the code); `join` takes an address, a
+port, the code and a name. Every call answers done, or the reason as text for the screen.
+`status` is `none` (with why the last league joined ended: `closed`, `kicked`, `disconnected`
+or an error's text),
+`host` or `guest` (with `reconnecting`); only the host's list carries the keys that `seat`,
+`grantAdvance` and `kick` take. `changed` carries nothing. It is sent when the lobby changes,
+when another GM's command changed the league, when a guest's line drops or comes back and when
+the session ends; a window's own command answers by itself and brings no push. Main refuses a
+new league and a roster load on the host too while his session is open, and a second session
+while one is open or opening.
 
 **Where the code goes.** Contracts, schemas and limits in `packages/shared`; the row dump and
 restore in `packages/data`; sessions, the codec and the transports in
@@ -530,7 +572,7 @@ job 4 are in.
    arrival, `resync`, the two totals, the failed apply contained, the way back after a drop and
    the 15 s watch; `Connection.unsent` and the loopback's `lose` in `net/transport.ts`; `unpack`
    in the codec (a message with the bytes it inflated to); the new numbers in `WIRE`. No
-   message changed shape, so the protocol number stays 1. `net/session.test.ts` gained four
+   message changed shape, so the protocol number stays 1 (2 since job 5). `net/session.test.ts` gained four
    tests, each starting from a hosted league on its own save file with one seated guest: a
    whole batch lost, then the last piece of a 60-day batch, both sent again from the buffer
    with no snapshot, then a buffer that keeps nothing and a snapshot, the two leagues identical
@@ -562,7 +604,7 @@ job 4 are in.
    nothing, the 10 s rule for every `resync` answer, the guest's own way back, its 15 s watch,
    which places outlive a connection, a command's answer when its batch is passed over or it
    is given between two connections, and `unsent` on the transport interface.
-5. **Direct connection and the session API** (Fable, main and contracts). The TCP transport,
+5. **Direct connection and the session API: done** (Fable, main and contracts). The TCP transport,
    with its count of unsent bytes and a cap on the connections that have not said `hello` yet.
    Lobby state in the sessions: seat requests and approval, readiness, the advance grant, kick,
    the peer list, and a guest's "reconnecting" in the status. The join code's throttle and its
@@ -575,9 +617,64 @@ job 4 are in.
    the clock moves, a granted guest advances, and both end identical; a kicked guest cannot
    rejoin with the old code or his resume key; a frame split across reads and one over the
    limit are handled; with no session the app behaves as before.
+   _Built:_ `net/tcp.ts`, the direct connection on Node's `net` with no new dependency: the
+   4-byte length, a length over the limit closed on before its body, `unsent` from the socket,
+   39 sockets at most, a close that still sends what was written. In `net/host.ts`: the wish,
+   Ready and the grants on each guest's row, the host's own row, `seat`, `grant`, `ready` and
+   `kick`, the `session` message sent whenever the list changes, the count of wrong codes by
+   address, and `dispatch` for the host's own commands (Ready cleared, "can be fired" kept
+   off). In `net/guest.ts`: `requestSeat`, `ready`, and `status()` with the list and
+   `reconnecting`. `net/online.ts` is what main holds: this machine's own league and at most
+   one session, the league the window reads (the mirror while a guest) and the calls of
+   `GmApi.session`. In `packages/shared`: the two new fields of `session` and protocol 2,
+   `WIRE.strangers`, `codeTries` and `codeTriesMs`, `CLOCK_COMMANDS` (moved from the engine,
+   which imports it), `GmApi.session`, `SessionStatus` and the IPC names. Main's handlers read
+   `online.league`, `commands.dispatch` goes through `online.dispatch`, and `changed` is main's
+   first push to a window.
+   `net/tcp.test.ts` has five tests over real sockets on 127.0.0.1: a length and a body cut
+   across reads, then three packets in one read; a packet of exactly the limit, then a length
+   one over it, closed with no body sent; `unsent` past a packet after 32 MB toward a peer who
+   reads nothing, and zero once he reads; 39 connections held and the 40th closed; a close that
+   delivers the last word and hands nothing over afterwards. `net/session.test.ts` gained one:
+   two `Online`, each over its own league, on real sockets. No session, and each game is its
+   own; hosting (a second session, a new league and "can be fired" refused); a wrong code, then
+   the right one in lower case; a seat asked for and given; commands from both sides and each
+   window pushed only the other's; Ready cleared by the clock, by an offer and by its answer;
+   the clock refused to the guest, his after the grant, refused again once it is taken back;
+   the two leagues identical four times on the way; a seated guest kicked (told why, a new
+   code, the old code and his resume key refused); the guest's game kicked and back on its own
+   league, untouched; five wrong codes, then the right one refused until the minute is over;
+   back as a newcomer; the guest leaves; the host closes and nobody is at the port.
+   Also run for this job, by a script that is not in the repo: two instances of the built app
+   on one machine, separate user-data folders, each driven only through `window.gm` in its
+   window. A league each; host; a wrong code and the right one; the seat; a ticket price from
+   each side and the host's team refused to the guest; the clock refused, then granted; the
+   preseason advanced by the guest, then eight days of the season by host and guest in turn,
+   the standings and league status the same text in both windows; the guest leaves, plays a day of his own
+   league, joins again and is kicked; the host leaves and plays on. No error in either window.
+   What that does and does not show: both runs are one machine talking to itself through
+   127.0.0.1. Nothing went between two machines or across a router, so the addresses the host's
+   status lists and the firewall's answer to the listening port are untried. The throttle's
+   minute is a test's clock moved by hand, and its 1,024-address cap is not tested. The run in
+   the built app proves the IPC, the preload and the push; it clicked nothing, and its guest
+   window still read "Start a new league to begin" throughout, because no screen calls
+   `window.gm.session` or listens to `changed` yet.
+   Known and left: the screens (job 6), which also own the confirm past a GM who is not ready.
+   A host session that closes itself on an error (a batch it could not send) reads as `none`
+   with no reason on the host. A guest who leaves on purpose looks like one who dropped. An
+   address being refused for its wrong codes is told `joinCode` like any wrong code, so a join
+   screen cannot say "wait a minute". A guest who flips Ready or his wish makes the host send
+   the list to everyone each time, at most at the message rate (20 a second); the host can kick
+   him. The direct connection is not encrypted. The session calls trust the types of what the window
+   hands them, like every other IPC handler: the window is ours, and a wrong key or team is an
+   error in the answer. The design above was corrected or made precise in eight places while
+   building: the `session` message and the protocol number, what `peerKey` is, the cap on
+   connections, the throttle's window, when Ready clears, the host's row, a kicked guest's
+   team, and what `changed` and the session calls carry.
 6. **Lobby and guest screens** (Fable, UI). The Online screen and the guest's view of the app
    as described above, the host's confirm when someone is not ready, a "reconnecting" state,
-   refetch on `changed`; strings in `en.ts` and `fr.ts`.
+   refetch on `changed`, why a session ended (on the host's side the status has no reason yet,
+   see job 5); strings in `en.ts` and `fr.ts`.
    _Done when:_ component tests cover the Online screen's states; and two app instances on one
    machine (separate user-data folders) play a week over the direct connection: host, join,
    seat, lines and a trade from each side, an advance, a guest killed and back. That run is by

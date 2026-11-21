@@ -49,7 +49,10 @@ const fromHost: HostMessage[] = [
   { kind: 'refused', reason: 'appVersion' },
   {
     kind: 'session',
-    peers: [{ name: 'Minh', teamId: null, connected: true, ready: false, can: ['advance'] }],
+    you: 0,
+    peers: [
+      { name: 'Minh', teamId: null, wish: null, connected: true, ready: false, can: ['advance'] },
+    ],
   },
   { kind: 'snapshot.begin' },
   {

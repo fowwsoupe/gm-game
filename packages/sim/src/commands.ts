@@ -10,7 +10,13 @@ import type {
   TeamId,
   TradeProposal,
 } from '@gm/shared';
-import { GOALIE_ROTATIONS, MARKET_SIZES, STOP_CATEGORIES, TICKET_STEPS } from '@gm/shared';
+import {
+  CLOCK_COMMANDS,
+  GOALIE_ROTATIONS,
+  MARKET_SIZES,
+  STOP_CATEGORIES,
+  TICKET_STEPS,
+} from '@gm/shared';
 import {
   Rng,
   applyEvent,
@@ -76,14 +82,6 @@ const notYours: CommandResult = {
   ok: false,
   error: { code: 'not_allowed', message: 'not your team' },
 };
-/** The clock: what moves the league on for everyone. */
-const CLOCK = new Set<Command['kind']>([
-  'sim.advance',
-  'offseason.openFreeAgency',
-  'offseason.startDraft',
-  'freeAgency.advanceDay',
-  'season.rollover',
-]);
 const invalid = (message: string): CommandResult => ({
   ok: false,
   error: { code: 'invalid', message },
@@ -128,7 +126,7 @@ export function handleCommand(
   legends: readonly HallOfFamer[] = [],
 ): CommandResult {
   // The clock is the host's: a remote player moves it only if the host granted him `advance`.
-  if (CLOCK.has(command.kind) && actor.id !== 'local' && !actor.can?.includes('advance')) {
+  if (CLOCK_COMMANDS.has(command.kind) && actor.id !== 'local' && !actor.can?.includes('advance')) {
     return { ok: false, error: { code: 'not_allowed', message: 'only the host advances' } };
   }
   switch (command.kind) {
