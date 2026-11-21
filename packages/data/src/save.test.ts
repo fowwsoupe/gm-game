@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest';
-import type { Actor, Command, GameId, PlayerId, TeamId } from '@gm/shared';
+import type { Actor, Cell, Command, GameId, PlayerId, TableRows, TeamId } from '@gm/shared';
 import { Rng, createLeague, defaultContext, handleCommand } from '@gm/sim';
 import { openSave, SAVE_SCHEMA } from './index';
 import { migrations } from './migrations';

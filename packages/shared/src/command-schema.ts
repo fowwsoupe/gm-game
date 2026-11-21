@@ -1,6 +1,6 @@
 import { z } from 'zod';
 import { STOP_CATEGORIES, type Command, type CommandError } from './commands';
-import type { PlayerId, TeamId } from './domain';
+import type { GameId, PlayerId, TeamId } from './domain';
 import { GOALIE_ROTATIONS, SPECIAL_UNITS } from './sports/hockey';
 
 /**
@@ -34,6 +34,7 @@ const unsafe = 'a name the game cannot use';
 const text = z.string().max(TEXT_MAX).refine(isSafeText, unsafe);
 const id = z.string().min(1).max(ID_MAX).refine(isSafeText, unsafe);
 const teamId = id as unknown as z.ZodType<TeamId>;
+const gameId = id as unknown as z.ZodType<GameId>;
 const playerId = id as unknown as z.ZodType<PlayerId>;
 const players = z.array(playerId).max(LIST_MAX);
 /** `<draft season>-<round>-<original team id>`: the engine splits it, so the team part is an id too. */
@@ -138,6 +139,14 @@ export const commandSchema = z.discriminatedUnion('kind', [
     kind: kind('goalies.setRotation'),
     teamId,
     rotation: z.enum(GOALIE_ROTATIONS),
+  }),
+  z.strictObject({
+    kind: kind('bench.order'),
+    gameId,
+    teamId,
+    at: z.int().min(0).max(100_000),
+    order: text,
+    value: small.exactOptional(),
   }),
   z.strictObject({ kind: kind('draft.setBoard'), teamId, order: players }),
   z.strictObject({ kind: kind('offseason.startDraft') }),
