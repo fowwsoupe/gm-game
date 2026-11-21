@@ -1,7 +1,7 @@
 import { describe, expect, it } from 'vitest';
 import type { Actor, Command, GameId, PlayerId, TeamId } from '@gm/shared';
 import { Rng, createLeague, defaultContext, handleCommand } from '@gm/sim';
-import { openSave } from './index';
+import { openSave, SAVE_SCHEMA } from './index';
 import { migrations } from './migrations';
 
 const ctx = defaultContext();
@@ -452,6 +452,79 @@ describe('SaveFile', () => {
   });
 });
 
+const countsOf = (tables: TableRows[]) =>
+  Object.fromEntries(tables.map((t) => [t.table, t.rows.length]));
+
+describe('a save as rows', () => {
+  it('is every table, and the schema has a number', () => {
+    const save = openSave(':memory:');
+    expect(SAVE_SCHEMA).toBe(migrations.length);
+    const tables = save.dumpRows();
+    expect(tables.map((t) => t.table)).toContain('player_league_seasons');
+    expect(tables.every((t) => t.rows.length === 0)).toBe(true);
+    save.close();
+  });
+
+  it("keeps a host's note of his friends' seats, and leaves it out of the rows", () => {
+    const save = openSave(':memory:');
+    save.saveNewLeague(createLeague(4, ctx));
+    const without = save.dumpRows();
+    expect(save.hostSeats()).toEqual({});
+    save.setHostSeats({ t1: '76561198000000002' });
+    expect(save.hostSeats()).toEqual({ t1: '76561198000000002' });
+    expect(save.getMeta('hostSeats')).toContain('76561198000000002');
+    expect(save.dumpRows()).toEqual(without);
+    // A note that cannot be read is no note: nobody is seated on what it says.
+    save.setMeta('hostSeats', '{"t1": 5, "t2": "76561198000000003"}');
+    expect(save.hostSeats()).toEqual({ t2: '76561198000000003' });
+    for (const unreadable of ['not json', 'null', '7']) {
+      save.setMeta('hostSeats', unreadable);
+      expect(save.hostSeats(), unreadable).toEqual({});
+    }
+    save.close();
+  });
+
+  it('restores all of a snapshot or none of it', () => {
+    const save = openSave(':memory:');
+    const state = createLeague(4, ctx);
+    save.saveNewLeague(state);
+    const tables = save.dumpRows();
+    const counts = countsOf(tables);
+    const teams = tables.findIndex((t) => t.table === 'teams');
+    /** The snapshot with one table's rows changed. */
+    const withRows = (at: number, change: (rows: Cell[][]) => unknown[][]) =>
+      tables.map((t, i) => (i === at ? { ...t, rows: change(t.rows) as Cell[][] } : t));
+    const firstCell = (cell: unknown) =>
+      withRows(teams, (rows) => [[cell, ...rows[0]!.slice(1)], ...rows.slice(1)]);
+    const bad: Record<string, [TableRows[], Record<string, number>]> = {
+      'a row one cell short': [withRows(teams, (r) => [r[0]!.slice(1), ...r.slice(1)]), counts],
+      'a row one cell long': [withRows(teams, (r) => [[...r[0]!, null], ...r.slice(1)]), counts],
+      'a cell that is an object': [firstCell({ id: 't1' }), counts],
+      'a cell that is a boolean': [firstCell(true), counts],
+      'a cell that is not finite': [firstCell(NaN), counts],
+      'a row that is not a list': [withRows(teams, () => ['t1'] as never), counts],
+      'a table the save does not have': [[...tables, { table: 'nope', rows: [] }], counts],
+      'a table that is a statement': [[{ table: 'meta; DROP TABLE teams', rows: [] }], counts],
+      'fewer rows than promised': [withRows(teams, (r) => r.slice(1)), counts],
+      'more rows than promised': [tables, { ...counts, teams: counts.teams! - 1 }],
+      'a table nobody promised': [tables, { ...counts, teams: undefined as never }],
+      'the same rows twice': [[...tables, tables[teams]!], counts],
+      // Every count is right, but the players' teams are gone.
+      'a broken link': [withRows(teams, () => []), { ...counts, teams: 0 }],
+    };
+    for (const [what, [rows, promised]] of Object.entries(bad)) {
+      const copy = openSave(':memory:');
+      expect(() => copy.restoreRows(rows, promised), what).toThrow();
+      expect(countsOf(copy.dumpRows()), what).toEqual(countsOf(openSave(':memory:').dumpRows()));
+      // Nothing is left half open: the same save still takes the good snapshot.
+      copy.restoreRows(tables, counts);
+      expect(copy.loadState(), what).toEqual(state);
+      copy.close();
+    }
+    save.close();
+  });
+});
+
 describe('player history', () => {
   it("lists a drafted player's signing and the awards he won, oldest first", () => {
     const save = openSave(':memory:');
@@ -473,6 +546,13 @@ describe('player history', () => {
     // A pick, signed or still in the prospect pool.
     const drafted = Object.values(state.prospects)[0]!.player;
     expect(save.playerHistory(drafted.id).moves[0]).toMatchObject({ kind: 'drafted' });
+    // The whole save as rows, into a fresh one: the same state, the same rows.
+    const tables = save.dumpRows();
+    const copy = openSave(':memory:');
+    copy.restoreRows(tables, countsOf(tables));
+    expect(copy.loadState()).toEqual(state);
+    expect(copy.dumpRows()).toEqual(tables);
+    copy.close();
     // The draft results: every pick of this summer's draft, in order.
     const latest = save.latestDraft();
     expect(latest.season).toBe(state.date.season);

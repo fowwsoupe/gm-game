@@ -4,6 +4,7 @@ import {
   useCapSheet,
   useDashboard,
   useDispatch,
+  useOnline,
   usePlayoffs,
   usePulse,
   useStandings,
@@ -29,12 +30,20 @@ export function Home({
   const t = useT();
   const { data: status } = useStatus();
   const mine = useMine();
+  const { guest, clock } = useOnline();
   if (!hasLeague) return <p className="text-muted">{t('home.empty')}</p>;
   return (
     <div className="grid max-w-5xl gap-4 md:grid-cols-2">
-      {status?.career ? <CareerCard career={status.career} /> : <TeamPicker />}
+      {/* A guest's team is the host's to give: no picker, no job offers. */}
+      {guest ? (
+        !mine && <p className="text-sm text-muted md:col-span-2">{t('online.waitSeat')}</p>
+      ) : status?.career ? (
+        <CareerCard career={status.career} />
+      ) : (
+        <TeamPicker />
+      )}
       {mine ? <TeamStrip teamId={mine.id} /> : null}
-      <SimBar />
+      {clock && <SimBar />}
       <Card>
         <p>{t('home.teamsLoaded', { count: teamCount })}</p>
         {lastSim && <p className="mt-2 text-sm text-muted">{lastSim}</p>}
@@ -316,6 +325,7 @@ function SimBar() {
   const t = useT();
   const { data: status } = useStatus();
   const dispatch = useDispatch();
+  const { guest } = useOnline();
   const [picked, setPicked] = useState<number | null>(null);
   if (!status || status.championTeamId || status.day >= status.playoffsEndDay) return null;
   const first = status.day + 1;
@@ -367,26 +377,29 @@ function SimBar() {
           {t('home.simBarGo', { day: target })}
         </Button>
       </div>
-      <div className="mt-3 flex flex-wrap items-center gap-3 text-xs text-muted">
-        <span>{t('home.stopOn')}</span>
-        {STOP_CATEGORIES.map((c) => (
-          <label key={c} className="flex items-center gap-1">
-            <input
-              type="checkbox"
-              checked={status.stopOn.includes(c)}
-              onChange={() =>
-                dispatch.mutate({
-                  kind: 'league.setStopOn',
-                  stopOn: status.stopOn.includes(c)
-                    ? status.stopOn.filter((x) => x !== c)
-                    : [...status.stopOn, c],
-                })
-              }
-            />
-            {t(`home.stopOn.${c}`)}
-          </label>
-        ))}
-      </div>
+      {/* What a sim stops on is the host's setting. */}
+      {!guest && (
+        <div className="mt-3 flex flex-wrap items-center gap-3 text-xs text-muted">
+          <span>{t('home.stopOn')}</span>
+          {STOP_CATEGORIES.map((c) => (
+            <label key={c} className="flex items-center gap-1">
+              <input
+                type="checkbox"
+                checked={status.stopOn.includes(c)}
+                onChange={() =>
+                  dispatch.mutate({
+                    kind: 'league.setStopOn',
+                    stopOn: status.stopOn.includes(c)
+                      ? status.stopOn.filter((x) => x !== c)
+                      : [...status.stopOn, c],
+                  })
+                }
+              />
+              {t(`home.stopOn.${c}`)}
+            </label>
+          ))}
+        </div>
+      )}
     </Card>
   );
 }

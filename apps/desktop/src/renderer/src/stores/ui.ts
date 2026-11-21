@@ -21,7 +21,8 @@ export type Screen =
   | 'team'
   | 'owner'
   | 'frontOffice'
-  | 'player';
+  | 'player'
+  | 'online';
 
 /** What the match viewer can show on top of the rink. */
 export const OVERLAYS = ['shots', 'names', 'strength', 'iceTime'] as const;
