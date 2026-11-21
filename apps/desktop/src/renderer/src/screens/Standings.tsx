@@ -8,7 +8,7 @@ import {
   type SortingState,
 } from '@tanstack/react-table';
 import type { PulseRow, StandingsRow, Team } from '@gm/shared';
-import { useDispatch, usePulse, useStandings, useStatus, useTeams } from '@/lib/queries';
+import { useDispatch, useOnline, usePulse, useStandings, useStatus, useTeams } from '@/lib/queries';
 import { useT, type MessageKey } from '@/i18n';
 import { Button, Card, TeamLink, Td, Th } from '@/ui';
 import { pct, teamName } from '@/lib/format';
@@ -53,6 +53,7 @@ export function Standings() {
   const { data: teams = [] } = useTeams();
   const { data: pulse = [] } = usePulse();
   const { data: status } = useStatus();
+  const { guest } = useOnline();
   const t = useT();
   const [view, setView] = useState<'league' | 'conference' | 'division'>('league');
 
@@ -88,7 +89,7 @@ export function Standings() {
           ))}
         </div>
       )}
-      {status?.freeAgencyOpen && <ExpansionCard />}
+      {status?.freeAgencyOpen && !guest && <ExpansionCard />}
       {[...groups].map(([name, rowsIn]) => (
         <Card key={name || 'league'} {...(name && { title: name })}>
           <StandingsTable data={rowsIn} />

@@ -50,7 +50,7 @@ for (let l = 0; l < leagues; l++) {
   const res = handleCommand(
     state,
     { kind: 'sim.advance', days: ctx.ruleset.season.calendar.regularSeasonDays - state.date.day },
-    { id: 'lab', controls: [] },
+    { id: 'lab', controls: [], can: ['advance'] },
     ctx,
   );
   if (!res.ok) throw new Error(res.error.message);

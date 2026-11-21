@@ -18,6 +18,7 @@ const api: GmApi = {
     games: (input) => ipcRenderer.invoke(IPC.games, input),
     game: (input) => ipcRenderer.invoke(IPC.game, input),
     exhibition: (input) => ipcRenderer.invoke(IPC.exhibition, input),
+    watch: (input) => ipcRenderer.invoke(IPC.watch, input),
     roster: (input) => ipcRenderer.invoke(IPC.roster, input),
     resignOffers: (input) => ipcRenderer.invoke(IPC.resignOffers, input),
     players: (input) => ipcRenderer.invoke(IPC.players, input),
@@ -48,6 +49,26 @@ const api: GmApi = {
   },
   steam: {
     status: () => ipcRenderer.invoke(IPC.steamStatus),
+  },
+  session: {
+    host: (input) => ipcRenderer.invoke(IPC.sessionHost, input),
+    invite: () => ipcRenderer.invoke(IPC.sessionInvite),
+    join: (input) => ipcRenderer.invoke(IPC.sessionJoin, input),
+    leave: () => ipcRenderer.invoke(IPC.sessionLeave),
+    requestSeat: (input) => ipcRenderer.invoke(IPC.sessionRequestSeat, input),
+    seat: (input) => ipcRenderer.invoke(IPC.sessionSeat, input),
+    ready: (input) => ipcRenderer.invoke(IPC.sessionReady, input),
+    grantAdvance: (input) => ipcRenderer.invoke(IPC.sessionGrantAdvance, input),
+    kick: (input) => ipcRenderer.invoke(IPC.sessionKick, input),
+    status: () => ipcRenderer.invoke(IPC.sessionStatus),
+    onChanged: (listener) => {
+      // A signal with nothing in it: the listener is not handed the IPC event.
+      const heard = () => listener();
+      ipcRenderer.on(IPC.sessionChanged, heard);
+      return () => {
+        ipcRenderer.removeListener(IPC.sessionChanged, heard);
+      };
+    },
   },
 };
 

@@ -54,6 +54,7 @@ export type { Models } from './models';
 export { defaultContext, type ModelOverrides, type SimContext } from './context';
 export { createLeague, START_SEASON } from './create';
 export { handleCommand } from './commands';
+export { watchGame } from './advance';
 export { playerProfiles } from './profiles';
 export { dashboard } from './dashboard';
 export { available, sitsOut, strengthFor } from './tonight';

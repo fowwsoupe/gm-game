@@ -1,5 +1,5 @@
 import type { LeagueEvent } from './events';
-import type { Department, PlayerId, TeamId, TradeProposal } from './domain';
+import type { Department, GameId, PlayerId, TeamId, TradeProposal } from './domain';
 import type { GoalieRotation, SpecialUnit } from './sports/hockey';
 
 /**
@@ -16,7 +16,8 @@ export type StopCategory = (typeof STOP_CATEGORIES)[number];
  * rewrites: multiplayer (send commands over the network, the host validates them),
  * undo/replay, AI GMs using the same actions as humans, and logging.
  *
- * Commands are plain, serializable data. Add new kinds here, then a handler in
+ * Commands are plain, serializable data. Add new kinds here, their schema in
+ * `command-schema.ts` (the typecheck fails without it), then a handler in
  * `packages/sim/src/commands.ts`.
  */
 export type Command =
@@ -105,6 +106,19 @@ export type Command =
   | { kind: 'staff.fire'; teamId: TeamId; department: Department }
   /** How your goalies share starts (see `GoalieRotation`). */
   | { kind: 'goalies.setRotation'; teamId: TeamId; rotation: GoalieRotation }
+  /**
+   * An order from the bench in the game your team plays today and has not played yet (the match
+   * viewer): the game is played with it from game second `at`. `order` is one of the sport's
+   * (hockey: `BENCH_ORDERS`). Not before an order already given in that game.
+   */
+  | {
+      kind: 'bench.order';
+      gameId: GameId;
+      teamId: TeamId;
+      at: number;
+      order: string;
+      value?: number;
+    }
   /** Rank the draft class for your picks (best first). Players missing from it go by the scouts' order. */
   | { kind: 'draft.setBoard'; teamId: TeamId; order: PlayerId[] }
   /**
@@ -147,10 +161,23 @@ export type Command =
       promiseRole?: true;
     };
 
+/** What the host of an online league can grant a remote player. `advance`: the clock commands. */
+export type Grant = 'advance';
+/** The clock: what moves the league on for everyone. */
+export const CLOCK_COMMANDS: ReadonlySet<Command['kind']> = new Set<Command['kind']>([
+  'sim.advance',
+  'offseason.openFreeAgency',
+  'offseason.startDraft',
+  'freeAgency.advanceDay',
+  'season.rollover',
+]);
+
 /** Who issued a command. Single-player is always 'local'; multiplayer adds real ids. */
 export interface Actor {
   id: string;
   controls: TeamId[];
+  /** Grants from the host. `local` needs none. */
+  can?: Grant[];
 }
 
 export type CommandError =

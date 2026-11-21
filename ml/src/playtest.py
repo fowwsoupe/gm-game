@@ -22,6 +22,7 @@ USER_KINDS = {
     "draft.boardSet", "trade.completed", "player.signed", "contract.extended",
     "contract.boughtOut", "freeAgency.offered", "contract.countered", "owner.cardAnswered",
     "finance.ticketPriceSet", "prospect.signed", "prospect.released", "delegate.set",
+    "bench.ordered", "staff.hired", "staff.fired",
 }
 
 

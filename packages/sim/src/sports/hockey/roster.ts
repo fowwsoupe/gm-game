@@ -58,6 +58,7 @@ export function importHockeyRoster(json: unknown, rules: Ruleset): RosterImport 
     abbreviation: t.abbreviation,
     ...(t.conference ? { conference: t.conference } : {}),
     ...(t.division ? { division: t.division } : {}),
+    ...(t.colors ? { colors: t.colors } : {}),
     userControlled: i === 0,
   }));
   const players: Player[] = file.players.map((p) => ({
@@ -130,6 +131,7 @@ export function exportHockeyRoster(
       name: t.name,
       ...(t.conference ? { conference: t.conference } : {}),
       ...(t.division ? { division: t.division } : {}),
+      ...(t.colors ? { colors: t.colors } : {}),
     })),
     players: league.players.map((p) => ({
       id: p.id,

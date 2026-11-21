@@ -15,6 +15,18 @@ export type SpecialUnit = (typeof SPECIAL_UNITS)[number];
  */
 export const GOALIE_ROTATIONS = ['backToBack', 'always', 'split'] as const;
 export type GoalieRotation = (typeof GOALIE_ROTATIONS)[number];
+/**
+ * Orders a coach gives from the bench (`BenchOrder.order`); only `match` has a `value`. From the
+ * first `emptyNet` or `goalieBack` the net is the coach's for the rest of the game, in place of
+ * the pull rule: empty while his team trails in regulation, or the goalie stays in. `goalieChange`:
+ * the other goalie comes in, once (nothing happens if he already has, or none is dressed).
+ * `match` is the home side's, which has the last change: at five-on-five the forward line named by
+ * `value` (1 to `MATCH_LINES`) goes out whenever the visitors' first line does, and its other
+ * shifts go to the other lines by their shares of the ice time; 0 calls the match off.
+ */
+export const BENCH_ORDERS = ['emptyNet', 'goalieBack', 'goalieChange', 'match'] as const;
+/** Forward lines a team dresses: the lines a `match` order can name. */
+export const MATCH_LINES = 4;
 /** A starter on the second night of a back-to-back plays at this share of his rating. */
 export const TIRED_GOALIE = 0.92;
 
@@ -92,9 +104,32 @@ export interface HockeyBoxSide {
 }
 
 /**
+ * What the box does not keep and a viewer draws (`HockeyBoxScore.timeline`). Skaters by index,
+ * as in `shots`; seconds are whole, rounded like a shot's, and each list is in the order it
+ * happened. So a row and a shot in the same second can be either way round: a goal and the
+ * change that follows it share a second.
+ */
+export interface HockeyTimeline {
+  /** Each side's first defenceman in `skaters` (forwards come first). */
+  firstD: [number, number];
+  /**
+   * [second, side, skaters on the ice], each time a side's unit changes. A skater can be listed
+   * twice: the engine sends one spare for two hurt teammates of a unit and counts him twice.
+   */
+  shifts: [number, 0 | 1, number[]][];
+  /** [second, side, what]: 0 = goalie pulled, 1 = goalie back, 2 = the other goalie in. */
+  goalies: [number, 0 | 1, 0 | 1 | 2][];
+  /** [second, side, skater]: he leaves the game hurt. */
+  hurt: [number, 0 | 1, number][];
+  /** Shootout attempts in order: [side, skater, 1 = goal]. */
+  shootout: [0 | 1, number, 0 | 1][];
+}
+
+/**
  * What GameResult.box holds for hockey. Goals are the shots flagged as goals; shootout goals are
  * not listed. `emptyNet` counts the goals each side [home, away] scored into an empty net: they
- * are in `shots` but on no goalie's line.
+ * are in `shots` but on no goalie's line. `timeline` is there only for a game played to be
+ * watched (`timeline` on the game the sport plays); league games never have it and none is saved.
  */
 export interface HockeyBoxScore {
   home: HockeyBoxSide;
@@ -102,6 +137,7 @@ export interface HockeyBoxScore {
   shots: HockeyShot[];
   penalties: HockeyPenalty[];
   emptyNet?: [number, number];
+  timeline?: HockeyTimeline;
 }
 
 export const isGoalie = (position: string) => position === 'G';

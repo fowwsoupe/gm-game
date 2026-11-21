@@ -44,6 +44,11 @@ export interface Side {
   /** Penalties running, soonest to end first: [end second, skater index]. */
   penalties: [number, number][];
   pulled: boolean;
+  /**
+   * The coach's word on the net, from his first `emptyNet` (true) or `goalieBack` (false) order
+   * to the end of the game. Unset: the `pullSeconds` rule decides.
+   */
+  net?: boolean;
   /** Team skills of the units on ice. */
   uAtk: number;
   uDef: number;

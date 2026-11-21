@@ -1,13 +1,18 @@
+import type { HockeyTimeline } from '@gm/shared';
 import type { Rng } from '../../core';
 import { rating } from './strength';
 import { HOCKEY_TUNING } from './tuning';
 import type { Side } from './side';
 
-/** Three shooters each, then one at a time. Skill is shooting and hands. */
+/**
+ * Three shooters each, then one at a time. Skill is shooting and hands. Each attempt is written
+ * to `attempts` when it is given (the timeline a viewer draws).
+ */
 export function playShootout(
   S: readonly [Side, Side],
   rng: Rng,
   goalFactor: (n: 0 | 1) => number,
+  attempts?: HockeyTimeline['shootout'],
 ): 0 | 1 {
   const T = HOCKEY_TUNING;
   const order = ([0, 1] as const).map((n) =>
@@ -28,7 +33,9 @@ export function playShootout(
     const k = list[round % Math.max(1, list.length)];
     const skill = k === undefined ? 50 : S[n].shoot[k]! + rating(S[n].players[k]!, 'puckHandling');
     const p = T.shootoutGoal * (skill / 130) ** 2 * goalFactor((1 - n) as 0 | 1);
-    return rng.chance(Math.min(0.9, p));
+    const goal = rng.chance(Math.min(0.9, p));
+    attempts?.push([n, k ?? -1, goal ? 1 : 0]);
+    return goal;
   };
   for (let round = 0; round < 3; round++) {
     for (const n of [0, 1] as const) {

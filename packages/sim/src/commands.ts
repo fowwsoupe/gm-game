@@ -10,7 +10,13 @@ import type {
   TeamId,
   TradeProposal,
 } from '@gm/shared';
-import { GOALIE_ROTATIONS, MARKET_SIZES, STOP_CATEGORIES, TICKET_STEPS } from '@gm/shared';
+import {
+  CLOCK_COMMANDS,
+  GOALIE_ROTATIONS,
+  MARKET_SIZES,
+  STOP_CATEGORIES,
+  TICKET_STEPS,
+} from '@gm/shared';
 import {
   Rng,
   applyEvent,
@@ -66,7 +72,7 @@ import {
 import { evaluateTrade, offerExpires, planRetention } from './trades';
 import { pressQuestion } from './owner';
 import { overall } from './players';
-import { advance } from './advance';
+import { advance, watchGame } from './advance';
 import type { SimContext } from './context';
 
 /** A human controls a team if the actor was given it, or is the local player and it is theirs. */
@@ -119,6 +125,10 @@ export function handleCommand(
   /** Hall of Famers (the save's, not the league state's): who can come back as staff. */
   legends: readonly HallOfFamer[] = [],
 ): CommandResult {
+  // The clock is the host's: a remote player moves it only if the host granted him `advance`.
+  if (CLOCK_COMMANDS.has(command.kind) && actor.id !== 'local' && !actor.can?.includes('advance')) {
+    return { ok: false, error: { code: 'not_allowed', message: 'only the host advances' } };
+  }
   switch (command.kind) {
     case 'sim.advance':
       if (command.days < 1 || command.days > 400) {
@@ -190,8 +200,14 @@ export function handleCommand(
     case 'team.relocate': {
       const team = state.teams[command.teamId];
       if (!team) return invalid('unknown team');
-      // The local player edits any team's identity (sandbox); a remote player only his own.
-      if (actor.id !== 'local' && !actor.controls.includes(team.id)) return notYours;
+      // The local player edits any team's identity (sandbox). A remote player renames his own
+      // team and no more: a relocation picks a market size, which is money.
+      if (
+        actor.id !== 'local' &&
+        (command.kind === 'team.relocate' || !actor.controls.includes(team.id))
+      ) {
+        return notYours;
+      }
       const checked = checkIdentity(state, command, team.id);
       if (typeof checked === 'string') return invalid(checked);
       const identity = { teamId: team.id, ...checked };
@@ -772,6 +788,32 @@ export function handleCommand(
         kind: 'goalies.rotationSet',
         teamId: team.id,
         rotation: command.rotation,
+      });
+      return applied(state, ev);
+    }
+
+    case 'bench.order': {
+      const team = state.teams[command.teamId];
+      if (!team) return invalid('unknown team');
+      if (!controls(actor, team)) return notYours;
+      const last = state.bench[command.gameId]?.at(-1)?.at ?? 0;
+      if (!Number.isInteger(command.at) || command.at < last) {
+        return invalid('an order cannot go before an earlier one');
+      }
+      // The day's own code says which game the team plays today, so the two cannot disagree.
+      // ponytail: one replay of the day an order (10 to 15 ms); a cheaper lookup if orders ever come in bulk.
+      const game = watchGame(state, ctx, team.id);
+      if (game?.id !== command.gameId) return invalid('your team does not play that game today');
+      if (!ctx.sport.benchOrderOk(command.order, command.value, game.homeTeamId === team.id)) {
+        return invalid('your bench cannot give that order');
+      }
+      const ev = makeEvent(state, 'minor', [team.id], {
+        kind: 'bench.ordered',
+        gameId: command.gameId,
+        teamId: team.id,
+        at: command.at,
+        order: command.order,
+        ...(command.value !== undefined && { value: command.value }),
       });
       return applied(state, ev);
     }

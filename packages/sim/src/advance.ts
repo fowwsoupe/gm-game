@@ -69,6 +69,8 @@ export function advance(
   days: number,
   stopOn: 'never' | 'major' | readonly StopCategory[],
   ctx: SimContext,
+  /** The tap behind `watchGame`: this team's game is played with its timeline, and the call ends there. */
+  watch?: TeamId,
 ): LeagueEvent[] {
   const events: LeagueEvent[] = [];
   const emit = emitter(state, events);
@@ -310,6 +312,7 @@ export function advance(
     for (const g of byDay.get(today.day) ?? []) {
       const homeRest = rest(g.homeTeamId, today.day);
       const awayRest = rest(g.awayTeamId, today.day);
+      const watched = g.homeTeamId === watch || g.awayTeamId === watch;
       const result = sport.simGame(
         {
           id: g.id as GameId,
@@ -323,10 +326,13 @@ export function advance(
           awayTired: awayRest.tired,
           homeMedical: medicalFactor(g.homeTeamId),
           awayMedical: medicalFactor(g.awayTeamId),
+          timeline: watched,
+          orders: state.bench[g.id],
         },
         rng,
       );
       finishGame(result, today.day);
+      if (watched) return events;
     }
 
     if (phaseOf(cal, today) === 'playoffs' && !state.championTeamId) {
@@ -339,9 +345,11 @@ export function advance(
         const lowerHome = ctx.ruleset.playoffs.homeIcePattern[gameIndex] === 1;
         const homeTeamId = lowerHome ? series.lowerTeamId : series.higherTeamId;
         const awayTeamId = lowerHome ? series.higherTeamId : series.lowerTeamId;
+        const watched = homeTeamId === watch || awayTeamId === watch;
+        const id = `p${today.season}_${series.id}_${gameIndex + 1}` as GameId;
         const result = sport.simGame(
           {
-            id: `p${today.season}_${series.id}_${gameIndex + 1}` as GameId,
+            id,
             homeTeamId,
             awayTeamId,
             home: strengthOf(homeTeamId, today.day),
@@ -349,11 +357,14 @@ export function advance(
             playoff: true,
             homeMedical: medicalFactor(homeTeamId),
             awayMedical: medicalFactor(awayTeamId),
+            timeline: watched,
+            orders: state.bench[id],
           },
           rng,
         );
         result.playoffSeriesId = series.id;
         finishGame(result, today.day);
+        if (watched) return events;
         if (series.higherWins === winsNeeded || series.lowerWins === winsNeeded) {
           const winnerTeamId =
             series.higherWins === winsNeeded ? series.higherTeamId : series.lowerTeamId;
@@ -402,6 +413,7 @@ export function advance(
         }
       }
     }
+    if (watch) return events; // its team has no game today
 
     // League pulse once a week.
     if (phaseOf(cal, today) === 'regular' && today.day % 7 === 6) {
@@ -492,6 +504,27 @@ export function advance(
     }
   }
   return events;
+}
+
+/**
+ * The game `teamId` plays on the league's date, as the next `sim.advance` will play it, with its
+ * timeline for the match viewer (undefined: no game that day). A read: the day's own code runs
+ * on a copy that is thrown away, so the game is still to be played.
+ */
+export function watchGame(
+  state: LeagueState,
+  ctx: SimContext,
+  teamId: TeamId,
+): GameResult | undefined {
+  // Played games are only ever added, never changed, and late in a season they are most of the
+  // league: the copy shares them (`watch.test.ts` checks the league comes out untouched).
+  const copy: LeagueState = structuredClone({ ...state, results: {} });
+  copy.results = { ...state.results };
+  // The stored result, not the event's (which also lists the units for the linemate count).
+  const played = advance(copy, 1, 'never', ctx, teamId).find(
+    (e) => e.kind === 'game.final' && e.teamIds.includes(teamId),
+  );
+  return played?.kind === 'game.final' ? copy.results[played.result.id] : undefined;
 }
 
 /** Runs of the rest of the season behind the weekly pulse's playoff odds. */

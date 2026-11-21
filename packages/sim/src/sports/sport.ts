@@ -1,4 +1,5 @@
 import type {
+  BenchOrder,
   GameId,
   GameResult,
   Leaderboard,
@@ -152,6 +153,12 @@ export interface SportModule<Strength = unknown> {
   /** Whether these players make a valid saved unit of that name (hockey: 3F+2D / 2F+2D). */
   unitOk(unit: string, players: readonly Player[]): boolean;
 
+  /**
+   * Whether a coach can give this order from the bench, `home` on the home side (hockey: one of
+   * `BENCH_ORDERS` with its value; matching a line is the home side's).
+   */
+  benchOrderOk(order: string, value: number | undefined, home: boolean): boolean;
+
   /** The lineup the game would dress, as named units in order (hockey: F1–F4, D1–D3, G). */
   lineup(
     players: readonly Player[],
@@ -169,6 +176,18 @@ export interface SportModule<Strength = unknown> {
       playoff?: boolean;
       /** Score only (no box score, no injuries): the fast mode for playoff odds. */
       resultOnly?: boolean;
+      /**
+       * Also keep, in the box, what a viewer needs to draw the game (hockey: who is on the ice).
+       * It must not change the game: same result, same box, same draws from `rng`. Nothing to
+       * keep it in with `resultOnly`.
+       */
+      timeline?: boolean;
+      /**
+       * Orders from the bench for this game, in game-time order (`LeagueState.bench`). None: the
+       * game as today, the same draws from `rng`. With one at second T, the game before T is
+       * that same game.
+       */
+      orders?: readonly BenchOrder[] | undefined;
       /** The team also played yesterday (hockey: its backup goalie starts). */
       homeBackToBack?: boolean;
       awayBackToBack?: boolean;

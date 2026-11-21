@@ -3,6 +3,9 @@ import { existsSync, mkdtempSync, rmSync } from 'node:fs';
 import { tmpdir } from 'node:os';
 import { join } from 'node:path';
 import { afterAll, beforeEach, describe, expect, it, vi } from 'vitest';
+import type { Command, HockeyBoxScore } from '@gm/shared';
+import { defaultContext, handleCommand } from '@gm/sim';
+import type { WorkerRequest } from './sim.worker';
 
 const dir = mkdtempSync(join(tmpdir(), 'gm-svc-'));
 afterAll(() => rmSync(dir, { recursive: true, force: true }));
@@ -11,14 +14,21 @@ vi.mock('electron', () => ({ app: { getPath: () => dir } }));
 /** A stand-in for the sim worker: tests decide what each command gets back. */
 class FakeWorker extends EventEmitter {
   static all: FakeWorker[] = [];
-  reply: 'ok' | 'die' | 'bad-event' = 'ok';
+  /** What the next worker to start replies: the service starts one at its first command. */
+  static reply: 'ok' | 'die' | 'bad-event' | 'sim' = 'ok';
+  reply = FakeWorker.reply;
   constructor() {
     super();
     FakeWorker.all.push(this);
   }
-  postMessage() {
+  postMessage(req: WorkerRequest) {
     if (this.reply === 'die') queueMicrotask(() => this.emit('error', new Error('boom')));
-    else if (this.reply === 'bad-event')
+    else if (this.reply === 'sim') {
+      // What the real worker does, on a copy of the state as a thread would get.
+      const state = structuredClone(req.state);
+      const result = handleCommand(state, req.command, req.actor, defaultContext(state.rulesetId));
+      queueMicrotask(() => this.emit('message', result));
+    } else if (this.reply === 'bad-event')
       // The sim state accepts this event, but the save refuses it (unknown teams break a foreign
       // key), so the write fails and rolls back.
       queueMicrotask(() =>
@@ -59,6 +69,7 @@ const cmd = { kind: 'sim.advance', days: 1 } as const;
 describe('LeagueService', () => {
   beforeEach(() => {
     FakeWorker.all = [];
+    FakeWorker.reply = 'ok';
   });
 
   it('says there is no league on a first run, instead of failing on a missing folder', () => {
@@ -78,20 +89,87 @@ describe('LeagueService', () => {
     svc.dispose();
   });
 
+  it('plays an exhibition with its timeline, the same game for the same seed', () => {
+    const svc = new LeagueService();
+    const [home, away] = svc.newLeague(1).teams;
+    const game = svc.exhibition(home!.id, away!.id, 7);
+    const box = game.result.box as HockeyBoxScore;
+    expect(box.timeline!.shifts.length).toBeGreaterThan(50);
+    expect(svc.exhibition(home!.id, away!.id, 7)).toEqual(game);
+    svc.dispose();
+  });
+
+  it("shows tonight's game without playing it, and the sim then plays that game", async () => {
+    const svc = new LeagueService();
+    const { teams } = svc.newLeague(1);
+    expect(svc.watch(teams[0]!.id)).toBeNull(); // camp: nobody plays
+    FakeWorker.reply = 'sim';
+    await svc.dispatch({ kind: 'sim.advance', days: -svc.status().day }); // to opening night
+    const game = teams.map((t) => svc.watch(t.id)).find((g) => g)!;
+    const { timeline, ...box } = game.result.box as HockeyBoxScore;
+    expect(timeline!.shifts.length).toBeGreaterThan(50);
+    expect(Object.keys(game.names).length).toBeGreaterThan(30);
+    expect(svc.game(game.result.id)).toBeNull(); // still to be played
+    await svc.dispatch(cmd);
+    expect(svc.game(game.result.id)).toEqual({ ...game, result: { ...game.result, box } });
+    svc.dispose();
+  });
+
+  it("replays tonight's game with a bench order, and the sim then plays the coached game", async () => {
+    const svc = new LeagueService();
+    const mine = svc.newLeague(1).teams.find((t) => t.userControlled)!.id;
+    FakeWorker.reply = 'sim';
+    await svc.dispatch({ kind: 'sim.advance', days: -svc.status().day });
+    while (!svc.watch(mine)) await svc.dispatch(cmd); // to the team's first game
+    const plain = svc.watch(mine)!;
+    expect(plain.orders).toBeUndefined();
+    const gameId = plain.result.id;
+    const order = { kind: 'bench.order', gameId, teamId: mine, at: 900, order: 'goalieChange' };
+    expect((await svc.dispatch(order as Command)).ok).toBe(true);
+    const coached = svc.watch(mine)!;
+    expect(coached.orders).toEqual([{ teamId: mine, at: 900, order: 'goalieChange' }]);
+    const { timeline, ...box } = coached.result.box as HockeyBoxScore;
+    const side = plain.result.homeTeamId === mine ? 0 : 1;
+    expect(timeline!.goalies.some((r) => r[1] === side && r[2] === 2 && r[0] <= 900)).toBe(true);
+    await svc.dispatch(cmd);
+    const { orders, ...played } = coached;
+    expect(orders).toHaveLength(1);
+    expect(svc.game(gameId)).toEqual({ ...played, result: { ...coached.result, box } });
+    svc.dispose();
+  });
+
   it('keeps working after the worker dies', async () => {
     const svc = new LeagueService();
     svc.newLeague(1);
-    FakeWorker.all[0]!.reply = 'die';
+    svc.standings();
+    expect(FakeWorker.all).toHaveLength(0); // no sim thread before the first command
+    FakeWorker.reply = 'die';
     await expect(svc.dispatch(cmd)).rejects.toThrow('boom');
+    FakeWorker.reply = 'ok';
     const res = await svc.dispatch(cmd); // goes to the replacement worker
     expect(res.ok).toBe(true);
+    expect(FakeWorker.all).toHaveLength(2);
+    svc.dispose();
+  });
+
+  it('refuses a malformed command before the sim sees it', async () => {
+    const svc = new LeagueService();
+    svc.newLeague(1);
+    FakeWorker.reply = 'die'; // reaching the worker would reject with "boom"
+    const forged = { ...cmd, actor: { id: 'local', controls: [] } };
+    expect(await svc.dispatch(forged)).toMatchObject({ ok: false, error: { code: 'invalid' } });
+    expect(await svc.dispatch({ kind: 'contract.buyout', playerId: '__proto__' })).toMatchObject({
+      ok: false,
+      error: { code: 'invalid' },
+    });
+    expect(FakeWorker.all).toHaveLength(0);
     svc.dispose();
   });
 
   it('goes back to what the disk has when saving fails', async () => {
     const svc = new LeagueService();
     svc.newLeague(1);
-    FakeWorker.all[0]!.reply = 'bad-event';
+    FakeWorker.reply = 'bad-event';
     await expect(svc.dispatch(cmd)).rejects.toThrow(/FOREIGN KEY/);
     expect(svc.playoffs().series).toHaveLength(0); // the phantom series is gone
     FakeWorker.all[0]!.reply = 'ok';

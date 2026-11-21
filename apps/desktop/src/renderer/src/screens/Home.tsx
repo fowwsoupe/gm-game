@@ -1,9 +1,10 @@
-import { useState } from 'react';
+import { useState, type ReactNode } from 'react';
 import { STOP_CATEGORIES, type CardEffects, type Career, type TeamId } from '@gm/shared';
 import {
   useCapSheet,
   useDashboard,
   useDispatch,
+  useOnline,
   usePlayoffs,
   usePulse,
   useStandings,
@@ -29,12 +30,20 @@ export function Home({
   const t = useT();
   const { data: status } = useStatus();
   const mine = useMine();
+  const { guest, clock } = useOnline();
   if (!hasLeague) return <p className="text-muted">{t('home.empty')}</p>;
   return (
     <div className="grid max-w-5xl gap-4 md:grid-cols-2">
-      {status?.career ? <CareerCard career={status.career} /> : <TeamPicker />}
+      {/* A guest's team is the host's to give: no picker, no job offers. */}
+      {guest ? (
+        !mine && <p className="text-sm text-muted md:col-span-2">{t('online.waitSeat')}</p>
+      ) : status?.career ? (
+        <CareerCard career={status.career} />
+      ) : (
+        <TeamPicker />
+      )}
       {mine ? <TeamStrip teamId={mine.id} /> : null}
-      <SimBar />
+      {clock && <SimBar />}
       <Card>
         <p>{t('home.teamsLoaded', { count: teamCount })}</p>
         {lastSim && <p className="mt-2 text-sm text-muted">{lastSim}</p>}
@@ -146,7 +155,9 @@ function TeamStrip({ teamId }: { teamId: TeamId }) {
   const odds = inSeason ? pulse.find((p) => p.teamId === teamId)?.playoffOdds : undefined;
   const space = sheet?.seasons[0]?.space;
   const opponent = teams.find((x) => x.id === home?.nextGame?.opponentId);
-  const stats: { label: string; value: string; note?: string }[] = [
+  const openWatch = useUi((s) => s.openWatch);
+  const tonight = !!home?.nextGame && home.nextGame.day === status?.day;
+  const stats: { label: string; value: string; note?: ReactNode }[] = [
     {
       label: t('home.record'),
       value: row ? `${row.w}-${row.l}-${row.otl}` : '–',
@@ -172,6 +183,11 @@ function TeamStrip({ teamId }: { teamId: TeamId }) {
         home?.nextGame && opponent
           ? t(home.nextGame.home ? 'home.vs' : 'home.at', { team: opponent.abbreviation })
           : '–',
+      // A game day: watch it before it is played.
+      ...(tonight &&
+        status && {
+          note: <Button onClick={() => openWatch(teamId, status.day)}>{t('home.watch')}</Button>,
+        }),
     },
   ];
   return (
@@ -309,6 +325,7 @@ function SimBar() {
   const t = useT();
   const { data: status } = useStatus();
   const dispatch = useDispatch();
+  const { guest } = useOnline();
   const [picked, setPicked] = useState<number | null>(null);
   if (!status || status.championTeamId || status.day >= status.playoffsEndDay) return null;
   const first = status.day + 1;
@@ -360,26 +377,29 @@ function SimBar() {
           {t('home.simBarGo', { day: target })}
         </Button>
       </div>
-      <div className="mt-3 flex flex-wrap items-center gap-3 text-xs text-muted">
-        <span>{t('home.stopOn')}</span>
-        {STOP_CATEGORIES.map((c) => (
-          <label key={c} className="flex items-center gap-1">
-            <input
-              type="checkbox"
-              checked={status.stopOn.includes(c)}
-              onChange={() =>
-                dispatch.mutate({
-                  kind: 'league.setStopOn',
-                  stopOn: status.stopOn.includes(c)
-                    ? status.stopOn.filter((x) => x !== c)
-                    : [...status.stopOn, c],
-                })
-              }
-            />
-            {t(`home.stopOn.${c}`)}
-          </label>
-        ))}
-      </div>
+      {/* What a sim stops on is the host's setting. */}
+      {!guest && (
+        <div className="mt-3 flex flex-wrap items-center gap-3 text-xs text-muted">
+          <span>{t('home.stopOn')}</span>
+          {STOP_CATEGORIES.map((c) => (
+            <label key={c} className="flex items-center gap-1">
+              <input
+                type="checkbox"
+                checked={status.stopOn.includes(c)}
+                onChange={() =>
+                  dispatch.mutate({
+                    kind: 'league.setStopOn',
+                    stopOn: status.stopOn.includes(c)
+                      ? status.stopOn.filter((x) => x !== c)
+                      : [...status.stopOn, c],
+                  })
+                }
+              />
+              {t(`home.stopOn.${c}`)}
+            </label>
+          ))}
+        </div>
+      )}
     </Card>
   );
 }

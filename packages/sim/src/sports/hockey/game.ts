@@ -1,11 +1,13 @@
 import { TIRED_GOALIE } from '@gm/shared';
 import type {
+  BenchOrder,
   GameId,
   GameResult,
   HockeyBoxScore,
   HockeyGameStats,
   HockeyPenalty,
   HockeyShot,
+  HockeyTimeline,
   Player,
   PlayerId,
   TeamId,
@@ -21,7 +23,7 @@ import {
 } from './strength';
 import { HOCKEY_TUNING, rulesGoalModel, type GoalModel } from './tuning';
 import { finishBox, makeSide } from './side';
-import { buildUnit, pick } from './units';
+import { buildUnit, matchShares, pick } from './units';
 import { playShootout } from './shootout';
 
 /** Who shoots: defencemen take far fewer shots than forwards. */
@@ -84,6 +86,9 @@ interface Played {
  * players, a pulled goalie and empty-net goals all come out of that, not the other way round.
  * Overtime is 3v3 sudden death (five-on-five periods in the playoffs), then a shootout.
  * `keepBox: false` (the fast mode) skips the box score and injuries but plays the same game.
+ * `timeline` also writes down, in the box, what the game decides and the box does not keep (who
+ * is on the ice, the goalie leaving or changing, a skater hurt, shootout attempts): it draws
+ * nothing from `rng`, so the game is the same with or without it.
  */
 function playGame(
   input: {
@@ -95,6 +100,9 @@ function playGame(
     medical: [number, number];
     playoff: boolean;
     keepBox: boolean;
+    timeline: boolean;
+    /** Bench orders (`BENCH_ORDERS`) by side, in game-time order. */
+    orders: readonly { at: number; side: 0 | 1; order: string; value: number | undefined }[];
   },
   rng: Rng,
   model: GoalModel,
@@ -104,6 +112,16 @@ function playGame(
     makeSide(input.home, input.homeBackup),
     makeSide(input.away, input.awayBackup),
   ] as const;
+  const tl: HockeyTimeline | undefined =
+    input.timeline && input.keepBox
+      ? {
+          firstD: [S[0].lines.flat().length, S[1].lines.flat().length],
+          shifts: [],
+          goalies: [],
+          hurt: [],
+          shootout: [],
+        }
+      : undefined;
   const goals: [number, number] = [0, 0];
   const shotCount: [number, number] = [0, 0];
   const emptyNet: [number, number] = [0, 0];
@@ -142,6 +160,8 @@ function playGame(
   /** Skaters per side from the base strength (5, or 3 in overtime) less penalties running. */
   let base = 5;
   const count = (n: 0 | 1) => Math.max(3, base - S[n].penalties.length);
+  /** The forward line (its index) the home coach sends against the visitors' first, if he matches. */
+  let match: number | undefined;
   const lam: [number, number] = [0, 0];
   const penRate: [number, number] = [0, 0];
 
@@ -156,13 +176,33 @@ function playGame(
     for (const n of [0, 1] as const) {
       const s = S[n];
       const window = pullWindow(n);
-      s.pulled = regulation && window > 0 && t >= REGULATION - window && s.current >= 0;
+      // The rule, unless the coach has taken the net: then it is empty while his team trails.
+      const empty =
+        s.net === undefined
+          ? window > 0 && t >= REGULATION - window
+          : s.net && goals[1 - n]! > goals[n];
+      const pulled = regulation && empty && s.current >= 0;
+      if (tl && pulled !== s.pulled) tl.goalies.push([Math.round(t), n, pulled ? 0 : 1]);
+      s.pulled = pulled;
     }
-    for (const n of [0, 1] as const) {
+    // A home coach who matches has the last change: the visitors' unit goes out first.
+    for (const n of match === undefined ? ([0, 1] as const) : ([1, 0] as const)) {
       const mine = count(n);
       const theirs = count((1 - n) as 0 | 1);
       const kind = mine > theirs ? 'pp' : mine < theirs ? 'pk' : 'ev';
-      S[n].onIce = buildUnit(S[n], kind, mine + (S[n].pulled ? 1 : 0), rng);
+      const was = S[n].onIce;
+      // At five-on-five he answers their first line (any of its forwards out) with the line he named.
+      const answer =
+        n === 0 && match !== undefined && mine === 5 && theirs === 5 && !S[0].pulled && !S[1].pulled
+          ? matchShares(
+              match,
+              S[1].onIce.some((k) => S[1].lines[0]?.includes(k)),
+            )
+          : undefined;
+      const now = buildUnit(S[n], kind, mine + (S[n].pulled ? 1 : 0), rng, answer);
+      S[n].onIce = now;
+      if (tl && (now.length !== was.length || now.some((k, i) => k !== was[i])))
+        tl.shifts.push([Math.round(t), n, now]);
       const f = S[n].onIce.filter((k) => !S[n].isD[k]);
       const d = S[n].onIce.filter((k) => S[n].isD[k]);
       // The first forward takes the draws (his line's centre), as in the team strength numbers.
@@ -235,6 +275,7 @@ function playGame(
         )
           continue;
         s.out.add(k);
+        tl?.hurt.push([Math.round(t), n, k]);
         injuries.push({ playerId: s.players[k]!.id, days: pickInjuryDays() });
       }
       const hurt =
@@ -251,7 +292,16 @@ function playGame(
     if (s.current !== 0 || !s.goalies[1]) return;
     s.current = 1;
     s.against = 0;
+    tl?.goalies.push([Math.round(t), n, 2]);
     s.goalieLines.push({ id: s.goalies[1].id, toi: 0, shotsAgainst: 0, saves: 0 });
+  };
+  /** The next bench order to come, and what obeying one does. */
+  let due = 0;
+  const obey = ({ side, order, value }: (typeof input.orders)[number]) => {
+    if (order === 'goalieChange') goalieIn(side);
+    else if (order === 'emptyNet' || order === 'goalieBack') S[side].net = order === 'emptyNet';
+    // The home side's only: line 1 up, 0 calls the match off.
+    else if (order === 'match' && side === 0) match = value ? value - 1 : undefined;
   };
 
   /** One shot by side `a`. Returns true if it was a goal. */
@@ -353,6 +403,12 @@ function playGame(
     let shiftEnd = t;
     let dirty = true;
     while (t < end) {
+      // A bench order's second is a boundary below: the order is obeyed here and the units rebuilt.
+      // With no orders nothing here runs, so the game and its draws are today's.
+      for (let o = input.orders[due]; o && o.at <= t; o = input.orders[++due]) {
+        obey(o);
+        dirty = true;
+      }
       if (t >= shiftEnd) {
         if (t > 0) shiftChange();
         shiftEnd = Math.min(t + T.shiftSeconds, end);
@@ -366,11 +422,18 @@ function playGame(
       const total = clocks[0]! + clocks[1]! + clocks[2]! + clocks[3]!;
       let boundary = Math.min(end, shiftEnd);
       for (const s of S) if (s.penalties[0]) boundary = Math.min(boundary, s.penalties[0][0]);
-      // The goalie is pulled at a set time, so it is a boundary too.
+      boundary = Math.min(boundary, input.orders[due]?.at ?? end);
+      // The goalie is pulled at a set time, so it is a boundary too (not once the coach has the net).
       if (opts.regulation) {
         for (const n of [0, 1] as const) {
           const window = pullWindow(n);
-          if (window && !S[n].pulled && S[n].current >= 0 && t < REGULATION - window)
+          if (
+            S[n].net === undefined &&
+            window &&
+            !S[n].pulled &&
+            S[n].current >= 0 &&
+            t < REGULATION - window
+          )
             boundary = Math.min(boundary, REGULATION - window);
         }
       }
@@ -423,7 +486,7 @@ function playGame(
         penalties: false,
         suddenDeath: true,
       });
-      if (overtimeGoal === null) shootoutWinner = playShootout(S, rng, goalFactor);
+      if (overtimeGoal === null) shootoutWinner = playShootout(S, rng, goalFactor, tl?.shootout);
     }
   }
 
@@ -433,7 +496,9 @@ function playGame(
     overtimeGoal,
     shootoutWinner,
     overtime,
-    ...(input.keepBox ? { box: finishBox(S, shots, penalties, emptyNet) } : {}),
+    ...(input.keepBox
+      ? { box: { ...finishBox(S, shots, penalties, emptyNet), ...(tl && { timeline: tl }) } }
+      : {}),
     injuries,
   };
 }
@@ -447,6 +512,10 @@ interface MatchupInput {
   playoff?: boolean;
   /** Score and totals only, no box score or injuries: faster, for odds and what-if sims. */
   resultOnly?: boolean;
+  /** Also keep `HockeyBoxScore.timeline` for a viewer; the game itself does not change. */
+  timeline?: boolean;
+  /** Bench orders (`BENCH_ORDERS`) of either team, in game-time order. None: the game as today. */
+  orders?: readonly BenchOrder[] | undefined;
   /** The team played yesterday: its backup goalie starts (never in the playoffs). */
   homeBackToBack?: boolean;
   awayBackToBack?: boolean;
@@ -484,6 +553,15 @@ export function simGame(
       medical: [input.homeMedical ?? 1, input.awayMedical ?? 1],
       playoff: !!input.playoff,
       keepBox: !input.resultOnly,
+      timeline: !!input.timeline,
+      orders: (input.orders ?? [])
+        .filter((o) => o.teamId === input.homeTeamId || o.teamId === input.awayTeamId)
+        .map((o) => ({
+          at: o.at,
+          side: o.teamId === input.homeTeamId ? 0 : 1,
+          order: o.order,
+          value: o.value,
+        })),
     },
     rng,
     model,
