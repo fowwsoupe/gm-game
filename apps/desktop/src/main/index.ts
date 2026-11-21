@@ -3,16 +3,22 @@ import { app, BrowserWindow, dialog, ipcMain } from 'electron';
 import { IPC, type GmApi } from '@gm/shared/ipc';
 import { LeagueService } from './league';
 import { Online } from './net/online';
-import { initSteam, steamStatus } from './steam';
+import { initSteam, steamClient, steamStatus } from './steam';
 
 // Steam must initialize before any window is created for the overlay to hook in.
 initSteam();
 
 /** This machine's league and the hosted one it may be in: the handlers read whichever is active. */
-const online = new Online(new LeagueService(), app.getVersion(), () => {
-  for (const win of BrowserWindow.getAllWindows())
-    if (!win.isDestroyed()) win.webContents.send(IPC.sessionChanged);
-});
+const online = new Online(
+  new LeagueService(),
+  app.getVersion(),
+  () => {
+    for (const win of BrowserWindow.getAllWindows())
+      if (!win.isDestroyed()) win.webContents.send(IPC.sessionChanged);
+  },
+  undefined,
+  steamClient(),
+);
 
 function createWindow() {
   const win = new BrowserWindow({
@@ -128,6 +134,7 @@ function registerIpc() {
   ipcMain.handle(IPC.dispatch, (_e, command: unknown) => online.dispatch(command));
   ipcMain.handle(IPC.steamStatus, () => steamStatus());
   ipcMain.handle(IPC.sessionHost, (_e, input: SessionIn<'host'>) => online.host(input));
+  ipcMain.handle(IPC.sessionInvite, () => online.invite());
   ipcMain.handle(IPC.sessionJoin, (_e, input: SessionIn<'join'>) => online.join(input));
   ipcMain.handle(IPC.sessionLeave, () => online.leave());
   ipcMain.handle(IPC.sessionRequestSeat, (_e, input: SessionIn<'requestSeat'>) =>
@@ -145,6 +152,10 @@ function registerIpc() {
 void app.whenReady().then(() => {
   registerIpc();
   createWindow();
+  // An invite accepted while the game was not running: Steam starts it with the lobby to join.
+  const lobby = process.argv[process.argv.indexOf('+connect_lobby') + 1];
+  if (process.argv.includes('+connect_lobby') && lobby && /^\d{1,20}$/.test(lobby))
+    void online.invited(BigInt(lobby));
   app.on('activate', () => {
     if (BrowserWindow.getAllWindows().length === 0) createWindow();
   });

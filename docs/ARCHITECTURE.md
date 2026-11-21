@@ -152,7 +152,12 @@ which also says how much of it is built.
    order, a `peerKey` the transport vouches for, the bytes still `unsent`, nothing handed over
    after `close()`). A new transport implements it and changes no session; session tests run
    over `loopback()`, which loses packets when a test says so. `net/tcp.ts` is the direct
-   connection (not encrypted: LAN and testing).
+   connection (not encrypted: LAN and testing). `net/steam.ts` is Steam (a friends-only lobby,
+   P2P packets from its members only), written against `steamworks.js`' own typings and run
+   only over `net/fakeSteam.ts` so far: not verified live. On Steam the `peerKey` is a SteamID,
+   and the host session is told so (`identified`): a guest's place and seat go by it, a kick
+   holds for the session, and the host's save notes who held which team (`hostSeats`, a `meta`
+   row no snapshot carries).
 7. **Main holds one `Online`** (`net/online.ts`): this machine's own league and at most one
    session. Query handlers read `online.league` (the mirror while this machine is a guest),
    `commands.dispatch` goes through `online.dispatch`, and what only happens outside a session

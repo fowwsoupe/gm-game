@@ -102,6 +102,9 @@ const JSON_META = {
 
 const IMPORTANCE_RANK: Record<Importance, number> = { minor: 0, notable: 1, major: 2 };
 
+/** The `meta` key of a host's own note (`hostSeats`): the one row no snapshot carries. */
+const HOST_SEATS = 'hostSeats';
+
 const isCell = (c: unknown) =>
   c === null || typeof c === 'string' || (typeof c === 'number' && Number.isFinite(c));
 
@@ -153,6 +156,24 @@ export class SaveFile {
         'INSERT INTO meta (key, value) VALUES (?, ?) ON CONFLICT(key) DO UPDATE SET value = excluded.value',
       )
       .run(key, value);
+  }
+
+  /**
+   * A host's own note for his next online session: team id to the lasting identity (a SteamID) of
+   * the guest he seated on it. It is this machine's alone: `dumpRows` leaves it out, so no guest
+   * is ever sent it. A note that does not read is no note.
+   */
+  hostSeats(): Record<string, string> {
+    try {
+      const seats = JSON.parse(this.getMeta(HOST_SEATS) ?? '{}') as object;
+      return Object.fromEntries(Object.entries(seats).filter(([, who]) => typeof who === 'string'));
+    } catch {
+      return {};
+    }
+  }
+
+  setHostSeats(seats: Readonly<Record<string, string>>) {
+    this.setMeta(HOST_SEATS, JSON.stringify(seats));
   }
 
   // ---------- whole league ----------
@@ -674,10 +695,11 @@ export class SaveFile {
    * save of many seasons makes a join stutter.
    */
   dumpRows(): TableRows[] {
-    return [...this.tables().keys()].map((table) => ({
-      table,
-      rows: this.db.prepare(`SELECT * FROM ${table} ORDER BY rowid`).raw().all() as Cell[][],
-    }));
+    return [...this.tables().keys()].map((table) => {
+      const rows = this.db.prepare(`SELECT * FROM ${table} ORDER BY rowid`).raw().all() as Cell[][];
+      // What a host keeps for himself (`hostSeats`) stays on his machine.
+      return { table, rows: table === 'meta' ? rows.filter(([key]) => key !== HOST_SEATS) : rows };
+    });
   }
 
   /**

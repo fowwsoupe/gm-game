@@ -732,6 +732,8 @@ export const en = {
   'online.host.body':
     'Friends join the league open in this game. Your game runs it and holds the save: they play while you host.',
   'online.host.go': 'Host',
+  'online.host.steam': 'Host on Steam',
+  'online.host.direct': 'Host on a direct connection',
   'online.join.title': 'Join a league',
   'online.join.body':
     'Ask the host for his address, port and code. Your own league is set aside, untouched, until you leave.',
@@ -739,6 +741,8 @@ export const en = {
   'online.join.port': 'Port',
   'online.join.code': 'Code',
   'online.join.go': 'Join',
+  'online.join.steam':
+    'A league hosted on Steam needs nothing typed: accept the invite its host sends you in Steam.',
   'online.direct.note':
     'A direct connection, not encrypted: for a home network or testing, not the internet.',
   'online.reason.closed': 'The host closed the league.',
@@ -752,6 +756,9 @@ export const en = {
   'online.reason.full': 'The league is full.',
   'online.failed': 'That did not work: {reason}',
   'online.hosting': 'You are hosting',
+  'online.steam.body':
+    'Your league is hosted on Steam, in a friends-only lobby: invite your friends. A friend who accepts joins by himself, and gets back the team you gave him the last time you hosted this league.',
+  'online.invite': 'Invite friends',
   'online.stop': 'Stop hosting',
   'online.confirmStop': 'Stop hosting? Every guest is disconnected.',
   'online.guest': 'You are a guest',
@@ -775,6 +782,8 @@ export const en = {
   'online.ungrant': 'Take back advance',
   'online.kick': 'Kick',
   'online.confirmKick': 'Remove {name} from the league? The join code changes.',
+  'online.confirmKick.steam':
+    'Remove {name} from the league? He cannot come back until you host it again.',
   'online.imReady': "I'm ready",
   'online.confirmAdvance': 'Not ready: {names}. Advance anyway?',
   'online.waitSeat': 'The host gives you a team: ask for one on the Online screen.',

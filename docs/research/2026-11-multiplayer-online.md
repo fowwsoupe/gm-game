@@ -7,6 +7,9 @@ the host validates and sims, 1 to 32 humans per league. Step 1 (hot-seat) put se
 in one save on one machine. This brief says how that save is played from several machines,
 settles each open question with a default the owner can overrule (one table, near the end), and
 splits the work into seven jobs. Step 3 (our servers, accounts, anti-cheat) is not part of it.
+All seven jobs are built. The last one, the Steam transport, is **built, not verified live**: it
+has only run against a fake, and still needs a two-machine test with the real Steam App ID (job 7
+lists what that test checks).
 
 ## What exists today
 
@@ -234,9 +237,10 @@ protocol number, the app version (`app.getVersion()`) and the save schema (the n
 migrations, exported from `@gm/data`) all equal its own. `welcome` names the league's ruleset
 and sport, and the guest leaves unless its build has that ruleset for that sport (only `nhl`
 today; the check names no sport), and leaves again if the snapshot that follows is not that
-league (ruleset, sport, event count). On
-Steam the same values also sit in the lobby's data so the join screen can say "the host runs
-another version" early; the handshake is what counts. Every dev build says 0.0.1 today, so two
+league (ruleset, sport, event count). This brief first put the same values in the Steam lobby's
+data too, so a join screen could say "the host runs another version" early. Job 7 did not: a
+friend joins from an invite, with no screen in between, and the handshake's refusal already
+reaches his Online screen in words, so the lobby holds no data. Every dev build says 0.0.1 today, so two
 different commits pass as equal: a real version per release fixes that, and adding the build's
 commit to the check is the named alternative. Admission is this handshake plus the transport's
 own gate (the join code on a direct connection, lobby membership on Steam). An admitted guest
@@ -271,8 +275,18 @@ the session started, for as long as that team is human and no guest holds it. A 
 the guest (his place, his resume key and his grant) and his team stays a human team on the
 host, who seats someone else on it or hands it to its AI GM. A guest who leaves by himself is a
 guest who dropped: if he was seated, his row stays, disconnected, until the host kicks him or
-takes the team back. The transport's `peerKey` is read for one thing, counting wrong join codes
-by address; seats by SteamID wait for job 7.
+takes the team back. On a direct connection the transport's `peerKey` is read for one thing,
+counting wrong join codes by address. As built in job 7, on Steam it is who the guest is
+(`identified` in the host's options): his place in a session is found by his SteamID, and a
+resume key opens nothing there, so somebody else's key gives a guest only a row of his own. The
+host's save notes team id to SteamID in one `meta` row (`hostSeats`), written when the host
+seats a guest, struck when he unseats or kicks him, and left out of every snapshot. In the
+host's next session a friend whose SteamID is noted is seated on admission, while that team is
+still human and no guest holds it. A team noted for a friend is human before he is back in, so
+the host's own row skips it (the brief's "first human team" would have shown the host on his
+friend's team after a restart). A kick on Steam has no code to change: that SteamID is refused
+`kicked` at the handshake until the session ends, and can be invited again in the next one, as
+a newcomer.
 
 **Advancing the day; readiness.** The clock belongs to the host: he presses the sim buttons, and
 so may a guest he grants `advance` (a co-commissioner). Every GM has a Ready toggle; on a guest
@@ -378,7 +392,7 @@ change anything he is not allowed to.
 that connects, and a connection with `send(bytes)`, `close()`, message and close callbacks, and
 a `peerKey` the transport vouches for. It is not one per connection, as this brief first said
 (job 5): on a direct connection it is the remote address, which two games on one machine or
-behind one router share; on Steam it will be a SteamID. Packets arrive whole
+behind one router share; on Steam it is a SteamID. Packets arrive whole
 and in order, and nothing is handed to an end after its own `close()` (job 3: a refused guest
 gets one `hello`, whatever was already on its way). Job 4 added `unsent`, the bytes handed to
 `send` that have not left the machine, which the host's backlog limit reads (zero where a
@@ -417,7 +431,27 @@ transport cannot tell). Three implementations:
   transport is built against the real typings with a fake in tests, and it ends **built, not
   verified live**: no real Steam App ID exists in this repo and one machine runs one Steam
   account at a time, so it needs a two-machine test with the real App ID before it counts as
-  working.
+  working. As built in job 7 (`net/steam.ts`, 260 lines): Steam's packets go to a SteamID and
+  have no connection, so each carries 5 bytes in front, a number its guest picked and what the
+  frame is (a packet, or the connection's end); the largest packet of the wire still fits
+  under Steam's megabyte. A member's new number is a new connection, which ends his old one,
+  at most once in `WIRE.reconnectMs` (1 s), so the limits a connection starts with are not had
+  again for the asking. The host accepts a member's P2P session when he enters the lobby and
+  when he asks as a member (Steam sends the two by different roads), and drops a packet from
+  anyone who is not in the lobby as it is read, since 0.4.0 closes no session and somebody who
+  left can still send. The guest takes the lobby's owner as he first finds him for the host,
+  for good (Steam hands a lobby whose owner left to another member), accepts that one session
+  before his first frame, and reads only his packets. `unsent` is 0, Steam does not say what
+  it still holds, so the backlog limit does not act on Steam. The kicked guest is refused by
+  the session at the handshake, not ignored by the transport as this brief first said, so he
+  is told why. Known and left: a guest's connection leaves the lobby as it closes, so a packet
+  he sent in the same turn as his own `close()` can be dropped with him, which is short of the
+  interface; no session sends one (a guest who leaves only closes), and the host's last word
+  does arrive. A member, or one who left, can make the host read up to 64 packets a turn for
+  nothing, since 0.4.0 can put nobody out of a lobby or a session. Any member of the lobby can
+  invite others, as Steam lets him. A `hello` sent less than a second after that SteamID's
+  last connection began is dropped, and that join fails 15 s later: the friend accepts the
+  invite again.
 
 **Lobby and guest screens.** `GmApi.session` goes into `packages/shared/src/ipc.ts` first: host
 (direct or Steam), join, leave, request a team, assign a team, ready, grant advance, kick and
@@ -434,9 +468,15 @@ guest's too: whoever moves the clock is asked about the others. New league, Load
 stays: it is the commissioner's way to act for an absent GM. Text in `en.ts` and `fr.ts`.
 
 The session API as built in job 5 (`net/online.ts` behind `GmApi.session`): `host` opens the
-direct connection only, until job 7 adds Steam, and its status carries what the host reads out
+direct connection, and its status carries what the host reads out
 (this machine's addresses on its networks, the port, the code); `join` takes an address, a
-port, the code and a name. Every call answers done, or the reason as text for the screen.
+port, the code and a name. Since job 7 `host` takes `steam` to open a Steam lobby instead (its
+status then has no `direct`, and a game that is not under Steam answers "Steam is not
+running."), and `invite` opens Steam's invite dialog for that host. A guest on Steam calls
+nothing: main follows the invite (`GameLobbyJoinRequested` while the game runs, the
+`+connect_lobby` argument when Steam started it), under the player's Steam name, unless a
+session is already open or opening here; a join that fails leaves its reason in `ended`, since
+no window asked for it. Every call answers done, or the reason as text for the screen.
 `status` is `none` (with why the last session ended by itself: for a guest `closed`, `kicked`,
 `disconnected` or an error's text; for a host whose session closed itself `error`, since job 6;
 nothing after a session its own player ended),
@@ -739,7 +779,7 @@ job 4 are in.
    the rollover were not played in a session.
    Known and left: a guest whose game was restarted is a newcomer, so the host frees the dead
    row's team ("No team", and the row goes) before it can be asked for again; job 7 remembers
-   seats by SteamID. Leave asks no question. A reason we have no words for is shown as it came,
+   seats by SteamID, on Steam only. Leave asks no question. A reason we have no words for is shown as it came,
    in English: a command refused while reconnecting reads "disconnected", and a connection
    that cannot be made reads as Node's error. An address throttled for its wrong codes still reads as a
    wrong code. The join form is empty again after a session ends. A guest with no team reads
@@ -749,9 +789,9 @@ job 4 are in.
    corrected in four places while building: who gets the Ready toggle, New league, Load roster
    and "can be fired" hidden on the host too, what a guest may change on a team page, and the
    reason on the host's status.
-7. **Steam transport** (Fable, main). The same interface over `steamworks.js` as described
-   above, seats remembered by SteamID in the host's save, "Host on Steam" and "Invite" on the
-   Online screen, the roadmap brought up to date.
+7. **Steam transport: built, not verified live** (Fable, main). The same interface over
+   `steamworks.js` as described above, seats remembered by SteamID in the host's save, "Host on
+   Steam" and "Invite" on the Online screen, the roadmap brought up to date.
    _Done when:_ the session tests pass over the Steam transport with a fake `steamworks.js`
    shaped by the real typings (lobby, packets, callbacks); a packet from a non-member is
    ignored; a remembered SteamID gets its seat back. This job ends **built, not verified
@@ -762,6 +802,87 @@ job 4 are in.
    `sendP2PPacket` and whether it needs pacing; a drop and a rejoin. (A first smoke on the
    default test app 480, two accounts on two machines, is possible earlier; it does not replace
    the run on the real App ID.)
+   _Built:_ `net/steam.ts`: `hostSteam` (the lobby, a connection for each member who sends a
+   frame, and `invite`), `joinSteam` and `onInvite`, written against `Steam`, an interface made
+   of the typings' own types for the calls a hosted league uses. The client `init` returns and
+   the tests' fake both have to fit it, and the typecheck holds them to it. The typings'
+   enums are `const enum`, which this build (isolated modules) cannot read as values, so the
+   seven numbers used are written out, each typed by its enum member: a wrong one fails the
+   typecheck (tried: 4 for `LobbyChatUpdate` is a TS2322), and the four callback numbers were
+   read back from the installed module at run time. `main/steam.ts` hands main the client it
+   already made (the App ID is still `STEAM_APP_ID`, default 480; none was added);
+   `net/online.ts` hosts on it, opens the invite dialog and follows an invite; `main/index.ts`
+   reads `+connect_lobby`. In `net/host.ts`: `identified`, the SteamIDs kicked in this session,
+   the seat note and the host's own row. In `packages/data`: `hostSeats` and `setHostSeats` on
+   the save (the `meta` table, no migration), and `dumpRows` leaves that row out. In
+   `packages/shared`: `session.host({ steam })`, `session.invite`, a host status with no
+   `direct` on Steam, `WIRE.reconnectMs`. No new wire message; the protocol number stands. On
+   the Online screen, when the game runs under Steam: "Host on Steam" first and "Host on a
+   direct connection" second, and a line on the Join card saying an invite needs nothing typed.
+   Hosting on Steam: no address, port or code, "Invite friends", and a Kick question that says
+   he cannot come back until the league is hosted again.
+   _Tested:_ `net/fakeSteam.ts` (186 lines) is Steam for the tests, in one process: players,
+   lobbies whose owner hands them on when he leaves, packets that wait until the receiver
+   accepts the sender's session (with one `P2PSessionRequest`), callbacks that come later, the
+   megabyte, a line a test cuts. `net/steam.test.ts` has six tests over it: a friends-only
+   lobby of 32 and packets whole and in order both ways, an empty one and one of the wire's
+   largest size included; only a member is heard, from when he enters to when he leaves, and
+   what is not a frame is dropped and holds up nothing; a close reaches the other end and
+   nothing is handed over after it; a member's new connection number is a new connection once
+   a second, and a close opens none; what Steam says is gone is closed (a lost line, a packet
+   it refuses); a guest follows the host he found, never the lobby's next owner.
+   `net/session.test.ts` gained one, two `Online` each over its own league on the fake: host on
+   Steam (no `direct`, a lobby of 32, the invite dialog, a guest's `invite` refused); an invite
+   accepted, in with no code, the two leagues identical; a seat, noted under his SteamID and in
+   no snapshot; commands both ways; a cut line and back on the same row; an invite ignored
+   while in a session; leave and rejoin on the same row and seat with no resume key; the host
+   stops and hosts again, his own row on his own team though the friend's sorts first, the
+   friend seated with no click; a second guest seated, a third who sends her resume key and
+   gets a row of his own with no team; a kick (the note struck, refused `kicked` with or
+   without the key, and again when invited); a game of another version told so; the kicked
+   friend a newcomer with no team once the host hosts again. The sockets test also checks that
+   hosting on Steam without Steam, and an invite from a direct host, are refused in words.
+   `Online.test.tsx` has two more (seven): the first screen under Steam, and the host on Steam
+   with nothing for a friend to type. `save.test.ts` has one more: the note round-trips, is in
+   no dump, and one that does not read is no note. Each rule was also switched off once to see
+   a test fail, then put back: the host's own team skipping noted teams, a resume key opening
+   nothing on Steam, the kicked SteamID refused, only a member's packets read, the guest
+   keeping to the host he found.
+   The done-when above asked for more than was done in one place: the loopback and socket
+   session tests were not run again over Steam. The Steam session test above and the six
+   transport tests are what ran over the fake.
+   In the built app, by an agent's script that is not in the repo: Steam does not run on the
+   machine this was built on (`init` throws "Could not determine Steam client install
+   directory."), so only the game without Steam was seen. One "Host" button, no "Host on
+   Steam" and no word of an invite; `window.gm.session.host({ steam: true })` answers "Steam is
+   not running." and opens nothing; `session.invite()` is refused, from a direct host too; a
+   direct host's card reads an address, a port and a code and has no "Invite friends"; started
+   with `+connect_lobby` and a lobby id, the game opens as usual, with no session and no
+   reason. Job 6's run of two instances by clicks was played again unchanged over the direct
+   connection, all 14 steps. Nothing of the Steam side was seen in the built app: "Host on
+   Steam", the hosting card with "Invite friends" and an invite followed exist in component
+   tests on static markup and in the session test over the fake only.
+   _Not verified live:_ everything above ran against the fake, which plays what the transport
+   leans on and none of Steam's own gates or network. The two-machine test with the real App ID
+   still has to show: the list in the done-when; that a friends-only lobby lets in who it
+   should; that the owner hears `LobbyChatUpdate` for a member entering and leaving, and a
+   guest's first packet waits for the host's accept as the fake has it; that `readP2PPacket`
+   throws when nothing waits (if it does not, a turn reads 64 empty packets and drops them);
+   what `joinLobby` rejects with, which the friend's Online screen shows as it comes; and that
+   `+connect_lobby` reaches `process.argv` in a packaged build.
+   Known and left: the transport's own list above (a guest's last packet with his close, a
+   member who floods, members inviting others, a `hello` inside the second). After a kick the
+   friend's team stays a human team on the host, as on a direct connection. A friend who is
+   invited while his game hosts or is in another league is not told: the invite is ignored. A
+   join from an invite that fails brings his window to the Online screen with the reason, in
+   our words where we have them (another version, kicked, full) and as it came otherwise (a
+   lobby that is gone reads as Steam's own error). He is listed under his Steam name, and
+   nothing lets him change it. A note outlives its team being handed to its AI GM: if the team
+   is a human one again when the friend comes back, he is seated on it, and the host unseats
+   him if that is not what he wants. The design above was
+   corrected in five places while building: no version values in the lobby's data, when the
+   host accepts a P2P session, who refuses a kicked guest, the host's own row, and this job's
+   done-when.
 
 Not in scope: step 3 (our servers, accounts, anti-cheat, real fog, leagues that run with the
 host away); host migration; a job market for several fired GMs; a draft pick timer; chat; a

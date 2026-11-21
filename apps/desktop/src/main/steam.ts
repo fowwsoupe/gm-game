@@ -1,4 +1,5 @@
 import { createRequire } from 'node:module';
+import type * as Steamworks from 'steamworks.js';
 
 /**
  * Optional Steam integration. The game must run fine without Steam (dev, CI, tests),
@@ -7,20 +8,13 @@ import { createRequire } from 'node:module';
  */
 const STEAM_APP_ID = Number(process.env.STEAM_APP_ID ?? 480);
 
-type SteamClient = {
-  localplayer: { getName(): string };
-};
-
-let client: SteamClient | null = null;
+let client: ReturnType<typeof Steamworks.init> | null = null;
 
 export function initSteam(): void {
   if (process.env.GM_DISABLE_STEAM === '1') return;
   try {
     const require = createRequire(import.meta.url);
-    const steamworks = require('steamworks.js') as {
-      init(appId: number): SteamClient;
-      electronEnableSteamOverlay(): void;
-    };
+    const steamworks = require('steamworks.js') as typeof Steamworks;
     client = steamworks.init(STEAM_APP_ID);
     steamworks.electronEnableSteamOverlay();
   } catch (err) {
@@ -28,6 +22,9 @@ export function initSteam(): void {
     console.info('[steam] not available, running without Steam:', (err as Error).message);
   }
 }
+
+/** The Steam client, or null when the game runs without Steam: what a league hosted on Steam goes through. */
+export const steamClient = () => client;
 
 export function steamStatus() {
   return { enabled: client !== null, playerName: client?.localplayer.getName() ?? null };

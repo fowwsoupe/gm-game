@@ -206,6 +206,18 @@ export class LeagueService {
   }
 
   /**
+   * A host's note for his next session, in his save and in no snapshot: team id to the SteamID of
+   * the guest he seated on it.
+   */
+  hostSeats() {
+    return this.open().save.hostSeats();
+  }
+
+  setHostSeats(seats: Readonly<Record<string, string>>) {
+    this.open().save.setHostSeats(seats);
+  }
+
+  /**
    * A mirror's start, and its way back after a gap: a fresh in-memory save filled with a host's
    * rows (`snapshot`, with the rows per table), then the state loaded from it. A bad snapshot
    * throws and leaves the service as it was.

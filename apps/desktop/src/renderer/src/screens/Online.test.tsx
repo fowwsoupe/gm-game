@@ -27,13 +27,17 @@ const peer = (
 const host = peer('Minh', 't1', { can: ['advance'] });
 
 /** The screen as static markup: what it shows in a state, without a window. */
-const show = (status: SessionStatus, more: { teams?: Team[]; error?: string } = {}) =>
+const show = (
+  status: SessionStatus,
+  more: { teams?: Team[]; error?: string; steam?: boolean } = {},
+) =>
   renderToStaticMarkup(
     <OnlineView
       status={status}
       teams={more.teams ?? teams}
       todo={{ t1: 3, t2: 0 }}
       defaultName="Steam name"
+      steam={more.steam ?? false}
       busy={false}
       error={more.error ?? null}
       act={() => {}}
@@ -61,6 +65,21 @@ it('no session: host or join, and nothing to host without a league', () => {
   const empty = show({ role: 'none' }, { teams: [] });
   expect(button(empty, 'Host')).toContain(' disabled=""');
   expect(empty).toContain('Start a new league to begin.');
+  // The game does not run under Steam: nothing about it.
+  expect(button(html, 'Host on Steam')).toBeUndefined();
+  expect(html).not.toContain('accept the invite');
+});
+
+it('no session, under Steam: host on it or on a direct connection, and join from an invite', () => {
+  const html = show({ role: 'none' }, { steam: true });
+  expect(button(html, 'Host on Steam')).not.toContain(' disabled=""');
+  expect(button(html, 'Host on a direct connection')).not.toContain(' disabled=""');
+  expect(button(html, 'Host')).toBeUndefined();
+  expect(html).toContain('accept the invite its host sends you in Steam');
+  // The direct connection is still there to join by.
+  expect(button(html, 'Join')).toBeDefined();
+  const empty = show({ role: 'none' }, { steam: true, teams: [] });
+  expect(button(empty, 'Host on Steam')).toContain(' disabled=""');
 });
 
 it('no session: why the last one ended, and why a call failed', () => {
@@ -90,6 +109,7 @@ it('the host: what a friend types, the lobby, and his tools on each guest', () =
   expect(html).toContain('51234');
   expect(html).toContain('K7M2QX');
   expect(button(html, 'Stop hosting')).toBeDefined();
+  expect(button(html, 'Invite friends')).toBeUndefined(); // Steam's dialog, for a league on Steam
   // Who is done and who is away; to do: the count for a seated team (zero included), a dash for
   // no team or no answer yet.
   expect(lobby(html)).toEqual([
@@ -113,6 +133,21 @@ it('the host: what a friend types, the lobby, and his tools on each guest', () =
   });
   expect(button(free, 'Give LAV')).toBeDefined();
   expect(free).toContain('127.0.0.1'); // no network: this machine can still join itself
+});
+
+it('the host on Steam: the invite, and nothing for a friend to type', () => {
+  const html = show({ role: 'host', you: 0, peers: [host, peer('Guy', 't2', { key: '1' })] });
+  expect(html).toContain('friends-only lobby');
+  expect(button(html, 'Invite friends')).not.toContain(' disabled=""');
+  expect(button(html, 'Stop hosting')).toBeDefined();
+  for (const direct of ['Address', 'Port', 'Code', '127.0.0.1', 'not encrypted'])
+    expect(html, direct).not.toContain(direct);
+  // The lobby and the host's tools are the same on any connection.
+  expect(lobby(html)).toEqual([
+    ['Minh (you)', 'Boston Club', 'Not ready · can advance', '3'],
+    ['Guy', 'Laval Club', 'Not ready', '0'],
+  ]);
+  expect(html.match(/>Kick<\/button>/g)).toHaveLength(1);
 });
 
 it('a guest: asks for a team, sees the lobby, and has none of the host tools', () => {

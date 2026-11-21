@@ -7,7 +7,8 @@ export interface Connection {
   /**
    * Who is at the other end, as far as the transport can vouch for it: an address on a direct
    * connection (two games on one machine share theirs), a SteamID on Steam. Never taken from a
-   * message. The host counts wrong join codes by it.
+   * message. The host counts wrong join codes by it, and on Steam it is who the guest is: what
+   * his place and his seat go by.
    */
   readonly peerKey: string;
   /**
@@ -22,7 +23,9 @@ export interface Connection {
   readonly unsent: number;
   /**
    * Ends the connection. Packets already sent still reach the other end; none is handed to this
-   * end after the call, so a session that closes a connection has heard the last of it.
+   * end after the call, so a session that closes a connection has heard the last of it. (One
+   * exception, on Steam: what a guest sent in the same turn as his own close may not arrive. See
+   * `joinSteam`.)
    */
   close(): void;
   /** Set by the session as soon as it is handed the connection: nothing arrives before that. */

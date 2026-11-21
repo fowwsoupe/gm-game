@@ -9,7 +9,9 @@ import {
 import { LeagueService } from '../league';
 import { GuestSession } from './guest';
 import { HostSession } from './host';
+import { hostSteam, joinSteam, onInvite, type Steam } from './steam';
 import { connectTcp, lanAddresses, listenTcp } from './tcp';
+import type { GuestTransport } from './transport';
 
 type In<K extends keyof GmApi['session']> = Parameters<GmApi['session'][K]>[0];
 
@@ -26,7 +28,8 @@ function named(text: string) {
  * what went wrong (the host's refusal, a dead line, a wrong role) is text for the screen.
  */
 export class Online {
-  private hosting: { session: HostSession; port: number } | null = null;
+  /** `port`: of a direct connection. `invite`: Steam's invite dialog, of a league hosted on Steam. */
+  private hosting: { session: HostSession; port?: number; invite?: () => void } | null = null;
   private guesting: { session: GuestSession; mirror: LeagueService } | null = null;
   /** A session is being opened: nothing else may start meanwhile. */
   private opening = false;
@@ -38,14 +41,19 @@ export class Online {
 
   /**
    * `changed`: main's push to the windows, for what they did not ask for. `bind`: the interface a
-   * hosted league listens on, every one by default (the tests keep to the loopback).
+   * hosted league listens on, every one by default (the tests keep to the loopback). `steam`: the
+   * Steam client, when the game runs under Steam: a league can then be hosted on it, and a
+   * friend's invite accepted in Steam is followed.
    */
   constructor(
     private readonly own: LeagueService,
     private readonly appVersion: string,
     private readonly changed: () => void,
     private readonly bind?: string,
-  ) {}
+    private readonly steam: Steam | null = null,
+  ) {
+    if (steam) onInvite(steam, (lobbyId) => void this.invited(lobbyId));
+  }
 
   /** The session this machine hosts, unless it closed itself (a batch it could not send). */
   private get hosted() {
@@ -103,18 +111,29 @@ export class Online {
     });
   }
 
-  /** Opens this machine's league to guests, on a port the OS picks, behind a join code. */
+  /**
+   * Opens this machine's league to guests: on a port the OS picks, behind a join code, or with
+   * `steam` in a friends-only Steam lobby, where the lobby is the gate and a guest is his SteamID.
+   */
   host(input: In<'host'>) {
     return this.open(async () => {
-      const transport = await listenTcp(this.bind);
+      if (input.steam && !this.steam) throw new Error('Steam is not running.');
+      const lobby = input.steam && this.steam ? await hostSteam(this.steam) : null;
+      const direct = lobby ? null : await listenTcp(this.bind);
+      const transport = (lobby ?? direct)!;
       try {
         const session = await HostSession.start(this.own, transport, {
           appVersion: this.appVersion,
-          joinCode: true,
+          joinCode: !lobby,
+          identified: !!lobby,
           name: named(input.name),
           onChange: this.changed,
         });
-        this.hosting = { session, port: transport.port };
+        this.hosting = {
+          session,
+          ...(direct && { port: direct.port }),
+          ...(lobby && { invite: lobby.invite }),
+        };
       } catch (err) {
         transport.close();
         throw err;
@@ -122,20 +141,50 @@ export class Online {
     });
   }
 
-  /**
-   * Joins the league hosted at an address. From then on `league` is its mirror, and this
-   * machine's own save is left closed to the window until the session is over.
-   */
+  /** The host of a league on Steam opens Steam's invite dialog. */
+  invite() {
+    return this.answer(() => {
+      const invite = this.hosted?.invite;
+      if (!invite) throw new Error('Only the host of a league on Steam does that.');
+      invite();
+    });
+  }
+
+  /** Joins the league hosted at an address, with the code its host read out. */
   join(input: In<'join'>) {
+    const joinCode = input.joinCode.trim().toUpperCase().slice(0, ID_MAX);
+    return this.enter(connectTcp(input.address.trim(), input.port), {
+      name: named(input.name),
+      ...(joinCode && { joinCode }),
+    });
+  }
+
+  /**
+   * A friend's invite accepted in Steam: this game joins the league hosted in that lobby, under
+   * its player's Steam name. Not while a session is open here. A join that fails is told like a
+   * session that ended, since no window asked for it.
+   */
+  async invited(lobbyId: bigint) {
+    const { steam } = this;
+    if (!steam || this.opening || this.hosted || this.guesting) return;
+    const result = await this.enter(joinSteam(steam, lobbyId), {
+      name: named(steam.localplayer.getName()),
+    });
+    if (!result.ok) this.ended = result.error;
+    this.changed();
+  }
+
+  /**
+   * Joins the league hosted at the other end of a transport. From then on `league` is its mirror,
+   * and this machine's own save is left closed to the window until the session is over.
+   */
+  private enter(transport: GuestTransport, hello: { name: string; joinCode?: string }) {
     return this.open(async () => {
-      const joinCode = input.joinCode.trim().toUpperCase().slice(0, ID_MAX);
       const mirror = new LeagueService(':memory:');
       try {
-        const transport = connectTcp(input.address.trim(), input.port);
         const session = await GuestSession.join(mirror, transport, {
           appVersion: this.appVersion,
-          name: named(input.name),
-          ...(joinCode && { joinCode }),
+          ...hello,
           // Not before the window reads the mirror: until then nothing it shows has changed.
           onChange: () => {
             if (this.guesting) this.changed();
@@ -195,8 +244,10 @@ export class Online {
     const hosting = this.hosted;
     if (hosting) {
       const { session, port } = hosting;
-      const direct = { addresses: lanAddresses(), port, joinCode: session.joinCode ?? '' };
-      return { role: 'host', you: 0, peers: session.peers(), direct };
+      const direct = port !== undefined && {
+        direct: { addresses: lanAddresses(), port, joinCode: session.joinCode ?? '' },
+      };
+      return { role: 'host', you: 0, peers: session.peers(), ...direct };
     }
     if (this.guesting) return { role: 'guest', ...this.guesting.session.status() };
     return { role: 'none', ...(this.ended !== undefined && { ended: this.ended }) };
