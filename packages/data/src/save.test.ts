@@ -111,12 +111,14 @@ describe('SaveFile', () => {
     };
     const teamId = Object.keys(state.teams)[0] as TeamId;
     play({ kind: 'team.setUserControlled', teamId, userControlled: true });
-    const game = state.schedule.find((g) => g.homeTeamId === teamId || g.awayTeamId === teamId)!;
+    // A home game: matching a line is the home side's.
+    const game = state.schedule.find((g) => g.homeTeamId === teamId)!;
     play({ kind: 'sim.advance', days: game.date.day - state.date.day });
     const gameId = game.id as GameId;
     play({ kind: 'bench.order', gameId, teamId, at: 1200, order: 'goalieChange' });
     play({ kind: 'bench.order', gameId, teamId, at: 3000, order: 'emptyNet' });
-    expect(save.loadState().bench[gameId]).toHaveLength(2);
+    play({ kind: 'bench.order', gameId, teamId, at: 3000, order: 'match', value: 2 });
+    expect(save.loadState().bench[gameId]).toHaveLength(3);
     expect(save.loadState()).toEqual(state);
     play({ kind: 'sim.advance', days: 1 });
     expect(save.loadState().bench).toEqual({});

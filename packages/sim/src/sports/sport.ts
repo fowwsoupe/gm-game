@@ -153,8 +153,11 @@ export interface SportModule<Strength = unknown> {
   /** Whether these players make a valid saved unit of that name (hockey: 3F+2D / 2F+2D). */
   unitOk(unit: string, players: readonly Player[]): boolean;
 
-  /** Whether a coach can give this order from the bench (hockey: one of `BENCH_ORDERS`). */
-  benchOrderOk(order: string, value: number | undefined): boolean;
+  /**
+   * Whether a coach can give this order from the bench, `home` on the home side (hockey: one of
+   * `BENCH_ORDERS` with its value; matching a line is the home side's).
+   */
+  benchOrderOk(order: string, value: number | undefined, home: boolean): boolean;
 
   /** The lineup the game would dress, as named units in order (hockey: F1–F4, D1–D3, G). */
   lineup(

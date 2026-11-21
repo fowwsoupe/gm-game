@@ -23,7 +23,7 @@ import {
 } from './strength';
 import { HOCKEY_TUNING, rulesGoalModel, type GoalModel } from './tuning';
 import { finishBox, makeSide } from './side';
-import { buildUnit, pick } from './units';
+import { buildUnit, matchShares, pick } from './units';
 import { playShootout } from './shootout';
 
 /** Who shoots: defencemen take far fewer shots than forwards. */
@@ -102,7 +102,7 @@ function playGame(
     keepBox: boolean;
     timeline: boolean;
     /** Bench orders (`BENCH_ORDERS`) by side, in game-time order. */
-    orders: readonly { at: number; side: 0 | 1; order: string }[];
+    orders: readonly { at: number; side: 0 | 1; order: string; value: number | undefined }[];
   },
   rng: Rng,
   model: GoalModel,
@@ -160,6 +160,8 @@ function playGame(
   /** Skaters per side from the base strength (5, or 3 in overtime) less penalties running. */
   let base = 5;
   const count = (n: 0 | 1) => Math.max(3, base - S[n].penalties.length);
+  /** The forward line (its index) the home coach sends against the visitors' first, if he matches. */
+  let match: number | undefined;
   const lam: [number, number] = [0, 0];
   const penRate: [number, number] = [0, 0];
 
@@ -183,12 +185,21 @@ function playGame(
       if (tl && pulled !== s.pulled) tl.goalies.push([Math.round(t), n, pulled ? 0 : 1]);
       s.pulled = pulled;
     }
-    for (const n of [0, 1] as const) {
+    // A home coach who matches has the last change: the visitors' unit goes out first.
+    for (const n of match === undefined ? ([0, 1] as const) : ([1, 0] as const)) {
       const mine = count(n);
       const theirs = count((1 - n) as 0 | 1);
       const kind = mine > theirs ? 'pp' : mine < theirs ? 'pk' : 'ev';
       const was = S[n].onIce;
-      const now = buildUnit(S[n], kind, mine + (S[n].pulled ? 1 : 0), rng);
+      // At five-on-five he answers their first line (any of its forwards out) with the line he named.
+      const answer =
+        n === 0 && match !== undefined && mine === 5 && theirs === 5 && !S[0].pulled && !S[1].pulled
+          ? matchShares(
+              match,
+              S[1].onIce.some((k) => S[1].lines[0]?.includes(k)),
+            )
+          : undefined;
+      const now = buildUnit(S[n], kind, mine + (S[n].pulled ? 1 : 0), rng, answer);
       S[n].onIce = now;
       if (tl && (now.length !== was.length || now.some((k, i) => k !== was[i])))
         tl.shifts.push([Math.round(t), n, now]);
@@ -286,9 +297,11 @@ function playGame(
   };
   /** The next bench order to come, and what obeying one does. */
   let due = 0;
-  const obey = ({ side, order }: { side: 0 | 1; order: string }) => {
+  const obey = ({ side, order, value }: (typeof input.orders)[number]) => {
     if (order === 'goalieChange') goalieIn(side);
     else if (order === 'emptyNet' || order === 'goalieBack') S[side].net = order === 'emptyNet';
+    // The home side's only: line 1 up, 0 calls the match off.
+    else if (order === 'match' && side === 0) match = value ? value - 1 : undefined;
   };
 
   /** One shot by side `a`. Returns true if it was a goal. */
@@ -543,7 +556,12 @@ export function simGame(
       timeline: !!input.timeline,
       orders: (input.orders ?? [])
         .filter((o) => o.teamId === input.homeTeamId || o.teamId === input.awayTeamId)
-        .map((o) => ({ at: o.at, side: o.teamId === input.homeTeamId ? 0 : 1, order: o.order })),
+        .map((o) => ({
+          at: o.at,
+          side: o.teamId === input.homeTeamId ? 0 : 1,
+          order: o.order,
+          value: o.value,
+        })),
     },
     rng,
     model,

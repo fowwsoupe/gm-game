@@ -18,20 +18,39 @@ function pickShare(units: number[][], shares: readonly number[], rng: Rng) {
   return weights.some((w) => w > 0) ? pick(weights, rng) : -1;
 }
 
+/**
+ * A line match (`match` in `BENCH_ORDERS`): the forward lines' shares of the next shift for a
+ * coach who named `line`. Against the other team's first line (`top`) only that line goes out;
+ * its other shifts go to his other lines by their shares.
+ */
+export const matchShares = (line: number, top: boolean): number[] =>
+  ICE_TIME.forwardLines.map((w, i) => ((i === line) === top ? w : 0));
+
 /** A skater of the same kind who is healthy and not already out there; the deepest first. */
 function spare(s: Side, k: number, unit: number[]) {
   const group = (s.isD[k] ? s.pairs : s.lines).flat();
   return group.filter((j) => !unit.includes(j) && !s.out.has(j)).at(-1);
 }
 
-/** The skaters a side sends out: even strength by ice time, or a power-play / penalty-kill unit. */
-export function buildUnit(s: Side, kind: 'ev' | 'pp' | 'pk', size: number, rng: Rng): number[] {
+/**
+ * The skaters a side sends out: even strength by ice time (or by `lineShares`, a coach matching
+ * a line), or a power-play / penalty-kill unit.
+ */
+export function buildUnit(
+  s: Side,
+  kind: 'ev' | 'pp' | 'pk',
+  size: number,
+  rng: Rng,
+  lineShares?: readonly number[],
+): number[] {
   const nd = size >= 4 ? 2 : 1;
   const nf = size - nd;
   let f: number[];
   let d: number[];
   if (kind === 'ev') {
-    const li = pickShare(s.lines, ICE_TIME.forwardLines, rng);
+    // A match that leaves no line to send (the named one is empty, or the only one) is no match.
+    let li = lineShares ? pickShare(s.lines, lineShares, rng) : -1;
+    if (li < 0) li = pickShare(s.lines, ICE_TIME.forwardLines, rng);
     const pi = pickShare(s.pairs, ICE_TIME.defensePairs, rng);
     f = li < 0 ? [] : s.lines[li]!.slice(0, nf);
     d = pi < 0 ? [] : s.pairs[pi]!.slice(0, nd);

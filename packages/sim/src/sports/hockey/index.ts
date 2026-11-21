@@ -3,6 +3,7 @@ import {
   GOALIE_RATINGS,
   HOCKEY_POSITIONS,
   isGoalie,
+  MATCH_LINES,
   SKATER_RATINGS,
   type SpecialUnit,
 } from '@gm/shared';
@@ -65,8 +66,14 @@ export function hockeySport(goalModel: GoalModel = rulesGoalModel): SportModule<
     lineup: lineupUnits,
     specialUnits: specialUnitsView,
     unitOk: (unit, players) => unitOk(unit as SpecialUnit, players),
-    benchOrderOk: (order, value) =>
-      (BENCH_ORDERS as readonly string[]).includes(order) && value === undefined,
+    benchOrderOk: (order, value, home) =>
+      order === 'match'
+        ? home &&
+          value !== undefined &&
+          Number.isInteger(value) &&
+          value >= 0 &&
+          value <= MATCH_LINES
+        : (BENCH_ORDERS as readonly string[]).includes(order) && value === undefined,
     leaders: hockeyLeaders,
     playerLines: hockeyPlayerLines,
     bonusEarned: hockeyBonusEarned,
