@@ -1,6 +1,15 @@
 import { useState } from 'react';
 import { MARKET_SIZES, TICKET_STEPS, type Team } from '@gm/shared';
-import { useCapSheet, useDispatch, useLines, useOwner, useRoster, useTeams } from '@/lib/queries';
+import {
+  useCapSheet,
+  useDispatch,
+  useLines,
+  useMine,
+  useOnline,
+  useOwner,
+  useRoster,
+  useTeams,
+} from '@/lib/queries';
 import { useUi } from '@/stores/ui';
 import { useT, type MessageKey } from '@/i18n';
 import { Button, Card, PersonFace, Td, Th } from '@/ui';
@@ -18,7 +27,11 @@ export function TeamPage() {
   const { data: lines } = useLines(team?.id);
   const { data: owned } = useOwner(team?.id);
   const dispatch = useDispatch();
+  const { guest } = useOnline();
+  const mine = useMine();
   if (!team) return <p className="text-muted">{t('team.empty')}</p>;
+  // What this window may change here: any human team's in its own league, a guest's own team only.
+  const own = guest ? team.id === mine?.id : team.userControlled;
   const byId = new Map<string, (typeof roster)[number]>(roster.map((p) => [p.id, p]));
   const name = (id: string) => {
     const p = byId.get(id);
@@ -31,7 +44,7 @@ export function TeamPage() {
         <Button onClick={() => setScreen('standings')}>{t('team.back')}</Button>
         <h1 className="text-lg font-semibold">{teamName(teams, team.id)}</h1>
       </div>
-      <IdentityCard key={team.id} team={team} />
+      {(!guest || own) && <IdentityCard key={team.id} team={team} relocate={!guest} />}
       {owned && (
         <Card title={t('team.owner')}>
           <div className="grid gap-4 text-sm md:grid-cols-4">
@@ -122,7 +135,7 @@ export function TeamPage() {
             ))}
             <div>
               <div className="text-muted">{t('team.arena.price')}</div>
-              {team.userControlled ? (
+              {own ? (
                 <div className="mt-1 flex flex-wrap gap-1">
                   {TICKET_STEPS.map((pct) => (
                     <Button
@@ -188,8 +201,8 @@ export function TeamPage() {
 
 const signedPct = (pct: number) => `${pct > 0 ? '+' : ''}${pct}%`;
 
-/** The identity editor: a team's city, name and abbreviation, and relocating it to a new market. The sim validates; an error shows beside Save. */
-function IdentityCard({ team }: { team: Team }) {
+/** The identity editor: a team's city, name and abbreviation, and (never for a guest) relocating it to a new market. The sim validates; an error shows beside Save. */
+function IdentityCard({ team, relocate }: { team: Team; relocate: boolean }) {
   const t = useT();
   const dispatch = useDispatch();
   const [draft, setDraft] = useState({
@@ -210,15 +223,19 @@ function IdentityCard({ team }: { team: Team }) {
         >
           {t('team.identity.save')}
         </Button>
-        <MarketSelect value={size} onChange={setSize} />
-        <Button
-          disabled={dispatch.isPending}
-          onClick={() =>
-            dispatch.mutate({ kind: 'team.relocate', teamId: team.id, ...draft, market: size })
-          }
-        >
-          {t('team.relocate')}
-        </Button>
+        {relocate && (
+          <>
+            <MarketSelect value={size} onChange={setSize} />
+            <Button
+              disabled={dispatch.isPending}
+              onClick={() =>
+                dispatch.mutate({ kind: 'team.relocate', teamId: team.id, ...draft, market: size })
+              }
+            >
+              {t('team.relocate')}
+            </Button>
+          </>
+        )}
         {error && <span className="text-xs text-red-500">{error}</span>}
       </div>
     </Card>

@@ -40,6 +40,33 @@ import type {
 import type { GoalieRotation } from './sports/hockey';
 import type { Command, CommandResult } from './commands';
 import type { Importance, LeagueEvent } from './events';
+import type { Peer } from './wire';
+
+/**
+ * One row of a hosted league's lobby. `key`: the host's number for a guest, which `seat`,
+ * `grantAdvance` and `kick` take; only the host's machine has it, and not for the host's own row.
+ */
+export type SessionPeer = Peer & { key?: string };
+
+/**
+ * Where this machine stands online. `you`: this machine's row in `peers` (the host is row 0).
+ * `direct`: what a friend types to join; absent when the league is hosted on Steam, where friends
+ * join from an invite. `ended`: why the last session ended by itself: the league this machine was
+ * a guest in is over (the host's word, or `disconnected`), the one it hosted closed on an `error`,
+ * or a friend's Steam invite could not be followed. Absent after a session its own player ended.
+ */
+export type SessionStatus =
+  | { role: 'none'; ended?: string }
+  | {
+      role: 'host';
+      you: number;
+      peers: SessionPeer[];
+      direct?: { addresses: string[]; port: number; joinCode: string };
+    }
+  | { role: 'guest'; you: number; peers: SessionPeer[]; reconnecting: boolean };
+
+/** `error`: the engine's or the host's reason, as text (`refused: joinCode`, `disconnected`...). */
+export type SessionResult = { ok: true } | { ok: false; error: string };
 
 /**
  * The single contract between the UI (renderer) and the main process.
@@ -205,6 +232,48 @@ export interface GmApi {
   steam: {
     status(): Promise<{ enabled: boolean; playerName: string | null }>;
   };
+  /**
+   * A league played from several machines. The host's game stays the only authority; a guest's
+   * queries read a mirror of it and his `commands.dispatch` goes to the host. While a session is
+   * open, `newLeague` and `newLeagueFromRoster` are refused.
+   */
+  session: {
+    /**
+     * Opens this machine's league to guests: over a direct connection (not encrypted: LAN and
+     * testing), or with `steam` to the friends the host invites through Steam.
+     */
+    host(input: { name: string; steam?: boolean }): Promise<SessionResult>;
+    /** The host of a league on Steam opens Steam's invite dialog. A friend who accepts joins by himself. */
+    invite(): Promise<SessionResult>;
+    /** Joins the league hosted at `address`: from then on the queries read its mirror. */
+    join(input: {
+      address: string;
+      port: number;
+      joinCode: string;
+      name: string;
+    }): Promise<SessionResult>;
+    /** The host ends the session for everyone; a guest goes back to his own league. */
+    leave(): Promise<SessionResult>;
+    /** A guest's wish for a team: the host decides. */
+    requestSeat(input: { teamId: TeamId }): Promise<SessionResult>;
+    /** The host binds a guest to a team (an AI team becomes a human one), or to none. */
+    seat(input: { key: string; teamId: TeamId | null }): Promise<SessionResult>;
+    /** Done for now: advisory, and cleared when the clock moves or an offer arrives. */
+    ready(input: { on: boolean }): Promise<SessionResult>;
+    /** The host lets a guest move the clock, or takes that back. */
+    grantAdvance(input: { key: string; on: boolean }): Promise<SessionResult>;
+    /**
+     * The host puts a guest out: his seat opens nothing any more, and the join code changes (on
+     * Steam, where there is none, he is refused for the rest of the session).
+     */
+    kick(input: { key: string }): Promise<SessionResult>;
+    status(): Promise<SessionStatus>;
+    /**
+     * Main's one push: the league or the lobby changed without this window asking (another GM's
+     * command, a guest joining, the session ending). Refetch. Returns the way to stop listening.
+     */
+    onChanged(listener: () => void): () => void;
+  };
 }
 
 /** IPC channel names. */
@@ -247,4 +316,16 @@ export const IPC = {
   feedList: 'feed:list',
   dispatch: 'commands:dispatch',
   steamStatus: 'steam:status',
+  sessionHost: 'session:host',
+  sessionInvite: 'session:invite',
+  sessionJoin: 'session:join',
+  sessionLeave: 'session:leave',
+  sessionRequestSeat: 'session:requestSeat',
+  sessionSeat: 'session:seat',
+  sessionReady: 'session:ready',
+  sessionGrantAdvance: 'session:grantAdvance',
+  sessionKick: 'session:kick',
+  sessionStatus: 'session:status',
+  /** Main to the windows, with nothing in it. */
+  sessionChanged: 'session:changed',
 } as const;

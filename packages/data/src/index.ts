@@ -1,1 +1,1 @@
-export { openSave, SaveFile } from './save';
+export { openSave, SaveFile, SAVE_SCHEMA } from './save';

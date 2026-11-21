@@ -1,5 +1,5 @@
 import type { OwnerObjective } from '@gm/shared';
-import { useDispatch, useOwnerReport, useStatus, useMine } from '@/lib/queries';
+import { useDispatch, useOnline, useOwnerReport, useStatus, useMine } from '@/lib/queries';
 import { money, statValue } from '@/lib/format';
 import { useT, type MessageKey } from '@/i18n';
 import { BarLineChart, Button, Card, StatRow, Td, Th } from '@/ui';
@@ -10,6 +10,7 @@ export function Owner() {
   const { data: league } = useStatus();
   const dispatch = useDispatch();
   const mine = useMine();
+  const { open } = useOnline();
   const { data: report } = useOwnerReport(mine?.id);
   if (!mine) return <p className="text-muted">{t('owner.empty')}</p>;
   if (!report) return null;
@@ -37,7 +38,8 @@ export function Owner() {
           <StatRow label={t('owner.cash')} value={money(report.cash)} />
           <StatRow label={t('owner.budget')} value={money(standing.payrollBudget)} />
         </div>
-        {league && (
+        {/* Firing is off in a hosted league: the engine refuses it there. */}
+        {league && !open && (
           <div className="mt-3 flex items-center gap-3 text-sm text-muted">
             <span>{t('owner.canBeFired')}</span>
             <Button
