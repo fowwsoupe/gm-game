@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest';
-import type { Actor, Cell, Command, PlayerId, TableRows, TeamId } from '@gm/shared';
+import type { Actor, Command, GameId, PlayerId, TeamId } from '@gm/shared';
 import { Rng, createLeague, defaultContext, handleCommand } from '@gm/sim';
 import { openSave, SAVE_SCHEMA } from './index';
 import { migrations } from './migrations';
@@ -96,6 +96,30 @@ describe('SaveFile', () => {
     );
     if (!res.ok) throw new Error(res.error.message);
     save.persist(res.events, state);
+    expect(save.loadState()).toEqual(state);
+    save.close();
+  });
+
+  it('keeps bench orders for a game still to be played, and drops them once it is', () => {
+    const save = openSave(':memory:');
+    const state = createLeague(8, ctx);
+    save.saveNewLeague(state);
+    const play = (command: Command) => {
+      const res = handleCommand(state, command, local, ctx);
+      if (!res.ok) throw new Error(res.error.message);
+      save.persist(res.events, state);
+    };
+    const teamId = Object.keys(state.teams)[0] as TeamId;
+    play({ kind: 'team.setUserControlled', teamId, userControlled: true });
+    const game = state.schedule.find((g) => g.homeTeamId === teamId || g.awayTeamId === teamId)!;
+    play({ kind: 'sim.advance', days: game.date.day - state.date.day });
+    const gameId = game.id as GameId;
+    play({ kind: 'bench.order', gameId, teamId, at: 1200, order: 'goalieChange' });
+    play({ kind: 'bench.order', gameId, teamId, at: 3000, order: 'emptyNet' });
+    expect(save.loadState().bench[gameId]).toHaveLength(2);
+    expect(save.loadState()).toEqual(state);
+    play({ kind: 'sim.advance', days: 1 });
+    expect(save.loadState().bench).toEqual({});
     expect(save.loadState()).toEqual(state);
     save.close();
   });

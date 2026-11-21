@@ -176,6 +176,14 @@ export const en = {
   'games.tonightShared':
     "Not played yet: this is the game the day's sim will play. Another GM may still want to watch his own, so the day is simmed from Home.",
   'games.backHome': 'Back to Home',
+  'games.benchTitle': 'Bench',
+  'games.benchEmptyNet': 'Empty the net',
+  'games.benchGoalieBack': 'Keep the goalie in',
+  'games.benchGoalieChange': 'Change the goalie',
+  'games.benchOrder': 'From the {team} bench: {order}',
+  'games.benchNote':
+    'An order takes effect at once and the rest of the game is played with it. Empty the net: the goalie is off for an extra skater whenever your team trails in regulation. After either order on the net, the coach no longer pulls the goalie on his own.',
+  'games.benchEarly': 'Orders are already given up to {time}. The bench opens again from there.',
   'actions.newLeague': 'New league',
   'actions.confirmReplace': 'Replace your current league? Your saved league will be deleted.',
   'actions.loadRoster': 'Load roster file…',

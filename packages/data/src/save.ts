@@ -94,6 +94,7 @@ const JSON_META = {
   rfaRights: '{}',
   formerTeams: '{}',
   goalieRotation: '{}',
+  bench: '{}',
   tradeBlock: '[]',
   rfaSheets: '[]',
   teamForm: '{}',
@@ -598,6 +599,7 @@ export class SaveFile {
           case 'international.played':
           case 'units.set':
           case 'goalies.rotationSet':
+          case 'bench.ordered':
           case 'trade.blockSet':
           case 'trade.offered':
           case 'freeAgency.offered':

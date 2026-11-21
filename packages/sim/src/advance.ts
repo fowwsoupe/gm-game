@@ -327,6 +327,7 @@ export function advance(
           homeMedical: medicalFactor(g.homeTeamId),
           awayMedical: medicalFactor(g.awayTeamId),
           timeline: watched,
+          orders: state.bench[g.id],
         },
         rng,
       );
@@ -345,9 +346,10 @@ export function advance(
         const homeTeamId = lowerHome ? series.lowerTeamId : series.higherTeamId;
         const awayTeamId = lowerHome ? series.higherTeamId : series.lowerTeamId;
         const watched = homeTeamId === watch || awayTeamId === watch;
+        const id = `p${today.season}_${series.id}_${gameIndex + 1}` as GameId;
         const result = sport.simGame(
           {
-            id: `p${today.season}_${series.id}_${gameIndex + 1}` as GameId,
+            id,
             homeTeamId,
             awayTeamId,
             home: strengthOf(homeTeamId, today.day),
@@ -356,6 +358,7 @@ export function advance(
             homeMedical: medicalFactor(homeTeamId),
             awayMedical: medicalFactor(awayTeamId),
             timeline: watched,
+            orders: state.bench[id],
           },
           rng,
         );

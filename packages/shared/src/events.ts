@@ -6,6 +6,7 @@ import type {
   CardEffects,
   DraftProspect,
   FinanceLines,
+  GameId,
   GameResult,
   Department,
   GmProfile,
@@ -238,6 +239,15 @@ export type LeagueEvent =
   | (EventBase & { kind: 'trade.blockSet'; teamId: TeamId; playerId: PlayerId; onBlock: boolean })
   /** A team changed how its goalies share starts. */
   | (EventBase & { kind: 'goalies.rotationSet'; teamId: TeamId; rotation: GoalieRotation })
+  /** A coach gave an order from the bench in a game still to be played today (a `BenchOrder`). */
+  | (EventBase & {
+      kind: 'bench.ordered';
+      gameId: GameId;
+      teamId: TeamId;
+      at: number;
+      order: string;
+      value?: number;
+    })
   /** A team made a free agent an offer (replaces its earlier one; `raise`: an AI team trailing in the race); he answers on his decision day. */
   | (EventBase & { kind: 'freeAgency.offered'; offer: FreeAgentOffer; raise?: true })
   /**

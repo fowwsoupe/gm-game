@@ -92,6 +92,7 @@ export function createLeague(
     rfaRights: {},
     formerTeams: {},
     goalieRotation: {},
+    bench: {},
     tradeBlock: [],
     rfaSheets: [],
     teamForm: drawForm(

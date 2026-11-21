@@ -1,5 +1,5 @@
 import type { LeagueEvent } from './events';
-import type { Department, PlayerId, TeamId, TradeProposal } from './domain';
+import type { Department, GameId, PlayerId, TeamId, TradeProposal } from './domain';
 import type { GoalieRotation, SpecialUnit } from './sports/hockey';
 
 /**
@@ -106,6 +106,19 @@ export type Command =
   | { kind: 'staff.fire'; teamId: TeamId; department: Department }
   /** How your goalies share starts (see `GoalieRotation`). */
   | { kind: 'goalies.setRotation'; teamId: TeamId; rotation: GoalieRotation }
+  /**
+   * An order from the bench in the game your team plays today and has not played yet (the match
+   * viewer): the game is played with it from game second `at`. `order` is one of the sport's
+   * (hockey: `BENCH_ORDERS`). Not before an order already given in that game.
+   */
+  | {
+      kind: 'bench.order';
+      gameId: GameId;
+      teamId: TeamId;
+      at: number;
+      order: string;
+      value?: number;
+    }
   /** Rank the draft class for your picks (best first). Players missing from it go by the scouts' order. */
   | { kind: 'draft.setBoard'; teamId: TeamId; order: PlayerId[] }
   /**

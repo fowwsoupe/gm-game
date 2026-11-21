@@ -531,12 +531,26 @@ export interface GameSummary {
   shootout: boolean;
 }
 
+/**
+ * An order a coach gives from the bench in a game still to be played (the match viewer): the game
+ * is played with it from game second `at`. `order` and `value` are the sport's (hockey:
+ * `BENCH_ORDERS`).
+ */
+export interface BenchOrder {
+  teamId: TeamId;
+  at: number;
+  order: string;
+  value?: number;
+}
+
 /** A game with everything the game center needs: the result (and box score) plus player names by id. */
 export interface GameDetail {
   result: GameResult;
   names: Record<string, string>;
   /** Length of one overtime period in seconds (a full period in the playoffs, shorter otherwise). */
   overtimeSeconds: number;
+  /** The bench orders it was played with, in game-time order (only a game still to be played has any). */
+  orders?: BenchOrder[];
 }
 
 export interface PlayoffSeries {

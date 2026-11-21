@@ -1,5 +1,6 @@
 import { TIRED_GOALIE } from '@gm/shared';
 import type {
+  BenchOrder,
   GameId,
   GameResult,
   HockeyBoxScore,
@@ -100,6 +101,8 @@ function playGame(
     playoff: boolean;
     keepBox: boolean;
     timeline: boolean;
+    /** Bench orders (`BENCH_ORDERS`) by side, in game-time order. */
+    orders: readonly { at: number; side: 0 | 1; order: string }[];
   },
   rng: Rng,
   model: GoalModel,
@@ -171,7 +174,12 @@ function playGame(
     for (const n of [0, 1] as const) {
       const s = S[n];
       const window = pullWindow(n);
-      const pulled = regulation && window > 0 && t >= REGULATION - window && s.current >= 0;
+      // The rule, unless the coach has taken the net: then it is empty while his team trails.
+      const empty =
+        s.net === undefined
+          ? window > 0 && t >= REGULATION - window
+          : s.net && goals[1 - n]! > goals[n];
+      const pulled = regulation && empty && s.current >= 0;
       if (tl && pulled !== s.pulled) tl.goalies.push([Math.round(t), n, pulled ? 0 : 1]);
       s.pulled = pulled;
     }
@@ -276,6 +284,12 @@ function playGame(
     tl?.goalies.push([Math.round(t), n, 2]);
     s.goalieLines.push({ id: s.goalies[1].id, toi: 0, shotsAgainst: 0, saves: 0 });
   };
+  /** The next bench order to come, and what obeying one does. */
+  let due = 0;
+  const obey = ({ side, order }: { side: 0 | 1; order: string }) => {
+    if (order === 'goalieChange') goalieIn(side);
+    else if (order === 'emptyNet' || order === 'goalieBack') S[side].net = order === 'emptyNet';
+  };
 
   /** One shot by side `a`. Returns true if it was a goal. */
   const shoot = (a: 0 | 1): boolean => {
@@ -376,6 +390,12 @@ function playGame(
     let shiftEnd = t;
     let dirty = true;
     while (t < end) {
+      // A bench order's second is a boundary below: the order is obeyed here and the units rebuilt.
+      // With no orders nothing here runs, so the game and its draws are today's.
+      for (let o = input.orders[due]; o && o.at <= t; o = input.orders[++due]) {
+        obey(o);
+        dirty = true;
+      }
       if (t >= shiftEnd) {
         if (t > 0) shiftChange();
         shiftEnd = Math.min(t + T.shiftSeconds, end);
@@ -389,11 +409,18 @@ function playGame(
       const total = clocks[0]! + clocks[1]! + clocks[2]! + clocks[3]!;
       let boundary = Math.min(end, shiftEnd);
       for (const s of S) if (s.penalties[0]) boundary = Math.min(boundary, s.penalties[0][0]);
-      // The goalie is pulled at a set time, so it is a boundary too.
+      boundary = Math.min(boundary, input.orders[due]?.at ?? end);
+      // The goalie is pulled at a set time, so it is a boundary too (not once the coach has the net).
       if (opts.regulation) {
         for (const n of [0, 1] as const) {
           const window = pullWindow(n);
-          if (window && !S[n].pulled && S[n].current >= 0 && t < REGULATION - window)
+          if (
+            S[n].net === undefined &&
+            window &&
+            !S[n].pulled &&
+            S[n].current >= 0 &&
+            t < REGULATION - window
+          )
             boundary = Math.min(boundary, REGULATION - window);
         }
       }
@@ -474,6 +501,8 @@ interface MatchupInput {
   resultOnly?: boolean;
   /** Also keep `HockeyBoxScore.timeline` for a viewer; the game itself does not change. */
   timeline?: boolean;
+  /** Bench orders (`BENCH_ORDERS`) of either team, in game-time order. None: the game as today. */
+  orders?: readonly BenchOrder[] | undefined;
   /** The team played yesterday: its backup goalie starts (never in the playoffs). */
   homeBackToBack?: boolean;
   awayBackToBack?: boolean;
@@ -512,6 +541,9 @@ export function simGame(
       playoff: !!input.playoff,
       keepBox: !input.resultOnly,
       timeline: !!input.timeline,
+      orders: (input.orders ?? [])
+        .filter((o) => o.teamId === input.homeTeamId || o.teamId === input.awayTeamId)
+        .map((o) => ({ at: o.at, side: o.teamId === input.homeTeamId ? 0 : 1, order: o.order })),
     },
     rng,
     model,

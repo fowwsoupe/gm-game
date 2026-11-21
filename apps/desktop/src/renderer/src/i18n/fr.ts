@@ -177,6 +177,14 @@ export const fr: Record<MessageKey, string> = {
   'games.tonightShared':
     'Pas encore joué : c’est le match que la simulation du jour jouera. Un autre DG voudra peut-être regarder le sien : le jour se simule depuis l’accueil.',
   'games.backHome': 'Retour à l’accueil',
+  'games.benchTitle': 'Banc',
+  'games.benchEmptyNet': 'Retirer le gardien',
+  'games.benchGoalieBack': 'Garder le gardien',
+  'games.benchGoalieChange': 'Changer de gardien',
+  'games.benchOrder': 'Du banc de {team} : {order}',
+  'games.benchNote':
+    'Un ordre prend effet tout de suite et le reste du match se joue avec lui. Retirer le gardien : il cède sa place à un sixième patineur dès que votre équipe tire de l’arrière en temps réglementaire. Après un ordre sur le filet, l’entraîneur ne retire plus le gardien de lui-même.',
+  'games.benchEarly': 'Des ordres sont déjà donnés jusqu’à {time}. Le banc rouvre à partir de là.',
   'actions.newLeague': 'Nouvelle ligue',
   'actions.confirmReplace': 'Remplacer votre ligue actuelle ? Votre sauvegarde sera supprimée.',
   'actions.loadRoster': 'Charger un fichier d’alignement…',

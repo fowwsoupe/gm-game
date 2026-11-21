@@ -3,7 +3,7 @@ import { existsSync, mkdtempSync, rmSync } from 'node:fs';
 import { tmpdir } from 'node:os';
 import { join } from 'node:path';
 import { afterAll, beforeEach, describe, expect, it, vi } from 'vitest';
-import type { HockeyBoxScore } from '@gm/shared';
+import type { Command, HockeyBoxScore } from '@gm/shared';
 import { defaultContext, handleCommand } from '@gm/sim';
 import type { WorkerRequest } from './sim.worker';
 
@@ -110,6 +110,29 @@ describe('LeagueService', () => {
     expect(svc.game(game.result.id)).toBeNull(); // still to be played
     await svc.dispatch(cmd);
     expect(svc.game(game.result.id)).toEqual({ ...game, result: { ...game.result, box } });
+    svc.dispose();
+  });
+
+  it("replays tonight's game with a bench order, and the sim then plays the coached game", async () => {
+    const svc = new LeagueService();
+    const mine = svc.newLeague(1).teams.find((t) => t.userControlled)!.id;
+    FakeWorker.all[0]!.reply = 'sim';
+    await svc.dispatch({ kind: 'sim.advance', days: -svc.status().day });
+    while (!svc.watch(mine)) await svc.dispatch(cmd); // to the team's first game
+    const plain = svc.watch(mine)!;
+    expect(plain.orders).toBeUndefined();
+    const gameId = plain.result.id;
+    const order = { kind: 'bench.order', gameId, teamId: mine, at: 900, order: 'goalieChange' };
+    expect((await svc.dispatch(order as Command)).ok).toBe(true);
+    const coached = svc.watch(mine)!;
+    expect(coached.orders).toEqual([{ teamId: mine, at: 900, order: 'goalieChange' }]);
+    const { timeline, ...box } = coached.result.box as HockeyBoxScore;
+    const side = plain.result.homeTeamId === mine ? 0 : 1;
+    expect(timeline!.goalies.some((r) => r[1] === side && r[2] === 2 && r[0] <= 900)).toBe(true);
+    await svc.dispatch(cmd);
+    const { orders, ...played } = coached;
+    expect(orders).toHaveLength(1);
+    expect(svc.game(gameId)).toEqual({ ...played, result: { ...coached.result, box } });
     svc.dispose();
   });
 

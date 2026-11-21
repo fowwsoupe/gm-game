@@ -404,7 +404,9 @@ export class LeagueService {
     const { state } = this.open();
     // The sim worker's context, so the game watched is the game it will play.
     const result = watchGame(state, contextWithXg(state.rulesetId, this.xg), teamId);
-    return result ? this.detail(state, result) : null;
+    if (!result) return null;
+    const orders = state.bench[result.id];
+    return { ...this.detail(state, result), ...(orders && { orders }) };
   }
 
   private detail(state: LeagueState, result: GameResult): GameDetail {

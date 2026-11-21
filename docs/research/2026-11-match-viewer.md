@@ -131,8 +131,11 @@ not coaching: the result is the one a plain sim gives.
 - State: `LeagueState.bench[gameId]`, appended in `applyEvent`, dropped when that game's
   `game.final` is applied; saved as JSON in `meta` like the depth charts (no migration).
 - `handleCommand` refuses an order unless the actor controls the team (`controls`), the team
-  plays that game today and it is not played yet, the sport accepts the order for that side,
-  and `at` is not before the last order already given in that game.
+  plays that game today and it is not played yet, the sport accepts the order
+  (`SportModule.benchOrderOk`: the name and its value; the side joins it with `match`), and
+  `at` is not before the last order already given in that game. Which game a team plays today
+  is asked of `watchGame` (job 4), the day's own code, so the check and the day cannot
+  disagree, in the playoffs either; it costs one watch an order.
 - `advance` hands each game its orders (`orders`, next to `timeline` on the game the sport
   plays). `playGame` treats an order's second as one more boundary in its clock loop, like a
   shift end or a penalty expiring: it applies the order there and calls `refresh`.
@@ -144,7 +147,20 @@ not coaching: the result is the one a plain sim gives.
   state is saved or sent, the game stays one pure function of the league, the seed and the
   orders, and a second copy that applies the events ends up identical.
 - The viewer pauses its clock for the round trip (one command, one replay) and sends the next
-  whole second as `at`.
+  whole second as `at`. If the clock is restarted to before the last order, the bench waits
+  until the clock is past it.
+- Found in job 4: **any order makes the rest of the game another game**, even one that changes
+  nothing on the ice (a second `goalieChange`, a `goalieBack` in a game the rule would never
+  have emptied). The loop stops at the order's second and throws away the wait it had drawn,
+  so the stream is one draw further on. Nothing in the averages (the clocks have no memory),
+  but an order is also a re-roll of what follows: see default 8.
+- Found in job 4: a `goalieChange` when the goalie has already changed, or when no second
+  goalie is dressed, is accepted and does nothing, as the engine's own `goalieIn`.
+- Found in job 4: the picture between two shots leads the puck to the next shot, and an order
+  changes which shot that is, so the puck and the discs around it were suddenly elsewhere (up
+  to 139 ft for the puck in the built app, the clock standing still). The rink now goes from
+  the picture that was to the new one over a quarter of a second (`blend` in `lib/rink.ts`);
+  with reduced motion it jumps, like everything else there.
 
 **Which orders.** One rule picks them: an order acts through something the engine already
 models, so it adds no tuning number and its cost is real. Three pass.
@@ -167,8 +183,9 @@ Left out, and why:
 AI teams give no orders: their bench is today's rules, so no game without a human coach
 changes. That makes every order an edge only humans have, so each bench job measures it (the
 obvious use against never, over at least 2,000 seeded games, in the PR). If one is worth more
-than 0.05 goals a game, the fix is a limit on the order (for the empty net, how early it may be
-used), not a retune of the engine, which would move every uncoached game.
+than 0.05 goals a game (for the net, the same in standings points: default 7 has what job 4
+measured), the fix is a limit on the order (for the empty net, how early it may be used), not
+a retune of the engine, which would move every uncoached game.
 
 **Hot seat.** Orders carry their team and pass `controls` like every command, and the local
 actor controls every human team, so two GMs at one machine need nothing new in the sim. A GM is
@@ -288,17 +305,32 @@ Each of these was open; the owner can overrule any of them before its job starts
 3. **Three orders**: empty the net (and put the goalie back), change the goalie, match a line.
    No timeout and no short bench until the engine has fatigue.
 4. **Line matching is the home side's only** (the last change).
-5. **The coach owns the net from his first goalie order** to the end of the game, and an empty
-   net only acts in regulation while his team trails. The relief rule (four against) stays.
+5. **The coach owns the net from his first `emptyNet` or `goalieBack`** to the end of the game,
+   and an empty net only acts in regulation while his team trails. The relief rule (four
+   against) stays. (This line first said "his first goalie order"; a `goalieChange` leaves the
+   `pullSeconds` rule in charge, as the table above has it and as job 4 built it.)
 6. **AI teams never give orders.** A bench run by the AI coach's quality would change every
    game: a balance job of its own.
 7. **0.05 goals a game** is the most an order may be worth when used every game (about four
    goals a season, under one win at the usual six goals a win, itself general knowledge); past
-   it the order is limited, the engine is not retuned.
+   it the order is limited, the engine is not retuned. Job 4 found goals the wrong measure for
+   the net: an empty net never gains goals, it gives goal difference away for a chance at the
+   tie, and never emptying it gains 0.054 goals a game while losing points. So the net is
+   judged in standings points and wins: by the same six goals a win, 0.05 goals a game is
+   about 0.008 wins or 0.017 points a game. Measured (45,000 team-games against the uncoached
+   game of the same seed): the best use found, emptying the net with four minutes left when
+   one down and with seven left when two down, is worth 0.009 points a game (0.003 wins),
+   about half the limit; the best goalie change (after three against before 40:00) 0.004
+   points and 0.004 goals a game, both within two standard errors of nothing. No order is
+   limited. The whole table is in job 4's PR.
 8. **Knowing what comes is not closed.** A GM who watches, leaves before the end and comes back
    has seen the game; an order cannot go before an earlier one, and that is all. It is the same
    as changing a line and re-simming a day today. Hosted multiplayer will need the host to hold
-   the clock.
+   the clock. Job 4 makes it plainer: the viewer holds the whole game, and any order re-rolls
+   what follows it, so a GM can watch to the end, restart the clock and give an order (anywhere
+   if he gave none, else after his last one) to get another ending. Closing it means the
+   league remembering how far each game has been shown and refusing an order before that
+   second: one more field beside `bench`, not built.
 9. **1x is real time**; speeds 1, 2, 4, 8, 20; the viewer opens at 8x.
 10. **SVG, drawn in code, no new dependency.** The preview's GRAPHICS.md says nothing is drawn
     in code; that is about faces and arenas, and the rink is a diagram like the shot map. The
@@ -339,9 +371,9 @@ Each stands alone and leaves main shippable. A job that adds text adds it to `i1
    day with one human GM, back to Home with several).
    _Done when:_ the pinned check holds for a regular-season and a playoff game; the query's
    time is in the PR; lab identical on one seed; smoke test.
-4. **Bench: the goalie.** The `bench.order` contract, state, save, the checks in
-   `handleCommand`, orders into `simGame`, the three goalie orders, a bench panel for each
-   human side.
+4. **Bench: the goalie** (done; `bench.test.ts` holds the checks). The `bench.order` contract,
+   state, save, the checks in `handleCommand`, orders into `simGame`, the three goalie orders,
+   a bench panel for each human side.
    _Done when:_ the pinned checks hold (no orders equals today; the game before an order is
    untouched); a second copy replaying the events is identical and a save round trip keeps the
    orders; an order for an AI team, for a game not played today or before an earlier order is

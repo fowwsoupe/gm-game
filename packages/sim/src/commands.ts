@@ -72,7 +72,7 @@ import {
 import { evaluateTrade, offerExpires, planRetention } from './trades';
 import { pressQuestion } from './owner';
 import { overall } from './players';
-import { advance } from './advance';
+import { advance, watchGame } from './advance';
 import type { SimContext } from './context';
 
 /** A human controls a team if the actor was given it, or is the local player and it is theirs. */
@@ -788,6 +788,31 @@ export function handleCommand(
         kind: 'goalies.rotationSet',
         teamId: team.id,
         rotation: command.rotation,
+      });
+      return applied(state, ev);
+    }
+
+    case 'bench.order': {
+      const team = state.teams[command.teamId];
+      if (!team) return invalid('unknown team');
+      if (!controls(actor, team)) return notYours;
+      if (!ctx.sport.benchOrderOk(command.order, command.value)) return invalid('unknown order');
+      const last = state.bench[command.gameId]?.at(-1)?.at ?? 0;
+      if (!Number.isInteger(command.at) || command.at < last) {
+        return invalid('an order cannot go before an earlier one');
+      }
+      // The day's own code says which game the team plays today, so the two cannot disagree.
+      // ponytail: one replay of the day an order (10 to 15 ms); a cheaper lookup if orders ever come in bulk.
+      if (watchGame(state, ctx, team.id)?.id !== command.gameId) {
+        return invalid('your team does not play that game today');
+      }
+      const ev = makeEvent(state, 'minor', [team.id], {
+        kind: 'bench.ordered',
+        gameId: command.gameId,
+        teamId: team.id,
+        at: command.at,
+        order: command.order,
+        ...(command.value !== undefined && { value: command.value }),
       });
       return applied(state, ev);
     }
